@@ -5,7 +5,7 @@ nextTypeId: 7
 types:
   JournalEntry:
     typeId: 0
-    nextIndex: 5
+    nextIndex: 6
     fields:
       id:
         index: 0
@@ -15,6 +15,8 @@ types:
         index: 3
       date:
         index: 4
+      title:
+        index: 5
   JournalBlockData:
     typeId: 1
     nextIndex: 4
