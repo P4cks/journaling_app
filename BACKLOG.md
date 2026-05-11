@@ -4,7 +4,7 @@ Running list of feature ideas. Not prioritized — pick whichever fits the momen
 Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the relevant section, or create a new section if nothing fits.
 
 ## UX / structure
-- [ ] **Refactor profile page to be more organised** — current screen mixes Appearance, Layouts, and Debug in a flat `ListView`. Group with clear section headers / categories; consider hiding Debug behind a long-press or a dev toggle.
+- [ ] **Refactor profile page to be more organised** — current screen mixes Appearance, Layouts, and Debug in a flat `ListView`. Move settings off Profile into a **dedicated Settings page** accessible from a Profile row (`Profile → Settings →`). The Settings page itself uses **collapsible/toggleable sections** — Appearance (expanded by default) and Debug (collapsed by default, ideally hidden behind a discovery toggle so casual users don't see the override pickers). Layouts likely stays on Profile (or moves into Settings as its own row — TBD when implementing).
 - [ ] **Drop the explicit edit toggle in the journal-entry editor** — for editable days, blocks should be directly editable. No pencil button, no read/edit mode toggle. Past days still need the read-only lock.
 - [ ] **Layouts: assign an icon to each layout** — Phosphor icon picker; the chosen icon shows up in the layout-picker sheet and on the Layouts list rows. Also: layout title editing should match the same tap-to-edit pattern used for journal-entry titles.
 - [ ] **Better affordance for tap-to-edit titles** — the current "tap the title to edit" pattern (entries today, layouts later) is invisible. Hint: a faint underline, a subtle pencil glyph next to the text, or a one-time tooltip on first launch.
