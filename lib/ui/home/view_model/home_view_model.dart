@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({
@@ -33,6 +34,11 @@ class HomeViewModel extends ChangeNotifier {
   /// dot. Past-day empties get swept by the repository so they'll drop out
   /// of this set on the next notification.
   Set<DateTime> get entriesByDay => _entriesByDay;
+
+  /// Computed on demand from the repository's full entry list. Entries are
+  /// few so caching isn't worth the complexity; the VM already notifies on
+  /// every repo mutation so consumers re-read this naturally.
+  StreakResult get streak => computeStreak(_repository.getAllEntries());
 
   void selectDate(DateTime date) {
     final normalized = _dateOnly(date);

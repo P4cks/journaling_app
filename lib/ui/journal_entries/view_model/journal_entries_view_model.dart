@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 
 /// A contiguous group of entries within a single calendar month, used as
 /// the section header on the entries list.
@@ -33,6 +34,11 @@ class JournalEntriesViewModel extends ChangeNotifier {
   List<MonthSection> get sections => _sections;
 
   bool get isEmpty => _sections.isEmpty;
+
+  /// Streak snapshot computed on demand from the full entry list — same
+  /// approach as `HomeViewModel.streak`. Entries are few; recomputing on
+  /// every rebuild is cheaper than caching with invalidation.
+  StreakResult get streak => computeStreak(_repository.getAllEntries());
 
   void refresh() {
     _rebuild();
