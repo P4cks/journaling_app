@@ -21,13 +21,14 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       date: fields[4] as DateTime,
       lastModified: fields[3] as DateTime,
       widgets: (fields[2] as List).cast<JournalBlockData>(),
+      title: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, JournalEntry obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(2)
@@ -35,7 +36,9 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       ..writeByte(3)
       ..write(obj.lastModified)
       ..writeByte(4)
-      ..write(obj.date);
+      ..write(obj.date)
+      ..writeByte(5)
+      ..write(obj.title);
   }
 
   @override
