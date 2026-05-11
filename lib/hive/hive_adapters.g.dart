@@ -18,7 +18,8 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
     };
     return JournalEntry(
       id: fields[0] as String,
-      date: fields[1] as DateTime,
+      date: fields[4] as DateTime,
+      lastModified: fields[3] as DateTime,
       widgets: (fields[2] as List).cast<JournalBlockData>(),
     );
   }
@@ -26,13 +27,15 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
   @override
   void write(BinaryWriter writer, JournalEntry obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
-      ..writeByte(1)
-      ..write(obj.date)
       ..writeByte(2)
-      ..write(obj.widgets);
+      ..write(obj.widgets)
+      ..writeByte(3)
+      ..write(obj.lastModified)
+      ..writeByte(4)
+      ..write(obj.date);
   }
 
   @override
@@ -119,6 +122,46 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BlockTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
+  @override
+  final typeId = 4;
+
+  @override
+  JournalLayout read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return JournalLayout(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      blocks: (fields[2] as List).cast<BlockType>(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, JournalLayout obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.blocks);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JournalLayoutAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
