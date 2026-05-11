@@ -10,6 +10,7 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(BlockTypeAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());
+    registerAdapter(JournalLayoutAdapter());
   }
 }
 
@@ -18,5 +19,6 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(BlockTypeAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());
+    registerAdapter(JournalLayoutAdapter());
   }
 }

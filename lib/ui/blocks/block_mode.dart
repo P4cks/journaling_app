@@ -1,0 +1,1 @@
+enum BlockMode { readOnly, editable }

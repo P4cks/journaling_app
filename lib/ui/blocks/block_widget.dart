@@ -1,0 +1,29 @@
+import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/text_block/text_block_widget.dart';
+
+class BlockWidget extends StatelessWidget {
+  const BlockWidget({
+    super.key,
+    required this.data,
+    required this.mode,
+    this.onChanged,
+  });
+
+  final JournalBlockData data;
+  final BlockMode mode;
+  final ValueChanged<JournalBlockData>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (data.type) {
+      case BlockType.textBlock:
+        return TextBlockWidget(data: data, mode: mode, onChanged: onChanged);
+      case BlockType.moodTracker:
+        return MoodTrackerWidget(data: data, mode: mode, onChanged: onChanged);
+    }
+  }
+}

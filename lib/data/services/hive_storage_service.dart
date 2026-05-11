@@ -1,22 +1,17 @@
 import 'package:hive_ce/hive.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
-import 'package:journaling_app_rewrite/data/model/journal_entry_collection.dart';
 
 class HiveStorageService {
-  final Box<JournalEntryCollection> _box;
+  final Box<JournalEntry> _box;
+
   HiveStorageService(this._box);
 
-  JournalEntryCollection? getJournalEntryCollection(String key){
-    return _box.get(key);
-  }
+  JournalEntry? getJournalEntry(String key) => _box.get(key);
 
-  Future<void> saveJournalEntryCollection(String key, JournalEntryCollection entry) {
-    return _box.put(key, entry);
-  }
+  Future<void> saveJournalEntry(String key, JournalEntry entry) =>
+      _box.put(key, entry);
 
-  Future<void> deleteJournalEntryCollection(String key){
-    return _box.delete(key);
-  }
+  Future<void> deleteJournalEntry(String key) => _box.delete(key);
 
-  List<JournalEntryCollection> getAllJournalEntryCollections() => _box.values.toList();
+  List<JournalEntry> getAllJournalEntries() => _box.values.toList();
 }

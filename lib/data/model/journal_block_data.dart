@@ -24,4 +24,7 @@ class JournalBlockData {
     type: type,
     contentJson: jsonEncode(content),
   );
+
+  @override
+  String toString() => 'JournalBlockData(id: $id, type: $type)';
 }
