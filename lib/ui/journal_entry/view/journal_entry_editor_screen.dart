@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -25,7 +24,6 @@ class JournalEntryEditorScreen extends StatefulWidget {
 
 class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
   JournalEntryEditorViewModel? _viewModel;
-  bool _isEditing = false;
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -55,13 +53,6 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
 
   void _onChanged() {
     if (mounted) setState(() {});
-  }
-
-  void _toggleEditing() {
-    setState(() {
-      _isEditing = !_isEditing;
-      debugPrint('[EditorScreen] isEditing -> $_isEditing');
-    });
   }
 
   /// Editor's "Change layout" action — destructive (replaces existing
@@ -129,18 +120,15 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
         final hasEntry = entry != null;
         final blocks = entry?.widgets ?? const [];
         final scheme = Theme.of(context).colorScheme;
-        final mode = (editable && _isEditing)
+        // No more explicit edit-mode toggle: when the day is editable
+        // (today or debug-unlocked) and an entry exists, blocks render
+        // directly editable. Past days stay read-only.
+        final mode = (editable && hasEntry)
             ? BlockMode.editable
             : BlockMode.readOnly;
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: (editable && _isEditing && hasEntry)
-                ? scheme.primaryContainer
-                : null,
-            foregroundColor: (editable && _isEditing && hasEntry)
-                ? scheme.onPrimaryContainer
-                : null,
             title: hasEntry
                 ? EditorTitle(
                     title: entry.title,
@@ -156,16 +144,6 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
                   tooltip: 'Change layout',
                   onPressed: _showChangeLayoutSheet,
                   icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
-                ),
-              if (editable && hasEntry)
-                IconButton(
-                  tooltip: _isEditing ? 'Done editing' : 'Edit',
-                  onPressed: _toggleEditing,
-                  icon: AppIcon(
-                    _isEditing
-                        ? PhosphorIconsBold.check
-                        : PhosphorIconsDuotone.pencilSimple,
-                  ),
                 )
               else if (!editable)
                 const Tooltip(

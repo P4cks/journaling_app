@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 
 /// Modal bottom sheet that lets the user pick from [layouts]. Returns the
 /// chosen layout, or `null` if dismissed.
@@ -35,7 +35,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
           ),
           for (final layout in layouts)
             ListTile(
-              leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
+              leading: AppIcon(layoutIconFor(layout.iconName).duotone),
               title: Text(layout.name),
               subtitle: Text(
                 '${layout.blocks.length} '

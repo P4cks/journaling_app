@@ -5,13 +5,15 @@ Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the releva
 
 ## UX / structure
 - [ ] **Refactor profile page to be more organised** — current screen mixes Appearance, Layouts, and Debug in a flat `ListView`. Move settings off Profile into a **dedicated Settings page** accessible from a Profile row (`Profile → Settings →`). The Settings page itself uses **collapsible/toggleable sections** — Appearance (expanded by default) and Debug (collapsed by default, ideally hidden behind a discovery toggle so casual users don't see the override pickers). Layouts likely stays on Profile (or moves into Settings as its own row — TBD when implementing).
-- [ ] **Drop the explicit edit toggle in the journal-entry editor** — for editable days, blocks should be directly editable. No pencil button, no read/edit mode toggle. Past days still need the read-only lock.
-- [ ] **Layouts: assign an icon to each layout** — Phosphor icon picker; the chosen icon shows up in the layout-picker sheet and on the Layouts list rows. Also: layout title editing should match the same tap-to-edit pattern used for journal-entry titles.
+- [x] **Drop the explicit edit toggle in the journal-entry editor** ([#11](https://github.com/P4cks/journaling_app/pull/11)) — for editable days, blocks render directly editable. Pencil button and read/edit mode toggle removed. Past days still show the read-only lock.
+- [x] **Layouts: assign an icon to each layout** ([#11](https://github.com/P4cks/journaling_app/pull/11)) — curated Phosphor icon picker in the layout editor; the chosen icon renders in the Layouts list (default layout's badge in `primaryContainer` so it still reads as primary) and in the layout-picker sheet.
+- [ ] **Layouts: tap-to-edit name in the editor** — match the inline AppBar tap-to-edit pattern used for journal-entry titles instead of the current always-visible TextField.
 - [ ] **Better affordance for tap-to-edit titles** — the current "tap the title to edit" pattern (entries today, layouts later) is invisible. Hint: a faint underline, a subtle pencil glyph next to the text, or a one-time tooltip on first launch.
 
 ## Theming / typography
 - [ ] **Revisit the surface palette system** — let users build and save their own palettes end-to-end (surface tint + secondary + accent), persisted alongside the existing curated list. Reduce the number of built-in defaults; lean on user-defined slots.
 - [ ] **Choose a new font** — currently the platform default. Pick something with more character for a journaling app (e.g. Lora, Source Serif, Inter — TBD).
+- [ ] **Toggle between emoij and phospor icons for blocks** - let users switch 
 
 ## Widget / block ideas
 - [ ] **Todo block** — checkable list items inside an entry.
@@ -20,6 +22,7 @@ Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the releva
 - [ ] **Weather block (API)** — fetches weather by location for the entry's date. Needs a weather provider and probably a location-permission flow.
 - [ ] **Quote of the day (API)** — fetches a daily quote from a public API; non-editable display.
 - [ ] **Prompt block** — configurable text block that displays a question above the input ("What surprised you today?"); the user answers in the field.
+- [ ] **Mood block** - Using
 
 ## Subscription / monetization
 - [ ] **Subscription scaffolding** — feature-gating infrastructure that scales to multiple tiers (e.g. free / pro / pro+). Tier capability flags read from a single source so individual gates are one-liners.
