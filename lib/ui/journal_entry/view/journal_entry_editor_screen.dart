@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/journal_entry_view.dart'
     show journalEntryHeroTag;
 import 'package:journaling_app_rewrite/ui/home/widgets/make_entry_cta.dart';
 import 'package:journaling_app_rewrite/ui/journal_entry/view_model/journal_entry_editor_view_model.dart';
+import 'package:journaling_app_rewrite/ui/journal_entry/widgets/editor_title.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -112,14 +114,6 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
     vm.createWithLayout(selected);
   }
 
-  String _formatTitle(DateTime d) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${months[d.month - 1]} ${d.day}, ${d.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final vm = _viewModel;
@@ -147,7 +141,15 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
             foregroundColor: (editable && _isEditing && hasEntry)
                 ? scheme.onPrimaryContainer
                 : null,
-            title: Text(_formatTitle(widget.date)),
+            title: hasEntry
+                ? EditorTitle(
+                    title: entry.title,
+                    date: widget.date,
+                    editable: editable,
+                    onChanged: vm.updateTitle,
+                  )
+                : Text(formatEntryDate(widget.date)),
+            titleSpacing: hasEntry ? 0 : null,
             actions: [
               if (editable && hasEntry)
                 IconButton(

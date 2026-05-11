@@ -13,6 +13,7 @@ class HomeViewModel extends ChangeNotifier {
     debugPrint('[HomeViewModel] init selectedDate=$_selectedDate');
     _repository.addListener(_onRepositoryChanged);
     _loadEntry();
+    _recomputeEntriesByDay();
   }
 
   final JournalRepository _repository;
@@ -20,10 +21,18 @@ class HomeViewModel extends ChangeNotifier {
   DateTime _selectedDate;
   DateTime _focusedDate;
   JournalEntry? _currentEntry;
+  Set<DateTime> _entriesByDay = const <DateTime>{};
 
   DateTime get selectedDate => _selectedDate;
   DateTime get focusedDate => _focusedDate;
   JournalEntry? get currentEntry => _currentEntry;
+
+  /// Set of normalized (local-midnight) days that currently have an entry.
+  /// Drives the calendar dot indicator. Empty entries are *included* here —
+  /// the user has clicked "Make entry" for today, so the day deserves a
+  /// dot. Past-day empties get swept by the repository so they'll drop out
+  /// of this set on the next notification.
+  Set<DateTime> get entriesByDay => _entriesByDay;
 
   void selectDate(DateTime date) {
     final normalized = _dateOnly(date);
@@ -43,6 +52,7 @@ class HomeViewModel extends ChangeNotifier {
   void reload() {
     debugPrint('[HomeViewModel] reload for $_selectedDate');
     _loadEntry();
+    _recomputeEntriesByDay();
     notifyListeners();
   }
 
@@ -63,6 +73,9 @@ class HomeViewModel extends ChangeNotifier {
         _repository.createEntryForDate(_selectedDate, layout: layout);
     _currentEntry = entry;
     debugPrint('[HomeViewModel] createEntryWithLayout -> $entry');
+    // No explicit recompute needed — repo notification will fire and call
+    // _onRepositoryChanged. notify here so the screen sees the new entry
+    // immediately without waiting for the async notification.
     notifyListeners();
     return entry;
   }
@@ -73,12 +86,21 @@ class HomeViewModel extends ChangeNotifier {
     _currentEntry = entry;
   }
 
+  void _recomputeEntriesByDay() {
+    _entriesByDay = _repository
+        .getAllEntries()
+        .map((e) => _dateOnly(e.date))
+        .toSet();
+  }
+
   void _onRepositoryChanged() {
     // Repository surface-area changes (create/delete/save/sweep) — re-read
     // the entry for the currently-selected date in case it was mutated or
-    // removed elsewhere (e.g. an empty-past-entry sweep on app resume).
-    debugPrint('[HomeViewModel] repository changed; refreshing selected entry');
+    // removed elsewhere (e.g. an empty-past-entry sweep on app resume),
+    // and recompute the dot-indicator set.
+    debugPrint('[HomeViewModel] repository changed; refreshing');
     _loadEntry();
+    _recomputeEntriesByDay();
     notifyListeners();
   }
 
