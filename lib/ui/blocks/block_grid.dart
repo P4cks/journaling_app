@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 class BlockGrid extends StatefulWidget {
   const BlockGrid({
@@ -170,7 +171,7 @@ class _BlockGridState extends State<BlockGrid> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                AppIcon(
                   block.type.icon,
                   color: scheme.onPrimaryContainer,
                   size: 18,
@@ -233,7 +234,7 @@ class _BlockGridState extends State<BlockGrid> {
             child: source == null
                 ? null
                 : Center(
-                    child: Icon(
+                    child: AppIcon(
                       source.type.icon,
                       color: scheme.primary,
                       size: 32,

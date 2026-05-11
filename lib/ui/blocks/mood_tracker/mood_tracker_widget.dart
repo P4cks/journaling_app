@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class MoodTrackerWidget extends StatelessWidget {
   const MoodTrackerWidget({
@@ -24,14 +26,20 @@ class MoodTrackerWidget extends StatelessWidget {
     onChanged?.call(updated);
   }
 
-  IconData _iconFor(Mood mood) {
+  IconData _iconFor(Mood mood, {required bool selected}) {
     switch (mood) {
       case Mood.happy:
-        return Icons.sentiment_very_satisfied;
+        return selected
+            ? PhosphorIconsFill.smiley
+            : PhosphorIconsDuotone.smiley;
       case Mood.neutral:
-        return Icons.sentiment_neutral;
+        return selected
+            ? PhosphorIconsFill.smileyMeh
+            : PhosphorIconsDuotone.smileyMeh;
       case Mood.sad:
-        return Icons.sentiment_very_dissatisfied;
+        return selected
+            ? PhosphorIconsFill.smileySad
+            : PhosphorIconsDuotone.smileySad;
     }
   }
 
@@ -63,7 +71,7 @@ class MoodTrackerWidget extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_iconFor(content.mood!)),
+          AppIcon(_iconFor(content.mood!, selected: true)),
           const SizedBox(width: 8),
           Text(_labelFor(content.mood!)),
         ],
@@ -78,7 +86,7 @@ class MoodTrackerWidget extends StatelessWidget {
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(_iconFor(m), size: 18),
+              AppIcon(_iconFor(m, selected: selected), size: 18),
               const SizedBox(width: 4),
               Text(_labelFor(m)),
             ],
