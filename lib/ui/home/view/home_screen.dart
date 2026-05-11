@@ -7,7 +7,6 @@ import 'package:journaling_app_rewrite/ui/home/view_model/home_view_model.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/home_calendar.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/journal_entry_view.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/make_entry_cta.dart';
-import 'package:journaling_app_rewrite/ui/home/widgets/streak_pill.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -69,17 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final vm = _viewModel;
     if (vm == null) return const SizedBox.shrink();
 
-    final streak = vm.streak;
-    final showPill = streak.current > 0 || streak.longest > 0;
-
     return SafeArea(
       child: Column(
         children: [
-          if (showPill)
-            StreakPill(
-              streak: streak,
-              onTap: () => context.go(Routes.journalEntries),
-            ),
           HomeCalendar(viewModel: vm),
           Expanded(
             child: vm.currentEntry == null
