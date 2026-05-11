@@ -4,9 +4,11 @@ import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/journal_entry_view.dart'
     show journalEntryHeroTag;
 import 'package:journaling_app_rewrite/ui/journal_entry/view_model/journal_entry_editor_view_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class JournalEntryEditorScreen extends StatefulWidget {
   const JournalEntryEditorScreen({super.key, required this.date});
@@ -85,7 +87,7 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
               ),
               for (final layout in layouts)
                 ListTile(
-                  leading: const Icon(Icons.dashboard_customize_outlined),
+                  leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
                   title: Text(layout.name),
                   subtitle: Text(
                     '${layout.blocks.length} '
@@ -163,20 +165,24 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
                 IconButton(
                   tooltip: 'Change layout',
                   onPressed: _showLayoutPicker,
-                  icon: const Icon(Icons.dashboard_outlined),
+                  icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
                 ),
               if (editable)
                 IconButton(
                   tooltip: _isEditing ? 'Done editing' : 'Edit',
                   onPressed: _toggleEditing,
-                  icon: Icon(_isEditing ? Icons.check : Icons.edit_outlined),
+                  icon: AppIcon(
+                    _isEditing
+                        ? PhosphorIconsBold.check
+                        : PhosphorIconsDuotone.pencilSimple,
+                  ),
                 )
               else
                 const Tooltip(
                   message: 'Past entries are read-only',
                   child: Padding(
                     padding: EdgeInsets.only(right: 16),
-                    child: Icon(Icons.lock_outline_rounded),
+                    child: AppIcon(PhosphorIconsDuotone.lock),
                   ),
                 ),
             ],

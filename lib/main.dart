@@ -10,9 +10,11 @@ import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +37,7 @@ void main() async {
   final layoutRepository = LayoutRepository(layoutStorage, settingsStorage);
   final journalRepository = JournalRepository(entryStorage, layoutRepository);
   final debugSettings = DebugSettings(settingsStorage);
+  final themeSettings = ThemeSettings(settingsStorage);
 
   await layoutRepository.seedDefaultIfEmpty();
 
@@ -43,6 +46,7 @@ void main() async {
       journalRepository: journalRepository,
       layoutRepository: layoutRepository,
       debugSettings: debugSettings,
+      themeSettings: themeSettings,
     ),
   );
 }
@@ -53,11 +57,13 @@ class MyApp extends StatelessWidget {
     required this.journalRepository,
     required this.layoutRepository,
     required this.debugSettings,
+    required this.themeSettings,
   });
 
   final JournalRepository journalRepository;
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
+  final ThemeSettings themeSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +71,34 @@ class MyApp extends StatelessWidget {
       journalRepository: journalRepository,
       layoutRepository: layoutRepository,
       debugSettings: debugSettings,
-      child: MaterialApp.router(
-        title: 'Journaling App',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        ),
-        routerConfig: appRouter,
+      themeSettings: themeSettings,
+      child: ListenableBuilder(
+        listenable: themeSettings,
+        builder: (context, _) {
+          final palette = themeSettings.palette;
+          final secondary = themeSettings.secondaryOverride;
+          final accent = themeSettings.accentOverride;
+          final surfaceOverride = themeSettings.debugSurfaceOverride;
+          return MaterialApp.router(
+            title: 'Journaling App',
+            themeMode: themeSettings.themeMode,
+            theme: buildAppTheme(
+              palette: palette,
+              brightness: Brightness.light,
+              secondary: secondary,
+              accent: accent,
+              surfaceOverride: surfaceOverride,
+            ),
+            darkTheme: buildAppTheme(
+              palette: palette,
+              brightness: Brightness.dark,
+              secondary: secondary,
+              accent: accent,
+              surfaceOverride: surfaceOverride,
+            ),
+            routerConfig: appRouter,
+          );
+        },
       ),
     );
   }

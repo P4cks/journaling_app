@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 
 class AppDependencies extends InheritedWidget {
   const AppDependencies({
@@ -9,12 +10,14 @@ class AppDependencies extends InheritedWidget {
     required this.journalRepository,
     required this.layoutRepository,
     required this.debugSettings,
+    required this.themeSettings,
     required super.child,
   });
 
   final JournalRepository journalRepository;
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
+  final ThemeSettings themeSettings;
 
   static AppDependencies of(BuildContext context) {
     final widget =
@@ -27,5 +30,6 @@ class AppDependencies extends InheritedWidget {
   bool updateShouldNotify(AppDependencies oldWidget) =>
       journalRepository != oldWidget.journalRepository ||
       layoutRepository != oldWidget.layoutRepository ||
-      debugSettings != oldWidget.debugSettings;
+      debugSettings != oldWidget.debugSettings ||
+      themeSettings != oldWidget.themeSettings;
 }

@@ -6,7 +6,9 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LayoutEditorScreen extends StatefulWidget {
   const LayoutEditorScreen({super.key, required this.layoutId});
@@ -73,7 +75,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               ),
               for (final type in BlockType.values)
                 ListTile(
-                  leading: Icon(type.icon),
+                  leading: AppIcon(type.icon),
                   title: Text(type.label),
                   onTap: () => Navigator.of(sheetContext).pop(type),
                 ),
@@ -111,7 +113,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           IconButton(
             tooltip: 'Save',
             onPressed: vm.canSave ? _save : null,
-            icon: const Icon(Icons.check),
+            icon: const AppIcon(PhosphorIconsBold.check),
           ),
         ],
       ),
@@ -158,8 +160,8 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
                         tooltip: 'Remove',
                         iconSize: 18,
                         visualDensity: VisualDensity.compact,
-                        icon: Icon(
-                          Icons.close,
+                        icon: AppIcon(
+                          PhosphorIconsBold.x,
                           color: scheme.onSurfaceVariant,
                         ),
                         onPressed: () => vm.removeSlot(block.id),
@@ -174,7 +176,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: _showAddBlockSheet,
-                    icon: const Icon(Icons.add),
+                    icon: const AppIcon(PhosphorIconsBold.plus),
                     label: const Text('Add block'),
                   ),
                 ),

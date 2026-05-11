@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AppScaffoldShell extends StatelessWidget {
   const AppScaffoldShell({super.key, required this.navigationShell});
@@ -22,18 +24,18 @@ class AppScaffoldShell extends StatelessWidget {
         onTap: _onDestinationTap,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            icon: AppIcon(PhosphorIconsDuotone.userCircle),
+            activeIcon: AppIcon(PhosphorIconsFill.userCircle),
             label: 'Profile',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: AppIcon(PhosphorIconsDuotone.house),
+            activeIcon: AppIcon(PhosphorIconsFill.house),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined),
-            activeIcon: Icon(Icons.menu_book),
+            icon: AppIcon(PhosphorIconsDuotone.bookOpen),
+            activeIcon: AppIcon(PhosphorIconsFill.bookOpen),
             label: 'Entries',
           ),
         ],

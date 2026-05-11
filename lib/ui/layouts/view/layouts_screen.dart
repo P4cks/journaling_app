@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LayoutsScreen extends StatefulWidget {
   const LayoutsScreen({super.key});
@@ -75,16 +77,18 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                     color: scheme.errorContainer,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Icon(
-                      Icons.delete_outline,
+                    child: AppIcon(
+                      PhosphorIconsDuotone.trash,
                       color: scheme.onErrorContainer,
                     ),
                   ),
                   onDismissed: (_) => vm.delete(layout.id),
                   child: ListTile(
                     leading: IconButton(
-                      icon: Icon(
-                        isDefault ? Icons.star : Icons.star_border,
+                      icon: AppIcon(
+                        isDefault
+                            ? PhosphorIconsFill.star
+                            : PhosphorIconsDuotone.star,
                         color: isDefault ? scheme.primary : null,
                       ),
                       tooltip: isDefault ? 'Default layout' : 'Set as default',
@@ -96,7 +100,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                       '${layout.blocks.length} '
                       'block${layout.blocks.length == 1 ? '' : 's'}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
                     onTap: () => _openEditor(layout.id),
                   ),
                 );
@@ -105,7 +109,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openEditor(null),
         tooltip: 'New layout',
-        child: const Icon(Icons.add),
+        child: const AppIcon(PhosphorIconsBold.plus),
       ),
     );
   }

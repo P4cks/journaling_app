@@ -9,11 +9,20 @@ class BlockCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      type: MaterialType.card,
-      elevation: 1,
-      borderRadius: BorderRadius.circular(12),
-      color: scheme.surfaceContainerHigh,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: isDark ? 0.55 : 0.18),
+            blurRadius: 14,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
