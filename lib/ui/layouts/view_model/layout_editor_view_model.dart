@@ -31,16 +31,19 @@ class LayoutEditorViewModel extends ChangeNotifier {
           BlockSlot(id: _uuid.v4(), type: type),
       ];
       nameController = TextEditingController(text: existing.name);
+      _iconName = existing.iconName;
       _isNew = false;
     } else {
       _id = _uuid.v4();
       _slots = [];
       nameController = TextEditingController();
+      _iconName = null;
       _isNew = true;
     }
     nameController.addListener(_onNameChanged);
     debugPrint(
-      '[LayoutEditorVM] init id=$_id isNew=$_isNew name="${nameController.text}" slots=${_slots.length}',
+      '[LayoutEditorVM] init id=$_id isNew=$_isNew name="${nameController.text}" '
+      'icon=$_iconName slots=${_slots.length}',
     );
   }
 
@@ -49,11 +52,20 @@ class LayoutEditorViewModel extends ChangeNotifier {
   late final TextEditingController nameController;
   late List<BlockSlot> _slots;
   late final bool _isNew;
+  String? _iconName;
 
   String get id => _id;
   bool get isNew => _isNew;
   List<BlockSlot> get slots => List.unmodifiable(_slots);
+  String? get iconName => _iconName;
   bool get canSave => nameController.text.trim().isNotEmpty;
+
+  void setIconName(String? name) {
+    if (_iconName == name) return;
+    _iconName = name;
+    debugPrint('[LayoutEditorVM] setIconName -> $name');
+    notifyListeners();
+  }
 
   void _onNameChanged() {
     notifyListeners();
@@ -97,6 +109,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
       id: _id,
       name: nameController.text.trim(),
       blocks: [for (final s in _slots) s.type],
+      iconName: _iconName,
     );
     await _repository.save(layout);
     debugPrint('[LayoutEditorVM] saved $layout');

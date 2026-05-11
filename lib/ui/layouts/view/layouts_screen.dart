@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -84,23 +85,36 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                   ),
                   onDismissed: (_) => vm.delete(layout.id),
                   child: ListTile(
-                    leading: IconButton(
-                      icon: AppIcon(
-                        isDefault
-                            ? PhosphorIconsFill.star
-                            : PhosphorIconsDuotone.star,
-                        color: isDefault ? scheme.primary : null,
-                      ),
-                      tooltip: isDefault ? 'Default layout' : 'Set as default',
-                      onPressed:
-                          isDefault ? null : () => vm.setDefault(layout.id),
+                    leading: _LayoutIconBadge(
+                      iconName: layout.iconName,
+                      isDefault: isDefault,
                     ),
                     title: Text(layout.name),
                     subtitle: Text(
                       '${layout.blocks.length} '
                       'block${layout.blocks.length == 1 ? '' : 's'}',
                     ),
-                    trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            isDefault
+                                ? PhosphorIconsFill.star
+                                : PhosphorIconsDuotone.star,
+                            color: isDefault ? scheme.primary : null,
+                          ),
+                          tooltip: isDefault
+                              ? 'Default layout'
+                              : 'Set as default',
+                          onPressed: isDefault
+                              ? null
+                              : () => vm.setDefault(layout.id),
+                        ),
+                        const AppIcon(PhosphorIconsDuotone.caretRight),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
                     onTap: () => _openEditor(layout.id),
                   ),
                 );
@@ -110,6 +124,43 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
         onPressed: () => _openEditor(null),
         tooltip: 'New layout',
         child: const AppIcon(PhosphorIconsBold.plus),
+      ),
+    );
+  }
+}
+
+/// Square badge showing the layout's chosen icon in the layouts list.
+/// Default layouts get a slightly stronger background tint so they read
+/// as the "primary" entry without needing the star icon to communicate
+/// it (the star moved to the trailing controls).
+class _LayoutIconBadge extends StatelessWidget {
+  const _LayoutIconBadge({required this.iconName, required this.isDefault});
+
+  final String? iconName;
+  final bool isDefault;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final icon = layoutIconFor(iconName);
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: isDefault
+            ? scheme.primaryContainer
+            : scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDefault ? scheme.primary : scheme.outlineVariant,
+          width: isDefault ? 1.5 : 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: AppIcon(
+        isDefault ? icon.fill : icon.duotone,
+        size: 22,
+        color: isDefault ? scheme.onPrimaryContainer : scheme.onSurface,
       ),
     );
   }

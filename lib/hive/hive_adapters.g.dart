@@ -143,19 +143,22 @@ class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
       id: fields[0] as String,
       name: fields[1] as String,
       blocks: (fields[2] as List).cast<BlockType>(),
+      iconName: fields[3] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, JournalLayout obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.blocks);
+      ..write(obj.blocks)
+      ..writeByte(3)
+      ..write(obj.iconName);
   }
 
   @override

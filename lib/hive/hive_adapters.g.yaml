@@ -37,7 +37,7 @@ types:
         index: 1
   JournalLayout:
     typeId: 4
-    nextIndex: 3
+    nextIndex: 4
     fields:
       id:
         index: 0
@@ -45,3 +45,5 @@ types:
         index: 1
       blocks:
         index: 2
+      iconName:
+        index: 3

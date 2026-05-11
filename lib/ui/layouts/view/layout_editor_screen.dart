@@ -7,7 +7,9 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LayoutEditorScreen extends StatefulWidget {
@@ -90,6 +92,15 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     }
   }
 
+  Future<void> _pickIcon() async {
+    final vm = _viewModel;
+    if (vm == null) return;
+    FocusScope.of(context).unfocus();
+    final picked = await showLayoutIconPicker(context, selected: vm.iconName);
+    if (picked == null || !mounted) return;
+    vm.setIconName(picked);
+  }
+
   List<JournalBlockData> _slotsAsBlockData() {
     final vm = _viewModel!;
     return [
@@ -125,13 +136,25 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: TextField(
-                controller: vm.nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _IconWell(
+                    icon: layoutIconFor(vm.iconName),
+                    onTap: _pickIcon,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: vm.nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      textInputAction: TextInputAction.done,
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -183,6 +206,38 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact icon-display tile used in the layout editor as the "pick icon"
+/// affordance next to the name field. Tap to open the icon picker.
+class _IconWell extends StatelessWidget {
+  const _IconWell({required this.icon, required this.onTap});
+
+  final LayoutIcon icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: 'Tap to change icon',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          alignment: Alignment.center,
+          child: AppIcon(icon.duotone, size: 28),
         ),
       ),
     );
