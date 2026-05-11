@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/streak_stat_card.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -21,6 +23,14 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         children: [
+          _SectionHeader(label: 'Streak'),
+          ListenableBuilder(
+            listenable: deps.journalRepository,
+            builder: (context, _) => StreakStatCard(
+              streak: computeStreak(deps.journalRepository.getAllEntries()),
+            ),
+          ),
+          const Divider(),
           _SectionHeader(label: 'Appearance'),
           ListenableBuilder(
             listenable: theme,
