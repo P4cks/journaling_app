@@ -1,0 +1,51 @@
+import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+/// Modal bottom sheet that lets the user pick from [layouts]. Returns the
+/// chosen layout, or `null` if dismissed.
+///
+/// Stateless and stand-alone — both the "Make entry" CTA on the home screen
+/// and the "Change layout" action inside the editor call into this same
+/// sheet. The editor wraps the result in a destructive-action confirm
+/// dialog (existing blocks will be replaced); the home CTA skips the
+/// confirm because there is nothing to replace.
+Future<JournalLayout?> showLayoutPickerSheet(
+  BuildContext context, {
+  required List<JournalLayout> layouts,
+  String title = 'Choose layout',
+}) {
+  if (layouts.isEmpty) return Future.value(null);
+  return showModalBottomSheet<JournalLayout>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+          ),
+          for (final layout in layouts)
+            ListTile(
+              leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
+              title: Text(layout.name),
+              subtitle: Text(
+                '${layout.blocks.length} '
+                'block${layout.blocks.length == 1 ? '' : 's'}',
+              ),
+              onTap: () => Navigator.of(sheetContext).pop(layout),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}

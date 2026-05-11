@@ -51,7 +51,7 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
     required this.journalRepository,
@@ -66,22 +66,51 @@ class MyApp extends StatelessWidget {
   final ThemeSettings themeSettings;
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Cold-start sweep — catches past-day entries left empty from a
+    // previous session.
+    widget.journalRepository.sweepEmptyPastEntries();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Catches the "user opened editor at 23:55, walked away, day rolled
+      // over while app was backgrounded" case.
+      widget.journalRepository.sweepEmptyPastEntries();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppDependencies(
-      journalRepository: journalRepository,
-      layoutRepository: layoutRepository,
-      debugSettings: debugSettings,
-      themeSettings: themeSettings,
+      journalRepository: widget.journalRepository,
+      layoutRepository: widget.layoutRepository,
+      debugSettings: widget.debugSettings,
+      themeSettings: widget.themeSettings,
       child: ListenableBuilder(
-        listenable: themeSettings,
+        listenable: widget.themeSettings,
         builder: (context, _) {
-          final palette = themeSettings.palette;
-          final secondary = themeSettings.secondaryOverride;
-          final accent = themeSettings.accentOverride;
-          final surfaceOverride = themeSettings.debugSurfaceOverride;
+          final palette = widget.themeSettings.palette;
+          final secondary = widget.themeSettings.secondaryOverride;
+          final accent = widget.themeSettings.accentOverride;
+          final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
           return MaterialApp.router(
             title: 'Journaling App',
-            themeMode: themeSettings.themeMode,
+            themeMode: widget.themeSettings.themeMode,
             theme: buildAppTheme(
               palette: palette,
               brightness: Brightness.light,

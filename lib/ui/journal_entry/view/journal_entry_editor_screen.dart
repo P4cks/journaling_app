@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/journal_entry_view.dart'
     show journalEntryHeroTag;
+import 'package:journaling_app_rewrite/ui/home/widgets/make_entry_cta.dart';
 import 'package:journaling_app_rewrite/ui/journal_entry/view_model/journal_entry_editor_view_model.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class JournalEntryEditorScreen extends StatefulWidget {
@@ -61,45 +62,15 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
     });
   }
 
-  Future<void> _showLayoutPicker() async {
+  /// Editor's "Change layout" action — destructive (replaces existing
+  /// blocks), so always confirms before applying.
+  Future<void> _showChangeLayoutSheet() async {
     final vm = _viewModel;
     if (vm == null) return;
     FocusScope.of(context).unfocus();
-    final layouts = vm.getAvailableLayouts();
-    if (layouts.isEmpty) return;
-
-    final selected = await showModalBottomSheet<JournalLayout>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Choose layout',
-                    style: Theme.of(sheetContext).textTheme.titleMedium,
-                  ),
-                ),
-              ),
-              for (final layout in layouts)
-                ListTile(
-                  leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
-                  title: Text(layout.name),
-                  subtitle: Text(
-                    '${layout.blocks.length} '
-                    'block${layout.blocks.length == 1 ? '' : 's'}',
-                  ),
-                  onTap: () => Navigator.of(sheetContext).pop(layout),
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+    final selected = await showLayoutPickerSheet(
+      context,
+      layouts: vm.getAvailableLayouts(),
     );
     if (selected == null || !mounted) return;
 
@@ -128,6 +99,19 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
     }
   }
 
+  /// Editor's CTA when reached via deep link to a date without an entry.
+  /// Non-destructive — there's nothing to replace, so no confirm dialog.
+  Future<void> _onMakeEntry() async {
+    final vm = _viewModel;
+    if (vm == null) return;
+    final selected = await showLayoutPickerSheet(
+      context,
+      layouts: vm.getAvailableLayouts(),
+    );
+    if (selected == null || !mounted) return;
+    vm.createWithLayout(selected);
+  }
+
   String _formatTitle(DateTime d) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -147,7 +131,9 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
       listenable: debug,
       builder: (context, _) {
         final editable = _isToday || debug.unlockAllDays;
-        final blocks = vm.entry.widgets;
+        final entry = vm.entry;
+        final hasEntry = entry != null;
+        final blocks = entry?.widgets ?? const [];
         final scheme = Theme.of(context).colorScheme;
         final mode = (editable && _isEditing)
             ? BlockMode.editable
@@ -155,19 +141,21 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor:
-                (editable && _isEditing) ? scheme.primaryContainer : null,
-            foregroundColor:
-                (editable && _isEditing) ? scheme.onPrimaryContainer : null,
+            backgroundColor: (editable && _isEditing && hasEntry)
+                ? scheme.primaryContainer
+                : null,
+            foregroundColor: (editable && _isEditing && hasEntry)
+                ? scheme.onPrimaryContainer
+                : null,
             title: Text(_formatTitle(widget.date)),
             actions: [
-              if (editable)
+              if (editable && hasEntry)
                 IconButton(
                   tooltip: 'Change layout',
-                  onPressed: _showLayoutPicker,
+                  onPressed: _showChangeLayoutSheet,
                   icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
                 ),
-              if (editable)
+              if (editable && hasEntry)
                 IconButton(
                   tooltip: _isEditing ? 'Done editing' : 'Edit',
                   onPressed: _toggleEditing,
@@ -177,7 +165,7 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
                         : PhosphorIconsDuotone.pencilSimple,
                   ),
                 )
-              else
+              else if (!editable)
                 const Tooltip(
                   message: 'Past entries are read-only',
                   child: Padding(
@@ -195,30 +183,54 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => FocusScope.of(context).unfocus(),
-                  child: blocks.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No blocks for this day yet',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context).disabledColor,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                          ),
-                        )
-                      : BlockGrid(
-                          blocks: blocks,
-                          mode: mode,
-                          onBlockChanged: vm.updateBlock,
-                        ),
+                  child: !hasEntry
+                      ? (editable
+                          ? MakeEntryCta(onTap: _onMakeEntry)
+                          : _NoEntryReadOnly())
+                      : blocks.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No blocks for this day yet',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context).disabledColor,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                              ),
+                            )
+                          : BlockGrid(
+                              blocks: blocks,
+                              mode: mode,
+                              onBlockChanged: vm.updateBlock,
+                            ),
                 ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _NoEntryReadOnly extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'No entry was made on this day.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.disabledColor,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
     );
   }
 }
