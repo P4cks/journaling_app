@@ -1,8 +1,14 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/home/view_model/home_view_model.dart';
 import 'package:table_calendar/table_calendar.dart';
+
+/// Sentinel marker passed back via `eventLoader`. `TableCalendar` only
+/// looks at list length when deciding whether to paint a dot, so the
+/// element value is irrelevant — `const Object()` keeps allocation flat.
+const _kHasEntryMarker = Object();
+const _kHasEntry = <Object>[_kHasEntryMarker];
+const _kNoEntries = <Object>[];
 
 class HomeCalendar extends StatefulWidget {
   const HomeCalendar({super.key, required this.viewModel});
@@ -16,9 +22,12 @@ class HomeCalendar extends StatefulWidget {
 class _HomeCalendarState extends State<HomeCalendar> {
   CalendarFormat _format = CalendarFormat.week;
 
+  DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
+
   @override
   Widget build(BuildContext context) {
     final debug = AppDependencies.of(context).debugSettings;
+    final scheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: debug,
       builder: (context, _) {
@@ -49,6 +58,18 @@ class _HomeCalendarState extends State<HomeCalendar> {
             CalendarFormat.week: 'Week',
           },
           availableGestures: AvailableGestures.all,
+          eventLoader: (day) =>
+              widget.viewModel.entriesByDay.contains(_normalize(day))
+                  ? _kHasEntry
+                  : _kNoEntries,
+          calendarStyle: CalendarStyle(
+            markerDecoration: BoxDecoration(
+              color: scheme.primary,
+              shape: BoxShape.circle,
+            ),
+            markerSize: 5,
+            markersMaxCount: 1,
+          ),
           headerStyle: const HeaderStyle(
             formatButtonVisible: true,
             titleCentered: true,

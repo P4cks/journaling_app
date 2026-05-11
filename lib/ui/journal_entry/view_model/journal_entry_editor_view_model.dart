@@ -60,6 +60,28 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the entry's title. Pass `null` (or an empty/whitespace-only
+  /// string, which is normalized to `null`) to clear the title — the UI
+  /// will fall back to displaying the date.
+  void updateTitle(String? newTitle) {
+    final current = _entry;
+    if (current == null) {
+      debugPrint('[EditorVM] updateTitle ignored — no entry');
+      return;
+    }
+    final trimmed = newTitle?.trim();
+    final normalized = (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+    if (current.title == normalized) return;
+    _entry = current.copyWith(
+      title: normalized,
+      clearTitle: normalized == null,
+      lastModified: DateTime.now(),
+    );
+    debugPrint('[EditorVM] updateTitle -> "${normalized ?? '<null>'}"');
+    _repository.saveJournalEntry(_entry!);
+    notifyListeners();
+  }
+
   void applyLayout(JournalLayout layout) {
     final current = _entry;
     if (current == null) {
