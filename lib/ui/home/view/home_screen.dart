@@ -6,6 +6,8 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/home/view_model/home_view_model.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/home_calendar.dart';
 import 'package:journaling_app_rewrite/ui/home/widgets/journal_entry_view.dart';
+import 'package:journaling_app_rewrite/ui/home/widgets/make_entry_cta.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,7 +45,22 @@ class _HomeScreenState extends State<HomeScreen> {
     debugPrint('[HomeScreen] opening editor at $path');
     await context.push(path);
     if (!mounted) return;
+    // Sweep on editor-pop catches the "user cleared all blocks on a past
+    // day" case immediately. Cheap — entries are few.
+    await AppDependencies.of(context).journalRepository
+        .sweepEmptyPastEntries();
+    if (!mounted) return;
     vm.reload();
+  }
+
+  Future<void> _onMakeEntry(HomeViewModel vm) async {
+    final deps = AppDependencies.of(context);
+    final layouts = deps.layoutRepository.getAll();
+    final picked = await showLayoutPickerSheet(context, layouts: layouts);
+    if (picked == null || !mounted) return;
+    vm.createEntryWithLayout(picked);
+    if (!mounted) return;
+    await _openEditor(vm);
   }
 
   @override
@@ -56,10 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           HomeCalendar(viewModel: vm),
           Expanded(
-            child: JournalEntryView(
-              entry: vm.currentEntry,
-              onTap: () => _openEditor(vm),
-            ),
+            child: vm.currentEntry == null
+                ? MakeEntryCta(onTap: () => _onMakeEntry(vm))
+                : JournalEntryView(
+                    entry: vm.currentEntry,
+                    onTap: () => _openEditor(vm),
+                  ),
           ),
         ],
       ),

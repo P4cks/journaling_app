@@ -9,7 +9,10 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-class JournalRepository {
+/// Single source of truth for journal entries. Extends [ChangeNotifier]
+/// so view models can subscribe and react to creates/updates/deletes/sweeps
+/// without each owner having to plumb refresh calls through.
+class JournalRepository extends ChangeNotifier {
   final HiveStorageService _storage;
   final LayoutRepository _layouts;
 
@@ -53,20 +56,10 @@ class JournalRepository {
     return entry;
   }
 
-  /// Legacy lazy-create call. Kept temporarily for callers that still expect
-  /// an entry to be auto-materialized on read. Will be removed once the
-  /// home/editor flows switch to explicit creation via [createEntryForDate].
-  @Deprecated('Use getEntryForDate + createEntryForDate explicitly. '
-      'This method will be removed in the lifecycle-rework commit.')
-  JournalEntry getOrCreateEntryForDate(DateTime date) {
-    final existing = getEntryForDate(date);
-    if (existing != null) return existing;
-    return createEntryForDate(date);
-  }
-
-  Future<void> saveJournalEntry(JournalEntry entry) {
+  Future<void> saveJournalEntry(JournalEntry entry) async {
     debugPrint('[JournalRepository] saveJournalEntry $entry');
-    return _storage.saveJournalEntry(_dateKey(entry.date), entry);
+    await _storage.saveJournalEntry(_dateKey(entry.date), entry);
+    notifyListeners();
   }
 
   /// All entries across all days, in unspecified order. Sorting/grouping
@@ -77,16 +70,19 @@ class JournalRepository {
     return all;
   }
 
-  Future<void> deleteEntry(JournalEntry entry) {
+  Future<void> deleteEntry(JournalEntry entry) async {
     debugPrint('[JournalRepository] deleteEntry $entry');
-    return _storage.deleteJournalEntry(_dateKey(entry.date));
+    await _storage.deleteJournalEntry(_dateKey(entry.date));
+    notifyListeners();
   }
 
   /// Removes past-day entries whose every block is at its default empty
   /// state. Today's entries are never deleted — the user may still be
   /// drafting. Pass [now] in tests; defaults to `DateTime.now()`.
   ///
-  /// Returns the number of entries deleted.
+  /// Returns the number of entries deleted. Notifies once if any entry
+  /// was deleted (not per-entry — listeners just need to know "something
+  /// changed").
   Future<int> sweepEmptyPastEntries({DateTime? now}) async {
     final today = _normalize(now ?? DateTime.now());
     var deleted = 0;
@@ -94,13 +90,14 @@ class JournalRepository {
       final entryDay = _normalize(entry.date);
       if (!entryDay.isBefore(today)) continue;
       if (!entry.hasNoContent) continue;
-      await deleteEntry(entry);
+      await _storage.deleteJournalEntry(_dateKey(entry.date));
       deleted++;
     }
     if (deleted > 0) {
       debugPrint(
         '[JournalRepository] sweepEmptyPastEntries removed $deleted entries',
       );
+      notifyListeners();
     }
     return deleted;
   }

@@ -16,47 +16,68 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
   })  : _repository = repository,
         _layoutRepository = layoutRepository,
         _date = date,
-        _entry = repository.getOrCreateEntryForDate(date) {
+        _entry = repository.getEntryForDate(date) {
     debugPrint('[EditorVM] init for date=$_date entry=$_entry');
   }
 
   final JournalRepository _repository;
   final LayoutRepository _layoutRepository;
   final DateTime _date;
-  JournalEntry _entry;
+  JournalEntry? _entry;
 
   DateTime get date => _date;
-  JournalEntry get entry => _entry;
+  JournalEntry? get entry => _entry;
+  bool get hasEntry => _entry != null;
 
   List<JournalLayout> getAvailableLayouts() => _layoutRepository.getAll();
 
+  /// Materializes an entry for this date using [layout]. Used by the
+  /// editor's "Make entry" CTA when reached via deep link for a day that
+  /// doesn't yet have one.
+  void createWithLayout(JournalLayout layout) {
+    final entry = _repository.createEntryForDate(_date, layout: layout);
+    _entry = entry;
+    debugPrint('[EditorVM] createWithLayout -> $entry');
+    notifyListeners();
+  }
+
   void updateBlock(JournalBlockData updated) {
+    final current = _entry;
+    if (current == null) {
+      debugPrint('[EditorVM] updateBlock ignored — no entry');
+      return;
+    }
     final newBlocks = [
-      for (final b in _entry.widgets)
+      for (final b in current.widgets)
         if (b.id == updated.id) updated else b,
     ];
-    _entry = _entry.copyWith(
+    _entry = current.copyWith(
       widgets: newBlocks,
       lastModified: DateTime.now(),
     );
     debugPrint('[EditorVM] updateBlock id=${updated.id} type=${updated.type}');
-    _repository.saveJournalEntry(_entry);
+    _repository.saveJournalEntry(_entry!);
     notifyListeners();
   }
 
   void applyLayout(JournalLayout layout) {
+    final current = _entry;
+    if (current == null) {
+      debugPrint('[EditorVM] applyLayout ignored — no entry');
+      return;
+    }
     final newBlocks = [
       for (final type in layout.blocks)
         JournalBlockData.create(id: _uuid.v4(), type: type),
     ];
-    _entry = _entry.copyWith(
+    _entry = current.copyWith(
       widgets: newBlocks,
       lastModified: DateTime.now(),
     );
     debugPrint(
       '[EditorVM] applyLayout "${layout.name}" (${layout.id}) — ${newBlocks.length} blocks',
     );
-    _repository.saveJournalEntry(_entry);
+    _repository.saveJournalEntry(_entry!);
     notifyListeners();
   }
 }
