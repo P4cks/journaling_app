@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/view_model/journal_entries_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/widgets/entry_list_tile.dart';
+import 'package:journaling_app_rewrite/ui/journal_entries/widgets/streak_stat_card.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class JournalEntriesScreen extends StatefulWidget {
@@ -46,20 +48,24 @@ class _JournalEntriesScreenState extends State<JournalEntriesScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Entries')),
-      body: vm.isEmpty ? const _EmptyState() : _SectionedList(sections: vm.sections),
+      body: vm.isEmpty
+          ? const _EmptyState()
+          : _SectionedList(sections: vm.sections, streak: vm.streak),
     );
   }
 }
 
 class _SectionedList extends StatelessWidget {
-  const _SectionedList({required this.sections});
+  const _SectionedList({required this.sections, required this.streak});
 
   final List<MonthSection> sections;
+  final StreakResult streak;
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
+        SliverToBoxAdapter(child: StreakStatCard(streak: streak)),
         for (final section in sections) ...[
           SliverToBoxAdapter(child: _MonthHeader(section: section)),
           SliverList.builder(
