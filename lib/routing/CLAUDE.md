@@ -10,7 +10,8 @@ every screen has access to repositories without per-route plumbing.
   `StatefulShellRoute.indexedStack` with three branches:
   - Branch 0: `/profile` (and nested `/profile/settings`,
     `/profile/layouts`, `/profile/layouts/new`,
-    `/profile/layouts/edit/:id`).
+    `/profile/layouts/edit/:id`, `/profile/block-settings`,
+    `/profile/block-settings/text`, `/profile/block-settings/prompt`).
   - Branch 1: `/` (Home) (and nested `/journal/:date`).
   - Branch 2: `/journal-entries` (the sectioned list).
 

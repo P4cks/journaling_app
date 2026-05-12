@@ -19,9 +19,21 @@ coordination live.
   - `getEntryForDate(date)` — synchronous read.
   - `createEntryForDate(date, {layout})` — synchronous create + async
     save. Uses the user's default layout when `layout == null`. **Does
-    not check for an existing entry** — that's the caller's job. The
-    new entry has fresh empty `JournalBlockData`s materialized from
-    `layout.blocks` (which holds *types*, not data).
+    not check for an existing entry** — that's the caller's job.
+    Calls `materializeLayout` to produce the entry's blocks.
+  - `materializeLayout(layout, date)` — turns a layout's
+    `List<BlockTemplate>` into fresh `JournalBlockData` instances.
+    Per-type seeding:
+    - `promptBlock` — calls `BlockSettings.pickPromptFor(date,
+      slotIndex)` to bake today's prompt into the entry's content.
+      The `slotIndex` is the prompt block's ordinal among prompt
+      blocks in this layout (not the overall block index), so two
+      prompt blocks on the same day get different prompts under
+      `daily` strategy.
+    - Other types — empty content map; the widget owns its read-time
+      reads (e.g. `TextBlockWidget` reads `BlockSettings.textCharLimit`
+      live).
+    Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.
   - `getAllEntries()` — unsorted; sorting is caller's job

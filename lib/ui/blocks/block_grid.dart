@@ -5,7 +5,6 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 // ---------------------------------------------------------------------------
 // BlockGrid — Notion-style drag-to-reorder
@@ -46,9 +45,6 @@ class BlockGrid extends StatefulWidget {
 }
 
 class _BlockGridState extends State<BlockGrid> {
-  // Index of the tile currently being dragged (null = not dragging).
-  int? _draggingIndex;
-
   // Logical insertion index where the item will land (0 … blocks.length).
   // null = no active drag or cursor has left the grid.
   int? _insertionIndex;
@@ -96,8 +92,7 @@ class _BlockGridState extends State<BlockGrid> {
     if (index < 0 || index >= _tileKeys.length) return null;
     final tileBox =
         _tileKeys[index].currentContext?.findRenderObject() as RenderBox?;
-    final gridBox =
-        _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (tileBox == null || gridBox == null) return null;
     final topLeft = tileBox.localToGlobal(Offset.zero, ancestor: gridBox);
     return topLeft & tileBox.size;
@@ -115,8 +110,7 @@ class _BlockGridState extends State<BlockGrid> {
   ///  2. On that row, find the tile whose centre-X is nearest to the cursor's X.
   ///  3. Left half of that tile → insert before it; right half → insert after.
   int _computeInsertionIndex(Offset globalPos) {
-    final gridBox =
-        _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (gridBox == null) return widget.blocks.length;
 
     final local = gridBox.globalToLocal(globalPos);
@@ -144,8 +138,7 @@ class _BlockGridState extends State<BlockGrid> {
     const rowEpsilon = 4.0;
     final rowIndices = <int>[
       for (var i = 0; i < n; i++)
-        if (centres[i] != null && (centres[i]!.dy - rowY).abs() < rowEpsilon)
-          i,
+        if (centres[i] != null && (centres[i]!.dy - rowY).abs() < rowEpsilon) i,
     ];
 
     // 3. Within that row, find the tile nearest horizontally.
@@ -168,9 +161,8 @@ class _BlockGridState extends State<BlockGrid> {
   // Drag lifecycle
   // -------------------------------------------------------------------------
 
-  void _onDragStarted(int index) {
+  void _onDragStarted() {
     setState(() {
-      _draggingIndex = index;
       _insertionIndex = null;
     });
   }
@@ -194,18 +186,12 @@ class _BlockGridState extends State<BlockGrid> {
 
   void _onDragEnd() {
     if (!mounted) return;
-    setState(() {
-      _draggingIndex = null;
-      _insertionIndex = null;
-    });
+    setState(() => _insertionIndex = null);
   }
 
   void _onAccept(int from) {
     final insertAt = _insertionIndex ?? widget.blocks.length;
-    setState(() {
-      _draggingIndex = null;
-      _insertionIndex = null;
-    });
+    setState(() => _insertionIndex = null);
     // Normalise: when inserting after the source the logical index shifts by 1.
     final to = insertAt > from ? insertAt - 1 : insertAt;
     if (from != to) widget.onReorder!(from, to);
@@ -294,7 +280,7 @@ class _BlockGridState extends State<BlockGrid> {
         }
       },
       onAcceptWithDetails: (details) => _onAccept(details.data),
-      builder: (_, __, ___) => gridContent,
+      builder: (_, _, _) => gridContent,
     );
 
     return Stack(
@@ -318,14 +304,11 @@ class _BlockGridState extends State<BlockGrid> {
   }
 
   List<Widget> _buildTiles() {
-    return [
-      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i),
-    ];
+    return [for (var i = 0; i < widget.blocks.length; i++) _buildTile(i)];
   }
 
   Widget _buildTile(int index) {
     final block = widget.blocks[index];
-    final isDragging = _draggingIndex == index;
 
     final card = BlockCard(
       topRight: widget.cardTrailing?.call(block, index),
@@ -351,9 +334,9 @@ class _BlockGridState extends State<BlockGrid> {
 
       content = LongPressDraggable<int>(
         data: index,
-        onDragStarted: () => _onDragStarted(index),
+        onDragStarted: _onDragStarted,
         onDragEnd: (_) => _onDragEnd(),
-        onDraggableCanceled: (_, __) => _onDragEnd(),
+        onDraggableCanceled: (_, _) => _onDragEnd(),
         feedback: feedback,
         // Dim the source tile; it stays in place (no grid reflow).
         childWhenDragging: Opacity(opacity: 0.35, child: card),
@@ -375,10 +358,7 @@ class _BlockGridState extends State<BlockGrid> {
 // ---------------------------------------------------------------------------
 
 class _DraggableFeedback extends StatelessWidget {
-  const _DraggableFeedback({
-    required this.tileKey,
-    required this.child,
-  });
+  const _DraggableFeedback({required this.tileKey, required this.child});
 
   final GlobalKey tileKey;
   final Widget child;
@@ -393,10 +373,7 @@ class _DraggableFeedback extends StatelessWidget {
       child: SizedBox(
         width: size.width,
         height: size.height,
-        child: Opacity(
-          opacity: 0.85,
-          child: child,
-        ),
+        child: Opacity(opacity: 0.85, child: child),
       ),
     );
   }

@@ -3,7 +3,9 @@ import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_block/text_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 
 class BlockWidget extends StatelessWidget {
   const BlockWidget({
@@ -24,6 +26,18 @@ class BlockWidget extends StatelessWidget {
         return TextBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.moodTracker:
         return MoodTrackerWidget(data: data, mode: mode, onChanged: onChanged);
+      case BlockType.weatherManual:
+        return WeatherManualWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+        );
+      case BlockType.promptBlock:
+        return PromptBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+        );
     }
   }
 }

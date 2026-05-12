@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:journaling_app_rewrite/data/model/block_template.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
@@ -22,13 +22,12 @@ class LayoutEditorViewModel extends ChangeNotifier {
     required LayoutRepository repository,
     String? layoutId,
   }) : _repository = repository {
-    final existing =
-        layoutId == null ? null : _repository.getById(layoutId);
+    final existing = layoutId == null ? null : _repository.getById(layoutId);
     if (existing != null) {
       _id = existing.id;
       _slots = [
-        for (final type in existing.blocks)
-          BlockSlot(id: _uuid.v4(), type: type),
+        for (final template in existing.blocks)
+          BlockSlot(id: template.id, type: template.type),
       ];
       nameController = TextEditingController(text: existing.name);
       _iconName = existing.iconName;
@@ -129,7 +128,10 @@ class LayoutEditorViewModel extends ChangeNotifier {
     final layout = JournalLayout(
       id: _id,
       name: nameController.text.trim(),
-      blocks: [for (final s in _slots) s.type],
+      blocks: [
+        for (final s in _slots)
+          BlockTemplate.create(id: s.id, type: s.type),
+      ],
       iconName: _iconName,
     );
     await _repository.save(layout);

@@ -1,9 +1,9 @@
-import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/block_template.dart';
 
 class JournalLayout {
   final String id;
   final String name;
-  final List<BlockType> blocks;
+  final List<BlockTemplate> blocks;
   final String? iconName;
 
   const JournalLayout({
@@ -19,7 +19,7 @@ class JournalLayout {
   JournalLayout copyWith({
     String? id,
     String? name,
-    List<BlockType>? blocks,
+    List<BlockTemplate>? blocks,
     String? iconName,
     bool clearIcon = false,
   }) => JournalLayout(

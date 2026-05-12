@@ -12,7 +12,7 @@ directly.
 | Box                  | Type                  | Wrapped by                  |
 |----------------------|-----------------------|-----------------------------|
 | `journalEntries_v5`  | `Box<JournalEntry>`   | `HiveStorageService`        |
-| `journalLayouts_v4`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
+| `journalLayouts_v5`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
 | `settings`           | `Box<String>`         | `SettingsStorageService`    |
 
 The two model boxes are versioned (`_vN` suffix). The settings box is
@@ -43,14 +43,30 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
     `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
     `theme.secondary`, `theme.accent`, `theme.customPalettes`,
-    `theme.debugSurface`. If you add another, give it a namespaced key
-    and add a typed accessor pair.
+    `theme.debugSurface`, `block.prompt.list` (JSON-encoded list of
+    strings), `block.prompt.strategy` (`daily` | `random`),
+    `block.text.charLimit` (positive int as string). If you add
+    another, give it a namespaced key and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
     Debug `ExpansionTile`.
   - `unlockAllDays` bypasses both the calendar's future-day disable
     and the editor's read-only-for-past guard.
+- [block_settings.dart](block_settings.dart) — `BlockSettings extends ChangeNotifier`.
+  Block-type-global configuration persisted in the `settings` Hive
+  box:
+  - `prompts` (`List<String>`) — the curated prompt list shown to
+    every prompt block.
+  - `promptStrategy` (`PromptStrategy` enum: `daily` | `random`) —
+    how `pickPromptFor` chooses a prompt.
+  - `textCharLimit` (`int?`) — optional hard cap on every text block.
+  - `pickPromptFor({date, slotIndex})` — used by
+    `JournalRepository.materializeLayout`. In `daily` mode the pick
+    is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
+    multiple prompt blocks on the same day get *different* prompts
+    and each prompt rotates through every slot evenly over time.
+  - Setters guard against no-op assignment and persist atomically.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
   Mirrors a `ColorScheme` configuration:
   - `themeMode` (`ThemeMode`, default `system`)

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-class MoodTrackerWidget extends StatelessWidget {
+class MoodTrackerWidget extends StatefulWidget {
   const MoodTrackerWidget({
     super.key,
     required this.data,
@@ -17,87 +15,90 @@ class MoodTrackerWidget extends StatelessWidget {
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
 
-  void _emit(Mood? mood) {
-    final updated = JournalBlockData.create(
-      id: data.id,
-      type: data.type,
-      content: MoodBlockContent(mood: mood).toMap(),
+  @override
+  State<MoodTrackerWidget> createState() => _MoodTrackerWidgetState();
+}
+
+class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
+  late final PageController _controller;
+
+  int get _initialIndex {
+    final emoji = MoodBlockContent.fromMap(widget.data.content).emoji;
+    final idx = emoji == null ? -1 : moodEmojis.indexOf(emoji);
+    return idx < 0 ? 0 : idx;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(
+      initialPage: _initialIndex,
+      viewportFraction: 0.42,
     );
-    onChanged?.call(updated);
   }
 
-  IconData _iconFor(Mood mood, {required bool selected}) {
-    switch (mood) {
-      case Mood.happy:
-        return selected
-            ? PhosphorIconsFill.smiley
-            : PhosphorIconsDuotone.smiley;
-      case Mood.neutral:
-        return selected
-            ? PhosphorIconsFill.smileyMeh
-            : PhosphorIconsDuotone.smileyMeh;
-      case Mood.sad:
-        return selected
-            ? PhosphorIconsFill.smileySad
-            : PhosphorIconsDuotone.smileySad;
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  String _labelFor(Mood mood) {
-    switch (mood) {
-      case Mood.happy:
-        return 'Happy';
-      case Mood.neutral:
-        return 'Neutral';
-      case Mood.sad:
-        return 'Sad';
-    }
+  void _emit(String? emoji) {
+    widget.onChanged?.call(
+      JournalBlockData.create(
+        id: widget.data.id,
+        type: widget.data.type,
+        content: MoodBlockContent(emoji: emoji).toMap(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = MoodBlockContent.fromMap(data.content);
+    final content = MoodBlockContent.fromMap(widget.data.content);
 
-    if (mode == BlockMode.readOnly) {
-      if (content.mood == null) {
-        return Text(
-          'No mood',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontStyle: FontStyle.italic,
-            color: Theme.of(context).disabledColor,
+    if (widget.mode == BlockMode.readOnly) {
+      if (content.emoji == null) {
+        return Center(
+          child: Text(
+            '—',
+            style: TextStyle(
+              fontSize: 40,
+              color: Theme.of(context).disabledColor,
+            ),
           ),
         );
       }
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(_iconFor(content.mood!, selected: true)),
-          const SizedBox(width: 8),
-          Text(_labelFor(content.mood!)),
-        ],
+      return Center(
+        child: Text(content.emoji!, style: const TextStyle(fontSize: 56)),
       );
     }
 
-    return Wrap(
-      spacing: 8,
-      children: Mood.values.map((m) {
-        final selected = m == content.mood;
-        return ChoiceChip(
-          label: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(_iconFor(m, selected: selected), size: 18),
-              const SizedBox(width: 4),
-              Text(_labelFor(m)),
-            ],
+    final selected = content.emoji;
+
+    return PageView.builder(
+      controller: _controller,
+      itemCount: moodEmojis.length,
+      onPageChanged: (index) {
+        FocusScope.of(context).unfocus();
+        _emit(moodEmojis[index]);
+      },
+      itemBuilder: (context, index) {
+        final emoji = moodEmojis[index];
+        final isSelected = emoji == selected;
+        return Center(
+          child: AnimatedScale(
+            scale: isSelected ? 1.0 : 0.6,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            child: AnimatedOpacity(
+              opacity: isSelected ? 1.0 : 0.45,
+              duration: const Duration(milliseconds: 180),
+              child: Text(emoji, style: const TextStyle(fontSize: 56)),
+            ),
           ),
-          selected: selected,
-          onSelected: (isSelected) {
-            FocusScope.of(context).unfocus();
-            _emit(isSelected ? m : null);
-          },
         );
-      }).toList(),
+      },
     );
   }
 }

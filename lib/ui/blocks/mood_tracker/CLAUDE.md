@@ -1,52 +1,53 @@
 # lib/ui/blocks/mood_tracker — Mood tracker block widget
 
-One `BlockType.moodTracker` block. Content shape: `{"moodId": "happy"|"neutral"|"sad"}`
+One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
 (absent → no mood selected). Typed wrapper: [MoodBlockContent](../../../data/model/block_content/mood_block_content.dart).
 
 ## Files
 
 - [mood_tracker_widget.dart](mood_tracker_widget.dart) — `MoodTrackerWidget`.
-  Stateless (the selection lives in `widget.data.content`).
+  Stateful — owns the `PageController` so swipe position survives rebuilds.
 
 ## Modes
 
-- `BlockMode.readOnly` — renders a `Row` with the selected mood's
-  filled Phosphor icon + label. When `mood == null`, shows "No mood"
-  in italic + `disabledColor`.
-- `BlockMode.editable` — renders a `Wrap` of `ChoiceChip`s, one per
-  `Mood` value. Tapping a chip emits a new `JournalBlockData`:
-  - Picking a new mood → `MoodBlockContent(mood: m)`.
-  - Tapping the currently-selected chip → emits `MoodBlockContent()`
-    (clears the selection).
-  `FocusScope.of(context).unfocus()` runs on every selection to dismiss
-  any text-field keyboard from a neighboring block.
+- `BlockMode.readOnly` — renders the selected emoji large and centred. When
+  `emoji == null`, renders a dimmed em-dash placeholder.
+- `BlockMode.editable` — horizontal `PageView` (carousel) of the curated
+  emoji set (`moodEmojis` constant in [mood_block_content.dart](../../../data/model/block_content/mood_block_content.dart)). Each page shows one emoji; selected page is full-scale + full-opacity, others scaled down + dimmed. `onPageChanged` writes the centred emoji as the selection (swiping to a page selects it). `FocusScope.of(context).unfocus()` runs on every page change to dismiss any text-field keyboard from a neighbouring block.
 
-## Icon mapping
+## Wire shape & migration
 
-Per-mood icon swaps between Phosphor duotone (unselected) and fill
-(selected):
+Persisted as `{"emoji": "<single emoji string>"}`. Legacy entries that
+stored `{"moodId": "happy"|"neutral"|"sad"}` are read back via a
+`_legacyMoodIdToEmoji` map in `MoodBlockContent.fromMap` (happy→😄,
+neutral→😐, sad→😢). New writes only emit `emoji`. No journalEntries
+box bump was needed because `JournalBlockData.contentJson` is just a
+JSON string.
 
-| Mood    | duotone           | fill           |
-|---------|-------------------|----------------|
-| happy   | `smiley`          | `smiley`       |
-| neutral | `smileyMeh`       | `smileyMeh`    |
-| sad     | `smileySad`       | `smileySad`    |
+## Curated emoji set
 
-Add a new `Mood` enum case → add a case to both `_iconFor` and
-`_labelFor`. The `JournalBlockEmptiness` extension only cares whether
-`mood == null`, so new moods don't change emptiness semantics.
+`moodEmojis = ['😄','😊','😌','😐','😢','😠','😩','😍','🤔']`. Reordering
+or extending the list is safe — old entries keep whatever emoji string
+they persisted, regardless of position. Removing an emoji means existing
+entries that stored it will still render it (string is stored, not an
+index).
 
 ## Gotchas
 
-- **Adding a `Mood` enum value** changes the wire format only via the
-  new id string. Existing entries with old ids stay valid; entries
-  with the new id won't decode on an older app version (returns `null`
-  → "No mood"). Same forward/backward story as `BlockType` itself.
-- **Persisted ids are the enum `name`s**, not indices. Don't reorder
-  the enum and don't rename a value — that *would* break existing data.
+- **Don't index `moodEmojis` to persist the selection.** Persist the
+  emoji string itself; otherwise reordering the list breaks past entries.
+- **The current page IS the selection.** Subtle accidental scrolling
+  during list interaction could change the mood. This is acceptable
+  per the chosen UX; if it becomes a problem, switch to "tap to select"
+  with separate browsing.
+- **Persisted emojis are user-visible strings.** Renaming/normalising
+  unicode forms could double-write the same logical mood; keep entries
+  exactly as the picker emits them.
 
 ## When to update this file
 
-- A new `Mood` value is added or one is renamed (the latter needs a
-  `fromMap` fallback or a box bump).
-- The chip layout changes (e.g. radio behavior, multi-select).
+- The emoji set changes (add/remove).
+- The carousel mechanic changes (e.g. tap-to-select rather than
+  swipe-as-selection).
+- The legacy `moodId` migration is removed (would require a journalEntries
+  box bump to drop old entries cleanly).

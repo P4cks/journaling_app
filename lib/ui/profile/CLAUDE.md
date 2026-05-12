@@ -9,6 +9,9 @@ Profile contains:
 2. **Profile** — optional Firebase Auth sign-in/status card.
 3. **Settings** entry point → `/profile/settings`.
 4. **Layouts** entry point → `/profile/layouts`.
+5. **Block settings** entry point → `/profile/block-settings`. Two
+   sub-screens (text, prompt) edit block-type-global config persisted
+   in [BlockSettings](../../data/services/block_settings.dart).
 
 Settings contains:
 

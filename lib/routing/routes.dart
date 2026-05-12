@@ -10,6 +10,9 @@ class Routes {
   static const layouts = '/profile/layouts';
   static const newLayout = '/profile/layouts/new';
   static const editLayout = '/profile/layouts/edit/:id';
+  static const blockSettings = '/profile/block-settings';
+  static const textBlockSettings = '/profile/block-settings/text';
+  static const promptBlockSettings = '/profile/block-settings/prompt';
 
   static String journalEntryFor(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
@@ -32,4 +35,7 @@ class RouteNames {
   static const layouts = 'layouts';
   static const newLayout = 'newLayout';
   static const editLayout = 'editLayout';
+  static const blockSettings = 'blockSettings';
+  static const textBlockSettings = 'textBlockSettings';
+  static const promptBlockSettings = 'promptBlockSettings';
 }

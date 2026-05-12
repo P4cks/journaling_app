@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry_emptiness.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
+import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,8 +18,9 @@ const _uuid = Uuid();
 class JournalRepository extends ChangeNotifier {
   final HiveStorageService _storage;
   final LayoutRepository _layouts;
+  final BlockSettings _blockSettings;
 
-  JournalRepository(this._storage, this._layouts);
+  JournalRepository(this._storage, this._layouts, this._blockSettings);
 
   /// Local-midnight normalization. All repository methods normalize inputs
   /// before keying so callers don't have to. Times-of-day on the input
@@ -43,11 +47,12 @@ class JournalRepository extends ChangeNotifier {
     JournalLayout? layout,
   }) {
     final resolvedLayout = layout ?? _layouts.getDefault();
+    final normalizedDate = _normalize(date);
     final entry = JournalEntry(
       id: _uuid.v4(),
-      date: _normalize(date),
+      date: normalizedDate,
       lastModified: DateTime.now(),
-      widgets: _blocksFromLayout(resolvedLayout),
+      widgets: materializeLayout(resolvedLayout, normalizedDate),
     );
     debugPrint(
       '[JournalRepository] created $entry from layout=${resolvedLayout?.name ?? '<none>'}',
@@ -102,16 +107,53 @@ class JournalRepository extends ChangeNotifier {
     return deleted;
   }
 
-  List<JournalBlockData> _blocksFromLayout(JournalLayout? layout) {
+  /// Materializes [layout] into a fresh list of [JournalBlockData]s with
+  /// per-type initial content seeded from block-type-global settings.
+  ///
+  /// Exposed publicly so the entry editor's `applyLayout` flow stays in
+  /// sync with `createEntryForDate`. The [date] argument is used to
+  /// pick prompts for `BlockType.promptBlock` slots (see
+  /// [BlockSettings.pickPromptFor]).
+  List<JournalBlockData> materializeLayout(
+    JournalLayout? layout,
+    DateTime date,
+  ) {
     if (layout == null) return const [];
-    return layout.blocks
-        .map(
-          (type) => JournalBlockData.create(
-            id: _uuid.v4(),
-            type: type,
-            content: const {},
-          ),
-        )
-        .toList();
+    var promptSlotIndex = 0;
+    return [
+      for (final template in layout.blocks)
+        _materializeOne(template.type, date, () => promptSlotIndex++),
+    ];
+  }
+
+  JournalBlockData _materializeOne(
+    BlockType type,
+    DateTime date,
+    int Function() nextPromptSlotIndex,
+  ) {
+    switch (type) {
+      case BlockType.promptBlock:
+        final slot = nextPromptSlotIndex();
+        final prompt = _blockSettings.pickPromptFor(
+          date: date,
+          slotIndex: slot,
+        );
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: PromptBlockContent(
+            prompt: prompt ?? '',
+            answer: '',
+          ).toMap(),
+        );
+      case BlockType.textBlock:
+      case BlockType.moodTracker:
+      case BlockType.weatherManual:
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: const {},
+        );
+    }
   }
 }

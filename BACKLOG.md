@@ -2,12 +2,9 @@
 
 Running list of feature ideas. Not prioritized — pick whichever fits the moment.
 Add a complexity measure to the idea
-Add a complexity measure to the idea
 Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the relevant section, or create a new section if nothing fits.
 
 READ CLAUDE.md for further implementation details
-
-**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
 
 **Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
 
@@ -33,17 +30,18 @@ READ CLAUDE.md for further implementation details
 * [ ] `S` **Choose a new font** — currently the platform default. Pick something with more character for a journaling app (e.g. Lora, Source Serif, Inter — TBD).
 * [ ] `M` **Toggle between emoji and Phosphor icons for blocks** — let users switch between emojis and Phosphor icons.
 * [ ] `L` **Animations** - rework animations for navigation to be smoother and visually appealing but discrete/
+* [ ] `S` **Change shadows on boxes**
 
 ## Widget / block ideas
 
 * [ ] `M` **Todo block** — checkable list items inside an entry.
-* [ ] `S` **Text block: character limit** — optional/configurable cap on the text block to encourage brevity.
+* [x] `S` **Text block: character limit** — optional/configurable cap on the text block to encourage brevity. Configured globally in Profile → Block settings → Text block; hard cap via `TextField.maxLength` with a tiny counter overlay.
 * [ ] `L` **Variable-sized blocks** — allow certain blocks (starting with text) to expand dynamically based on content instead of fixed height.
-* [ ] `S` **Weather block (manual)** — user picks a weather icon for the day (Phosphor sun, cloud, raindrops, snowflake, etc.).
+* [x] `S` **Weather block (manual)** — user picks a weather icon for the day (Phosphor sun, cloud, raindrops, snowflake, etc.). Carousel of 7 conditions (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`); icon mapping shared with the future API weather block.
 * [ ] `L` **Weather block (API)** — fetches weather by location for the entry's date. Needs a weather provider and probably a location-permission flow.
 * [ ] `M` **Quote of the day (API)** — fetches a daily quote from a public API; non-editable display.
-* [ ] `S` **Prompt block** — configurable text block that displays a question above the input ("What surprised you today?"); the user answers in the field.
-* [ ] `S` **Mood block** - center it more and remove text
+* [x] `S` **Prompt block** — configurable text block that displays a question above the input ("What surprised you today?"); the user answers in the field. New `BlockType.promptBlock`; prompt list + strategy (`daily` / `random`) configured globally in Profile → Block settings → Prompt block; the chosen prompt is baked into each new entry at materialization time.
+* [x] `S` **Mood block** - center it more and remove text. Replaced 3-Phosphor-icon ChoiceChip row with a swipeable emoji carousel (😄 😊 😌 😐 😢 😠 😩 😍 🤔). Schema-tolerant: legacy `moodId` values still decode (happy→😄, neutral→😐, sad→😢).
 * [ ] `XL` **Integration Calender block** - display activities for the day
 * [ ] `M` **Memory block** - show random block from a past day (with date and link to the entry)
 * [ ] `L` **Photo block** - add or take a foto to add to that day
@@ -55,7 +53,9 @@ READ CLAUDE.md for further implementation details
 
 ## Profile implementation
 
-* [ ] `XL` **Profile implementation with firebase**
+* [x] `L` **Firebase Auth profile scaffold** — optional Profile sign-in with email/password, Google, and Apple through a Firebase Auth repository boundary. No journaling features are gated and no local Hive data is synced yet.
+* [ ] `M` **Apple Sign In after Enrollment in Apple Developer Program** - Apple sign in and rework Profile workflow
+* [ ] `XL` **Profile implementation with firebase Firestore/Storage** — add cloud profile data, storage-backed avatar/media, and eventual sync once the auth-only scaffold is stable.
 
 ## Subscription / monetization
 

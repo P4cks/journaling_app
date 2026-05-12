@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_template.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
@@ -72,7 +73,9 @@ class LayoutRepository {
     final seed = JournalLayout(
       id: _uuid.v4(),
       name: 'Default',
-      blocks: const [BlockType.textBlock],
+      blocks: [
+        BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock),
+      ],
     );
     debugPrint(
       '[LayoutRepository] seeding fresh default layout ${seed.name} (${seed.id})',

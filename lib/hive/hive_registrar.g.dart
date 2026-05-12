@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/hive/hive_adapters.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
+    registerAdapter(BlockTemplateAdapter());
     registerAdapter(BlockTypeAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());
@@ -16,6 +17,7 @@ extension HiveRegistrar on HiveInterface {
 
 extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
+    registerAdapter(BlockTemplateAdapter());
     registerAdapter(BlockTypeAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());

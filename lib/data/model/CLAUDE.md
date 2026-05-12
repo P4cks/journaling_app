@@ -22,7 +22,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock }`.
   Adding a new variant requires (a) a wrapper in `block_content/`,
   (b) a widget under `lib/ui/blocks/<type>/`, (c) cases in
   [block_widget.dart](../../ui/blocks/block_widget.dart),
@@ -30,11 +30,22 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [journal_entry_emptiness.dart](journal_entry_emptiness.dart), and
   (d) `flutter pub run build_runner build`.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
-  `id`, `name`, `blocks` (`List<BlockType>` — *types*, not data;
-  `JournalRepository` materializes empty `JournalBlockData` instances
-  per type when creating a new entry), `iconName` (`String?` — Phosphor
-  name like `"squaresFour"`, resolved via [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
+  `id`, `name`, `blocks` (`List<BlockTemplate>` — see below; each
+  template carries an optional `configJson` that is baked into the
+  initial content of the materialized `JournalBlockData` instance when
+  `JournalRepository.createEntryForDate` runs), `iconName` (`String?`
+  — Phosphor name like `"squaresFour"`, resolved via
+  [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
   `copyWith` has `clearIcon: true` for explicit-null on `iconName`.
+- [block_template.dart](block_template.dart) — `BlockTemplate { String id; BlockType type; String configJson }`.
+  The per-slot envelope inside `JournalLayout.blocks`. Mirrors
+  `JournalBlockData`'s `contentJson` shape. The current model only
+  uses `type`; `configJson` defaults to `'{}'` and is kept around so
+  per-template overrides can be added later without another Hive
+  schema bump. Block-type-global configuration lives in
+  [BlockSettings](../services/block_settings.dart) instead — read at
+  materialization (`JournalRepository.materializeLayout`) or at render
+  time (`TextBlockWidget`).
 - [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — two
   extension methods:
   - `JournalBlockData.isEmpty` — per-type emptiness; unknown types are

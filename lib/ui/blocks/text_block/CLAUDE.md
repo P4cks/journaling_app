@@ -17,7 +17,9 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
 - `BlockMode.readOnly` — renders a `Text`. Empty text shows "No text yet"
   in italic + `disabledColor`.
 - `BlockMode.editable` — renders a multi-line `TextField` filling the
-  square cell. **Required field config** for in-cell scrolling:
+  square cell, wrapped in a `Stack` to overlay an optional character
+  counter in the bottom-right corner. **Required field config** for
+  in-cell scrolling:
   - `expands: true`
   - `maxLines: null`
   - `minLines: null`
@@ -26,17 +28,23 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
   the 1×1 cell. The hint is "Write something…".
   `onChanged` fires per keystroke and emits a new `JournalBlockData`
   via the parent's `onBlockChanged` callback — `JournalEntryEditorViewModel.updateBlock`
-  saves every keystroke. (`copyWith(lastModified: DateTime.now())` runs
-  per save; this is fine in practice but worth knowing if you start
-  profiling.)
+  saves every keystroke.
 
-## Implementation details
+## Character limit (optional, global)
 
-- The controller's text is **only** reset when `data.id` changes
-  (i.e. the block was replaced, not edited in place). That keeps the
-  caret position stable across notifications.
-- The widget is keyed by `ValueKey(block.id)` from `BlockGrid`, so a
-  reorder unmounts/remounts cleanly.
+When [BlockSettings.textCharLimit](../../../data/services/block_settings.dart)
+is non-null, the field gains `TextField.maxLength = limit` (Flutter
+enforces the hard cap by silently dropping further input), and a tiny
+`N/limit` counter renders in the bottom-right corner of the cell. The
+default Material counter widget is suppressed via
+`buildCounter: (_) => null` so it doesn't reserve vertical space below
+the input.
+
+The limit is **block-type-global** and read live via a
+`ListenableBuilder(listenable: blockSettings, ...)` — changing the
+limit in Profile → Block settings → Text takes effect immediately
+across every text block in every entry. It is **not** persisted in the
+entry's content, so it doesn't bake into historical entries.
 
 ## Gotchas
 
@@ -46,6 +54,10 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
 - **The widget assumes it's inside a square parent** (the `BlockCard`
   in the 1×1 staggered tile). If you reuse it outside that context,
   drop the `SizedBox.expand` or it'll demand infinite height.
+- **The character counter uses `_controller.text.characters.length`**
+  (grapheme clusters), not `String.length`. Match `TextField.maxLength`'s
+  semantics so a 200-cap shows `200/200` when full, not e.g. `203/200`
+  for emoji-heavy text.
 
 ## When to update this file
 
@@ -53,4 +65,6 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
   changes the persisted shape; update [block_content/CLAUDE.md](../../../data/model/block_content/CLAUDE.md)
   too, and either add a read-fallback in `TextBlockContent.fromMap` or
   bump the entries box name.
-- A new mode is added (e.g. preview-with-link-resolution).
+- The char-limit moves back to per-entry or grows additional global
+  toggles — keep [BlockSettings](../../../data/services/block_settings.dart)
+  and this file in sync.

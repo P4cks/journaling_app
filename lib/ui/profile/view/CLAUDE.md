@@ -9,6 +9,17 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
   (`StatelessWidget`) + private `_ExpansionTitle`, `_ColorTile`,
   `_ColorChip`.
+- [block_settings_screen.dart](block_settings_screen.dart) — public
+  `BlockSettingsScreen` (`StatelessWidget`). Index of configurable
+  block types; drills into per-type screens.
+- [text_block_settings_screen.dart](text_block_settings_screen.dart) —
+  public `TextBlockSettingsScreen` (`StatefulWidget`). One field:
+  optional character limit. Saves to
+  [BlockSettings](../../../data/services/block_settings.dart).
+- [prompt_block_settings_screen.dart](prompt_block_settings_screen.dart) —
+  public `PromptBlockSettingsScreen` (`StatefulWidget`). Multiline
+  text field for the prompt list (one per line) + a `SegmentedButton`
+  for the strategy (`daily` / `random`). Saves to `BlockSettings`.
 
 ## ProfileScreen composition
 
@@ -21,6 +32,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 | Divider                     | —                       |                                    |
 | `ListTile` "Settings"       | —                       | navigates to `/profile/settings`   |
 | `ListTile` "Layouts"        | —                       | navigates to `/profile/layouts`    |
+| `ListTile` "Block settings" | —                       | navigates to `/profile/block-settings` |
 
 ## SettingsScreen composition
 

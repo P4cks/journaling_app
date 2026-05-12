@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/auth_service.dart';
+import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
@@ -30,7 +31,7 @@ void main() async {
   debugPrint('[main] Hive initialized, adapters registered');
 
   final entriesBox = await Hive.openBox<JournalEntry>('journalEntries_v5');
-  final layoutsBox = await Hive.openBox<JournalLayout>('journalLayouts_v4');
+  final layoutsBox = await Hive.openBox<JournalLayout>('journalLayouts_v5');
   final settingsBox = await Hive.openBox<String>('settings');
   debugPrint(
     '[main] boxes opened: entries=${entriesBox.length}, layouts=${layoutsBox.length}, settings=${settingsBox.length}',
@@ -41,7 +42,12 @@ void main() async {
   final settingsStorage = SettingsStorageService(settingsBox);
 
   final layoutRepository = LayoutRepository(layoutStorage, settingsStorage);
-  final journalRepository = JournalRepository(entryStorage, layoutRepository);
+  final blockSettings = BlockSettings(settingsStorage);
+  final journalRepository = JournalRepository(
+    entryStorage,
+    layoutRepository,
+    blockSettings,
+  );
   final debugSettings = DebugSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
   final navigationGuard = NavigationGuard();
@@ -56,6 +62,7 @@ void main() async {
       layoutRepository: layoutRepository,
       debugSettings: debugSettings,
       themeSettings: themeSettings,
+      blockSettings: blockSettings,
       navigationGuard: navigationGuard,
     ),
   );
@@ -91,6 +98,7 @@ class MyApp extends StatefulWidget {
     required this.layoutRepository,
     required this.debugSettings,
     required this.themeSettings,
+    required this.blockSettings,
     required this.navigationGuard,
   });
 
@@ -99,6 +107,7 @@ class MyApp extends StatefulWidget {
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
   final ThemeSettings themeSettings;
+  final BlockSettings blockSettings;
   final NavigationGuard navigationGuard;
 
   @override
@@ -139,6 +148,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       layoutRepository: widget.layoutRepository,
       debugSettings: widget.debugSettings,
       themeSettings: widget.themeSettings,
+      blockSettings: widget.blockSettings,
       navigationGuard: widget.navigationGuard,
       child: ListenableBuilder(
         listenable: widget.themeSettings,

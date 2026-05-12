@@ -10,6 +10,9 @@ class SettingsStorageService {
   static const _themeAccentKey = 'theme.accent';
   static const _themeCustomPalettesKey = 'theme.customPalettes';
   static const _themeDebugSurfaceKey = 'theme.debugSurface';
+  static const _blockPromptListKey = 'block.prompt.list';
+  static const _blockPromptStrategyKey = 'block.prompt.strategy';
+  static const _blockTextCharLimitKey = 'block.text.charLimit';
 
   final Box<String> _box;
 
@@ -63,4 +66,21 @@ class SettingsStorageService {
   Future<void> setThemeDebugSurface(String? hex) => hex == null
       ? _box.delete(_themeDebugSurfaceKey)
       : _box.put(_themeDebugSurfaceKey, hex);
+
+  String? getBlockPromptListJson() => _box.get(_blockPromptListKey);
+
+  Future<void> setBlockPromptListJson(String? json) => json == null
+      ? _box.delete(_blockPromptListKey)
+      : _box.put(_blockPromptListKey, json);
+
+  String? getBlockPromptStrategy() => _box.get(_blockPromptStrategyKey);
+
+  Future<void> setBlockPromptStrategy(String value) =>
+      _box.put(_blockPromptStrategyKey, value);
+
+  String? getBlockTextCharLimit() => _box.get(_blockTextCharLimitKey);
+
+  Future<void> setBlockTextCharLimit(int? value) => value == null
+      ? _box.delete(_blockTextCharLimitKey)
+      : _box.put(_blockTextCharLimitKey, value.toString());
 }

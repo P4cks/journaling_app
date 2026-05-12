@@ -44,6 +44,22 @@ visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
 - [view_model/CLAUDE.md](view_model/CLAUDE.md) — `LayoutsViewModel`, `LayoutEditorViewModel` (+ `BlockSlot`)
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `showLayoutIconPicker`, `showLayoutPickerSheet`
 
+## Block configuration lives elsewhere
+
+The layout editor only chooses **which** block types appear; it does
+not configure them. Per-type configuration (e.g. prompt list, text
+char limit) is global and edited from Profile → Block settings, backed
+by [BlockSettings](../../data/services/block_settings.dart). When an
+entry is materialized from a layout (see
+[data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md)),
+prompt blocks have their prompt baked in from the global list at that
+moment; other blocks read their settings live at render time.
+
+The `JournalLayout.blocks` field is a `List<BlockTemplate>` whose
+`configJson` is currently always `'{}'` — the wrapper is kept around
+so per-template overrides can be reintroduced later without another
+Hive schema bump.
+
 ## Reuse: BlockGrid in WYSIWYG mode
 
 The layout editor renders its blocks with the same [BlockGrid](../blocks/CLAUDE.md)

@@ -9,8 +9,16 @@ block content.
 ## Files
 
 - [text_block_content.dart](text_block_content.dart) — `TextBlockContent { String text }`. Map shape: `{"text": "..."}`.
-  Missing key → empty string. Used by `TextBlockWidget` and
-  `entry_list_tile.dart`'s preview snippet.
+  Missing key → empty string. The character limit (when configured)
+  lives in [BlockSettings](../../services/block_settings.dart) and is
+  read at render time, *not* persisted per entry. Used by
+  `TextBlockWidget` and `entry_list_tile.dart`'s preview snippet.
+- [prompt_block_content.dart](prompt_block_content.dart) — `PromptBlockContent { String prompt; String answer }`.
+  Map shape: `{"prompt": "...", "answer": "..."}` (each field omitted when empty).
+  `prompt` is **layout-template state** seeded from `BlockTemplate.config`
+  at entry materialization. `answer` is per-entry user input. Used by
+  `PromptBlockWidget` and `JournalBlockEmptiness` (only `answer.trim()`
+  counts as content).
 - [weather_block_content.dart](weather_block_content.dart) — `WeatherBlockContent { String? conditionId }` + a curated `weatherConditionIds` constant list (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`).
   Map shape: `{"conditionId": "rain"}` (or absent → `conditionId: null`).
   `fromMap` ignores unknown ids (returns no-selection rather than throwing). Used by `WeatherManualWidget` (manual picker) and `JournalBlockEmptiness`. The icon mapping lives in [ui/blocks/weather_manual/weather_manual_widget.dart](../../../ui/blocks/weather_manual/weather_manual_widget.dart) as a top-level `weatherIconFor` helper so the future API weather block can reuse it.

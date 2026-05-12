@@ -1,4 +1,5 @@
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
@@ -11,6 +12,8 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 /// - `textBlock` — text is null/empty after trimming whitespace.
 /// - `moodTracker` — no mood selected.
 /// - `weatherManual` — no condition selected.
+/// - `promptBlock` — the user's answer is empty (prompt text alone
+///   doesn't count as content).
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -23,6 +26,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return MoodBlockContent.fromMap(content).emoji == null;
       case BlockType.weatherManual:
         return WeatherBlockContent.fromMap(content).conditionId == null;
+      case BlockType.promptBlock:
+        return PromptBlockContent.fromMap(content).answer.trim().isEmpty;
     }
   }
 }

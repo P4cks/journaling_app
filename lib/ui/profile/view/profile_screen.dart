@@ -47,6 +47,13 @@ class ProfileScreen extends StatelessWidget {
             trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
             onTap: () => context.push(Routes.layouts),
           ),
+          ListTile(
+            leading: const AppIcon(PhosphorIconsDuotone.slidersHorizontal),
+            title: const Text('Block settings'),
+            subtitle: const Text('Configure individual block types'),
+            trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
+            onTap: () => context.push(Routes.blockSettings),
+          ),
         ],
       ),
     );

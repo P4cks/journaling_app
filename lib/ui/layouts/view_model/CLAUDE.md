@@ -29,10 +29,12 @@ class BlockSlot { final String id; final BlockType type; }
 ```
 
 The editor needs **stable per-slot identities** so reorder/remove can
-target the right tile, but it doesn't need real `JournalBlockData`
-content. `BlockSlot` is that lightweight pair. Slots are converted to
-empty `JournalBlockData`s by the screen for `BlockGrid` rendering,
-and to a `List<BlockType>` for persistence (`JournalLayout.blocks`).
+target the right tile. `BlockSlot` is that lightweight pair. Slots are
+converted to empty `JournalBlockData`s by the screen for `BlockGrid`
+rendering, and to a `List<BlockTemplate>` (with empty configJson) for
+persistence (`JournalLayout.blocks`). Block-type-global configuration
+lives in [BlockSettings](../../../data/services/block_settings.dart),
+not in the slot.
 
 ### Construction
 

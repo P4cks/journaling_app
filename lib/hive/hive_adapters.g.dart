@@ -103,6 +103,10 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.textBlock;
       case 1:
         return BlockType.moodTracker;
+      case 2:
+        return BlockType.weatherManual;
+      case 3:
+        return BlockType.promptBlock;
       default:
         return BlockType.textBlock;
     }
@@ -115,6 +119,10 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(0);
       case BlockType.moodTracker:
         writer.writeByte(1);
+      case BlockType.weatherManual:
+        writer.writeByte(2);
+      case BlockType.promptBlock:
+        writer.writeByte(3);
     }
   }
 
@@ -142,7 +150,7 @@ class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
     return JournalLayout(
       id: fields[0] as String,
       name: fields[1] as String,
-      blocks: (fields[2] as List).cast<BlockType>(),
+      blocks: (fields[2] as List).cast<BlockTemplate>(),
       iconName: fields[3] as String?,
     );
   }
@@ -168,6 +176,46 @@ class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is JournalLayoutAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class BlockTemplateAdapter extends TypeAdapter<BlockTemplate> {
+  @override
+  final typeId = 7;
+
+  @override
+  BlockTemplate read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return BlockTemplate(
+      id: fields[0] as String,
+      type: fields[1] as BlockType,
+      configJson: fields[2] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, BlockTemplate obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.type)
+      ..writeByte(2)
+      ..write(obj.configJson);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockTemplateAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -4,9 +4,6 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
-import 'package:uuid/uuid.dart';
-
-const _uuid = Uuid();
 
 class JournalEntryEditorViewModel extends ChangeNotifier {
   JournalEntryEditorViewModel({
@@ -88,10 +85,7 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
       debugPrint('[EditorVM] applyLayout ignored — no entry');
       return;
     }
-    final newBlocks = [
-      for (final type in layout.blocks)
-        JournalBlockData.create(id: _uuid.v4(), type: type),
-    ];
+    final newBlocks = _repository.materializeLayout(layout, _date);
     _entry = current.copyWith(
       widgets: newBlocks,
       lastModified: DateTime.now(),
