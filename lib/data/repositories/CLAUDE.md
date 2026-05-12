@@ -1,0 +1,90 @@
+# lib/data/repositories — Domain operations
+
+Repositories compose storage services to provide domain-level operations.
+This is where keying conventions, default-resolution, and cross-box
+coordination live.
+
+## Files
+
+- [journal_repository.dart](journal_repository.dart) — `JournalRepository extends ChangeNotifier`.
+  - **Date keying**: `_normalize(d)` strips time-of-day → `DateTime(y, m, d)`;
+    `_dateKey(d)` is `_normalize(d).toIso8601String()`. **All public
+    methods normalize their inputs**, so callers may pass any `DateTime`.
+  - `getEntryForDate(date)` — synchronous read.
+  - `createEntryForDate(date, {layout})` — synchronous create + async
+    save. Uses the user's default layout when `layout == null`. **Does
+    not check for an existing entry** — that's the caller's job. The
+    new entry has fresh empty `JournalBlockData`s materialized from
+    `layout.blocks` (which holds *types*, not data).
+  - `saveJournalEntry(entry)` — async write, notifies on completion.
+  - `deleteEntry(entry)` — async delete, notifies.
+  - `getAllEntries()` — unsorted; sorting is caller's job
+    (`JournalEntriesViewModel` and `HomeViewModel.entriesByDay`
+    each do their own).
+  - `sweepEmptyPastEntries({now})` — deletes past-day entries whose
+    every block is empty (per `JournalEntry.hasNoContent`). Today's
+    entries are never deleted (user may still be drafting). Returns
+    the count; notifies once if anything was deleted.
+    **Called from three places**: `main.dart` cold-start, `MyApp`'s
+    `didChangeAppLifecycleState` resume, and `HomeScreen._openEditor`
+    on editor-pop.
+- [layout_repository.dart](layout_repository.dart) — `LayoutRepository`.
+  **Not a `ChangeNotifier`** (layout edits are infrequent and the
+  Layouts screen refreshes manually on push-pop). Methods:
+  - `getAll`, `getById`, `save`, `delete` — straightforward.
+  - `getDefault` — resolves the `defaultLayoutId` setting → `JournalLayout?`.
+    Returns `null` when the setting is unset, or when the id is set but
+    the layout was deleted (orphan id).
+  - `setDefault(id)` — async write to settings.
+  - **`delete(id)` clears the default-id setting if the deleted layout
+    was the default.** Otherwise next entry-create would resolve to
+    an orphan id and silently fall through to "no default" → empty
+    entry. This invariant matters; don't refactor it away.
+  - `seedDefaultIfEmpty()` — first-launch bootstrap. If the box is
+    empty, creates a single "Default" layout with one `textBlock` and
+    marks it as default. If the box is non-empty but no default is
+    set (e.g. the user deleted the previously-default), adopts the
+    first layout.
+
+## Implementation details
+
+- **Single source of truth.** `JournalRepository` is the only thing
+  that calls into `HiveStorageService`. View models hold a reference
+  to the repository and subscribe to its `ChangeNotifier`.
+- The two repositories are independent, but `JournalRepository` holds a
+  reference to `LayoutRepository` so it can resolve the user's default
+  layout when materializing a new entry.
+- All `debugPrint` logs are prefixed `[JournalRepository]` /
+  `[LayoutRepository]` so console output for the data layer is
+  greppable.
+
+## Gotchas
+
+- **The sweep runs on three triggers** (cold start, app resume, editor
+  pop). If you add a fourth trigger (e.g. a manual "clean up" button),
+  make sure it goes through this method so the `ChangeNotifier` fires
+  exactly once per sweep.
+- **`createEntryForDate` doesn't check for existing entries.** Calling
+  it on a day that already has one will overwrite. The current callers
+  (`HomeViewModel.createEntryWithLayout`,
+  `JournalEntryEditorViewModel.createWithLayout`) only invoke it from
+  CTAs that are only shown when no entry exists, so this is safe but
+  fragile. If you add a new call site, gate it on `getEntryForDate`
+  returning `null` first.
+- **`getAllEntries()` is unsorted by design** — pushing sort into the
+  repo would mean choosing an order that suits one caller but not
+  others. Each VM sorts the way it wants.
+- **Empty layouts produce empty entries.** `_blocksFromLayout` returns
+  `const []` for a null layout or `layout.blocks.map(...).toList()`
+  otherwise. The editor's "Make entry" CTA only renders when there
+  *is* a layout to pick, but a deep-linked entry could end up empty
+  if every layout was deleted between picker open and create. Not
+  currently guarded — handle if it ever bites.
+
+## When to update this file
+
+- A new public method is added to either repository.
+- The notification contract changes (e.g. partial-write notifications,
+  per-entry notifications) — every VM subscribes to this, document it.
+- The default-layout-on-delete invariant changes.
+- A new sweep trigger is wired in.
