@@ -31,7 +31,7 @@ class AppScaffoldShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: AppIcon(PhosphorIconsDuotone.house),
             activeIcon: AppIcon(PhosphorIconsFill.house),
-            label: 'Home',
+            label: 'Journal',
           ),
           BottomNavigationBarItem(
             icon: AppIcon(PhosphorIconsDuotone.bookOpen),

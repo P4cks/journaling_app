@@ -20,10 +20,9 @@ class JournalEntryView extends StatelessWidget {
       tag: journalEntryHeroTag,
       child: Material(
         color: scheme.surfaceContainerLow,
-        child: InkWell(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          splashColor: scheme.primary.withValues(alpha: 0.2),
-          highlightColor: scheme.primary.withValues(alpha: 0.08),
           child: blocks.isEmpty
               ? Center(
                   child: Text(
