@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// AppBar title for the layout editor — mirrors the inline tap-to-edit
 /// pattern used by [EditorTitle] on the journal-entry screen. Renders the
@@ -90,13 +92,28 @@ class _LayoutNameTitleState extends State<LayoutNameTitle> {
         final isEmpty = text.isEmpty;
         return InkWell(
           onTap: _startEditing,
-          child: Text(
-            isEmpty ? widget.hintText : text,
-            style: titleStyle?.copyWith(
-              color: isEmpty ? theme.colorScheme.onSurfaceVariant : null,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  isEmpty ? widget.hintText : text,
+                  style: titleStyle?.copyWith(
+                    color:
+                        isEmpty ? theme.colorScheme.onSurfaceVariant : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              AppIcon(
+                PhosphorIconsDuotone.pencilSimple,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant
+                    .withValues(alpha: 0.55),
+              ),
+            ],
           ),
         );
       },

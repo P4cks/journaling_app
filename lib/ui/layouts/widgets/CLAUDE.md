@@ -5,6 +5,15 @@ returns the user's pick or `null` on dismiss.
 
 ## Files
 
+- [add_block_sheet.dart](add_block_sheet.dart) —
+  `Future<BlockType?> showAddBlockSheet(context)`. Half-screen
+  `DraggableScrollableSheet` (initial 0.5, max 0.9) with a 2-column
+  `SliverGrid` of scaled-down block previews. Each cell renders the
+  real `BlockWidget` in `BlockMode.readOnly` with sample content
+  (from `BlockTypeDisplay.sampleData`) wrapped in `AbsorbPointer` +
+  `BlockCard`, plus the type's `label` and `description` below. Tap
+  pops the chosen `BlockType`. Iterates `BlockType.values`, so new
+  block types only need cases in `block_type_display.dart` to appear.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)

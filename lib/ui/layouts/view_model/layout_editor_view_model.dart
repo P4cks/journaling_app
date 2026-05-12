@@ -40,6 +40,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
       _iconName = null;
       _isNew = true;
     }
+    _snapshotInitial();
     nameController.addListener(_onNameChanged);
     debugPrint(
       '[LayoutEditorVM] init id=$_id isNew=$_isNew name="${nameController.text}" '
@@ -54,11 +55,31 @@ class LayoutEditorViewModel extends ChangeNotifier {
   late final bool _isNew;
   String? _iconName;
 
+  late String _initialName;
+  late String? _initialIconName;
+  late List<BlockType> _initialSlotTypes;
+
+  void _snapshotInitial() {
+    _initialName = nameController.text.trim();
+    _initialIconName = _iconName;
+    _initialSlotTypes = [for (final s in _slots) s.type];
+  }
+
   String get id => _id;
   bool get isNew => _isNew;
   List<BlockSlot> get slots => List.unmodifiable(_slots);
   String? get iconName => _iconName;
   bool get canSave => nameController.text.trim().isNotEmpty;
+
+  bool get isDirty {
+    if (nameController.text.trim() != _initialName) return true;
+    if (_iconName != _initialIconName) return true;
+    if (_slots.length != _initialSlotTypes.length) return true;
+    for (var i = 0; i < _slots.length; i++) {
+      if (_slots[i].type != _initialSlotTypes[i]) return true;
+    }
+    return false;
+  }
 
   void setIconName(String? name) {
     if (_iconName == name) return;
@@ -112,7 +133,10 @@ class LayoutEditorViewModel extends ChangeNotifier {
       iconName: _iconName,
     );
     await _repository.save(layout);
+    // Re-snapshot so isDirty reads false against the just-saved state.
+    _snapshotInitial();
     debugPrint('[LayoutEditorVM] saved $layout');
+    notifyListeners();
     return layout;
   }
 

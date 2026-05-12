@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -24,6 +24,7 @@ class LayoutEditorScreen extends StatefulWidget {
 
 class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   LayoutEditorViewModel? _viewModel;
+  NavigationGuard? _guard;
 
   @override
   void didChangeDependencies() {
@@ -35,11 +36,13 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         layoutId: widget.layoutId,
       );
       _viewModel!.addListener(_onChanged);
+      _guard = deps.navigationGuard..register(_onTabSwitchAttempt);
     }
   }
 
   @override
   void dispose() {
+    _guard?.register(null);
     _viewModel?.removeListener(_onChanged);
     _viewModel?.dispose();
     super.dispose();
@@ -49,45 +52,79 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _save() async {
+  /// Resolves the dirty-state dialog when the user tries to leave the
+  /// editor. Returns `true` when leaving is allowed (no dirty state, or
+  /// user picked save/discard), `false` otherwise. Does NOT pop the
+  /// editor — callers do that based on context (back button vs tab
+  /// switch).
+  Future<bool> _maybeSaveOnLeave() async {
     final vm = _viewModel;
-    if (vm == null || !vm.canSave) return;
-    await vm.save();
-    if (!mounted) return;
+    if (vm == null || !vm.isDirty) return true;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unsaved changes'),
+        content: const Text(
+          'Save your changes to this layout before leaving?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('discard'),
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop('save'),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return false;
+    switch (choice) {
+      case 'discard':
+        return true;
+      case 'save':
+        if (!vm.canSave) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Add a name to save')),
+          );
+          return false;
+        }
+        await vm.save();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  Future<void> _handlePop(bool didPop, Object? result) async {
+    if (didPop) return;
+    final canLeave = await _maybeSaveOnLeave();
+    if (!mounted || !canLeave) return;
     context.pop();
   }
 
-  Future<void> _showAddBlockSheet() async {
+  /// Tab-switch guard. The shell awaits this before calling `goBranch`.
+  /// If the user picks save/discard, we also pop the editor so they
+  /// don't return to a stale screen the next time they revisit this
+  /// branch. If there's no dirty state, allow the switch and leave the
+  /// editor mounted (so the user can tab back to mid-editing).
+  Future<bool> _onTabSwitchAttempt() async {
+    final vm = _viewModel;
+    final wasDirty = vm != null && vm.isDirty;
+    final canLeave = await _maybeSaveOnLeave();
+    if (!canLeave) return false;
+    if (wasDirty && mounted) context.pop();
+    return true;
+  }
+
+  Future<void> _addBlock() async {
     FocusScope.of(context).unfocus();
-    final selected = await showModalBottomSheet<BlockType>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Add block',
-                    style: Theme.of(sheetContext).textTheme.titleMedium,
-                  ),
-                ),
-              ),
-              for (final type in BlockType.values)
-                ListTile(
-                  leading: AppIcon(type.icon),
-                  title: Text(type.label),
-                  onTap: () => Navigator.of(sheetContext).pop(type),
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
+    final selected = await showAddBlockSheet(context);
     if (selected != null) {
       _viewModel?.addBlock(selected);
     }
@@ -118,78 +155,53 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     final slots = vm.slots;
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: LayoutNameTitle(controller: vm.nameController),
-        actions: [
-          IconButton(
-            tooltip: 'Change icon',
-            onPressed: _pickIcon,
-            icon: AppIcon(layoutIconFor(vm.iconName).duotone),
-          ),
-          IconButton(
-            tooltip: 'Save',
-            onPressed: vm.canSave ? _save : null,
-            icon: const AppIcon(PhosphorIconsBold.check),
-          ),
-        ],
-      ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Blocks',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _handlePop,
+      child: Scaffold(
+        appBar: AppBar(
+          titleSpacing: 0,
+          title: LayoutNameTitle(controller: vm.nameController),
+          actions: [
+            IconButton(
+              tooltip: 'Add block',
+              onPressed: _addBlock,
+              icon: const AppIcon(PhosphorIconsBold.plus),
             ),
-            Expanded(
-              child: slots.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No blocks yet. Tap "Add block" to start.',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).disabledColor,
-                                ),
-                      ),
-                    )
-                  : BlockGrid(
-                      blocks: _slotsAsBlockData(),
-                      mode: BlockMode.readOnly,
-                      onReorder: vm.moveSlot,
-                      cardTrailing: (block, index) => IconButton(
-                        tooltip: 'Remove',
-                        iconSize: 18,
-                        visualDensity: VisualDensity.compact,
-                        icon: AppIcon(
-                          PhosphorIconsBold.x,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                        onPressed: () => vm.removeSlot(block.id),
-                      ),
-                    ),
-            ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _showAddBlockSheet,
-                    icon: const AppIcon(PhosphorIconsBold.plus),
-                    label: const Text('Add block'),
-                  ),
-                ),
-              ),
+            IconButton(
+              tooltip: 'Change icon',
+              onPressed: _pickIcon,
+              icon: AppIcon(layoutIconFor(vm.iconName).duotone),
             ),
           ],
+        ),
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: slots.isEmpty
+              ? Center(
+                  child: Text(
+                    'No blocks yet. Tap + to add a block.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).disabledColor,
+                        ),
+                  ),
+                )
+              : BlockGrid(
+                  blocks: _slotsAsBlockData(),
+                  mode: BlockMode.readOnly,
+                  onReorder: vm.moveSlot,
+                  cardTrailing: (block, index) => IconButton(
+                    tooltip: 'Remove',
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                    icon: AppIcon(
+                      PhosphorIconsBold.x,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    onPressed: () => vm.removeSlot(block.id),
+                  ),
+                ),
         ),
       ),
     );

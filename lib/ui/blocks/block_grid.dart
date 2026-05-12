@@ -4,9 +4,24 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+
+// ---------------------------------------------------------------------------
+// BlockGrid — Notion-style drag-to-reorder
+//
+// Design:
+//  • The grid layout stays completely stable while dragging. No ghost tiles
+//    are injected into the StaggeredGrid, so there is no reflow jank.
+//  • A single DragTarget wraps the entire scrollable area.  Its onMove
+//    callback converts the pointer position into a logical insertion index
+//    by iterating over the RenderBoxes of each tile key.
+//  • A CustomPainter draws a coloured insertion line between the two tiles
+//    that straddle the current insertion index.  The line is rendered in an
+//    overlay Stack so it never affects layout.
+//  • The dragged tile is rendered semi-transparent (0.35 opacity) so the
+//    user can still see where it came from.
+// ---------------------------------------------------------------------------
 
 class BlockGrid extends StatefulWidget {
   const BlockGrid({
@@ -23,12 +38,7 @@ class BlockGrid extends StatefulWidget {
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onBlockChanged;
   final Widget Function(JournalBlockData block, int index)? cardTrailing;
-
-  /// When provided, tiles become drop targets for reordering. The caller
-  /// supplies the drag source (typically a [LongPressDraggable] inside
-  /// [cardTrailing]) carrying the source tile's index as data.
   final void Function(int from, int to)? onReorder;
-
   final EdgeInsets padding;
 
   @override
@@ -36,23 +46,142 @@ class BlockGrid extends StatefulWidget {
 }
 
 class _BlockGridState extends State<BlockGrid> {
-  int? _hoveringTargetIndex;
-  int? _draggingSourceIndex;
+  // Index of the tile currently being dragged (null = not dragging).
+  int? _draggingIndex;
+
+  // Logical insertion index where the item will land (0 … blocks.length).
+  // null = no active drag or cursor has left the grid.
+  int? _insertionIndex;
+
+  // One GlobalKey per tile so we can measure each tile's screen position.
+  // Initialised inline (not `late`) so it is never uninitialized, even if
+  // something accesses it before initState runs (e.g. during a hot-reload
+  // didUpdateWidget call that arrives before initState completes).
+  List<GlobalKey> _tileKeys = const [];
+
+  // Key on the Stack that wraps the whole grid, used as the RenderBox
+  // ancestor for coordinate conversions.
+  final GlobalKey _gridKey = GlobalKey();
 
   bool get _reorderable => widget.onReorder != null;
 
-  bool _isNoop(int from, int insertIndex) =>
-      from == insertIndex || from + 1 == insertIndex;
+  // -------------------------------------------------------------------------
+  // Lifecycle
+  // -------------------------------------------------------------------------
 
-  /// Apply [fn] inside [setState], deferring to a post-frame callback if we
-  /// are currently inside a build pass. Drag callbacks (`onMove`, `onLeave`)
-  /// can fire synchronously when a freshly-mounted `DragTarget` lands under
-  /// the user's finger during a rebuild — calling `setState` synchronously
-  /// from there trips the `setState during build` assertion.
-  void _safeSetState(VoidCallback fn) {
+  List<GlobalKey> _buildKeys(int length) =>
+      List.generate(length, (_) => GlobalKey());
+
+  @override
+  void initState() {
+    super.initState();
+    _tileKeys = _buildKeys(widget.blocks.length);
+  }
+
+  @override
+  void didUpdateWidget(BlockGrid old) {
+    super.didUpdateWidget(old);
+    if (widget.blocks.length != _tileKeys.length) {
+      _tileKeys = _buildKeys(widget.blocks.length);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Coordinate helpers
+  // -------------------------------------------------------------------------
+
+  /// Returns the [Rect] of tile [index] in the grid Stack's local space,
+  /// or null if it hasn't been laid out yet.
+  Rect? _tileRect(int index) {
+    if (index < 0 || index >= _tileKeys.length) return null;
+    final tileBox =
+        _tileKeys[index].currentContext?.findRenderObject() as RenderBox?;
+    final gridBox =
+        _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (tileBox == null || gridBox == null) return null;
+    final topLeft = tileBox.localToGlobal(Offset.zero, ancestor: gridBox);
+    return topLeft & tileBox.size;
+  }
+
+  // -------------------------------------------------------------------------
+  // Insertion-index computation
+  // -------------------------------------------------------------------------
+
+  /// Converts a pointer offset (global coordinates) to the best logical
+  /// insertion index using the Notion heuristic:
+  ///
+  ///  1. Find the row (group of tiles sharing the same centre-Y) nearest to
+  ///     the cursor's Y.
+  ///  2. On that row, find the tile whose centre-X is nearest to the cursor's X.
+  ///  3. Left half of that tile → insert before it; right half → insert after.
+  int _computeInsertionIndex(Offset globalPos) {
+    final gridBox =
+        _gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (gridBox == null) return widget.blocks.length;
+
+    final local = gridBox.globalToLocal(globalPos);
+    final n = widget.blocks.length;
+    if (n == 0) return 0;
+
+    // Build centre list (may contain nulls for not-yet-laid-out tiles).
+    final centres = List<Offset?>.generate(n, (i) => _tileRect(i)?.center);
+
+    // 1. Find the row (by Y) closest to local.dy.
+    double bestDy = double.infinity;
+    int closestIdx = 0;
+    for (var i = 0; i < n; i++) {
+      final c = centres[i];
+      if (c == null) continue;
+      final dy = (c.dy - local.dy).abs();
+      if (dy < bestDy) {
+        bestDy = dy;
+        closestIdx = i;
+      }
+    }
+
+    // 2. Collect all tile indices on the same row.
+    final rowY = centres[closestIdx]?.dy ?? 0;
+    const rowEpsilon = 4.0;
+    final rowIndices = <int>[
+      for (var i = 0; i < n; i++)
+        if (centres[i] != null && (centres[i]!.dy - rowY).abs() < rowEpsilon)
+          i,
+    ];
+
+    // 3. Within that row, find the tile nearest horizontally.
+    double bestDx = double.infinity;
+    int nearest = closestIdx;
+    for (final i in rowIndices) {
+      final dx = (centres[i]!.dx - local.dx).abs();
+      if (dx < bestDx) {
+        bestDx = dx;
+        nearest = i;
+      }
+    }
+
+    // 4. Left/right half decision.
+    final cx = centres[nearest]?.dx ?? local.dx;
+    return local.dx < cx ? nearest : nearest + 1;
+  }
+
+  // -------------------------------------------------------------------------
+  // Drag lifecycle
+  // -------------------------------------------------------------------------
+
+  void _onDragStarted(int index) {
+    setState(() {
+      _draggingIndex = index;
+      _insertionIndex = null;
+    });
+  }
+
+  void _onDragUpdate(DragTargetDetails<int> details) {
+    final idx = _computeInsertionIndex(details.offset);
+    if (idx == _insertionIndex) return;
+
     void apply() {
       if (!mounted) return;
-      setState(fn);
+      setState(() => _insertionIndex = idx);
     }
 
     if (WidgetsBinding.instance.schedulerPhase ==
@@ -63,81 +192,141 @@ class _BlockGridState extends State<BlockGrid> {
     }
   }
 
-  void _setHover(int targetIndex, int sourceIndex) {
-    // Flutter fires onMove regardless of onWillAccept, so guard no-ops here
-    // so they can't flash a ghost in an invalid drop position.
-    if (_isNoop(sourceIndex, targetIndex)) return;
-    if (_hoveringTargetIndex == targetIndex &&
-        _draggingSourceIndex == sourceIndex) {
-      return;
+  void _onDragEnd() {
+    if (!mounted) return;
+    setState(() {
+      _draggingIndex = null;
+      _insertionIndex = null;
+    });
+  }
+
+  void _onAccept(int from) {
+    final insertAt = _insertionIndex ?? widget.blocks.length;
+    setState(() {
+      _draggingIndex = null;
+      _insertionIndex = null;
+    });
+    // Normalise: when inserting after the source the logical index shifts by 1.
+    final to = insertAt > from ? insertAt - 1 : insertAt;
+    if (from != to) widget.onReorder!(from, to);
+  }
+
+  // -------------------------------------------------------------------------
+  // Insertion line geometry
+  // -------------------------------------------------------------------------
+
+  _InsertionLineInfo? _insertionLineInfo() {
+    final idx = _insertionIndex;
+    if (idx == null) return null;
+    final n = widget.blocks.length;
+    if (n == 0) return null;
+
+    // Drop after the last tile → vertical line to the right of it.
+    if (idx >= n) {
+      final r = _tileRect(n - 1);
+      if (r == null) return null;
+      return _InsertionLineInfo(
+        start: Offset(r.right + 5, r.top),
+        end: Offset(r.right + 5, r.bottom),
+      );
     }
-    _safeSetState(() {
-      _hoveringTargetIndex = targetIndex;
-      _draggingSourceIndex = sourceIndex;
-    });
-  }
 
-  void _clearHoverFor(int targetIndex) {
-    if (_hoveringTargetIndex != targetIndex) return;
-    _safeSetState(() {
-      _hoveringTargetIndex = null;
-      _draggingSourceIndex = null;
-    });
-  }
+    final targetRect = _tileRect(idx);
+    if (targetRect == null) return null;
 
-  void _accept(int from, int to) {
-    _safeSetState(() {
-      _hoveringTargetIndex = null;
-      _draggingSourceIndex = null;
-    });
-    widget.onReorder!(from, to);
-  }
+    // Check for a left neighbour on the same row.
+    if (idx > 0) {
+      final prevRect = _tileRect(idx - 1);
+      if (prevRect != null &&
+          (prevRect.center.dy - targetRect.center.dy).abs() < 4) {
+        // Same row: vertical line in the gap between the two tiles.
+        final x = (prevRect.right + targetRect.left) / 2;
+        final top = prevRect.top < targetRect.top
+            ? prevRect.top
+            : targetRect.top;
+        final bottom = prevRect.bottom > targetRect.bottom
+            ? prevRect.bottom
+            : targetRect.bottom;
+        return _InsertionLineInfo(
+          start: Offset(x, top),
+          end: Offset(x, bottom),
+        );
+      }
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: widget.padding,
-      child: Column(
-        children: [
-          StaggeredGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            children: _buildGridChildren(),
-          ),
-          if (_reorderable && widget.blocks.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: _buildTrailingTarget(),
-            ),
-        ],
-      ),
+    // First tile on a row (or idx == 0): vertical line to its left.
+    return _InsertionLineInfo(
+      start: Offset(targetRect.left - 5, targetRect.top),
+      end: Offset(targetRect.left - 5, targetRect.bottom),
     );
   }
 
-  List<Widget> _buildGridChildren() {
-    final children = <Widget>[];
-    final draggingIdx = _draggingSourceIndex;
-    for (var i = 0; i < widget.blocks.length; i++) {
-      // While a tile is being dragged, remove it from the grid entirely so
-      // the remaining tiles re-flow. The drag itself continues in the
-      // Overlay; the source widget can be unmounted safely.
-      if (draggingIdx == i) continue;
+  // -------------------------------------------------------------------------
+  // Build
+  // -------------------------------------------------------------------------
 
-      if (_reorderable && _hoveringTargetIndex == i) {
-        children.add(_buildGhost());
-      }
-      children.add(_buildTile(i));
-    }
-    if (_reorderable && _hoveringTargetIndex == widget.blocks.length) {
-      children.add(_buildGhost());
-    }
-    return children;
+  static const double _crossAxisSpacing = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    final lineInfo = _reorderable ? _insertionLineInfo() : null;
+
+    // The stable grid — never mutated during a drag.
+    Widget gridContent = SingleChildScrollView(
+      padding: widget.padding,
+      child: StaggeredGrid.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: _crossAxisSpacing,
+        children: _buildTiles(),
+      ),
+    );
+
+    if (!_reorderable) return gridContent;
+
+    // Wrap in a full-area DragTarget so pointer events reach us everywhere.
+    final dragTarget = DragTarget<int>(
+      onWillAcceptWithDetails: (_) => true,
+      onMove: _onDragUpdate,
+      onLeave: (_) {
+        if (_insertionIndex != null) {
+          setState(() => _insertionIndex = null);
+        }
+      },
+      onAcceptWithDetails: (details) => _onAccept(details.data),
+      builder: (_, __, ___) => gridContent,
+    );
+
+    return Stack(
+      key: _gridKey,
+      children: [
+        dragTarget,
+        // Insertion-line overlay — pointer events pass through.
+        if (lineInfo != null)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _InsertionLinePainter(
+                  info: lineInfo,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  List<Widget> _buildTiles() {
+    return [
+      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i),
+    ];
   }
 
   Widget _buildTile(int index) {
     final block = widget.blocks[index];
-    final scheme = Theme.of(context).colorScheme;
+    final isDragging = _draggingIndex == index;
+
     final card = BlockCard(
       topRight: widget.cardTrailing?.call(block, index),
       child: BlockWidget(
@@ -149,111 +338,108 @@ class _BlockGridState extends State<BlockGrid> {
     );
 
     Widget content = card;
+
     if (_reorderable) {
-      final draggable = LongPressDraggable<int>(
-        data: index,
-        onDragStarted: () {
-          _safeSetState(() => _draggingSourceIndex = index);
-        },
-        onDragEnd: (_) {
-          _safeSetState(() {
-            _draggingSourceIndex = null;
-            _hoveringTargetIndex = null;
-          });
-        },
-        feedback: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(12),
-          color: scheme.primaryContainer,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIcon(
-                  block.type.icon,
-                  color: scheme.onPrimaryContainer,
-                  size: 18,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  block.type.label,
-                  style: TextStyle(color: scheme.onPrimaryContainer),
-                ),
-              ],
-            ),
-          ),
+      // Feedback widget shown under the finger/cursor while dragging.
+      // We use a LayoutBuilder so the feedback matches the actual tile size.
+      final feedback = _DraggableFeedback(
+        tileKey: _tileKeys[index],
+        child: BlockCard(
+          child: BlockWidget(data: block, mode: BlockMode.readOnly),
         ),
-        childWhenDragging: const SizedBox.shrink(),
-        child: card,
       );
 
-      content = DragTarget<int>(
-        onWillAcceptWithDetails: (details) => !_isNoop(details.data, index),
-        onMove: (details) => _setHover(index, details.data),
-        onLeave: (_) => _clearHoverFor(index),
-        onAcceptWithDetails: (details) => _accept(details.data, index),
-        builder: (context, candidate, rejected) => draggable,
+      content = LongPressDraggable<int>(
+        data: index,
+        onDragStarted: () => _onDragStarted(index),
+        onDragEnd: (_) => _onDragEnd(),
+        onDraggableCanceled: (_, __) => _onDragEnd(),
+        feedback: feedback,
+        // Dim the source tile; it stays in place (no grid reflow).
+        childWhenDragging: Opacity(opacity: 0.35, child: card),
+        child: card,
       );
     }
 
     return StaggeredGridTile.count(
       crossAxisCellCount: 1,
       mainAxisCellCount: 1,
+      key: _tileKeys[index],
       child: content,
     );
   }
+}
 
-  Widget _buildGhost() {
-    final scheme = Theme.of(context).colorScheme;
-    final source =
-        (_draggingSourceIndex != null &&
-                _draggingSourceIndex! >= 0 &&
-                _draggingSourceIndex! < widget.blocks.length)
-            ? widget.blocks[_draggingSourceIndex!]
-            : null;
-    final targetIndex = _hoveringTargetIndex!;
+// ---------------------------------------------------------------------------
+// Helper widget: sizes the drag feedback to match the source tile exactly.
+// ---------------------------------------------------------------------------
 
-    return StaggeredGridTile.count(
-      crossAxisCellCount: 1,
-      mainAxisCellCount: 1,
-      child: DragTarget<int>(
-        onWillAcceptWithDetails: (details) =>
-            !_isNoop(details.data, targetIndex),
-        onMove: (details) => _setHover(targetIndex, details.data),
-        onLeave: (_) => _clearHoverFor(targetIndex),
-        onAcceptWithDetails: (details) => _accept(details.data, targetIndex),
-        builder: (context, candidate, rejected) {
-          return Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: scheme.primaryContainer.withValues(alpha: 0.45),
-              border: Border.all(color: scheme.primary, width: 2),
-            ),
-            child: source == null
-                ? null
-                : Center(
-                    child: AppIcon(
-                      source.type.icon,
-                      color: scheme.primary,
-                      size: 32,
-                    ),
-                  ),
-          );
-        },
+class _DraggableFeedback extends StatelessWidget {
+  const _DraggableFeedback({
+    required this.tileKey,
+    required this.child,
+  });
+
+  final GlobalKey tileKey;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = tileKey.currentContext?.findRenderObject() as RenderBox?;
+    final size = box?.size ?? const Size(160, 160);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: SizedBox(
+        width: size.width,
+        height: size.height,
+        child: Opacity(
+          opacity: 0.85,
+          child: child,
+        ),
       ),
     );
   }
+}
 
-  Widget _buildTrailingTarget() {
-    final insertIndex = widget.blocks.length;
-    return DragTarget<int>(
-      onWillAcceptWithDetails: (details) => !_isNoop(details.data, insertIndex),
-      onMove: (details) => _setHover(insertIndex, details.data),
-      onLeave: (_) => _clearHoverFor(insertIndex),
-      onAcceptWithDetails: (details) => _accept(details.data, insertIndex),
-      builder: (context, candidate, rejected) => const SizedBox(height: 32),
-    );
+// ---------------------------------------------------------------------------
+// Insertion line data + painter
+// ---------------------------------------------------------------------------
+
+class _InsertionLineInfo {
+  const _InsertionLineInfo({required this.start, required this.end});
+  final Offset start;
+  final Offset end;
+}
+
+class _InsertionLinePainter extends CustomPainter {
+  const _InsertionLinePainter({required this.info, required this.color});
+
+  final _InsertionLineInfo info;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(info.start, info.end, linePaint);
+
+    // Notion-style dot caps at each end of the line.
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(info.start, 4, dotPaint);
+    canvas.drawCircle(info.end, 4, dotPaint);
   }
+
+  @override
+  bool shouldRepaint(_InsertionLinePainter old) =>
+      old.info.start != info.start ||
+      old.info.end != info.end ||
+      old.color != color;
 }

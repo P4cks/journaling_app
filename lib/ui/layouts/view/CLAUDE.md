@@ -21,24 +21,43 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     `LayoutRepository` doesn't notify, the screen has to refresh
     manually on return.
 - [layout_editor_screen.dart](layout_editor_screen.dart) —
-  `LayoutEditorScreen` + private `_IconWell`. Editor for one layout.
-  - Header row: 56×56 `_IconWell` (tap → `showLayoutIconPicker`) +
-    expanded name `TextField`.
-  - "Blocks" label + `BlockGrid` (WYSIWYG, see [../CLAUDE.md](../CLAUDE.md)).
-    Empty state: "No blocks yet. Tap 'Add block' to start."
-  - Bottom: full-width `OutlinedButton.icon` "Add block" → modal
-    bottom sheet listing every `BlockType`. Picking one calls
+  `LayoutEditorScreen`. Editor for one layout.
+  - AppBar: `LayoutNameTitle` (tap-to-edit) + actions `+ (Add block)`
+    and the layout's icon (tap → `showLayoutIconPicker`).
+  - Body: the `BlockGrid` (WYSIWYG, see [../CLAUDE.md](../CLAUDE.md))
+    fills the body. Empty state: "No blocks yet. Tap + to add a block."
+    There is **no** "Blocks" header and no bottom-bar Add button.
+  - Adding a block: tap the AppBar `+` → `showAddBlockSheet`
+    (see [../widgets/CLAUDE.md](../widgets/CLAUDE.md)) returns the
+    chosen `BlockType?`; on non-null, the screen calls
     `vm.addBlock(type)`.
-  - AppBar save button is disabled until `vm.canSave` (name not blank).
-    Save persists via `vm.save()` and pops.
+  - **No AppBar save button.** Edits are live to the VM; the screen
+    wraps `Scaffold` in `PopScope(canPop: false, ...)` AND registers
+    a `NavigationGuard` handler (see
+    [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md))
+    for tab switches that `PopScope` can't see.
+  - Both paths share `_maybeSaveOnLeave`: if `vm.isDirty` is true the
+    handler shows an `AlertDialog` with Cancel / Discard / Save:
+    - Discard returns true → caller (pop or tab switch) proceeds.
+    - Save calls `vm.save()` and returns true. If the name is blank
+      (`!vm.canSave`), shows a SnackBar and returns false (stay on
+      screen).
+    - Cancel returns false.
+  - **Back button** (`_handlePop`): on `canLeave == true`, calls
+    `context.pop()` regardless of dirty state — back is an explicit
+    "leave this screen".
+  - **Tab switch** (`_onTabSwitchAttempt`): on `canLeave == true`,
+    pops the editor only if it WAS dirty when the handler started —
+    so save/discard puts the user back on the Layouts list, but a
+    no-op tab switch leaves the editor mounted for the user to tab
+    back to.
+  - `vm.save()` re-snapshots the initial state so `isDirty` reads
+    false post-save — important for defensive code paths.
 
 ## Gotchas
 
 - **`Dismissible` requires unique `Key`s.** Currently `ValueKey(layout.id)`.
   Don't reuse layout ids across deletes (uuids handle this).
-- **The add-block sheet builds an ad-hoc `BottomSheet` inline** rather
-  than living in `widgets/`. If a second screen needs the same picker,
-  promote it; for now keeping it inline keeps the call site obvious.
 - **`_slotsAsBlockData` constructs empty `JournalBlockData`s on every
   build**. Cheap, but if you start animating tiles, hoist into the VM
   with stable identities.

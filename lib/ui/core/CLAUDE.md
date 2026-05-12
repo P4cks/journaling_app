@@ -13,15 +13,21 @@ screen-specific.
 - [widgets/app_dependencies.dart](widgets/app_dependencies.dart) —
   `AppDependencies extends InheritedWidget`. The DI root. Holds
   `JournalRepository`, `LayoutRepository`, `DebugSettings`,
-  `ThemeSettings`. Accessed via `AppDependencies.of(context)`. The
-  static accessor `assert`s that an ancestor exists — failing fast in
-  development is better than mysterious nulls.
+  `ThemeSettings`, `NavigationGuard`. Accessed via
+  `AppDependencies.of(context)`. The static accessor `assert`s that
+  an ancestor exists — failing fast in development is better than
+  mysterious nulls.
   - **Read from `didChangeDependencies`, never `initState`.**
     `InheritedWidget` lookup is not safe in `initState`. The screen
     pattern (see [ui/CLAUDE.md](../CLAUDE.md)) guards VM construction
     with `if (_viewModel == null)` so it runs exactly once.
   - **When you add a new repository / settings object**, add it here
     *and* construct it in `main.dart` in the right order.
+- [widgets/navigation_guard.dart](widgets/navigation_guard.dart) —
+  `NavigationGuard`. Single-slot registry for an async "may I leave?"
+  handler. Screens with dirty state register/unregister; the shell
+  awaits it on tab switch. See [widgets/CLAUDE.md](widgets/CLAUDE.md)
+  for usage rules.
 - [widgets/app_icon.dart](widgets/app_icon.dart) — `AppIcon`. Thin
   wrapper around `PhosphorIcon`. Two opinionated defaults:
   - `duotoneSecondaryColor` defaults to `colorScheme.primary` (the

@@ -103,7 +103,7 @@ per-directory files — link instead.
   1. `WidgetsFlutterBinding.ensureInitialized()`
   2. `Hive.initFlutter()` then `Hive.registerAdapters()` (do **not** also call `Hive.init('.')` — root CLAUDE.md gotcha)
   3. Open the three boxes (`journalEntries_v5`, `journalLayouts_v4`, `settings`)
-  4. Construct services → repositories → `DebugSettings` / `ThemeSettings`
+  4. Construct services → repositories → `DebugSettings` / `ThemeSettings` / `NavigationGuard`
   5. `layoutRepository.seedDefaultIfEmpty()` so the very first launch has a default layout
   6. `runApp(MyApp(...))`
   - `MyApp` is a `StatefulWidget` with `WidgetsBindingObserver` mixin.

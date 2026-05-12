@@ -3,6 +3,7 @@ import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 
 class AppDependencies extends InheritedWidget {
   const AppDependencies({
@@ -11,6 +12,7 @@ class AppDependencies extends InheritedWidget {
     required this.layoutRepository,
     required this.debugSettings,
     required this.themeSettings,
+    required this.navigationGuard,
     required super.child,
   });
 
@@ -18,6 +20,7 @@ class AppDependencies extends InheritedWidget {
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
   final ThemeSettings themeSettings;
+  final NavigationGuard navigationGuard;
 
   static AppDependencies of(BuildContext context) {
     final widget =
@@ -31,5 +34,6 @@ class AppDependencies extends InheritedWidget {
       journalRepository != oldWidget.journalRepository ||
       layoutRepository != oldWidget.layoutRepository ||
       debugSettings != oldWidget.debugSettings ||
-      themeSettings != oldWidget.themeSettings;
+      themeSettings != oldWidget.themeSettings ||
+      navigationGuard != oldWidget.navigationGuard;
 }

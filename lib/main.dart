@@ -14,6 +14,7 @@ import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 
 void main() async {
@@ -38,6 +39,7 @@ void main() async {
   final journalRepository = JournalRepository(entryStorage, layoutRepository);
   final debugSettings = DebugSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
+  final navigationGuard = NavigationGuard();
 
   await layoutRepository.seedDefaultIfEmpty();
 
@@ -47,6 +49,7 @@ void main() async {
       layoutRepository: layoutRepository,
       debugSettings: debugSettings,
       themeSettings: themeSettings,
+      navigationGuard: navigationGuard,
     ),
   );
 }
@@ -58,12 +61,14 @@ class MyApp extends StatefulWidget {
     required this.layoutRepository,
     required this.debugSettings,
     required this.themeSettings,
+    required this.navigationGuard,
   });
 
   final JournalRepository journalRepository;
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
   final ThemeSettings themeSettings;
+  final NavigationGuard navigationGuard;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -101,6 +106,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       layoutRepository: widget.layoutRepository,
       debugSettings: widget.debugSettings,
       themeSettings: widget.themeSettings,
+      navigationGuard: widget.navigationGuard,
       child: ListenableBuilder(
         listenable: widget.themeSettings,
         builder: (context, _) {

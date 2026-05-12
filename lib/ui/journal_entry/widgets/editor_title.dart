@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// AppBar title for the journal entry editor.
 ///
@@ -119,13 +121,29 @@ class _EditorTitleState extends State<EditorTitle> {
         else
           InkWell(
             onTap: widget.editable ? _startEditing : null,
-            child: Text(
-              primaryText,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    primaryText,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (widget.editable) ...[
+                  const SizedBox(width: 6),
+                  AppIcon(
+                    PhosphorIconsDuotone.pencilSimple,
+                    size: 14,
+                    color: theme.colorScheme.onSurfaceVariant
+                        .withValues(alpha: 0.55),
+                  ),
+                ],
+              ],
             ),
           ),
         if (showSubtitle)
