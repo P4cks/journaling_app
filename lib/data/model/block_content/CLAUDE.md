@@ -13,6 +13,24 @@ block content.
   lives in [BlockSettings](../../services/block_settings.dart) and is
   read at render time, *not* persisted per entry. Used by
   `TextBlockWidget` and `entry_list_tile.dart`'s preview snippet.
+- [memory_block_content.dart](memory_block_content.dart) — `MemoryBlockContent { String? sourceEntryDate; String? sourceBlockId; BlockType? sourceType; String? snapshotJson }`.
+  Map shape: `{"sourceEntryDate": "yyyy-MM-dd", "sourceBlockId": "...", "sourceType": "textBlock", "snapshotJson": "..."}`
+  (all keys omitted when null). `isSeeded` getter is true when a memory
+  has been picked. The `snapshotJson` field stores the source block's
+  `contentJson` verbatim so future schema changes to that source type
+  don't invalidate the memory. Used by `MemoryBlockWidget` and
+  `JournalBlockEmptiness` (unseeded → empty).
+- [quote_block_content.dart](quote_block_content.dart) — `QuoteBlockContent { String? quote; String? author; String? fetchedDate }`.
+  Map shape: `{"quote": "...", "author": "...", "fetchedDate": "yyyy-MM-dd"}`
+  (all keys omitted when null — absent = "not fetched yet"). Used by
+  `QuoteBlockWidget` and `JournalBlockEmptiness` (no quote → empty).
+  Populated by the widget on first build via [QuoteService](../../services/quote_service.dart).
+- [todo_block_content.dart](todo_block_content.dart) — `TodoBlockContent { List<TodoItem> items }` + `TodoItem { String id; String text; bool done }`.
+  Map shape: `{"items": [{"id": "...", "text": "...", "done": true}]}`.
+  `done` is omitted when false to keep maps small; legacy entries
+  without the key decode as `done: false`. Items are per-entry (no
+  layout template). Used by `TodoBlockWidget` and `JournalBlockEmptiness`
+  (empty list OR all-empty-text counts as empty).
 - [prompt_block_content.dart](prompt_block_content.dart) — `PromptBlockContent { String prompt; String answer }`.
   Map shape: `{"prompt": "...", "answer": "..."}` (each field omitted when empty).
   `prompt` is **layout-template state** seeded from `BlockTemplate.config`

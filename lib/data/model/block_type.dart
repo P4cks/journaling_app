@@ -3,4 +3,7 @@ enum BlockType {
   moodTracker,
   weatherManual,
   promptBlock,
+  todoBlock,
+  quoteBlock,
+  memoryBlock,
 }

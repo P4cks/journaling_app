@@ -29,7 +29,7 @@ types:
         index: 2
   BlockType:
     typeId: 2
-    nextIndex: 4
+    nextIndex: 7
     fields:
       textBlock:
         index: 0
@@ -39,6 +39,12 @@ types:
         index: 2
       promptBlock:
         index: 3
+      todoBlock:
+        index: 4
+      quoteBlock:
+        index: 5
+      memoryBlock:
+        index: 6
   JournalLayout:
     typeId: 4
     nextIndex: 4

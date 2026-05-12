@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/quote_block/quote_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_block/text_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/todo_block/todo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 
 class BlockWidget extends StatelessWidget {
@@ -38,6 +41,12 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
         );
+      case BlockType.todoBlock:
+        return TodoBlockWidget(data: data, mode: mode, onChanged: onChanged);
+      case BlockType.quoteBlock:
+        return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
+      case BlockType.memoryBlock:
+        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged);
     }
   }
 }

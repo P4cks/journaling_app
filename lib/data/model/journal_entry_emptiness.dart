@@ -1,6 +1,9 @@
+import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -14,6 +17,12 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 /// - `weatherManual` — no condition selected.
 /// - `promptBlock` — the user's answer is empty (prompt text alone
 ///   doesn't count as content).
+/// - `todoBlock` — no items, or every item has empty text.
+/// - `quoteBlock` — no quote text fetched/stored yet (API-generated, so
+///   we treat un-fetched as empty rather than burying an entry that's
+///   only-quote).
+/// - `memoryBlock` — no memory seeded yet (i.e. no past eligible
+///   block was available when the entry was first opened).
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -28,6 +37,14 @@ extension JournalBlockEmptiness on JournalBlockData {
         return WeatherBlockContent.fromMap(content).conditionId == null;
       case BlockType.promptBlock:
         return PromptBlockContent.fromMap(content).answer.trim().isEmpty;
+      case BlockType.todoBlock:
+        final items = TodoBlockContent.fromMap(content).items;
+        return items.isEmpty || items.every((i) => i.text.trim().isEmpty);
+      case BlockType.quoteBlock:
+        final q = QuoteBlockContent.fromMap(content).quote;
+        return q == null || q.isEmpty;
+      case BlockType.memoryBlock:
+        return !MemoryBlockContent.fromMap(content).isSeeded;
     }
   }
 }

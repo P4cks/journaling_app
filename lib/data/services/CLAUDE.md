@@ -53,6 +53,17 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Debug `ExpansionTile`.
   - `unlockAllDays` bypasses both the calendar's future-day disable
     and the editor's read-only-for-past guard.
+- [quote_service.dart](quote_service.dart) — `QuoteService`.
+  Wraps ZenQuotes `/api/today`. Caches results in the `settings` Hive
+  box under the key `quote.<yyyy-MM-dd>` so every entry created on the
+  same calendar day sees the same quote. Methods:
+  - `readCached(date)` → `DailyQuote?` (synchronous box read).
+  - `getTodayQuote({now})` → `Future<DailyQuote?>`. Cache check first,
+    then HTTP GET with an 8-second timeout. Returns `null` on any
+    failure (HTTP non-200, parse error, network failure) — callers
+    render a "couldn't fetch" placeholder.
+  - The HTTP client is injectable for tests; defaults to a fresh
+    `http.Client`.
 - [block_settings.dart](block_settings.dart) — `BlockSettings extends ChangeNotifier`.
   Block-type-global configuration persisted in the `settings` Hive
   box:

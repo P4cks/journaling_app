@@ -39,6 +39,14 @@ coordination live.
   - `getAllEntries()` — unsorted; sorting is caller's job
     (`JournalEntriesViewModel` and `HomeViewModel.entriesByDay`
     each do their own).
+  - `pickRandomEligibleBlock({beforeDate, eligibleTypes})` — used by
+    [MemoryBlockWidget](../../ui/blocks/memory_block/memory_block_widget.dart)
+    to seed itself. Iterates all entries strictly before `beforeDate`,
+    filters to blocks whose `type` is in `eligibleTypes` AND whose
+    `isEmpty` is false (per `JournalBlockEmptiness`), and uniformly
+    samples. Returns `(date, block)` or `null` when the pool is empty.
+    The caller persists the snapshot into the entry's content so the
+    pick is locked.
   - `sweepEmptyPastEntries({now})` — deletes past-day entries whose
     every block is empty (per `JournalEntry.hasNoContent`). Today's
     entries are never deleted (user may still be drafting). Returns

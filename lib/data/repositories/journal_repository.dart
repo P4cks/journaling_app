@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
@@ -21,6 +23,8 @@ class JournalRepository extends ChangeNotifier {
   final BlockSettings _blockSettings;
 
   JournalRepository(this._storage, this._layouts, this._blockSettings);
+
+  final Random _rng = Random();
 
   /// Local-midnight normalization. All repository methods normalize inputs
   /// before keying so callers don't have to. Times-of-day on the input
@@ -126,6 +130,29 @@ class JournalRepository extends ChangeNotifier {
     ];
   }
 
+  /// Picks a random non-empty block from a past (strictly-before [beforeDate])
+  /// entry, restricted to types in [eligibleTypes]. Returns the parent
+  /// entry's normalized date alongside the block so callers can persist
+  /// both for tap-to-navigate. Returns `null` when no eligible blocks
+  /// exist.
+  ({DateTime date, JournalBlockData block})? pickRandomEligibleBlock({
+    required DateTime beforeDate,
+    required Set<BlockType> eligibleTypes,
+  }) {
+    final cutoff = _normalize(beforeDate);
+    final pool = <({DateTime date, JournalBlockData block})>[];
+    for (final entry in getAllEntries()) {
+      if (!_normalize(entry.date).isBefore(cutoff)) continue;
+      for (final block in entry.widgets) {
+        if (!eligibleTypes.contains(block.type)) continue;
+        if (block.isEmpty) continue;
+        pool.add((date: _normalize(entry.date), block: block));
+      }
+    }
+    if (pool.isEmpty) return null;
+    return pool[_rng.nextInt(pool.length)];
+  }
+
   JournalBlockData _materializeOne(
     BlockType type,
     DateTime date,
@@ -149,6 +176,9 @@ class JournalRepository extends ChangeNotifier {
       case BlockType.textBlock:
       case BlockType.moodTracker:
       case BlockType.weatherManual:
+      case BlockType.todoBlock:
+      case BlockType.quoteBlock:
+      case BlockType.memoryBlock:
         return JournalBlockData.create(
           id: _uuid.v4(),
           type: type,

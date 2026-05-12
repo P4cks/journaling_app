@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/firebase_options.dart';
@@ -50,6 +51,7 @@ void main() async {
   );
   final debugSettings = DebugSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
+  final quoteService = QuoteService(settingsBox);
   final navigationGuard = NavigationGuard();
   final authRepository = AuthRepository(authService);
 
@@ -63,6 +65,7 @@ void main() async {
       debugSettings: debugSettings,
       themeSettings: themeSettings,
       blockSettings: blockSettings,
+      quoteService: quoteService,
       navigationGuard: navigationGuard,
     ),
   );
@@ -99,6 +102,7 @@ class MyApp extends StatefulWidget {
     required this.debugSettings,
     required this.themeSettings,
     required this.blockSettings,
+    required this.quoteService,
     required this.navigationGuard,
   });
 
@@ -108,6 +112,7 @@ class MyApp extends StatefulWidget {
   final DebugSettings debugSettings;
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
+  final QuoteService quoteService;
   final NavigationGuard navigationGuard;
 
   @override
@@ -149,6 +154,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugSettings: widget.debugSettings,
       themeSettings: widget.themeSettings,
       blockSettings: widget.blockSettings,
+      quoteService: widget.quoteService,
       navigationGuard: widget.navigationGuard,
       child: ListenableBuilder(
         listenable: widget.themeSettings,

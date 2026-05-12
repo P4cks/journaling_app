@@ -45,6 +45,9 @@ the fullscreen editor, *and* the layout editor (WYSIWYG). Editing
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [prompt_block/prompt_block_widget.dart](prompt_block/prompt_block_widget.dart)
+- [todo_block/todo_block_widget.dart](todo_block/todo_block_widget.dart)
+- [quote_block/quote_block_widget.dart](quote_block/quote_block_widget.dart)
+- [memory_block/memory_block_widget.dart](memory_block/memory_block_widget.dart)
 
 ---
 

@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -18,6 +21,12 @@ extension BlockTypeDisplay on BlockType {
         return 'Weather';
       case BlockType.promptBlock:
         return 'Prompt';
+      case BlockType.todoBlock:
+        return 'Todo';
+      case BlockType.quoteBlock:
+        return 'Quote of the day';
+      case BlockType.memoryBlock:
+        return 'Memory';
     }
   }
 
@@ -31,6 +40,12 @@ extension BlockTypeDisplay on BlockType {
         return PhosphorIconsDuotone.sun;
       case BlockType.promptBlock:
         return PhosphorIconsDuotone.question;
+      case BlockType.todoBlock:
+        return PhosphorIconsDuotone.listChecks;
+      case BlockType.quoteBlock:
+        return PhosphorIconsDuotone.quotes;
+      case BlockType.memoryBlock:
+        return PhosphorIconsDuotone.clockCounterClockwise;
     }
   }
 
@@ -44,6 +59,12 @@ extension BlockTypeDisplay on BlockType {
         return 'Pick today’s weather.';
       case BlockType.promptBlock:
         return 'Answer a recurring question.';
+      case BlockType.todoBlock:
+        return 'Checkable list of tasks.';
+      case BlockType.quoteBlock:
+        return 'A fresh quote each day.';
+      case BlockType.memoryBlock:
+        return 'A random memory from a past day.';
     }
   }
 
@@ -76,6 +97,40 @@ extension BlockTypeDisplay on BlockType {
           content: const PromptBlockContent(
             prompt: 'What surprised you today?',
             answer: '',
+          ).toMap(),
+        );
+      case BlockType.todoBlock:
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const TodoBlockContent(
+            items: [
+              TodoItem(id: 'sample-1', text: 'Morning walk', done: true),
+              TodoItem(id: 'sample-2', text: 'Read 10 pages'),
+              TodoItem(id: 'sample-3', text: 'Stretch'),
+            ],
+          ).toMap(),
+        );
+      case BlockType.quoteBlock:
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const QuoteBlockContent(
+            quote:
+                'The only way to do great work is to love what you do.',
+            author: 'Steve Jobs',
+          ).toMap(),
+        );
+      case BlockType.memoryBlock:
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const MemoryBlockContent(
+            sourceEntryDate: '2025-09-14',
+            sourceBlockId: 'sample-text',
+            sourceType: BlockType.textBlock,
+            snapshotJson:
+                '{"text":"Saw the first frost on the field this morning."}',
           ).toMap(),
         );
     }
