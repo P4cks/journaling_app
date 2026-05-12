@@ -2,7 +2,7 @@
 
 This is the Flutter source for the journaling app. The repository-root CLAUDE.md holds project-wide rules (commands, schema-bump discipline, gotchas, conventions, workflow). Read it first.
 
-This file is a map of the source tree plus a maintenance contract for the per-directory CLAUDE.md files inside lib/. Each subdirectory has its own CLAUDE.md that summarises the code there in enough depth that an agent can act without re-reading every file.
+This file is a map of the source tree plus a maintenance contract for the per-directory CLAUDE.md files inside lib/. Each subdirectory has its own CLAUDE.md that summarises the code there in enough depth that an AGENTS can act without re-reading every file.
 
 How the per-directory CLAUDE.md files are organised
 Layered, top-down (same shape as the app's architecture):
@@ -29,21 +29,21 @@ lib/
     ├── journal_entry/       Fullscreen entry editor (singular: one entry)
     ├── journal_entries/     Sectioned list of all entries (plural)
     ├── layouts/             Layouts list + layout editor + icon picker
-    └── profile/             Profile screen (appearance + streak + debug)
+    └── profile/             Profile tab + nested settings screen
 Every leaf and intermediate directory under lib/ has a CLAUDE.md.
 
 What each CLAUDE.md should cover
 Every per-directory file should contain, in order:
 
 Purpose — one paragraph: what this directory is and where it sits in the layered architecture.
-Files — short bullet per file: what the class/function is, what key responsibilities it owns. Use markdown links with relative paths so agents can jump to source.
+Files — short bullet per file: what the class/function is, what key responsibilities it owns. Use markdown links with relative paths so AGENTSs can jump to source.
 Implementation details that aren't obvious from the file names — patterns this directory uses, invariants it relies on, what calls into it from outside.
 Gotchas — bugs that have already been hit here, subtle ordering requirements, things that look removable but aren't. The project-root CLAUDE.md has a "Gotchas hit during development" section — directory-level files should mirror that style for issues specific to their code.
 When to update this file — what edits to source under this directory should also touch the CLAUDE.md.
-Keep them dense but readable — agents are the primary audience, but a human should be able to skim one and orient in <60s.
+Keep them dense but readable — AGENTSs are the primary audience, but a human should be able to skim one and orient in <60s.
 
 Maintenance contract — read this before editing source
-The CLAUDE.md files in this tree are documentation that ages. When they go stale they stop being useful and start actively misleading the next agent. Keep them current:
+The CLAUDE.md files in this tree are documentation that ages. When they go stale they stop being useful and start actively misleading the next AGENTS. Keep them current:
 
 When you add, remove, or rename a file, update that directory's CLAUDE.md in the same change. The Files bullet list should be exhaustive.
 When you change a public-facing API (a function signature, a ChangeNotifier event, a Hive field) that other layers consume, audit every CLAUDE.md in the call graph and update the implementation- details + gotchas sections.
@@ -67,4 +67,8 @@ When you add a new repository or settings object, add it to AppDependencies and 
 When to update this file
 A new top-level directory is added under lib/ → add it to the tree diagram and create its CLAUDE.md.
 The boot sequence in main.dart changes (new init step, new box, new global service).
-The maintenance contract itself changes — keep this section accurate so future agents follow it.
+The maintenance contract itself changes — keep this section accurate so future AGENTSs follow it.
+
+## Updating BACKLOG.md
+
+When the feature has been finished with the agreement of the user update the BACKLOG.md file to reflect that the feature has been implemented

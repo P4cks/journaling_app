@@ -2,6 +2,7 @@ import 'package:hive_ce/hive.dart';
 
 class SettingsStorageService {
   static const _defaultLayoutIdKey = 'defaultLayoutId';
+  static const _debugMenuVisibleKey = 'debug.menuVisible';
   static const _unlockAllDaysKey = 'debug.unlockAllDays';
   static const _themeModeKey = 'theme.mode';
   static const _themePaletteIdKey = 'theme.paletteId';
@@ -24,6 +25,11 @@ class SettingsStorageService {
 
   Future<void> setUnlockAllDays(bool value) =>
       _box.put(_unlockAllDaysKey, value.toString());
+
+  bool getDebugMenuVisible() => _box.get(_debugMenuVisibleKey) == 'true';
+
+  Future<void> setDebugMenuVisible(bool value) =>
+      _box.put(_debugMenuVisibleKey, value.toString());
 
   String? getThemeMode() => _box.get(_themeModeKey);
 

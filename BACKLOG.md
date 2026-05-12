@@ -15,14 +15,15 @@ Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the releva
 * [x] **Drop the explicit edit toggle in the journal-entry editor** ([#11](https://github.com/P4cks/journaling_app/pull/11)) — for editable days, blocks render directly editable. Pencil button and read/edit mode toggle removed. Past days still show the read-only lock.
 * [x] **Layouts: assign an icon to each layout** ([#11](https://github.com/P4cks/journaling_app/pull/11)) — curated Phosphor icon picker in the layout editor; the chosen icon renders in the Layouts list (default layout's badge in `primaryContainer` so it still reads as primary) and in the layout-picker sheet.
 * [x] `S` **Layouts: tap-to-edit name in the editor** — match the inline AppBar tap-to-edit pattern used for journal-entry titles instead of the current always-visible TextField.
-* [ ] `S` **Better affordance for tap-to-edit titles** — the current "tap the title to edit" pattern (entries today, layouts later) is invisible. Hint: a faint underline, a subtle pencil glyph next to the text, or a one-time tooltip on first launch.
+* [x] `S` **Better affordance for tap-to-edit titles** — the current "tap the title to edit" pattern (entries today, layouts later) is invisible. Hint: a faint underline, a subtle pencil glyph next to the text, or a one-time tooltip on first launch.
 * [x] `S` **Remove ripple effect when opening a journal entry** — replace with a softer or no-touch feedback to better match the calm journaling feel.
 * [x] `S` **Rename Home tab to Journal** — clearer mental model; aligns with core feature.
-* [ ] `M` **Preview of block when adding block** - the add block menu should expand to half the screen and show a preview of the block (with the title below) before inserting it
-* [ ] `S` **turn "Add block" button into small plus** - and remove Blocks title
-* [ ] `M` **Split entry into block and text** - section
-* [ ] `S` **Remove checkmark from layouteditor** - remove checkmark icon button and replace it by automatic save on exit, with a popup asking you to save or discard the new layout before leaving the editor (eg. routing to another page)
+* [x] `M` **Preview of block when adding block** - the add block menu should expand to half the screen and show a preview of the block (with the title below) before inserting it
+* [x] `S` **turn "Add block" button into small plus** - and remove Blocks title
+* [ ] `M` **Different layout options** - Add other "layout strategies", like only blocks (already implemented) or alternatively an overarching section layout where you can layout the page into block sections of different sizes (which also makes it easy to implement bigger style blocks) and text sections, these sections would then be layed out in a horizontal style
+* [x] `S` **Remove checkmark from layouteditor** - remove checkmark icon button and replace it by automatic save on exit, with a popup asking you to save or discard the new layout before leaving the editor (eg. routing to another page)
 * [ ] `M` **Implement swipe gestures** - implement swipe gestures for navigating (especially going back)
+* [ ] `S` **Complete Layout Preview** - Preview should be in layout
 
 ## Theming / typography
 

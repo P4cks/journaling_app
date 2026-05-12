@@ -39,14 +39,17 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   Setters that take `null` (e.g. `setThemeSecondary(null)`) `delete`
   the key — distinguishes "user reset to default" from "user picked
   the same value as default".
-  - Known keys: `defaultLayoutId`, `debug.unlockAllDays`, `theme.mode`,
-    `theme.paletteId`, `theme.secondary`, `theme.accent`,
+  - Known keys: `defaultLayoutId`, `debug.menuVisible`,
+    `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
+    `theme.secondary`, `theme.accent`,
     `theme.debugSurface`. If you add another, give it a namespaced key
     and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
-  Currently a single flag: `unlockAllDays`. Bypasses both the
-  calendar's future-day disable and the editor's read-only-for-past
-  guard. Stores via `SettingsStorageService`.
+  Stores debug-facing switches via `SettingsStorageService`:
+  - `debugMenuVisible` gates whether the Settings screen renders the
+    Debug `ExpansionTile`.
+  - `unlockAllDays` bypasses both the calendar's future-day disable
+    and the editor's read-only-for-past guard.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
   Mirrors a `ColorScheme` configuration:
   - `themeMode` (`ThemeMode`, default `system`)

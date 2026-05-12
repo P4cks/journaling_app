@@ -8,9 +8,11 @@ import 'package:journaling_app_rewrite/ui/journal_entry/view/journal_entry_edito
 import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view/layouts_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
 
-final GlobalKey<NavigatorState> rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -27,6 +29,11 @@ final GoRouter appRouter = GoRouter(
               name: RouteNames.profile,
               builder: (context, state) => const ProfileScreen(),
               routes: [
+                GoRoute(
+                  path: 'settings',
+                  name: RouteNames.settings,
+                  builder: (context, state) => const SettingsScreen(),
+                ),
                 GoRoute(
                   path: 'layouts',
                   name: RouteNames.layouts,

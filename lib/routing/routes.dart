@@ -6,6 +6,7 @@ class Routes {
   static const journalEntries = '/journal-entries';
   static const journalEntry = '/journal/:date';
 
+  static const settings = '/profile/settings';
   static const layouts = '/profile/layouts';
   static const newLayout = '/profile/layouts/new';
   static const editLayout = '/profile/layouts/edit/:id';
@@ -27,6 +28,7 @@ class RouteNames {
   static const profile = 'profile';
   static const journalEntries = 'journalEntries';
   static const journalEntry = 'journalEntry';
+  static const settings = 'settings';
   static const layouts = 'layouts';
   static const newLayout = 'newLayout';
   static const editLayout = 'editLayout';

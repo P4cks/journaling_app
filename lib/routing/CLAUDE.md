@@ -8,8 +8,9 @@ every screen has access to repositories without per-route plumbing.
 
 - [app_router.dart](app_router.dart) — `GoRouter appRouter`. One
   `StatefulShellRoute.indexedStack` with three branches:
-  - Branch 0: `/profile` (and nested `/profile/layouts`,
-    `/profile/layouts/new`, `/profile/layouts/edit/:id`).
+  - Branch 0: `/profile` (and nested `/profile/settings`,
+    `/profile/layouts`, `/profile/layouts/new`,
+    `/profile/layouts/edit/:id`).
   - Branch 1: `/` (Home) (and nested `/journal/:date`).
   - Branch 2: `/journal-entries` (the sectioned list).
 
@@ -26,6 +27,8 @@ every screen has access to repositories without per-route plumbing.
     path with zero-padded segments. `DateTime.parse` on the other side
     expects exactly this shape.
   - `Routes.editLayoutFor(String id)` builds `/profile/layouts/edit/<id>`.
+  - `Routes.settings` is the absolute path used by the Profile row;
+    the router child path remains relative (`path: 'settings'`).
 
 ## Implementation details
 

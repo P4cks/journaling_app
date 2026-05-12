@@ -36,7 +36,7 @@ lib/
     ├── journal_entry/       Fullscreen entry editor (singular: one entry)
     ├── journal_entries/     Sectioned list of all entries (plural)
     ├── layouts/             Layouts list + layout editor + icon picker
-    └── profile/             Profile screen (appearance + streak + debug)
+    └── profile/             Profile tab + nested settings screen
 ```
 
 Every leaf and intermediate directory under `lib/` has a `CLAUDE.md`.
@@ -49,7 +49,7 @@ Every per-directory file should contain, in order:
    in the layered architecture.
 2. **Files** — short bullet per file: what the class/function is, what
    key responsibilities it owns. Use markdown links with relative paths
-   so agents can jump to source.
+   so CLAUDE can jump to source.
 3. **Implementation details that aren't obvious from the file names** —
    patterns this directory uses, invariants it relies on, what calls
    into it from outside.
@@ -61,7 +61,7 @@ Every per-directory file should contain, in order:
 5. **When to update this file** — what edits to source under this
    directory should also touch the CLAUDE.md.
 
-Keep them dense but readable — agents are the primary audience, but a
+Keep them dense but readable — CLAUDE are the primary audience, but a
 human should be able to skim one and orient in <60s.
 
 ## Maintenance contract — read this before editing source
@@ -125,4 +125,4 @@ per-directory files — link instead.
 - The boot sequence in `main.dart` changes (new init step, new box, new
   global service).
 - The maintenance contract itself changes — keep this section accurate
-  so future agents follow it.
+  so future CLAUDE follow it.

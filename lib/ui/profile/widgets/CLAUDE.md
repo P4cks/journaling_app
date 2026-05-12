@@ -1,4 +1,4 @@
-# lib/ui/profile/widgets — Profile-screen widgets
+# lib/ui/profile/widgets — Profile-area widgets
 
 See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
@@ -16,7 +16,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   accent) + the palette name. Selected palette gets a primary border
   and a fill check-circle. Calls back with the palette `id` string.
   Wrapped in `GridView.count(shrinkWrap: true, physics: NeverScrollable)`
-  so it nests inside the `ListView` of the Profile screen.
+  so it nests inside the `ListView` of the Settings screen.
 - [swatch_grid_picker.dart](swatch_grid_picker.dart) —
   `Future<SwatchResult?> showSwatchPicker(...)` + `SwatchResult` value
   class + private `_SwatchDialog`, `_Swatch`, `_LabelSlider`.
@@ -52,7 +52,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - **`showSwatchPicker` returns `null` on dismiss**, but `Reset` and
   `Apply` both pop with a non-null result. **Cancel** also pops with
   `null`. Callers must distinguish all three cases — see the
-  Profile screen for the canonical pattern.
+  Settings screen for the canonical pattern.
 - **`StreakStatCard` is pure**; passing a fresh `StreakResult` on
   every build is fine because the function is cheap.
 
