@@ -6,6 +6,12 @@ coordination live.
 
 ## Files
 
+- [auth_repository.dart](auth_repository.dart) — `AuthRepository extends ChangeNotifier`.
+  Listens to `AuthService.authStateChanges` and exposes `currentUser`,
+  `isConfigured`, loading state, active `AuthOperation`, and readable
+  error/success messages. Public methods wrap email sign-in/register,
+  password reset, Google, Apple, and sign-out. UI should use this
+  repository instead of importing Firebase SDK classes.
 - [journal_repository.dart](journal_repository.dart) — `JournalRepository extends ChangeNotifier`.
   - **Date keying**: `_normalize(d)` strips time-of-day → `DateTime(y, m, d)`;
     `_dateKey(d)` is `_normalize(d).toIso8601String()`. **All public
@@ -49,8 +55,10 @@ coordination live.
 ## Implementation details
 
 - **Single source of truth.** `JournalRepository` is the only thing
-  that calls into `HiveStorageService`. View models hold a reference
-  to the repository and subscribe to its `ChangeNotifier`.
+  that calls into `HiveStorageService`, and `AuthRepository` is the
+  only thing Profile uses for auth state/actions. View models hold a
+  reference to the relevant repository and subscribe to its
+  `ChangeNotifier`.
 - The two repositories are independent, but `JournalRepository` holds a
   reference to `LayoutRepository` so it can resolve the user's default
   layout when materializing a new entry.

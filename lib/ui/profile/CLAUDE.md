@@ -6,8 +6,9 @@ the detailed settings live one push deeper at `/profile/settings`.
 Profile contains:
 
 1. **Streak** — current vs longest streaks (or a nudge when current is 0).
-2. **Settings** entry point → `/profile/settings`.
-3. **Layouts** entry point → `/profile/layouts`.
+2. **Profile** — optional Firebase Auth sign-in/status card.
+3. **Settings** entry point → `/profile/settings`.
+4. **Layouts** entry point → `/profile/layouts`.
 
 Settings contains:
 
@@ -31,7 +32,8 @@ profile/
 pull the settings/repositories they need from `AppDependencies` and
 sprinkle `ListenableBuilder`s where each section needs to react:
 
-- The streak card listens to the repository.
+- The streak card listens to the journal repository.
+- The optional auth card listens to `authRepository`.
 - Each appearance / debug color row listens to `themeSettings`.
 - The `Show debug menu` and `unlockAllDays` switches listen to
   `debugSettings`.
@@ -47,7 +49,7 @@ underlying settings notifiers.
   and their private section/color helper widgets.
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `PalettePicker`,
   `ThemeModeSelector`, `showSwatchPicker` (the color dialog),
-  `StreakStatCard`.
+  `StreakStatCard`, `ProfileAuthCard`.
 
 ## Theme override semantics
 
@@ -77,6 +79,9 @@ underlying settings notifiers.
 - **The streak listens to `journalRepository`, not to a
   `StreakViewModel`.** `computeStreak` is pure and fast; calling it
   per build is cheaper than another `ChangeNotifier`.
+- **Auth is optional and local-first.** A missing Firebase config shows
+  a disabled Profile auth card; it must not block app launch or local
+  journaling.
 - **`SwitchListTile.onChanged` is wired straight to
   `debug.setDebugMenuVisible` / `debug.setUnlockAllDays`** — no
   debouncing. Toggling repeatedly is harmless because the setters no-op

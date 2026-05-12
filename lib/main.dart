@@ -1,16 +1,19 @@
-import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_ce/hive.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
+import 'package:journaling_app_rewrite/data/services/auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
+import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/firebase_options.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -19,6 +22,8 @@ import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final authService = await _createAuthService();
 
   await Hive.initFlutter();
   Hive.registerAdapters();
@@ -40,11 +45,13 @@ void main() async {
   final debugSettings = DebugSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
   final navigationGuard = NavigationGuard();
+  final authRepository = AuthRepository(authService);
 
   await layoutRepository.seedDefaultIfEmpty();
 
   runApp(
     MyApp(
+      authRepository: authRepository,
       journalRepository: journalRepository,
       layoutRepository: layoutRepository,
       debugSettings: debugSettings,
@@ -54,9 +61,32 @@ void main() async {
   );
 }
 
+Future<AuthService> _createAuthService() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('[main] Firebase initialized');
+    return FirebaseAuthService();
+  } on UnsupportedError catch (error) {
+    debugPrint('[main] Firebase auth disabled: $error');
+    return DisabledAuthService(
+      'Firebase is not configured yet. Run flutterfire configure for Android '
+      'and iOS, then enable Email, Google, and Apple sign-in providers.',
+    );
+  } catch (error) {
+    debugPrint('[main] Firebase auth disabled: $error');
+    return DisabledAuthService(
+      'Firebase could not be initialized. Check the project configuration and '
+      'try again.',
+    );
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
+    required this.authRepository,
     required this.journalRepository,
     required this.layoutRepository,
     required this.debugSettings,
@@ -64,6 +94,7 @@ class MyApp extends StatefulWidget {
     required this.navigationGuard,
   });
 
+  final AuthRepository authRepository;
   final JournalRepository journalRepository;
   final LayoutRepository layoutRepository;
   final DebugSettings debugSettings;
@@ -87,6 +118,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.authRepository.dispose();
     super.dispose();
   }
 
@@ -102,6 +134,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return AppDependencies(
+      authRepository: widget.authRepository,
       journalRepository: widget.journalRepository,
       layoutRepository: widget.layoutRepository,
       debugSettings: widget.debugSettings,

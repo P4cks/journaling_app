@@ -1,5 +1,6 @@
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -9,6 +10,7 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 /// Per type:
 /// - `textBlock` — text is null/empty after trimming whitespace.
 /// - `moodTracker` — no mood selected.
+/// - `weatherManual` — no condition selected.
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -18,7 +20,9 @@ extension JournalBlockEmptiness on JournalBlockData {
       case BlockType.textBlock:
         return TextBlockContent.fromMap(content).text.trim().isEmpty;
       case BlockType.moodTracker:
-        return MoodBlockContent.fromMap(content).mood == null;
+        return MoodBlockContent.fromMap(content).emoji == null;
+      case BlockType.weatherManual:
+        return WeatherBlockContent.fromMap(content).conditionId == null;
     }
   }
 }

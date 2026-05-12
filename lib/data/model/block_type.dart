@@ -1,4 +1,5 @@
 enum BlockType {
   textBlock,
-  moodTracker
+  moodTracker,
+  weatherManual,
 }

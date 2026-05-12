@@ -9,7 +9,7 @@ for how they fit together; this file is per-file notes.
   DI root. Constructed once in `main.dart`. `static of(context)` is
   guarded by `assert(widget != null)` so a missing ancestor fails
   loudly in dev rather than NPE-ing at first use. `updateShouldNotify`
-  compares all four dependency references — bumping a repository (which
+  compares every dependency reference — bumping a repository (which
   we don't currently do at runtime) would re-trigger dependants.
 - [app_icon.dart](app_icon.dart) — `AppIcon`. Phosphor wrapper. Pulls
   `size` and `color` from the surrounding `IconTheme` when unset, and

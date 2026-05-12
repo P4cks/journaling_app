@@ -1,8 +1,9 @@
 # lib/data — Data layer
 
-Everything below the UI: models, persistence services, and repositories.
-**No Flutter widgets live here.** Pure Dart + `hive_ce` + `package:uuid`
-+ `flutter/foundation.dart` (only for `ChangeNotifier` / `debugPrint`).
+Everything below the UI: models, persistence services, auth services, and
+repositories. **No Flutter widgets live here.** Pure Dart + Firebase SDK
+wrappers + `hive_ce` + `package:uuid` + `flutter/foundation.dart` (only for
+`ChangeNotifier` / `debugPrint`).
 
 ## Layered shape
 
@@ -21,6 +22,10 @@ Read order if you're new: `model/` → `services/` → `repositories/`.
 - `JournalRepository` extends `ChangeNotifier`. It notifies on every
   create / save / delete and on a non-zero sweep. View models subscribe
   to it instead of plumbing manual refresh calls.
+- `AuthRepository` extends `ChangeNotifier`. It listens to the auth
+  service stream and exposes optional sign-in state to Profile. UI
+  should depend on `AppUser.uid` for future cloud/profile features,
+  never on `FirebaseAuth.instance` directly.
 - `DebugSettings` and `ThemeSettings` are `ChangeNotifier`s — they
   notify on every setter. The root `MaterialApp` and several screens
   rebuild via `ListenableBuilder` against them.
@@ -43,10 +48,10 @@ so DST transitions don't break a streak.
 
 ## Subdirectory CLAUDE.md files
 
-- [model/CLAUDE.md](model/CLAUDE.md) — entry / block / layout data classes
+- [model/CLAUDE.md](model/CLAUDE.md) — entry / block / layout / app user data classes
 - [model/block_content/CLAUDE.md](model/block_content/CLAUDE.md) — typed wrappers over the JSON content of each block type
 - [services/CLAUDE.md](services/CLAUDE.md) — Hive box wrappers + settings ChangeNotifiers + pure streak math
-- [repositories/CLAUDE.md](repositories/CLAUDE.md) — JournalRepository + LayoutRepository
+- [repositories/CLAUDE.md](repositories/CLAUDE.md) — AuthRepository + JournalRepository + LayoutRepository
 
 ## When to update this file
 

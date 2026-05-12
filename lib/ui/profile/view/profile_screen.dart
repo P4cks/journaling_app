@@ -4,6 +4,7 @@ import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/profile_auth_card.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/streak_stat_card.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -24,6 +25,12 @@ class ProfileScreen extends StatelessWidget {
             builder: (context, _) => StreakStatCard(
               streak: computeStreak(deps.journalRepository.getAllEntries()),
             ),
+          ),
+          _SectionHeader(label: 'Profile'),
+          ListenableBuilder(
+            listenable: deps.authRepository,
+            builder: (context, _) =>
+                ProfileAuthCard(authRepository: deps.authRepository),
           ),
           const Divider(),
           ListTile(

@@ -37,6 +37,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
     flame icon and a divider between them.
   - When `current == 0`: shows a nudge ("Make an entry today …"),
     optionally mentioning the longest streak if there is one.
+- [profile_auth_card.dart](profile_auth_card.dart) — `ProfileAuthCard`
+  plus the email auth bottom sheet. Signed-out state offers Email,
+  Google, and Apple buttons when Firebase is configured; otherwise it
+  shows the disabled configuration message. Signed-in state shows the
+  user's name/email, provider label, optional email verification hint,
+  and sign-out.
 
 ## Gotchas
 
@@ -52,6 +58,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   Settings screen for the canonical pattern.
 - **`StreakStatCard` is pure**; passing a fresh `StreakResult` on
   every build is fine because the function is cheap.
+- **`ProfileAuthCard` talks only to `AuthRepository`.** Keep Firebase
+  SDK imports out of widgets so later Firestore/Storage profile work
+  can attach behind the same `AppUser.uid` boundary.
 
 ## When to update this file
 
@@ -59,3 +68,4 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - A new pickable swatch is added (or the 12-swatch palette is retuned).
 - A new picker variant is introduced (e.g. transparency).
 - The streak card gains new metrics (e.g. average per week).
+- The auth card adds providers, profile fields, or account actions.

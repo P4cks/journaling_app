@@ -16,6 +16,8 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 |-----------------------------|-------------------------|------------------------------------|
 | _SectionHeader("Streak")    | —                       | accent-colored small caps          |
 | `StreakStatCard`            | `journalRepository`     | `computeStreak(getAllEntries())`   |
+| _SectionHeader("Profile")   | —                       | auth section directly under streak |
+| `ProfileAuthCard`           | `authRepository`        | optional Firebase sign-in/status   |
 | Divider                     | —                       |                                    |
 | `ListTile` "Settings"       | —                       | navigates to `/profile/settings`   |
 | `ListTile` "Layouts"        | —                       | navigates to `/profile/layouts`    |

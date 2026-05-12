@@ -1,8 +1,9 @@
 # lib/data/services — Storage + settings
 
-Thin wrappers around `hive_ce`'s `Box<T>` (one service per box) plus two
-`ChangeNotifier` settings classes and one pure function (`computeStreak`).
-Repositories compose these; UI never touches a service directly.
+Thin wrappers around `hive_ce`'s `Box<T>` (one service per box), Firebase Auth
+service wrappers, two `ChangeNotifier` settings classes, and one pure function
+(`computeStreak`). Repositories compose these; UI never touches a service
+directly.
 
 ## Boxes (current names — bump these on schema changes)
 
@@ -78,6 +79,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - `current` starts from today (or yesterday if today has no entry),
     so the streak doesn't break until the user misses a full day.
   - Pass `now` in tests; defaults to `DateTime.now()`.
+- [auth_service.dart](auth_service.dart) — `AuthService` interface,
+  `AuthFailure`, and `DisabledAuthService`. The disabled service is used
+  when Firebase options are missing or initialization fails so the app
+  can keep running as a local-first journal.
+- [firebase_auth_service.dart](firebase_auth_service.dart) —
+  `FirebaseAuthService`. The only class that imports `firebase_auth` /
+  `google_sign_in`. Maps Firebase `User` → `AppUser`, wraps Firebase
+  exceptions in `AuthFailure`, and supports email/password, Google,
+  Apple, password reset, and sign-out.
 
 ## Implementation details
 
@@ -89,6 +99,9 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
 - `debugPrint` with a `[ClassName]` prefix on every state transition.
   This is intentional — the bottom-of-the-stack log makes drag/drop
   and sweep behavior debuggable from the console.
+- Firebase Auth is **optional**. Missing FlutterFire config should
+  disable only the Profile auth buttons, not app startup or local Hive
+  journaling.
 
 ## Gotchas
 
@@ -100,12 +113,16 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   Don't pass un-normalized `DateTime`s and expect dedup — the function
   normalizes internally, but the caller may still get hashing surprises
   if they reuse the same set elsewhere.
+- **Don't import Firebase Auth outside `FirebaseAuthService`.** Future
+  Firestore/Storage code should hang off `AuthRepository.currentUser.uid`
+  rather than coupling widgets or repositories to Firebase SDK state.
 
 ## When to update this file
 
 - A new box is added (and added to the table above).
 - A new setting key is added to `SettingsStorageService` (add it to
   the "Known keys" list).
+- A new auth provider or Firebase-facing auth method is added.
 - A box name is bumped — update the table.
 - `streak_service.dart` changes shape (e.g. tracking longest-by-month,
   weekly streaks) — describe the new semantics here so callers don't

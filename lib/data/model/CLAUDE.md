@@ -22,7 +22,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual }`.
   Adding a new variant requires (a) a wrapper in `block_content/`,
   (b) a widget under `lib/ui/blocks/<type>/`, (c) cases in
   [block_widget.dart](../../ui/blocks/block_widget.dart),
@@ -45,6 +45,11 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
     doesn't count as content. Used by both
     `JournalRepository.sweepEmptyPastEntries` and `computeStreak` to
     decide what counts.
+- [app_user.dart](app_user.dart) — `AppUser`. Auth-facing value object
+  with `uid`, optional email/display name/photo URL, provider IDs, and
+  email verification state. This is the UI/cloud boundary for future
+  Firestore/Storage work; do not expose Firebase `User` objects above
+  the service layer.
 
 ## Implementation details
 

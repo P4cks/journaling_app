@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
@@ -47,8 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     // Sweep on editor-pop catches the "user cleared all blocks on a past
     // day" case immediately. Cheap — entries are few.
-    await AppDependencies.of(context).journalRepository
-        .sweepEmptyPastEntries();
+    await AppDependencies.of(context).journalRepository.sweepEmptyPastEntries();
     if (!mounted) return;
     vm.reload();
   }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1007919307133-q1co1llllrls9pebputnqt4t9o69va3s.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1007919307133-q1co1llllrls9pebputnqt4t9o69va3s</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1007919307133-vnp16h2ghpnrj3j9p9nf0b3l4675b60v.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyASKgAtmMwZARIQqjn3d00a1WdjGODnFHc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1007919307133</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.journalingAppRewrite</string>
+	<key>PROJECT_ID</key>
+	<string>journaling-app-5c19d</string>
+	<key>STORAGE_BUCKET</key>
+	<string>journaling-app-5c19d.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1007919307133:ios:b3ed8fe1a638e171d69414</string>
+</dict>
+</plist>
