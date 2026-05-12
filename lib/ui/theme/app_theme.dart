@@ -7,6 +7,7 @@ ThemeData buildAppTheme({
   required Brightness brightness,
   Color? secondary,
   Color? accent,
+  Color? textColor,
   Color? surfaceOverride,
 }) {
   final base = ColorScheme.fromSeed(
@@ -15,7 +16,8 @@ ThemeData buildAppTheme({
   );
 
   final surface = surfaceOverride ?? palette.surfaceFor(brightness);
-  final onSurface = contrastOn(surface);
+  final onSurface =
+      textColor ?? palette.defaultTextColor ?? contrastOn(surface);
 
   final containerLow = Color.lerp(surface, onSurface, 0.03)!;
   final container = Color.lerp(surface, onSurface, 0.05)!;
@@ -26,14 +28,22 @@ ThemeData buildAppTheme({
   final effectiveAccent = accent ?? palette.defaultAccent;
   final effectiveSecondary = secondary ?? palette.defaultSecondary;
 
-  final primaryContainer =
-      Color.lerp(surface, effectiveAccent, brightness == Brightness.dark ? 0.35 : 0.45)!;
-  final secondaryContainer =
-      Color.lerp(surface, effectiveSecondary, brightness == Brightness.dark ? 0.30 : 0.40)!;
-  final tertiary =
-      Color.lerp(effectiveSecondary, effectiveAccent, 0.4)!;
-  final tertiaryContainer =
-      Color.lerp(surface, tertiary, brightness == Brightness.dark ? 0.30 : 0.40)!;
+  final primaryContainer = Color.lerp(
+    surface,
+    effectiveAccent,
+    brightness == Brightness.dark ? 0.35 : 0.45,
+  )!;
+  final secondaryContainer = Color.lerp(
+    surface,
+    effectiveSecondary,
+    brightness == Brightness.dark ? 0.30 : 0.40,
+  )!;
+  final tertiary = Color.lerp(effectiveSecondary, effectiveAccent, 0.4)!;
+  final tertiaryContainer = Color.lerp(
+    surface,
+    tertiary,
+    brightness == Brightness.dark ? 0.30 : 0.40,
+  )!;
 
   final scheme = base.copyWith(
     brightness: brightness,

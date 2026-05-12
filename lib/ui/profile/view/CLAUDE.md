@@ -26,9 +26,8 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 |-----------------------------|-------------------------|------------------------------------|
 | `ExpansionTile` "Appearance"| —                       | expanded by default                |
 | `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
-| "Surface palette" + `PalettePicker` | `themeSettings` | 2-column grid of curated palettes |
-| `_ColorTile` "Secondary color" | `themeSettings`      | opens `showSwatchPicker`           |
-| `_ColorTile` "Accent color"    | `themeSettings`      | opens `showSwatchPicker`           |
+| "Theme" + `PalettePicker` | `themeSettings` | horizontal Graphite/user-theme strip |
+| `showThemeEditorSheet`    | —                       | add/edit user themes                |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `ExpansionTile` "Debug"     | `debugSettings`         | collapsed by default, conditional  |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
@@ -41,6 +40,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - `_SectionHeader` — accent-tinted titleSmall with letter-spacing.
 - `_ExpansionTitle` — same accent-tinted titleSmall styling, used in
   `SettingsScreen` `ExpansionTile.title`.
+- `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
+  for user themes; edits name, surface tint, secondary, accent, and text
+  colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.
 - `_ColorTile` — palette-icon leading, label + subtitle ("… · custom"
   appended when overridden), `_ColorChip` trailing.
 - `_ColorChip` — 28×28 circle. `outlined: true` adds a thicker
@@ -60,6 +62,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - **Debug is conditionally rendered, not just collapsed.** When
   `debugMenuVisible` is false, the debug controls are absent from the
   tree so casual users do not see the override controls.
+- **Deleting the active user theme falls back to Graphite.**
+  `ThemeSettings.deleteCustomPalette` owns the fallback and clears any
+  secondary/accent overrides.
 
 ## When to update this file
 

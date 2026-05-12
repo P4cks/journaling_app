@@ -41,7 +41,7 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   the same value as default".
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
     `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
-    `theme.secondary`, `theme.accent`,
+    `theme.secondary`, `theme.accent`, `theme.customPalettes`,
     `theme.debugSurface`. If you add another, give it a namespaced key
     and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
@@ -53,9 +53,14 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
   Mirrors a `ColorScheme` configuration:
   - `themeMode` (`ThemeMode`, default `system`)
-  - `paletteId` (string id into `kSurfacePalettes`)
+  - `paletteId` (Graphite or a generated user-theme id)
+  - `palettes` (Graphite plus persisted user themes)
   - `secondaryOverride`, `accentOverride`, `debugSurfaceOverride`
     (all nullable; `null` means "use the palette's default")
+  - User themes are persisted as a single `theme.customPalettes` JSON
+    list. Each item stores `id`, `name`, and `#RRGGBB` `surface`,
+    `secondary`, `accent`, and `text` values. Legacy slot-map JSON is
+    still decoded.
   - `effectiveSecondary` / `effectiveAccent` getters resolve override →
     palette default. Use these from non-debug UI; the raw `*Override`
     getters are for the Profile screen to show "is overridden".

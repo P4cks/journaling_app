@@ -114,6 +114,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           final secondary = widget.themeSettings.secondaryOverride;
           final accent = widget.themeSettings.accentOverride;
           final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
+          final textColor = palette.defaultTextColor;
           return MaterialApp.router(
             title: 'Journaling App',
             themeMode: widget.themeSettings.themeMode,
@@ -122,6 +123,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               brightness: Brightness.light,
               secondary: secondary,
               accent: accent,
+              textColor: textColor,
               surfaceOverride: surfaceOverride,
             ),
             darkTheme: buildAppTheme(
@@ -129,6 +131,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               brightness: Brightness.dark,
               secondary: secondary,
               accent: accent,
+              textColor: textColor,
               surfaceOverride: surfaceOverride,
             ),
             routerConfig: appRouter,

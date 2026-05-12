@@ -8,6 +8,7 @@ class SettingsStorageService {
   static const _themePaletteIdKey = 'theme.paletteId';
   static const _themeSecondaryKey = 'theme.secondary';
   static const _themeAccentKey = 'theme.accent';
+  static const _themeCustomPalettesKey = 'theme.customPalettes';
   static const _themeDebugSurfaceKey = 'theme.debugSurface';
 
   final Box<String> _box;
@@ -51,6 +52,11 @@ class SettingsStorageService {
   Future<void> setThemeAccent(String? hex) => hex == null
       ? _box.delete(_themeAccentKey)
       : _box.put(_themeAccentKey, hex);
+
+  String? getThemeCustomPalettes() => _box.get(_themeCustomPalettesKey);
+
+  Future<void> setThemeCustomPalettes(String json) =>
+      _box.put(_themeCustomPalettesKey, json);
 
   String? getThemeDebugSurface() => _box.get(_themeDebugSurfaceKey);
 

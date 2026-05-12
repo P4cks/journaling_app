@@ -8,15 +8,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `ThemeModeSelector`. `SegmentedButton<ThemeMode>` with three options
   (System / Light / Dark), each with a Phosphor duotone icon. Pure
   presentation — driven by `value` and `onChanged`.
-- [palette_picker.dart](palette_picker.dart) — `PalettePicker`. 2×N
-  grid of `_PaletteSwatch` tiles (one per `SurfacePalette` in
-  [theme/surface_palette.dart](../../theme/surface_palette.dart)).
-  Each swatch shows the palette's dark/light surface (based on the
-  *current* theme brightness) + two color dots (default secondary /
-  accent) + the palette name. Selected palette gets a primary border
-  and a fill check-circle. Calls back with the palette `id` string.
-  Wrapped in `GridView.count(shrinkWrap: true, physics: NeverScrollable)`
-  so it nests inside the `ListView` of the Settings screen.
+- [palette_picker.dart](palette_picker.dart) — `PalettePicker`.
+  Horizontal `ListView` of theme tiles plus an Add theme tile at the end.
+  Graphite renders as the protected default with no actions. User themes
+  show surface + color dots, right-aligned name text, and edit/delete
+  icon actions. Calls back for select/add/edit/delete; persistence stays
+  in `ThemeSettings`.
 - [swatch_grid_picker.dart](swatch_grid_picker.dart) —
   `Future<SwatchResult?> showSwatchPicker(...)` + `SwatchResult` value
   class + private `_SwatchDialog`, `_Swatch`, `_LabelSlider`.
@@ -43,7 +40,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ## Gotchas
 
-- **`PalettePicker` reads `Theme.of(context).brightness` per swatch**
+- **`PalettePicker` reads `Theme.of(context).brightness` per tile**
   to decide which surface (dark or light) to render. If the user is
   in `ThemeMode.system`, the displayed swatches follow the system
   brightness — picking a palette while the OS is light will preview
@@ -58,6 +55,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ## When to update this file
 
+- The horizontal theme tile actions/layout change.
 - A new pickable swatch is added (or the 12-swatch palette is retuned).
 - A new picker variant is introduced (e.g. transparency).
 - The streak card gains new metrics (e.g. average per week).

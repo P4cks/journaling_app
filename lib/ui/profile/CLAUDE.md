@@ -12,7 +12,8 @@ Profile contains:
 Settings contains:
 
 1. **Appearance** — expanded by default; theme mode (segmented), surface
-   palette grid, secondary/accent color pickers.
+   palette grid, secondary/accent color pickers for built-ins, and
+   full surface/secondary/accent/text editing for custom slots.
 2. **Show debug menu** — persisted discovery switch.
 3. **Debug** — rendered only when `debugMenuVisible` is true; collapsed
    by default; `unlockAllDays`, surface override, HSL free-pick for
@@ -50,6 +51,10 @@ underlying settings notifiers.
 
 ## Theme override semantics
 
+- **User themes** — Graphite is the protected default. User-created
+  themes appear beside it in a horizontal strip, can be edited through
+  a half-sheet, and can be deleted. Deleting the active user theme
+  falls back to Graphite.
 - **Secondary / accent** — `setSecondaryOverride(null)` and
   `setAccentOverride(null)` clear the override so the palette's
   default takes effect. Color pickers return a `SwatchResult` sentinel
