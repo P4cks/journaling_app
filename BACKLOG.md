@@ -2,7 +2,10 @@
 
 Running list of feature ideas. Not prioritized — pick whichever fits the moment.
 Add a complexity measure to the idea
+Add a complexity measure to the idea
 Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the relevant section, or create a new section if nothing fits.
+
+**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
 
 **Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
 
@@ -52,6 +55,14 @@ Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the releva
 * [ ] `XL` **Profile implementation with firebase**
 
 ## Subscription / monetization
+
+* [ ] `XL` **Subscription scaffolding** — feature-gating infrastructure that scales to multiple tiers (e.g. free / pro / pro+). Tier capability flags read from a single source so individual gates are one-liners. Using a tool like revenuecat
+* [ ] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. (requires scaffolding)
+* [ ] `XL` **Gate: cloud synchronization (paid only)** — accounts + sync backend (separate piece of work).
+* [ ] `S` **Gate: block count per layout for free users** — paid tiers unlock more blocks per layout (or unlimited). (requires scaffolding)
+* [ ] `S` **Gate: statistics and insight (paid only)** - (requires scaffolding)
+* [ ] `M` **Gate: limited selection of blocks for free users** - set some default blocks, text block, mood block etc. maybe let user select one as a gift after 7 day streak
+* [ ] `S` **Gate: change theme (paid only)** - custom themes only configurable as a paid user. For free users only default theme
 
 * [ ] `XL` **Subscription scaffolding** — feature-gating infrastructure that scales to multiple tiers (e.g. free / pro / pro+). Tier capability flags read from a single source so individual gates are one-liners. Using a tool like revenuecat
 * [ ] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. (requires scaffolding)
