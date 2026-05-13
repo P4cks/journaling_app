@@ -1,9 +1,10 @@
 # lib/ui/blocks — Block widgets
 
 The reusable widget layer for journal blocks. **`BlockGrid` is the only
-widget in the app that lays out blocks** — it's used by the home preview,
-the fullscreen editor, *and* the layout editor (WYSIWYG). Editing
-`BlockGrid` affects all three; verify all three after structural changes.
+widget in the app that lays out blocks** — it's used by the main
+journal screen's swipe pager (each page wraps it) and by the layout
+editor (WYSIWYG). Editing `BlockGrid` affects both surfaces; verify
+both after structural changes.
 
 ## Files
 

@@ -58,9 +58,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 
 - **`Dismissible` requires unique `Key`s.** Currently `ValueKey(layout.id)`.
   Don't reuse layout ids across deletes (uuids handle this).
-- **`_slotsAsBlockData` constructs empty `JournalBlockData`s on every
-  build**. Cheap, but if you start animating tiles, hoist into the VM
-  with stable identities.
+- **`_slotsAsBlockData` constructs sample-content `JournalBlockData`s
+  on every build** via `BlockType.sampleData(id: slot.id)` so the
+  editor's tiles match the "Add block" sheet previews. Cheap, but if
+  you start animating tiles, hoist into the VM with stable identities.
+  Sample data is preview-only — it never reaches saved entries (the
+  VM's `save()` builds `BlockTemplate.create` with empty `configJson`).
 
 ## When to update this file
 

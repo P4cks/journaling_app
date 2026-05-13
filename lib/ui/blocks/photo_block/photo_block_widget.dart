@@ -33,8 +33,7 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
   final ImagePicker _picker = ImagePicker();
   bool _picking = false;
 
-  PhotoStorageService get _storage =>
-      AppDependencies.of(context).photoStorage;
+  PhotoStorageService get _storage => AppDependencies.of(context).photoStorage;
 
   void _emit(String? newPath, {String? previousPath}) {
     if (previousPath != null && previousPath != newPath) {

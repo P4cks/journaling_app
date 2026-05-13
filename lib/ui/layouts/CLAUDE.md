@@ -66,10 +66,15 @@ The layout editor renders its blocks with the same [BlockGrid](../blocks/CLAUDE.
 the home preview and editor use — passing `BlockMode.readOnly` plus
 `onReorder` (to enable DnD) plus `cardTrailing` (to inject a remove-X
 button at the top-right of each tile). The blocks are constructed
-ad-hoc from `BlockSlot`s (the VM's lightweight `(id, type)` pair) and
-fed to `BlockGrid` as empty `JournalBlockData`s. This is what makes
-the layout editor look identical to the entry editor — important so
-the user understands the connection.
+ad-hoc from `BlockSlot`s (the VM's lightweight `(id, type)` pair) via
+`BlockType.sampleData(id: slot.id)` (see
+[block_type_display.dart](../blocks/block_type_display.dart)), so each
+tile renders the same rich, sample-content placeholder shown in the
+"Add block" sheet. The sample is preview-only — it never lands in
+saved entries (see *Block configuration lives elsewhere* above for
+how layouts materialize). This is what makes the layout editor look
+identical to the entry editor and the picker — important so the user
+understands the connection.
 
 ## Gotchas
 

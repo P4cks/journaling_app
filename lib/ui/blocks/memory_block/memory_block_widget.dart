@@ -11,7 +11,6 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
-import 'package:journaling_app_rewrite/ui/home/view/home_screen.dart';
 
 /// Surfaces a random non-empty block from a past entry. The pick is
 /// **locked once shown** — the first build with empty content asks the
