@@ -19,9 +19,8 @@ class BlockSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = <SettingsSection>[
       SettingsSection(label: "Text Block", widget: [TextBlockSettings()]),
-      SettingsSection(label: "Prompt Block", widget: [PromptBlockSettings()])
+      SettingsSection(label: "Prompt Block", widget: [PromptBlockSettings()]),
     ];
-
 
     return Scaffold(
       appBar: AppBar(title: const Text('Block settings')),
@@ -29,7 +28,6 @@ class BlockSettingsScreen extends StatelessWidget {
         itemCount: entries.length,
         itemBuilder: (context, i) {
           return entries[i];
-
         },
       ),
     );

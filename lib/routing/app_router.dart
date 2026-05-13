@@ -65,14 +65,12 @@ final GoRouter appRouter = GoRouter(
                     GoRoute(
                       path: 'text',
                       name: RouteNames.textBlockSettings,
-                      builder: (context, state) =>
-                          const TextBlockSettings(),
+                      builder: (context, state) => const TextBlockSettings(),
                     ),
                     GoRoute(
                       path: 'prompt',
                       name: RouteNames.promptBlockSettings,
-                      builder: (context, state) =>
-                          const PromptBlockSettings(),
+                      builder: (context, state) => const PromptBlockSettings(),
                     ),
                   ],
                 ),

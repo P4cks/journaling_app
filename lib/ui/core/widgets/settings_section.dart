@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 
-
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.label, required this.widget});
 

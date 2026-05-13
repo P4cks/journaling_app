@@ -131,7 +131,6 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
         const SizedBox(height: 24),
         FilledButton(onPressed: _save, child: const Text('Save')),
       ],
-
     );
   }
 }

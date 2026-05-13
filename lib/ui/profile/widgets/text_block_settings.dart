@@ -94,7 +94,6 @@ class _TextBlockSettingsState extends State<TextBlockSettings> {
         const SizedBox(height: 20),
         FilledButton(onPressed: _save, child: const Text('Save')),
       ],
-
     );
   }
 }

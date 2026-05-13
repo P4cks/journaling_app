@@ -10,7 +10,6 @@ import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.da
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -221,8 +220,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
-
 
 class _ExpansionTitle extends StatelessWidget {
   const _ExpansionTitle(this.label);
