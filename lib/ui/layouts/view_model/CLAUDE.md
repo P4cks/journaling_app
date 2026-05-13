@@ -30,11 +30,15 @@ class BlockSlot { final String id; final BlockType type; }
 
 The editor needs **stable per-slot identities** so reorder/remove can
 target the right tile. `BlockSlot` is that lightweight pair. Slots are
-converted to empty `JournalBlockData`s by the screen for `BlockGrid`
-rendering, and to a `List<BlockTemplate>` (with empty configJson) for
-persistence (`JournalLayout.blocks`). Block-type-global configuration
-lives in [BlockSettings](../../../data/services/block_settings.dart),
-not in the slot.
+converted to sample-content `JournalBlockData`s by the screen — via
+`BlockType.sampleData(id: slot.id)` (see
+[block_type_display.dart](../../blocks/block_type_display.dart)) — for
+`BlockGrid` rendering (matches the "Add block" sheet's preview style),
+and to a `List<BlockTemplate>` (with empty configJson) for persistence
+(`JournalLayout.blocks`). The sample data is preview-only; the saved
+layout never carries it. Block-type-global configuration lives in
+[BlockSettings](../../../data/services/block_settings.dart), not in
+the slot.
 
 ### Construction
 

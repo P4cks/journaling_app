@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
@@ -139,10 +140,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
 
   List<JournalBlockData> _slotsAsBlockData() {
     final vm = _viewModel!;
-    return [
-      for (final slot in vm.slots)
-        JournalBlockData.create(id: slot.id, type: slot.type),
-    ];
+    return [for (final slot in vm.slots) slot.type.sampleData(id: slot.id)];
   }
 
   @override
