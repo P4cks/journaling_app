@@ -11,6 +11,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/home/view/home_screen.dart';
 
 /// Surfaces a random non-empty block from a past entry. The pick is
 /// **locked once shown** — the first build with empty content asks the
@@ -23,12 +24,14 @@ class MemoryBlockWidget extends StatefulWidget {
     super.key,
     required this.data,
     required this.mode,
+    required this.onJumpToDate,
     this.onChanged,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+  final ValueChanged<DateTime> onJumpToDate;
 
   @override
   State<MemoryBlockWidget> createState() => _MemoryBlockWidgetState();
@@ -84,7 +87,9 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   void _openSource(String isoDate) {
     final parsed = DateTime.tryParse(isoDate);
     if (parsed == null) return;
-    context.push(Routes.journalEntryFor(parsed));
+    widget.onJumpToDate.call(parsed);
+
+    //vm?._loadEntry(parsed);
   }
 
   @override

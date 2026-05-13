@@ -80,6 +80,7 @@ final GoRouter appRouter = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
+
             GoRoute(
               path: Routes.home,
               name: RouteNames.home,
@@ -94,7 +95,7 @@ final GoRouter appRouter = GoRouter(
                     return JournalEntryEditorScreen(date: date);
                   },
                 ),
-              ],
+              ]
             ),
           ],
         ),

@@ -56,7 +56,6 @@ class _MoodTrackerWidgetState extends State<MoodTrackerWidget> {
   @override
   Widget build(BuildContext context) {
     final content = MoodBlockContent.fromMap(widget.data.content);
-
     if (widget.mode == BlockMode.readOnly) {
       if (content.emoji == null) {
         return Center(

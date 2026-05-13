@@ -6,10 +6,16 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 const journalEntryHeroTag = 'journal-entry-card';
 
 class JournalEntryView extends StatelessWidget {
-  const JournalEntryView({super.key, required this.entry, this.onTap});
+  const JournalEntryView({
+    super.key,
+    required this.entry,
+    this.onTap,
+    this.onJumpToDate,
+  });
 
   final JournalEntry? entry;
   final VoidCallback? onTap;
+  final ValueChanged<DateTime>? onJumpToDate;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +39,11 @@ class JournalEntryView extends StatelessWidget {
                     ),
                   ),
                 )
-              : BlockGrid(blocks: blocks, mode: BlockMode.readOnly),
+              : BlockGrid(
+                  blocks: blocks,
+                  mode: BlockMode.readOnly,
+                  onJumpToDate: onJumpToDate,
+                ),
         ),
       ),
     );

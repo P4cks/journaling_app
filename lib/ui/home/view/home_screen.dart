@@ -76,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : JournalEntryView(
                     entry: vm.currentEntry,
                     onTap: () => _openEditor(vm),
+                    onJumpToDate: (date) => vm.selectDate(date),
                   ),
           ),
         ],

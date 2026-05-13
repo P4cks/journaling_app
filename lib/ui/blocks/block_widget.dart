@@ -18,11 +18,13 @@ class BlockWidget extends StatelessWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onJumpToDate
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+  final ValueChanged<DateTime>? onJumpToDate;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class BlockWidget extends StatelessWidget {
       case BlockType.quoteBlock:
         return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.memoryBlock:
-        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged, onJumpToDate: onJumpToDate!);
       case BlockType.weatherApi:
         return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.photoBlock:
