@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/core/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
@@ -6,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dar
 import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -22,81 +26,101 @@ class SettingsScreen extends StatelessWidget {
         listenable: debug,
         builder: (context, _) => ListView(
           children: [
-            ExpansionTile(
-              initiallyExpanded: true,
-              leading: const AppIcon(PhosphorIconsDuotone.palette),
-              title: const _ExpansionTitle('Appearance'),
-              childrenPadding: const EdgeInsets.only(bottom: 8),
-              children: [
+            SettingsSection(
+              label: "Appearance",
+              widget: [
                 ListenableBuilder(
                   listenable: theme,
                   builder: (context, _) => Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Center(
-                              child: ThemeModeSelector(
-                                value: theme.themeMode,
-                                onChanged: theme.setThemeMode,
+                      Column(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Center(
+                                child: ThemeModeSelector(
+                                  value: theme.themeMode,
+                                  onChanged: theme.setThemeMode,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Theme',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            PalettePicker(
-                              selectedId: theme.paletteId,
-                              palettes: theme.palettes,
-                              onSelected: theme.setPaletteId,
-                              onAdd: () async {
-                                final palette = await showThemeEditorSheet(
-                                  context,
-                                  title: 'Add theme',
-                                  initial: theme.customPaletteTemplate(),
-                                );
-                                if (palette == null) return;
-                                await theme.addCustomPalette(palette);
-                              },
-                              onEdit: (palette) async {
-                                final updated = await showThemeEditorSheet(
-                                  context,
-                                  title: 'Edit theme',
-                                  initial: palette,
-                                );
-                                if (updated == null) return;
-                                await theme.updateCustomPalette(updated);
-                              },
-                              onDelete: (palette) =>
-                                  theme.deleteCustomPalette(palette.id),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Theme',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              PalettePicker(
+                                selectedId: theme.paletteId,
+                                palettes: theme.palettes,
+                                onSelected: theme.setPaletteId,
+                                onAdd: () async {
+                                  final palette = await showThemeEditorSheet(
+                                    context,
+                                    title: 'Add theme',
+                                    initial: theme.customPaletteTemplate(),
+                                  );
+                                  if (palette == null) return;
+                                  await theme.addCustomPalette(palette);
+                                },
+                                onEdit: (palette) async {
+                                  final updated = await showThemeEditorSheet(
+                                    context,
+                                    title: 'Edit theme',
+                                    initial: palette,
+                                  );
+                                  if (updated == null) return;
+                                  await theme.updateCustomPalette(updated);
+                                },
+                                onDelete: (palette) =>
+                                    theme.deleteCustomPalette(palette.id),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(),
-            SwitchListTile(
-              secondary: const AppIcon(PhosphorIconsDuotone.bug),
-              title: const Text('Show debug menu'),
-              subtitle: const Text('Reveal development-only controls'),
-              value: debug.debugMenuVisible,
-              onChanged: debug.setDebugMenuVisible,
+            SettingsSection(
+              label: "Journal templates",
+              widget: [
+                ListTile(
+                  leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
+                  title: const Text('Manage templates'),
+                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
+                  onTap: () => context.push(Routes.layouts),
+                ),
+              ],
             ),
-            if (debug.debugMenuVisible) ...[
-              const Divider(),
-              ExpansionTile(
-                leading: const AppIcon(PhosphorIconsDuotone.wrench),
-                title: const _ExpansionTitle('Debug'),
-                childrenPadding: const EdgeInsets.only(bottom: 8),
-                children: [
+            SettingsSection(
+              label: "Blocks",
+              widget: [
+                ListTile(
+                  leading: const AppIcon(
+                    PhosphorIconsDuotone.slidersHorizontal,
+                  ),
+                  title: const Text('Configure blocks'),
+                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
+                  onTap: () => context.push(Routes.blockSettings),
+                ),
+              ],
+            ),
+            SettingsSection(
+              label: "Debug",
+              widget: [
+                Padding(
+                  padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
+                  child: SwitchListTile(
+                    secondary: const AppIcon(PhosphorIconsDuotone.bug),
+                    title: const Text('Show debug menu'),
+                    value: debug.debugMenuVisible,
+                    onChanged: debug.setDebugMenuVisible,
+                  ),
+                ),
+                if (debug.debugMenuVisible) ...[
                   SwitchListTile(
                     secondary: const AppIcon(PhosphorIconsDuotone.lockKeyOpen),
                     title: const Text('Unlock all days'),
@@ -189,14 +213,16 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+
 
 class _ExpansionTitle extends StatelessWidget {
   const _ExpansionTitle(this.label);

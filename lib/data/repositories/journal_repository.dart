@@ -46,10 +46,7 @@ class JournalRepository extends ChangeNotifier {
   /// [layout] or, if `null`, the user's default layout. Saves and returns it.
   /// **Does not check for an existing entry** — callers should use
   /// [getEntryForDate] first if they want to avoid overwriting.
-  JournalEntry createEntryForDate(
-    DateTime date, {
-    JournalLayout? layout,
-  }) {
+  JournalEntry createEntryForDate(DateTime date, {JournalLayout? layout}) {
     final resolvedLayout = layout ?? _layouts.getDefault();
     final normalizedDate = _normalize(date);
     final entry = JournalEntry(
@@ -168,10 +165,7 @@ class JournalRepository extends ChangeNotifier {
         return JournalBlockData.create(
           id: _uuid.v4(),
           type: type,
-          content: PromptBlockContent(
-            prompt: prompt ?? '',
-            answer: '',
-          ).toMap(),
+          content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
         );
       case BlockType.textBlock:
       case BlockType.moodTracker:

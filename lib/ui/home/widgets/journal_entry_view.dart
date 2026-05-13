@@ -28,9 +28,9 @@ class JournalEntryView extends StatelessWidget {
                   child: Text(
                     'No blocks for this day yet',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).disabledColor,
-                          fontStyle: FontStyle.italic,
-                        ),
+                      color: Theme.of(context).disabledColor,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 )
               : BlockGrid(blocks: blocks, mode: BlockMode.readOnly),

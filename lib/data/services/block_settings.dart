@@ -110,10 +110,7 @@ class BlockSettings extends ChangeNotifier {
   ///
   /// Returns `null` when no prompts are configured — the caller is
   /// expected to render an empty placeholder.
-  String? pickPromptFor({
-    required DateTime date,
-    required int slotIndex,
-  }) {
+  String? pickPromptFor({required DateTime date, required int slotIndex}) {
     if (_prompts.isEmpty) return null;
     if (_promptStrategy == PromptStrategy.random) {
       return _prompts[_rng.nextInt(_prompts.length)];

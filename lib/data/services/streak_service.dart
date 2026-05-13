@@ -34,10 +34,7 @@ class StreakResult {
 /// as one calendar day, which is what the user expects from a streak.
 ///
 /// Pass [now] in tests; defaults to `DateTime.now()`.
-StreakResult computeStreak(
-  List<JournalEntry> entries, {
-  DateTime? now,
-}) {
+StreakResult computeStreak(List<JournalEntry> entries, {DateTime? now}) {
   final days = <DateTime>{};
   for (final entry in entries) {
     if (entry.hasNoContent) continue;

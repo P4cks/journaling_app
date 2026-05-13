@@ -62,8 +62,8 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
               child: Text(
                 'No layouts yet. Tap + to create one.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).disabledColor,
-                    ),
+                  color: Theme.of(context).disabledColor,
+                ),
               ),
             )
           : ListView.builder(

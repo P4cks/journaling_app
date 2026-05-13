@@ -73,9 +73,7 @@ class LayoutRepository {
     final seed = JournalLayout(
       id: _uuid.v4(),
       name: 'Default',
-      blocks: [
-        BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock),
-      ],
+      blocks: [BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock)],
     );
     debugPrint(
       '[LayoutRepository] seeding fresh default layout ${seed.name} (${seed.id})',

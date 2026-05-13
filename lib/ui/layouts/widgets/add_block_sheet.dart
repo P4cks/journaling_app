@@ -39,8 +39,9 @@ Future<BlockType?> showAddBlockSheet(BuildContext context) {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurfaceVariant
-                            .withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -60,20 +61,16 @@ Future<BlockType?> showAddBlockSheet(BuildContext context) {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                 sliver: SliverGrid(
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                     childAspectRatio: 0.72,
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (gridCtx, i) {
-                      final type = BlockType.values[i];
-                      return _AddBlockCell(type: type);
-                    },
-                    childCount: BlockType.values.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((gridCtx, i) {
+                    final type = BlockType.values[i];
+                    return _AddBlockCell(type: type);
+                  }, childCount: BlockType.values.length),
                 ),
               ),
             ],

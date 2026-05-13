@@ -26,12 +26,8 @@ class BlockCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: child,
-          ),
-          if (topRight != null)
-            Positioned(top: 4, right: 4, child: topRight!),
+          Padding(padding: const EdgeInsets.all(12), child: child),
+          if (topRight != null) Positioned(top: 4, right: 4, child: topRight!),
         ],
       ),
     );

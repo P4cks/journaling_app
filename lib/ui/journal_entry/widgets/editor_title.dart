@@ -139,8 +139,9 @@ class _EditorTitleState extends State<EditorTitle> {
                   AppIcon(
                     PhosphorIconsDuotone.pencilSimple,
                     size: 14,
-                    color: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.55),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.55,
+                    ),
                   ),
                 ],
               ],
@@ -183,9 +184,7 @@ class _InlineTitleField extends StatelessWidget {
       maxLines: 1,
       textInputAction: TextInputAction.done,
       onSubmitted: onSubmitted,
-      style: theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         isDense: true,
         contentPadding: EdgeInsets.zero,

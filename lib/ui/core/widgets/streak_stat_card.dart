@@ -87,9 +87,7 @@ class _StatColumn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              isActive
-                  ? PhosphorIconsFill.flame
-                  : PhosphorIconsDuotone.flame,
+              isActive ? PhosphorIconsFill.flame : PhosphorIconsDuotone.flame,
               size: 20,
               color: scheme.primary,
               secondaryColor: scheme.primary,
@@ -128,15 +126,11 @@ class _NudgeRow extends StatelessWidget {
     final hasHistory = streak.longest > 0;
     final message = hasHistory
         ? 'Make an entry today to start a new streak. Best so far: '
-            '${streak.longest} days.'
+              '${streak.longest} days.'
         : 'Make an entry today to start a streak.';
     return Row(
       children: [
-        AppIcon(
-          PhosphorIconsDuotone.flame,
-          size: 28,
-          color: scheme.primary,
-        ),
+        AppIcon(PhosphorIconsDuotone.flame, size: 28, color: scheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

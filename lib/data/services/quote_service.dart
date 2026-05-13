@@ -38,8 +38,8 @@ class DailyQuote {
 /// expected to render a graceful fallback and offer retry.
 class QuoteService {
   QuoteService(Box<String> settingsBox, {http.Client? httpClient})
-      : _box = settingsBox,
-        _http = httpClient ?? http.Client();
+    : _box = settingsBox,
+      _http = httpClient ?? http.Client();
 
   static const _endpoint = 'https://zenquotes.io/api/today';
   static const _keyPrefix = 'quote.';

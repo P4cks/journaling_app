@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/core/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/text_block_settings.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Index screen for block-type-global configuration. Lists every block
@@ -14,32 +17,19 @@ class BlockSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = <_BlockSettingsEntry>[
-      _BlockSettingsEntry(
-        type: BlockType.textBlock,
-        subtitle: 'Optional character limit',
-        route: Routes.textBlockSettings,
-      ),
-      _BlockSettingsEntry(
-        type: BlockType.promptBlock,
-        subtitle: 'Prompt list and rotation strategy',
-        route: Routes.promptBlockSettings,
-      ),
+    final entries = <SettingsSection>[
+      SettingsSection(label: "Text Block", widget: [TextBlockSettings()]),
+      SettingsSection(label: "Prompt Block", widget: [PromptBlockSettings()])
     ];
+
 
     return Scaffold(
       appBar: AppBar(title: const Text('Block settings')),
       body: ListView.builder(
         itemCount: entries.length,
         itemBuilder: (context, i) {
-          final entry = entries[i];
-          return ListTile(
-            leading: AppIcon(entry.type.icon),
-            title: Text(entry.type.label),
-            subtitle: Text(entry.subtitle),
-            trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
-            onTap: () => context.push(entry.route),
-          );
+          return entries[i];
+
         },
       ),
     );

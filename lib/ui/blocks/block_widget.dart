@@ -36,11 +36,7 @@ class BlockWidget extends StatelessWidget {
           onChanged: onChanged,
         );
       case BlockType.promptBlock:
-        return PromptBlockWidget(
-          data: data,
-          mode: mode,
-          onChanged: onChanged,
-        );
+        return PromptBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.todoBlock:
         return TodoBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.quoteBlock:

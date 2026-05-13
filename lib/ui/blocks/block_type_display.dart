@@ -116,8 +116,7 @@ extension BlockTypeDisplay on BlockType {
           id: id,
           type: this,
           content: const QuoteBlockContent(
-            quote:
-                'The only way to do great work is to love what you do.',
+            quote: 'The only way to do great work is to love what you do.',
             author: 'Steve Jobs',
           ).toMap(),
         );

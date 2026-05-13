@@ -63,9 +63,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1007919307133',
     projectId: 'journaling-app-5c19d',
     storageBucket: 'journaling-app-5c19d.firebasestorage.app',
-    androidClientId: '1007919307133-vnp16h2ghpnrj3j9p9nf0b3l4675b60v.apps.googleusercontent.com',
-    iosClientId: '1007919307133-q1co1llllrls9pebputnqt4t9o69va3s.apps.googleusercontent.com',
+    androidClientId:
+        '1007919307133-vnp16h2ghpnrj3j9p9nf0b3l4675b60v.apps.googleusercontent.com',
+    iosClientId:
+        '1007919307133-q1co1llllrls9pebputnqt4t9o69va3s.apps.googleusercontent.com',
     iosBundleId: 'com.example.journalingAppRewrite',
   );
-
 }

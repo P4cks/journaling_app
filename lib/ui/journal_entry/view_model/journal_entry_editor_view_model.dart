@@ -10,10 +10,10 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
     required JournalRepository repository,
     required LayoutRepository layoutRepository,
     required DateTime date,
-  })  : _repository = repository,
-        _layoutRepository = layoutRepository,
-        _date = date,
-        _entry = repository.getEntryForDate(date) {
+  }) : _repository = repository,
+       _layoutRepository = layoutRepository,
+       _date = date,
+       _entry = repository.getEntryForDate(date) {
     debugPrint('[EditorVM] init for date=$_date entry=$_entry');
   }
 
@@ -48,10 +48,7 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
       for (final b in current.widgets)
         if (b.id == updated.id) updated else b,
     ];
-    _entry = current.copyWith(
-      widgets: newBlocks,
-      lastModified: DateTime.now(),
-    );
+    _entry = current.copyWith(widgets: newBlocks, lastModified: DateTime.now());
     debugPrint('[EditorVM] updateBlock id=${updated.id} type=${updated.type}');
     _repository.saveJournalEntry(_entry!);
     notifyListeners();
@@ -86,10 +83,7 @@ class JournalEntryEditorViewModel extends ChangeNotifier {
       return;
     }
     final newBlocks = _repository.materializeLayout(layout, _date);
-    _entry = current.copyWith(
-      widgets: newBlocks,
-      lastModified: DateTime.now(),
-    );
+    _entry = current.copyWith(widgets: newBlocks, lastModified: DateTime.now());
     debugPrint(
       '[EditorVM] applyLayout "${layout.name}" (${layout.id}) — ${newBlocks.length} blocks',
     );

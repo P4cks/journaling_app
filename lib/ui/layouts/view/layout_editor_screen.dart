@@ -64,9 +64,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Unsaved changes'),
-        content: const Text(
-          'Save your changes to this layout before leaving?',
-        ),
+        content: const Text('Save your changes to this layout before leaving?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
@@ -89,9 +87,9 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         return true;
       case 'save':
         if (!vm.canSave) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add a name to save')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
           return false;
         }
         await vm.save();
@@ -183,8 +181,8 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
                   child: Text(
                     'No blocks yet. Tap + to add a block.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).disabledColor,
-                        ),
+                      color: Theme.of(context).disabledColor,
+                    ),
                   ),
                 )
               : BlockGrid(
@@ -207,4 +205,3 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     );
   }
 }
-

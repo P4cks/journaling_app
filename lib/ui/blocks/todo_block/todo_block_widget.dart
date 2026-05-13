@@ -93,10 +93,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
   }
 
   void _add(TodoBlockContent content) {
-    final next = [
-      ...content.items,
-      TodoItem(id: _uuid.v4(), text: ''),
-    ];
+    final next = [...content.items, TodoItem(id: _uuid.v4(), text: '')];
     _emit(next);
   }
 
@@ -161,8 +158,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
                 item: item,
                 controller: _controllerFor(item),
                 onToggle: () => _toggle(content, item.id),
-                onTextChanged: (value) =>
-                    _updateText(content, item.id, value),
+                onTextChanged: (value) => _updateText(content, item.id, value),
                 onRemove: () => _remove(content, item.id),
               );
             },
@@ -240,9 +236,7 @@ class _TodoRow extends StatelessWidget {
                 decoration: item.done
                     ? TextDecoration.lineThrough
                     : TextDecoration.none,
-                color: item.done
-                    ? theme.colorScheme.onSurfaceVariant
-                    : null,
+                color: item.done ? theme.colorScheme.onSurfaceVariant : null,
               ),
               decoration: const InputDecoration(
                 hintText: 'Task',

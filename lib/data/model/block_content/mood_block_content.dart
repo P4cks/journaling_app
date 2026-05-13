@@ -41,7 +41,5 @@ class MoodBlockContent {
     return const MoodBlockContent();
   }
 
-  Map<String, dynamic> toMap() => {
-    if (emoji != null) 'emoji': emoji,
-  };
+  Map<String, dynamic> toMap() => {if (emoji != null) 'emoji': emoji};
 }

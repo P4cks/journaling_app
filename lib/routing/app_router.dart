@@ -9,9 +9,9 @@ import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart
 import 'package:journaling_app_rewrite/ui/layouts/view/layouts_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/block_settings_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
-import 'package:journaling_app_rewrite/ui/profile/view/prompt_block_settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
-import 'package:journaling_app_rewrite/ui/profile/view/text_block_settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/widgets/text_block_settings.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -66,13 +66,13 @@ final GoRouter appRouter = GoRouter(
                       path: 'text',
                       name: RouteNames.textBlockSettings,
                       builder: (context, state) =>
-                          const TextBlockSettingsScreen(),
+                          const TextBlockSettings(),
                     ),
                     GoRoute(
                       path: 'prompt',
                       name: RouteNames.promptBlockSettings,
                       builder: (context, state) =>
-                          const PromptBlockSettingsScreen(),
+                          const PromptBlockSettings(),
                     ),
                   ],
                 ),

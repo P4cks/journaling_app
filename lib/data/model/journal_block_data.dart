@@ -19,11 +19,7 @@ class JournalBlockData {
     required String id,
     required BlockType type,
     Map<String, dynamic> content = const {},
-  }) => JournalBlockData(
-    id: id,
-    type: type,
-    contentJson: jsonEncode(content),
-  );
+  }) => JournalBlockData(id: id, type: type, contentJson: jsonEncode(content));
 
   @override
   String toString() => 'JournalBlockData(id: $id, type: $type)';

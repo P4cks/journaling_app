@@ -63,9 +63,9 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
       return Text(
         isEmpty ? 'No text yet' : content.text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
-              color: isEmpty ? Theme.of(context).disabledColor : null,
-            ),
+          fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+          color: isEmpty ? Theme.of(context).disabledColor : null,
+        ),
       );
     }
 
@@ -91,13 +91,13 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
             // Suppress the default Material counter — we render our own
             // in the corner so it doesn't reserve vertical space below
             // the input.
-            buildCounter: (
-              context, {
-              required currentLength,
-              required isFocused,
-              required maxLength,
-            }) =>
-                null,
+            buildCounter:
+                (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  required maxLength,
+                }) => null,
             keyboardType: TextInputType.multiline,
             textAlignVertical: TextAlignVertical.top,
             decoration: const InputDecoration(
@@ -119,9 +119,9 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
                 return Text(
                   '${_controller.text.characters.length}/$limit',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 10,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
                 );
               },
             ),

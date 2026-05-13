@@ -20,5 +20,6 @@ Color? colorFromHex(String? hex) {
   return Color(parsed);
 }
 
-Color contrastOn(Color color) =>
-    color.computeLuminance() > 0.5 ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+Color contrastOn(Color color) => color.computeLuminance() > 0.5
+    ? const Color(0xFF000000)
+    : const Color(0xFFFFFFFF);

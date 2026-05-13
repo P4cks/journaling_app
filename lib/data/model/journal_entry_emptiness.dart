@@ -52,6 +52,5 @@ extension JournalBlockEmptiness on JournalBlockData {
 /// Entry-level emptiness: every block is empty (or there are no blocks).
 /// Title is intentionally ignored — a title alone does not count as content.
 extension JournalEntryEmptiness on JournalEntry {
-  bool get hasNoContent =>
-      widgets.isEmpty || widgets.every((b) => b.isEmpty);
+  bool get hasNoContent => widgets.isEmpty || widgets.every((b) => b.isEmpty);
 }

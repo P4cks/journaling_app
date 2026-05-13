@@ -41,10 +41,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   // Eligible source block types. Memory blocks themselves are excluded
   // to avoid memory-of-a-memory recursion. Prompt blocks are excluded
   // for now (they're shaped differently and feel weird as memories).
-  static const _eligibleTypes = {
-    BlockType.textBlock,
-    BlockType.moodTracker,
-  };
+  static const _eligibleTypes = {BlockType.textBlock, BlockType.moodTracker};
 
   @override
   void didChangeDependencies() {
@@ -184,18 +181,12 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.textBlock:
         final text = TextBlockContent.fromMap(decoded).text;
         return SingleChildScrollView(
-          child: Text(
-            text,
-            style: theme.textTheme.bodySmall,
-          ),
+          child: Text(text, style: theme.textTheme.bodySmall),
         );
       case BlockType.moodTracker:
         final emoji = MoodBlockContent.fromMap(decoded).emoji;
         return Center(
-          child: Text(
-            emoji ?? '—',
-            style: const TextStyle(fontSize: 48),
-          ),
+          child: Text(emoji ?? '—', style: const TextStyle(fontSize: 48)),
         );
       // Other types aren't currently picked (see `_eligibleTypes`).
       // Render a generic placeholder if the eligibility set is widened
@@ -205,10 +196,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.todoBlock:
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
-        return Text(
-          'Memory',
-          style: theme.textTheme.bodySmall,
-        );
+        return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }
 }

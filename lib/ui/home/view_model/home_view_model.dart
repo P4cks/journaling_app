@@ -7,9 +7,9 @@ class HomeViewModel extends ChangeNotifier {
   HomeViewModel({
     required JournalRepository journalRepository,
     DateTime? initialDate,
-  })  : _repository = journalRepository,
-        _selectedDate = _dateOnly(initialDate ?? DateTime.now()),
-        _focusedDate = _dateOnly(initialDate ?? DateTime.now()) {
+  }) : _repository = journalRepository,
+       _selectedDate = _dateOnly(initialDate ?? DateTime.now()),
+       _focusedDate = _dateOnly(initialDate ?? DateTime.now()) {
     debugPrint('[HomeViewModel] init selectedDate=$_selectedDate');
     _repository.addListener(_onRepositoryChanged);
     _loadEntry();
@@ -40,9 +40,7 @@ class HomeViewModel extends ChangeNotifier {
       debugPrint('[HomeViewModel] selectDate ignored (unchanged $normalized)');
       return;
     }
-    debugPrint(
-      '[HomeViewModel] selectDate $_selectedDate -> $normalized',
-    );
+    debugPrint('[HomeViewModel] selectDate $_selectedDate -> $normalized');
     _selectedDate = normalized;
     _focusedDate = normalized;
     _loadEntry();
@@ -69,8 +67,7 @@ class HomeViewModel extends ChangeNotifier {
   /// Updates state and returns the newly created entry so the caller can
   /// navigate into the editor.
   JournalEntry createEntryWithLayout(JournalLayout layout) {
-    final entry =
-        _repository.createEntryForDate(_selectedDate, layout: layout);
+    final entry = _repository.createEntryForDate(_selectedDate, layout: layout);
     _currentEntry = entry;
     debugPrint('[HomeViewModel] createEntryWithLayout -> $entry');
     // No explicit recompute needed — repo notification will fire and call

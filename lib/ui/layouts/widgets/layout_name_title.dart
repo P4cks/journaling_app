@@ -99,8 +99,7 @@ class _LayoutNameTitleState extends State<LayoutNameTitle> {
                 child: Text(
                   isEmpty ? widget.hintText : text,
                   style: titleStyle?.copyWith(
-                    color:
-                        isEmpty ? theme.colorScheme.onSurfaceVariant : null,
+                    color: isEmpty ? theme.colorScheme.onSurfaceVariant : null,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -110,8 +109,9 @@ class _LayoutNameTitleState extends State<LayoutNameTitle> {
               AppIcon(
                 PhosphorIconsDuotone.pencilSimple,
                 size: 14,
-                color: theme.colorScheme.onSurfaceVariant
-                    .withValues(alpha: 0.55),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.55,
+                ),
               ),
             ],
           ),

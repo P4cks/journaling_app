@@ -122,18 +122,14 @@ class _SwatchDialogState extends State<_SwatchDialog> {
                 value: _hsl.saturation,
                 min: 0,
                 max: 1,
-                onChanged: (v) => setState(
-                  () => _hsl = _hsl.withSaturation(v),
-                ),
+                onChanged: (v) => setState(() => _hsl = _hsl.withSaturation(v)),
               ),
               _LabelSlider(
                 label: 'Lightness',
                 value: _hsl.lightness,
                 min: 0,
                 max: 1,
-                onChanged: (v) => setState(
-                  () => _hsl = _hsl.withLightness(v),
-                ),
+                onChanged: (v) => setState(() => _hsl = _hsl.withLightness(v)),
               ),
             ],
           ],
@@ -149,9 +145,8 @@ class _SwatchDialogState extends State<_SwatchDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(
-            SwatchResult.color(_current),
-          ),
+          onPressed: () =>
+              Navigator.of(context).pop(SwatchResult.color(_current)),
           child: const Text('Apply'),
         ),
       ],

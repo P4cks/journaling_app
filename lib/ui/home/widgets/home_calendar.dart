@@ -32,9 +32,8 @@ class _HomeCalendarState extends State<HomeCalendar> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    final defaultTextStyle = theme.textTheme.bodyMedium?.copyWith(
-          color: scheme.onSurface,
-        ) ??
+    final defaultTextStyle =
+        theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface) ??
         TextStyle(color: scheme.onSurface);
     final mutedTextStyle = defaultTextStyle.copyWith(
       color: scheme.onSurfaceVariant,
@@ -75,8 +74,8 @@ class _HomeCalendarState extends State<HomeCalendar> {
           availableGestures: AvailableGestures.all,
           eventLoader: (day) =>
               widget.viewModel.entriesByDay.contains(_normalize(day))
-                  ? _kHasEntry
-                  : _kNoEntries,
+              ? _kHasEntry
+              : _kNoEntries,
           calendarStyle: CalendarStyle(
             // Day cells
             defaultTextStyle: defaultTextStyle,
@@ -115,7 +114,8 @@ class _HomeCalendarState extends State<HomeCalendar> {
           headerStyle: HeaderStyle(
             titleCentered: true,
             formatButtonVisible: true,
-            titleTextStyle: theme.textTheme.titleMedium?.copyWith(
+            titleTextStyle:
+                theme.textTheme.titleMedium?.copyWith(
                   color: scheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ) ??
@@ -132,21 +132,20 @@ class _HomeCalendarState extends State<HomeCalendar> {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: scheme.outline),
             ),
-            formatButtonTextStyle: theme.textTheme.labelMedium?.copyWith(
+            formatButtonTextStyle:
+                theme.textTheme.labelMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ) ??
                 TextStyle(color: scheme.onSurfaceVariant),
-            formatButtonPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            formatButtonPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 4,
+            ),
             headerPadding: const EdgeInsets.symmetric(vertical: 8),
           ),
           daysOfWeekStyle: DaysOfWeekStyle(
-            weekdayStyle: mutedTextStyle.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-            weekendStyle: mutedTextStyle.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            weekdayStyle: mutedTextStyle.copyWith(fontWeight: FontWeight.w500),
+            weekendStyle: mutedTextStyle.copyWith(fontWeight: FontWeight.w500),
           ),
         );
       },

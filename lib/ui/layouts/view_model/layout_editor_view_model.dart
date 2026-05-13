@@ -129,8 +129,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
       id: _id,
       name: nameController.text.trim(),
       blocks: [
-        for (final s in _slots)
-          BlockTemplate.create(id: s.id, type: s.type),
+        for (final s in _slots) BlockTemplate.create(id: s.id, type: s.type),
       ],
       iconName: _iconName,
     );

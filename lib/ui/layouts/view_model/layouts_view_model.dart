@@ -4,7 +4,7 @@ import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart'
 
 class LayoutsViewModel extends ChangeNotifier {
   LayoutsViewModel({required LayoutRepository repository})
-      : _repository = repository {
+    : _repository = repository {
     refresh();
   }
 

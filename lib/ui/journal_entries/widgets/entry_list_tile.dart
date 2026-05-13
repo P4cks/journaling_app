@@ -56,8 +56,9 @@ class EntryListTile extends StatelessWidget {
             preview,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
-              fontStyle:
-                  preview == 'No content' ? FontStyle.italic : FontStyle.normal,
+              fontStyle: preview == 'No content'
+                  ? FontStyle.italic
+                  : FontStyle.normal,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

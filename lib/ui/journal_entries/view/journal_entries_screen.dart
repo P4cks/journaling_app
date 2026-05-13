@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
+import 'package:journaling_app_rewrite/ui/core/streak_stat_card.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/view_model/journal_entries_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/widgets/entry_list_tile.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -55,13 +58,22 @@ class _JournalEntriesScreenState extends State<JournalEntriesScreen> {
 
 class _SectionedList extends StatelessWidget {
   const _SectionedList({required this.sections});
-
   final List<MonthSection> sections;
 
   @override
   Widget build(BuildContext context) {
+    final deps = AppDependencies.of(context);
     return CustomScrollView(
       slivers: [
+        SliverToBoxAdapter(child: SectionHeader(label: 'Streak')),
+        SliverToBoxAdapter(
+          child: ListenableBuilder(
+            listenable: deps.journalRepository,
+            builder: (context, _) => StreakStatCard(
+              streak: computeStreak(deps.journalRepository.getAllEntries()),
+            ),
+          ),
+        ),
         for (final section in sections) ...[
           SliverToBoxAdapter(child: _MonthHeader(section: section)),
           SliverList.builder(
@@ -70,8 +82,7 @@ class _SectionedList extends StatelessWidget {
               final entry = section.entries[index];
               return EntryListTile(
                 entry: entry,
-                onTap: () =>
-                    context.push(Routes.journalEntryFor(entry.date)),
+                onTap: () => context.push(Routes.journalEntryFor(entry.date)),
               );
             },
           ),
@@ -124,10 +135,7 @@ class _EmptyState extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
-            Text(
-              'No entries yet',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('No entries yet', style: theme.textTheme.titleMedium),
             const SizedBox(height: 6),
             Text(
               'Make your first entry from the home screen.',

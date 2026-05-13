@@ -28,11 +28,7 @@ class BlockTemplate {
     required String id,
     required BlockType type,
     Map<String, dynamic> config = const {},
-  }) => BlockTemplate(
-    id: id,
-    type: type,
-    configJson: jsonEncode(config),
-  );
+  }) => BlockTemplate(id: id, type: type, configJson: jsonEncode(config));
 
   BlockTemplate copyWith({
     String? id,

@@ -9,10 +9,7 @@ import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 /// picking. The caller should treat a returned name of
 /// [kDefaultLayoutIconName] the same as `null` if they want to persist
 /// "no preference" — both render the same default glyph.
-Future<String?> showLayoutIconPicker(
-  BuildContext context, {
-  String? selected,
-}) {
+Future<String?> showLayoutIconPicker(BuildContext context, {String? selected}) {
   return showModalBottomSheet<String>(
     context: context,
     builder: (sheetContext) => SafeArea(
@@ -40,8 +37,7 @@ Future<String?> showLayoutIconPicker(
                     _IconTile(
                       icon: icon,
                       selected: icon.name == selected,
-                      onTap: () =>
-                          Navigator.of(sheetContext).pop(icon.name),
+                      onTap: () => Navigator.of(sheetContext).pop(icon.name),
                     ),
                 ],
               ),
@@ -76,8 +72,7 @@ class _IconTile extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color:
-                selected ? scheme.primaryContainer : Colors.transparent,
+            color: selected ? scheme.primaryContainer : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? scheme.primary : scheme.outlineVariant,
@@ -88,9 +83,7 @@ class _IconTile extends StatelessWidget {
           child: AppIcon(
             selected ? icon.fill : icon.duotone,
             size: 28,
-            color: selected
-                ? scheme.onPrimaryContainer
-                : scheme.onSurface,
+            color: selected ? scheme.onPrimaryContainer : scheme.onSurface,
           ),
         ),
       ),

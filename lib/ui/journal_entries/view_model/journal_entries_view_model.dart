@@ -18,7 +18,7 @@ class MonthSection {
 
 class JournalEntriesViewModel extends ChangeNotifier {
   JournalEntriesViewModel({required JournalRepository repository})
-      : _repository = repository {
+    : _repository = repository {
     _repository.addListener(_onRepositoryChanged);
     _rebuild();
   }
@@ -56,11 +56,7 @@ class JournalEntriesViewModel extends ChangeNotifier {
 
     _sections = [
       for (final key in orderedKeys)
-        MonthSection(
-          year: key ~/ 100,
-          month: key % 100,
-          entries: byKey[key]!,
-        ),
+        MonthSection(year: key ~/ 100, month: key % 100, entries: byKey[key]!),
     ];
     debugPrint(
       '[EntriesVM] rebuilt: ${_sections.length} months, ${all.length} entries',

@@ -10,8 +10,7 @@ class LayoutStorageService {
 
   List<JournalLayout> getAllLayouts() => _box.values.toList();
 
-  Future<void> saveLayout(JournalLayout layout) =>
-      _box.put(layout.id, layout);
+  Future<void> saveLayout(JournalLayout layout) => _box.put(layout.id, layout);
 
   Future<void> deleteLayout(String id) => _box.delete(id);
 

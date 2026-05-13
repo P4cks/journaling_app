@@ -165,26 +165,24 @@ class _JournalEntryEditorScreenState extends State<JournalEntryEditorScreen> {
                   onTap: () => FocusScope.of(context).unfocus(),
                   child: !hasEntry
                       ? (editable
-                          ? MakeEntryCta(onTap: _onMakeEntry)
-                          : _NoEntryReadOnly())
+                            ? MakeEntryCta(onTap: _onMakeEntry)
+                            : _NoEntryReadOnly())
                       : blocks.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No blocks for this day yet',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Theme.of(context).disabledColor,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                              ),
-                            )
-                          : BlockGrid(
-                              blocks: blocks,
-                              mode: mode,
-                              onBlockChanged: vm.updateBlock,
-                            ),
+                      ? Center(
+                          child: Text(
+                            'No blocks for this day yet',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).disabledColor,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                          ),
+                        )
+                      : BlockGrid(
+                          blocks: blocks,
+                          mode: mode,
+                          onBlockChanged: vm.updateBlock,
+                        ),
                 ),
               ),
             ),
