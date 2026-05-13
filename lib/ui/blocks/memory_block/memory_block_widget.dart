@@ -23,12 +23,14 @@ class MemoryBlockWidget extends StatefulWidget {
     super.key,
     required this.data,
     required this.mode,
+    required this.onJumpToDate,
     this.onChanged,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+  final ValueChanged<DateTime> onJumpToDate;
 
   @override
   State<MemoryBlockWidget> createState() => _MemoryBlockWidgetState();
@@ -84,7 +86,9 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   void _openSource(String isoDate) {
     final parsed = DateTime.tryParse(isoDate);
     if (parsed == null) return;
-    context.push(Routes.journalEntryFor(parsed));
+    widget.onJumpToDate.call(parsed);
+
+    //vm?._loadEntry(parsed);
   }
 
   @override

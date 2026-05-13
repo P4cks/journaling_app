@@ -91,6 +91,7 @@ class _JournalPagerState extends State<JournalPager> {
           onBlockChanged: mode == BlockMode.editable
               ? widget.viewModel.updateBlock
               : null,
+          onJumpToDate: (date) => widget.viewModel.setSelectedDate(date),
         );
       },
     );

@@ -31,11 +31,13 @@ class BlockGrid extends StatefulWidget {
     this.cardTrailing,
     this.onReorder,
     this.padding = const EdgeInsets.all(16),
+    this.onJumpToDate
   });
 
   final List<JournalBlockData> blocks;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onBlockChanged;
+  final ValueChanged<DateTime>? onJumpToDate;
   final Widget Function(JournalBlockData block, int index)? cardTrailing;
   final void Function(int from, int to)? onReorder;
   final EdgeInsets padding;
@@ -317,6 +319,7 @@ class _BlockGridState extends State<BlockGrid> {
         data: block,
         mode: widget.mode,
         onChanged: widget.onBlockChanged,
+        onJumpToDate: widget.onJumpToDate
       ),
     );
 
