@@ -53,6 +53,26 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Debug `ExpansionTile`.
   - `unlockAllDays` bypasses both the calendar's future-day disable
     and the editor's read-only-for-past guard.
+- [photo_storage_service.dart](photo_storage_service.dart) — `PhotoStorageService`.
+  Copies `image_picker` results into `<app-docs>/photos/<uuid>.<ext>`
+  and exposes:
+  - `savePickedFile(XFile)` → `Future<String>` (absolute path).
+  - `deleteAtPath(path)` → best-effort delete; swallows
+    `FileSystemException` so cleanup paths can call it without guarding.
+  Photo bytes are **never stored in Hive** — only the path string is
+  persisted via `PhotoBlockContent`.
+- [weather_service.dart](weather_service.dart) — `WeatherService`.
+  Wraps `geolocator` + Open-Meteo's `/v1/forecast?current_weather=true`.
+  Returns a `WeatherFetchResult` with one of four `WeatherFetchStatus`
+  values: `ok`, `permissionDenied`, `locationDisabled`, `networkFailure`.
+  - Caches per `(date, ~10km location bucket)` in the `settings` Hive
+    box under `weather.<yyyy-MM-dd>.<lat_lon>`.
+  - The static `mapWeatherCode(int)` translates WMO codes onto the
+    seven condition ids used by the manual weather block, so the
+    icon-mapping helper is shared.
+  - All `geolocator` calls are injectable for tests; defaults use
+    `Geolocator.checkPermission` / `requestPermission` /
+    `getCurrentPosition` with `LocationAccuracy.low`.
 - [quote_service.dart](quote_service.dart) — `QuoteService`.
   Wraps ZenQuotes `/api/today`. Caches results in the `settings` Hive
   box under the key `quote.<yyyy-MM-dd>` so every entry created on the

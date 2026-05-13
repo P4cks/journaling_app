@@ -13,6 +13,20 @@ block content.
   lives in [BlockSettings](../../services/block_settings.dart) and is
   read at render time, *not* persisted per entry. Used by
   `TextBlockWidget` and `entry_list_tile.dart`'s preview snippet.
+- [photo_block_content.dart](photo_block_content.dart) — `PhotoBlockContent { String? photoPath }`.
+  Map shape: `{"photoPath": "/.../photos/<uuid>.jpg"}` (key omitted when null).
+  `hasPhoto` is true when `photoPath` is non-null and non-empty. The
+  file itself lives under the app documents dir, written by
+  [PhotoStorageService](../../services/photo_storage_service.dart);
+  Hive only persists the path string. Used by `PhotoBlockWidget` and
+  `JournalBlockEmptiness` (no photo → empty).
+- [weather_api_block_content.dart](weather_api_block_content.dart) — `WeatherApiBlockContent { String? conditionId; double? temperatureC; String? fetchedDate; String? error }`.
+  Map shape: `{"conditionId": "...", "temperatureC": 12.4, "fetchedDate": "yyyy-MM-dd"}`
+  (all keys omitted when null). `isFetched` is true when a condition
+  is stored. Reuses the `conditionId` strings from
+  [weather_block_content.dart](weather_block_content.dart) so the same
+  icon mapping works for both manual and API blocks. Used by
+  `WeatherApiWidget` and `JournalBlockEmptiness` (unfetched → empty).
 - [memory_block_content.dart](memory_block_content.dart) — `MemoryBlockContent { String? sourceEntryDate; String? sourceBlockId; BlockType? sourceType; String? snapshotJson }`.
   Map shape: `{"sourceEntryDate": "yyyy-MM-dd", "sourceBlockId": "...", "sourceType": "textBlock", "snapshotJson": "..."}`
   (all keys omitted when null). `isSeeded` getter is true when a memory

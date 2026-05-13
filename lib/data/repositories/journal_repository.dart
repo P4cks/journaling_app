@@ -173,6 +173,8 @@ class JournalRepository extends ChangeNotifier {
       case BlockType.todoBlock:
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
+      case BlockType.weatherApi:
+      case BlockType.photoBlock:
         return JournalBlockData.create(
           id: _uuid.v4(),
           type: type,

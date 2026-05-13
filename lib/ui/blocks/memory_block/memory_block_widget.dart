@@ -196,6 +196,8 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.todoBlock:
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
+      case BlockType.weatherApi:
+      case BlockType.photoBlock:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }

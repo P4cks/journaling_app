@@ -1,8 +1,10 @@
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
@@ -23,6 +25,9 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 ///   only-quote).
 /// - `memoryBlock` — no memory seeded yet (i.e. no past eligible
 ///   block was available when the entry was first opened).
+/// - `weatherApi` — no observation fetched/stored yet (API-generated,
+///   so we don't keep an entry alive just because of a failed fetch).
+/// - `photoBlock` — no photo path stored yet.
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -45,6 +50,10 @@ extension JournalBlockEmptiness on JournalBlockData {
         return q == null || q.isEmpty;
       case BlockType.memoryBlock:
         return !MemoryBlockContent.fromMap(content).isSeeded;
+      case BlockType.weatherApi:
+        return !WeatherApiBlockContent.fromMap(content).isFetched;
+      case BlockType.photoBlock:
+        return !PhotoBlockContent.fromMap(content).hasPhoto;
     }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SectionHeader extends StatelessWidget {
-  const SectionHeader({required this.label});
+  const SectionHeader({super.key, required this.label});
   final String label;
   @override
   Widget build(BuildContext context) {

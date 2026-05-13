@@ -29,7 +29,7 @@ types:
         index: 2
   BlockType:
     typeId: 2
-    nextIndex: 7
+    nextIndex: 9
     fields:
       textBlock:
         index: 0
@@ -45,6 +45,10 @@ types:
         index: 5
       memoryBlock:
         index: 6
+      weatherApi:
+        index: 7
+      photoBlock:
+        index: 8
   JournalLayout:
     typeId: 4
     nextIndex: 4

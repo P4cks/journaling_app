@@ -6,4 +6,6 @@ enum BlockType {
   todoBlock,
   quoteBlock,
   memoryBlock,
+  weatherApi,
+  photoBlock,
 }

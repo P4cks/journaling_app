@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
-import 'package:journaling_app_rewrite/ui/core/streak_stat_card.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/streak_stat_card.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';

@@ -12,9 +12,11 @@ import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/data/services/weather_service.dart';
 import 'package:journaling_app_rewrite/firebase_options.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
@@ -52,6 +54,8 @@ void main() async {
   final debugSettings = DebugSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
   final quoteService = QuoteService(settingsBox);
+  final weatherService = WeatherService(settingsBox);
+  final photoStorage = PhotoStorageService();
   final navigationGuard = NavigationGuard();
   final authRepository = AuthRepository(authService);
 
@@ -66,6 +70,8 @@ void main() async {
       themeSettings: themeSettings,
       blockSettings: blockSettings,
       quoteService: quoteService,
+      weatherService: weatherService,
+      photoStorage: photoStorage,
       navigationGuard: navigationGuard,
     ),
   );
@@ -103,6 +109,8 @@ class MyApp extends StatefulWidget {
     required this.themeSettings,
     required this.blockSettings,
     required this.quoteService,
+    required this.weatherService,
+    required this.photoStorage,
     required this.navigationGuard,
   });
 
@@ -113,6 +121,8 @@ class MyApp extends StatefulWidget {
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
   final QuoteService quoteService;
+  final WeatherService weatherService;
+  final PhotoStorageService photoStorage;
   final NavigationGuard navigationGuard;
 
   @override
@@ -155,6 +165,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       themeSettings: widget.themeSettings,
       blockSettings: widget.blockSettings,
       quoteService: widget.quoteService,
+      weatherService: widget.weatherService,
+      photoStorage: widget.photoStorage,
       navigationGuard: widget.navigationGuard,
       child: ListenableBuilder(
         listenable: widget.themeSettings,

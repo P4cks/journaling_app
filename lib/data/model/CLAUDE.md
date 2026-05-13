@@ -22,7 +22,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock }`.
   Adding a new variant requires (a) a wrapper in `block_content/`,
   (b) a widget under `lib/ui/blocks/<type>/`, (c) cases in
   [block_widget.dart](../../ui/blocks/block_widget.dart),

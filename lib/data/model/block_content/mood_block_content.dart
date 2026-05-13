@@ -4,15 +4,15 @@
 /// emoji string itself, so reordering or removing emojis here is safe — old
 /// entries keep rendering whatever they stored.
 const moodEmojis = <String>[
-  '😄',
-  '😊',
-  '😌',
-  '😐',
-  '😢',
-  '😠',
-  '😩',
-  '😍',
-  '🤔',
+  '😄 Happy',
+  '😊 Jovial',
+  '😌 Peaceful',
+  '😐 Neutral',
+  '😢 Sad',
+  '😠 Angry',
+  '😩 Despair',
+  '😍 In Love',
+  '🤔 Thoughtful',
 ];
 
 /// Legacy `moodId` (enum-name) → emoji migration.

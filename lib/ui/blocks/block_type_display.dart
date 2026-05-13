@@ -1,9 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
@@ -27,6 +29,10 @@ extension BlockTypeDisplay on BlockType {
         return 'Quote of the day';
       case BlockType.memoryBlock:
         return 'Memory';
+      case BlockType.weatherApi:
+        return 'Weather (live)';
+      case BlockType.photoBlock:
+        return 'Photo';
     }
   }
 
@@ -46,6 +52,10 @@ extension BlockTypeDisplay on BlockType {
         return PhosphorIconsDuotone.quotes;
       case BlockType.memoryBlock:
         return PhosphorIconsDuotone.clockCounterClockwise;
+      case BlockType.weatherApi:
+        return PhosphorIconsDuotone.cloudSun;
+      case BlockType.photoBlock:
+        return PhosphorIconsDuotone.image;
     }
   }
 
@@ -65,6 +75,10 @@ extension BlockTypeDisplay on BlockType {
         return 'A fresh quote each day.';
       case BlockType.memoryBlock:
         return 'A random memory from a past day.';
+      case BlockType.weatherApi:
+        return 'Auto-fetched weather for your location.';
+      case BlockType.photoBlock:
+        return 'Attach a photo from your camera or gallery.';
     }
   }
 
@@ -131,6 +145,23 @@ extension BlockTypeDisplay on BlockType {
             snapshotJson:
                 '{"text":"Saw the first frost on the field this morning."}',
           ).toMap(),
+        );
+      case BlockType.weatherApi:
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const WeatherApiBlockContent(
+            conditionId: 'partly_cloudy',
+            temperatureC: 18,
+          ).toMap(),
+        );
+      case BlockType.photoBlock:
+        // No real file path in the preview — the widget will render
+        // its empty-state affordance instead.
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const PhotoBlockContent().toMap(),
         );
     }
   }

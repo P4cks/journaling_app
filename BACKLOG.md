@@ -38,13 +38,13 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **Text block: character limit** — optional/configurable cap on the text block to encourage brevity. Configured globally in Profile → Block settings → Text block; hard cap via `TextField.maxLength` with a tiny counter overlay.
 * [ ] `L` **Variable-sized blocks** — allow certain blocks (starting with text) to expand dynamically based on content instead of fixed height.
 * [x] `S` **Weather block (manual)** — user picks a weather icon for the day (Phosphor sun, cloud, raindrops, snowflake, etc.). Carousel of 7 conditions (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`); icon mapping shared with the future API weather block.
-* [ ] `L` **Weather block (API)** — fetches weather by location for the entry's date. Needs a weather provider and probably a location-permission flow.
+* [x] `L` **Weather block (API)** — fetches weather by location for the entry's date. Open-Meteo + `geolocator`; permission-denied / network-failure / location-disabled states surface with retry. Caches per-day per-location in the settings box; icon mapping shared with the manual weather block.
 * [x] `M` **Quote of the day (API)** — fetches a daily quote from a public API; non-editable display. ZenQuotes `/api/today`, cached per-day in the settings box; on first build the block fetches and bakes the quote/author into the entry's content forever.
 * [x] `S` **Prompt block** — configurable text block that displays a question above the input ("What surprised you today?"); the user answers in the field. New `BlockType.promptBlock`; prompt list + strategy (`daily` / `random`) configured globally in Profile → Block settings → Prompt block; the chosen prompt is baked into each new entry at materialization time.
 * [x] `S` **Mood block** - center it more and remove text. Replaced 3-Phosphor-icon ChoiceChip row with a swipeable emoji carousel (😄 😊 😌 😐 😢 😠 😩 😍 🤔). Schema-tolerant: legacy `moodId` values still decode (happy→😄, neutral→😐, sad→😢).
 * [ ] `XL` **Integration Calender block** - display activities for the day
 * [x] `M` **Memory block** - show random block from a past day (with date and link to the entry). Picks once from any non-empty text or mood block in past entries, locks the snapshot into the entry's content, tap-to-navigate to source.
-* [ ] `L` **Photo block** - add or take a foto to add to that day
+* [x] `L` **Photo block** - add or take a foto to add to that day. `image_picker` (camera/gallery); files copied to `<docs>/photos/<uuid>.<ext>` with the path stored in content. Long-press → Replace / Remove. iOS + Android permission strings wired.
 
 ## Entries tab ideas
 

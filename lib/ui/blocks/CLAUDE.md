@@ -48,6 +48,8 @@ the fullscreen editor, *and* the layout editor (WYSIWYG). Editing
 - [todo_block/todo_block_widget.dart](todo_block/todo_block_widget.dart)
 - [quote_block/quote_block_widget.dart](quote_block/quote_block_widget.dart)
 - [memory_block/memory_block_widget.dart](memory_block/memory_block_widget.dart)
+- [weather_api/weather_api_widget.dart](weather_api/weather_api_widget.dart)
+- [photo_block/photo_block_widget.dart](photo_block/photo_block_widget.dart)
 
 ---
 

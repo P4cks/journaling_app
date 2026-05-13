@@ -4,8 +4,10 @@ import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
+import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/data/services/weather_service.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 
 class AppDependencies extends InheritedWidget {
@@ -18,6 +20,8 @@ class AppDependencies extends InheritedWidget {
     required this.themeSettings,
     required this.blockSettings,
     required this.quoteService,
+    required this.weatherService,
+    required this.photoStorage,
     required this.navigationGuard,
     required super.child,
   });
@@ -29,6 +33,8 @@ class AppDependencies extends InheritedWidget {
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
   final QuoteService quoteService;
+  final WeatherService weatherService;
+  final PhotoStorageService photoStorage;
   final NavigationGuard navigationGuard;
 
   static AppDependencies of(BuildContext context) {
@@ -47,5 +53,7 @@ class AppDependencies extends InheritedWidget {
       themeSettings != oldWidget.themeSettings ||
       blockSettings != oldWidget.blockSettings ||
       quoteService != oldWidget.quoteService ||
+      weatherService != oldWidget.weatherService ||
+      photoStorage != oldWidget.photoStorage ||
       navigationGuard != oldWidget.navigationGuard;
 }

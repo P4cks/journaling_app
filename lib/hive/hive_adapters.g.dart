@@ -113,6 +113,10 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.quoteBlock;
       case 6:
         return BlockType.memoryBlock;
+      case 7:
+        return BlockType.weatherApi;
+      case 8:
+        return BlockType.photoBlock;
       default:
         return BlockType.textBlock;
     }
@@ -135,6 +139,10 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(5);
       case BlockType.memoryBlock:
         writer.writeByte(6);
+      case BlockType.weatherApi:
+        writer.writeByte(7);
+      case BlockType.photoBlock:
+        writer.writeByte(8);
     }
   }
 
