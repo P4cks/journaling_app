@@ -1,38 +1,19 @@
-# lib/ui/profile/view — Profile and Settings screens
+# lib/ui/profile/view — Settings screens
 
-See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
+See [../CLAUDE.md](../CLAUDE.md) for the screen overview. The
+standalone profile screen is gone — its functionality is now the
+profile dropdown in the main screen's AppBar
+([../../journal/widgets/profile_menu_button.dart](../../journal/widgets/profile_menu_button.dart)).
 
 ## Files
 
-- [profile_screen.dart](profile_screen.dart) — public `ProfileScreen`
-  (`StatelessWidget`) + private `_SectionHeader`.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
-  (`StatelessWidget`) + private `_ExpansionTitle`, `_ColorTile`,
-  `_ColorChip`.
+  (`StatelessWidget`) + private color helpers. Pushed via `/settings`
+  from the profile dropdown.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatelessWidget`). Index of configurable
-  block types; drills into per-type screens.
-- [text_block_settings_screen.dart](text_block_settings_screen.dart) —
-  public `TextBlockSettingsScreen` (`StatefulWidget`). One field:
-  optional character limit. Saves to
-  [BlockSettings](../../../data/services/block_settings.dart).
-- [prompt_block_settings_screen.dart](prompt_block_settings_screen.dart) —
-  public `PromptBlockSettingsScreen` (`StatefulWidget`). Multiline
-  text field for the prompt list (one per line) + a `SegmentedButton`
-  for the strategy (`daily` / `random`). Saves to `BlockSettings`.
-
-## ProfileScreen composition
-
-| Block                       | Listens to              | Notes                              |
-|-----------------------------|-------------------------|------------------------------------|
-| _SectionHeader("Streak")    | —                       | accent-colored small caps          |
-| `StreakStatCard`            | `journalRepository`     | `computeStreak(getAllEntries())`   |
-| _SectionHeader("Profile")   | —                       | auth section directly under streak |
-| `ProfileAuthCard`           | `authRepository`        | optional Firebase sign-in/status   |
-| Divider                     | —                       |                                    |
-| `ListTile` "Settings"       | —                       | navigates to `/profile/settings`   |
-| `ListTile` "Layouts"        | —                       | navigates to `/profile/layouts`    |
-| `ListTile` "Block settings" | —                       | navigates to `/profile/block-settings` |
+  block types; drills into per-type screens. Pushed via
+  `/block-settings`.
 
 ## SettingsScreen composition
 

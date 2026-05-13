@@ -5,7 +5,8 @@ screen-specific.
 
 ## Subdirectories
 
-- [widgets/](widgets/) — `AppDependencies` (DI), `AppIcon` (Phosphor wrapper), `AppScaffoldShell` (bottom nav).
+- [widgets/](widgets/) — `AppDependencies` (DI), `AppIcon` (Phosphor wrapper),
+  `SectionHeader`, `SettingsSection`, `StreakStatCard`.
 - [format/](format/) — small date formatters (no `intl` dependency).
 
 ## widgets/
@@ -23,11 +24,6 @@ screen-specific.
     with `if (_viewModel == null)` so it runs exactly once.
   - **When you add a new repository / settings object**, add it here
     *and* construct it in `main.dart` in the right order.
-- [widgets/navigation_guard.dart](widgets/navigation_guard.dart) —
-  `NavigationGuard`. Single-slot registry for an async "may I leave?"
-  handler. Screens with dirty state register/unregister; the shell
-  awaits it on tab switch. See [widgets/CLAUDE.md](widgets/CLAUDE.md)
-  for usage rules.
 - [widgets/app_icon.dart](widgets/app_icon.dart) — `AppIcon`. Thin
   wrapper around `PhosphorIcon`. Two opinionated defaults:
   - `duotoneSecondaryColor` defaults to `colorScheme.primary` (the
@@ -37,12 +33,6 @@ screen-specific.
   Use `PhosphorIconsDuotone.xxx` for default and `PhosphorIconsFill.xxx`
   for selected/active states. **Never use raw `Icons.*`** — analyzer
   won't catch it but it'll look out of place.
-- [widgets/app_scaffold_shell.dart](widgets/app_scaffold_shell.dart) —
-  `AppScaffoldShell`. The persistent `Scaffold` with the three-tab
-  bottom nav, wrapping `StatefulShellRoute.indexedStack`'s
-  `navigationShell`. Tapping the active tab re-runs `goBranch` with
-  `initialLocation: true`, which pops that branch back to its root —
-  the conventional "tap to return to the top" behavior.
 
 ## format/
 

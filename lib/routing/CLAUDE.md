@@ -6,61 +6,56 @@ every screen has access to repositories without per-route plumbing.
 
 ## Files
 
-- [app_router.dart](app_router.dart) — `GoRouter appRouter`. One
-  `StatefulShellRoute.indexedStack` with three branches:
-  - Branch 0: `/profile` (and nested `/profile/settings`,
-    `/profile/layouts`, `/profile/layouts/new`,
-    `/profile/layouts/edit/:id`, `/profile/block-settings`,
-    `/profile/block-settings/text`, `/profile/block-settings/prompt`).
-  - Branch 1: `/` (Home) (and nested `/journal/:date`).
-  - Branch 2: `/journal-entries` (the sectioned list).
+- [app_router.dart](app_router.dart) — `GoRouter appRouter`. Flat
+  top-level routes, no `StatefulShellRoute`:
+  - `/` → `MainJournalScreen()` (defaults to today)
+  - `/journal/:date` → `MainJournalScreen(initialDate: parsed)`
+    (deep-link / entries-list tap)
+  - `/entries` → `JournalEntriesScreen`
+  - `/settings` → `SettingsScreen`
+  - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
+  - `/block-settings` (+ `text`, `prompt`) → block settings screens
 
-  Sub-routes (the journal editor, the layouts CRUD screens) **live
-  inside the relevant branch**, not at the root, so the bottom nav
-  stays visible while navigating them. Don't move them up — root
-  CLAUDE.md gotcha territory.
-
-  `initialLocation: Routes.home` so cold start lands on Home (Branch 1).
+  `initialLocation: Routes.home` so cold start lands on the merged
+  main screen.
 
 - [routes.dart](routes.dart) — `Routes` (paths) and `RouteNames` (named
   routes) constants. Use these everywhere; never inline path strings.
   - `Routes.journalEntryFor(DateTime)` builds the `/journal/yyyy-mm-dd`
     path with zero-padded segments. `DateTime.parse` on the other side
     expects exactly this shape.
-  - `Routes.editLayoutFor(String id)` builds `/profile/layouts/edit/<id>`.
-  - `Routes.settings` is the absolute path used by the Profile row;
-    the router child path remains relative (`path: 'settings'`).
+  - `Routes.editLayoutFor(String id)` builds `/layouts/edit/<id>`.
 
 ## Implementation details
 
 - **`rootNavigatorKey`** is exported as a top-level. Currently unused
   by callers but kept around for future dialogs/sheets that need to
-  pop above the shell.
-- **Path parameter parsing** for the journal-entry screen happens in
-  the route builder: `DateTime.parse(state.pathParameters['date']!)`.
-  If `Routes.journalEntryFor` is the only place that constructs that
-  path, the format is guaranteed compatible. Don't introduce alternative
-  date-path constructors that disagree on padding or separator.
-- **Editor screens are `push`ed, not `go`-ed**, so the back-stack within
-  a branch is preserved. See `HomeScreen._openEditor` and
-  `JournalEntriesScreen` (uses `context.push`).
+  pop above the screen.
+- **Path parameter parsing** for `/journal/:date` happens in the route
+  builder: `DateTime.parse(state.pathParameters['date']!)`. If
+  `Routes.journalEntryFor` is the only place that constructs that
+  path, the format is guaranteed compatible.
+- **All screens reached from the main screen are `push`ed** (not
+  `go`-ed), so the Back button returns to `MainJournalScreen` on the
+  same selected date.
 
 ## Gotchas
 
-- **`StatefulShellRoute.indexedStack` keeps each branch's nav stack
-  alive across tab switches.** If you push the editor on Home, switch
-  to Profile, then come back, the editor is still on the Home stack.
-  This is intentional UX.
-- **The `path: 'layouts'` vs `path: '/profile/layouts'` distinction**:
-  go_router treats a leading-slash path as absolute and a non-leading
-  one as nested. The current config uses relative paths for sub-routes
-  so they nest correctly under their parent — don't accidentally prefix
-  a sub-route with `/`.
+- **`/` and `/journal/:date` map to the same widget** —
+  `MainJournalScreen`. The path-parameter form is the deep-link
+  entry point; the bare path defaults to today. Both flows go
+  through the same VM, so the rest of the app doesn't have to
+  branch on which path it came from.
+- **No more nested branches.** The old `StatefulShellRoute` is gone
+  with the bottom nav. Don't reintroduce nested routes just to keep
+  a chrome element pinned; the main screen owns its own AppBar and
+  bottom calendar bar directly.
 
 ## When to update this file
 
-- A new top-level route or branch is added.
-- A new path is introduced — add the constant to [routes.dart](routes.dart)
-  and update both the tree-of-branches list above and the cross-referenced
-  screen CLAUDE.md.
-- The shell behavior changes (e.g. tabs swapped for a drawer).
+- A new top-level route is added — add the constant to
+  [routes.dart](routes.dart) and a `GoRoute` to
+  [app_router.dart](app_router.dart).
+- A nested sub-route is added beneath `/layouts` or `/block-settings`.
+- The main screen's date model changes (e.g. range selection, week
+  view of `:date`).

@@ -27,4 +27,3 @@ class BlockSettingsScreen extends StatelessWidget {
     );
   }
 }
-

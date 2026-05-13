@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Centered call-to-action shown on the Home screen (and inside the
-/// editor when reached via deep link) for days that don't yet have an
-/// entry. Tapping fires [onTap] — typically opens the layout picker.
+/// Centered call-to-action shown on the main journal screen for days
+/// that don't yet have an entry (today). Tapping fires [onTap] —
+/// typically opens the layout picker.
 class MakeEntryCta extends StatelessWidget {
   const MakeEntryCta({
     super.key,

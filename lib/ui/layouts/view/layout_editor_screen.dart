@@ -6,7 +6,6 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
@@ -25,7 +24,6 @@ class LayoutEditorScreen extends StatefulWidget {
 
 class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   LayoutEditorViewModel? _viewModel;
-  NavigationGuard? _guard;
 
   @override
   void didChangeDependencies() {
@@ -37,13 +35,11 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         layoutId: widget.layoutId,
       );
       _viewModel!.addListener(_onChanged);
-      _guard = deps.navigationGuard..register(_onTabSwitchAttempt);
     }
   }
 
   @override
   void dispose() {
-    _guard?.register(null);
     _viewModel?.removeListener(_onChanged);
     _viewModel?.dispose();
     super.dispose();
@@ -105,20 +101,6 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     final canLeave = await _maybeSaveOnLeave();
     if (!mounted || !canLeave) return;
     context.pop();
-  }
-
-  /// Tab-switch guard. The shell awaits this before calling `goBranch`.
-  /// If the user picks save/discard, we also pop the editor so they
-  /// don't return to a stale screen the next time they revisit this
-  /// branch. If there's no dirty state, allow the switch and leave the
-  /// editor mounted (so the user can tab back to mid-editing).
-  Future<bool> _onTabSwitchAttempt() async {
-    final vm = _viewModel;
-    final wasDirty = vm != null && vm.isDirty;
-    final canLeave = await _maybeSaveOnLeave();
-    if (!canLeave) return false;
-    if (wasDirty && mounted) context.pop();
-    return true;
   }
 
   Future<void> _addBlock() async {

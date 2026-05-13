@@ -21,7 +21,6 @@ import 'package:journaling_app_rewrite/firebase_options.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/navigation_guard.dart';
 import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 
 void main() async {
@@ -56,7 +55,6 @@ void main() async {
   final quoteService = QuoteService(settingsBox);
   final weatherService = WeatherService(settingsBox);
   final photoStorage = PhotoStorageService();
-  final navigationGuard = NavigationGuard();
   final authRepository = AuthRepository(authService);
 
   await layoutRepository.seedDefaultIfEmpty();
@@ -72,7 +70,6 @@ void main() async {
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
-      navigationGuard: navigationGuard,
     ),
   );
 }
@@ -111,7 +108,6 @@ class MyApp extends StatefulWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
-    required this.navigationGuard,
   });
 
   final AuthRepository authRepository;
@@ -123,7 +119,6 @@ class MyApp extends StatefulWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
-  final NavigationGuard navigationGuard;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -167,7 +162,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,
-      navigationGuard: widget.navigationGuard,
       child: ListenableBuilder(
         listenable: widget.themeSettings,
         builder: (context, _) {

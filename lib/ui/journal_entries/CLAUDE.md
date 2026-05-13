@@ -1,8 +1,10 @@
-# lib/ui/journal_entries — All-entries list (plural)
+# lib/ui/journal_entries — All-entries list
 
-The third tab. Sectioned list of every entry the user has, grouped
-by month, newest-first. **Plural** — sibling of [`journal_entry/`](../journal_entry/CLAUDE.md)
-(singular, the fullscreen editor).
+Sectioned list of every entry the user has, grouped by month,
+newest-first. Pushed from the main screen's top-bar Entries icon
+(replacing the former Entries tab). Tapping a row pushes
+`/journal/yyyy-mm-dd`, which lands the user back on the main
+journal screen with that date selected.
 
 ```
 journal_entries/

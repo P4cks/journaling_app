@@ -16,24 +16,25 @@ the same three-part shape:
 - [blocks/CLAUDE.md](blocks/CLAUDE.md) — `BlockGrid`, `BlockCard`, the
   `BlockWidget` dispatcher, and one concrete-block subdir per block type
   ([text_block/](blocks/text_block/), [mood_tracker/](blocks/mood_tracker/)).
-  Shared by home preview, fullscreen editor, layout editor.
+  Shared by the journal pager (main screen) and the layout editor.
 - [core/CLAUDE.md](core/CLAUDE.md) — non-screen-specific widgets and
   helpers used everywhere. `AppDependencies` (DI), `AppIcon` (Phosphor
-  wrapper), `AppScaffoldShell` (bottom nav), `date_format` (small
-  intl-free formatters).
+  wrapper), `date_format` (small intl-free formatters), shared
+  `StreakStatCard` / `SectionHeader` / `SettingsSection`.
 - [theme/CLAUDE.md](theme/CLAUDE.md) — `buildAppTheme()`, the
   `SurfacePalette` catalogue, color/hex helpers.
-- [home/CLAUDE.md](home/CLAUDE.md) — Home screen: calendar at top,
-  entry preview / "make entry" CTA below.
-- [journal_entry/CLAUDE.md](journal_entry/CLAUDE.md) — Fullscreen
-  editor for a single entry (singular — one entry).
+- [journal/CLAUDE.md](journal/CLAUDE.md) — Main journal screen: AppBar
+  with editable title + date subtitle + entries-icon + profile dropdown,
+  swipe pager between entries, sticky calendar bar at the bottom.
+  Merger of the former Home + journal-entry editor.
 - [journal_entries/CLAUDE.md](journal_entries/CLAUDE.md) — Sectioned
-  list of all entries (plural). **Sibling of `journal_entry`, named
-  differently to disambiguate.**
+  list of all entries (plural). Pushed from the main screen's
+  Entries icon.
 - [layouts/CLAUDE.md](layouts/CLAUDE.md) — Layouts CRUD: list, editor,
-  icon catalogue, picker sheets.
-- [profile/CLAUDE.md](profile/CLAUDE.md) — Profile screen: streak,
-  appearance, layouts entry-point, debug.
+  icon catalogue, picker sheets. Pushed from the profile dropdown.
+- [profile/CLAUDE.md](profile/CLAUDE.md) — Settings and Block-settings
+  screens, plus the widgets the profile dropdown's header reuses
+  (`ProfileAuthCard`). No standalone profile screen.
 
 ## Conventions used across the UI
 

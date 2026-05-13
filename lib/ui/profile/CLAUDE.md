@@ -1,41 +1,40 @@
-# lib/ui/profile — Profile + Settings screens
+# lib/ui/profile — Settings + Block-settings screens
 
-The first tab. Profile is now a lightweight navigation surface, while
-the detailed settings live one push deeper at `/profile/settings`.
-
-Profile contains:
-
-1. **Streak** — current vs longest streaks (or a nudge when current is 0).
-2. **Profile** — optional Firebase Auth sign-in/status card.
-3. **Settings** entry point → `/profile/settings`.
-4. **Layouts** entry point → `/profile/layouts`.
-5. **Block settings** entry point → `/profile/block-settings`. Two
-   sub-screens (text, prompt) edit block-type-global config persisted
-   in [BlockSettings](../../data/services/block_settings.dart).
+There is **no top-level Profile screen** anymore. The main journal
+screen's AppBar exposes a profile dropdown
+([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart))
+with a streak + auth header and three items — Settings, Layouts,
+Block settings — that push to the corresponding screens. This
+directory hosts the pushed screens (Settings, Block-settings) plus
+the widgets (`ProfileAuthCard`, theme/palette pickers) reused by both
+Settings and the dropdown.
 
 Settings contains:
 
 1. **Appearance** — expanded by default; theme mode (segmented), surface
    palette grid, secondary/accent color pickers for built-ins, and
    full surface/secondary/accent/text editing for custom slots.
-2. **Show debug menu** — persisted discovery switch.
-3. **Debug** — rendered only when `debugMenuVisible` is true; collapsed
-   by default; `unlockAllDays`, surface override, HSL free-pick for
-   secondary/accent.
+2. **Journal templates** — `Manage templates` row that pushes `/layouts`.
+3. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
+4. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
+   surface override, and HSL free-pick for secondary/accent.
+
+Block-settings contains an index that drills into text and prompt
+sub-screens (persist to [BlockSettings](../../data/services/block_settings.dart)).
 
 ```
 profile/
-├── view/        ProfileScreen, SettingsScreen
-└── widgets/     palette_picker, swatch_grid_picker, streak_stat_card, theme_mode_selector
+├── view/        SettingsScreen, BlockSettingsScreen
+└── widgets/     palette_picker, swatch_grid_picker, theme_mode_selector,
+                profile_auth_card, prompt_block_settings, text_block_settings
 ```
 
 ## Stateless screen + listeners
 
-`ProfileScreen` and `SettingsScreen` are both `StatelessWidget`s. They
-pull the settings/repositories they need from `AppDependencies` and
-sprinkle `ListenableBuilder`s where each section needs to react:
+`SettingsScreen` and `BlockSettingsScreen` are both `StatelessWidget`s.
+They pull the settings/repositories they need from `AppDependencies`
+and sprinkle `ListenableBuilder`s where each section needs to react:
 
-- The streak card listens to the journal repository.
 - The optional auth card listens to `authRepository`.
 - Each appearance / debug color row listens to `themeSettings`.
 - The `Show debug menu` and `unlockAllDays` switches listen to
@@ -48,11 +47,13 @@ underlying settings notifiers.
 
 ## Subdirectory CLAUDE.md files
 
-- [view/CLAUDE.md](view/CLAUDE.md) — `ProfileScreen`, `SettingsScreen`,
-  and their private section/color helper widgets.
+- [view/CLAUDE.md](view/CLAUDE.md) — `SettingsScreen`,
+  `BlockSettingsScreen`.
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `PalettePicker`,
   `ThemeModeSelector`, `showSwatchPicker` (the color dialog),
-  `StreakStatCard`, `ProfileAuthCard`.
+  `ProfileAuthCard`, `PromptBlockSettings`, `TextBlockSettings`.
+  Note: `StreakStatCard` lives in [../core/widgets/](../core/widgets/)
+  and is reused by the entries list and the profile dropdown.
 
 ## Theme override semantics
 

@@ -27,17 +27,16 @@ lib/
 ├── routing/                 go_router config + Routes / RouteNames constants
 └── ui/
     ├── core/
-    │   ├── widgets/         AppDependencies (DI InheritedWidget), AppIcon, AppScaffoldShell
+    │   ├── widgets/         AppDependencies (DI), AppIcon, StreakStatCard, SectionHeader, SettingsSection
     │   └── format/          date formatters (no `intl` dep)
     ├── theme/               buildAppTheme(), SurfacePalette catalogue, color_hex helpers
     ├── blocks/              BlockGrid, BlockCard, BlockWidget dispatcher
     │   ├── text_block/      TextBlockWidget
     │   └── mood_tracker/    MoodTrackerWidget
-    ├── home/                Home screen (calendar + entry preview)
-    ├── journal_entry/       Fullscreen entry editor (singular: one entry)
-    ├── journal_entries/     Sectioned list of all entries (plural)
-    ├── layouts/             Layouts list + layout editor + icon picker
-    └── profile/             Profile tab + nested settings screen
+    ├── journal/             Main journal screen — AppBar (editable title + date + entries + profile dropdown), swipe pager, bottom calendar
+    ├── journal_entries/     Sectioned list of all entries (pushed from top-bar icon)
+    ├── layouts/             Layouts list + layout editor + icon picker (pushed from profile dropdown)
+    └── profile/             Settings / Block-settings screens + auth card widget (no top-level profile screen — see profile dropdown in journal/widgets/)
 ```
 
 Every leaf and intermediate directory under `lib/` has a `CLAUDE.md`.
