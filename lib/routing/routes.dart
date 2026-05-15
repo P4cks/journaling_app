@@ -4,6 +4,7 @@ class Routes {
   static const home = '/';
   static const journalEntry = '/journal/:date';
   static const entries = '/entries';
+  static const statistics = '/statistics';
 
   static const settings = '/settings';
   static const layouts = '/layouts';
@@ -29,6 +30,7 @@ class RouteNames {
   static const home = 'home';
   static const journalEntry = 'journalEntry';
   static const entries = 'entries';
+  static const statistics = 'statistics';
   static const settings = 'settings';
   static const layouts = 'layouts';
   static const newLayout = 'newLayout';

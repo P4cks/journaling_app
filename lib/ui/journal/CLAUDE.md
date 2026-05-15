@@ -28,10 +28,12 @@ journal/
   show `NoEntryReadOnly`. Matches the pre-merge behaviour exactly.
 - **AppBar** — `JournalTitle` (editable title + date subtitle) on
   the left; right actions are the Change-layout icon (when editable +
-  hasEntry), an Entries icon (pushes `/entries`), and the
+  hasEntry), a Statistics icon (pushes `/statistics`), and the
   `ProfileMenuButton` (PopupMenu with streak + auth header, then
   Settings / Layouts / Block settings rows that push the
-  corresponding screens).
+  corresponding screens). The Statistics icon replaced the former
+  Entries icon; `/entries` is still reachable by URL but no AppBar
+  action links to it.
 - **Bottom calendar bar** — `CalendarBottomBar`. Sticky compact week
   strip; the trailing month-icon opens a draggable bottom sheet with
   a full month view. Collapses to zero height when the keyboard is up.

@@ -32,6 +32,10 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   Two-way sync with `vm.selectedDate` — external changes animate the
   controller; user swipes call `vm.setSelectedDate`. Each page is the
   existing `BlockGrid` in mode chosen by the screen's `modeFor` callback.
+  Holds a `Set<String> _lockedBlockIds` populated by
+  `onInteractionLockChanged` from `BlockGrid`. When non-empty, the
+  outer `PageView` swaps to `NeverScrollableScrollPhysics` so an
+  inner mood/weather carousel wins the horizontal drag.
 
 ## Sentinel: TableCalendar `eventLoader`
 
@@ -57,6 +61,11 @@ with per-day lists; doing so would walk the entry set per cell.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
+- **`JournalPager`'s lock-set keys are block IDs**, not a bool flag.
+  If two carousels are expanded simultaneously (mood + manual weather
+  on the same day), collapsing one keeps the other's lock in place.
+  The block widgets release on `_collapse()` and again, defensively,
+  in `dispose()` to avoid a stuck `NeverScrollableScrollPhysics`.
 
 ## When to update this file
 

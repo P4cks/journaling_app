@@ -23,7 +23,13 @@ both after structural changes.
     `onBlockChanged` (per-block edit callback),
   - `cardTrailing(block, index)` — optional builder for the top-right affordance,
   - `onReorder(from, to)` — enables long-press drag & drop (Notion-style),
-  - `padding` (default 16).
+  - `padding` (default 16),
+  - `onJumpToDate(date)` — forwarded to the memory block.
+  - `onInteractionLockChanged(blockId, locked)` — forwarded to blocks
+    with horizontal carousels (mood, manual weather). `JournalPager`
+    wires this through to disable its outer horizontal swipe while
+    any inner carousel is expanded, so nested `PageView`s don't fight
+    over the drag.
 
 - [block_card.dart](block_card.dart) — `BlockCard`. The square chrome
   for one block: rounded `Container` on `scheme.surfaceContainerHigh`
@@ -42,6 +48,10 @@ both after structural changes.
 - [block_type_display.dart](block_type_display.dart) — `extension BlockTypeDisplay on BlockType`
   with `label`, `icon` (Phosphor duotone), `description`, and `sampleData(id:)`.
 
+- [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —
+  `CollapsibleCarouselBlock<T>`. Generic tap-to-expand / auto-collapse
+  carousel shared between the mood and manual-weather blocks. See
+  [widgets/CLAUDE.md](widgets/CLAUDE.md).
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)

@@ -51,10 +51,10 @@ block content.
   at entry materialization. `answer` is per-entry user input. Used by
   `PromptBlockWidget` and `JournalBlockEmptiness` (only `answer.trim()`
   counts as content).
-- [weather_block_content.dart](weather_block_content.dart) — `WeatherBlockContent { String? conditionId }` + a curated `weatherConditionIds` constant list (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`).
+- [weather_block_content.dart](weather_block_content.dart) — `WeatherBlockContent { String? conditionId }` + a curated `weatherConditionIds` constant list (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`) + `defaultWeatherConditionId = 'cloud'` (seeded by `JournalRepository._materializeOne` into newly-materialized blocks).
   Map shape: `{"conditionId": "rain"}` (or absent → `conditionId: null`).
   `fromMap` ignores unknown ids (returns no-selection rather than throwing). Used by `WeatherManualWidget` (manual picker) and `JournalBlockEmptiness`. The icon mapping lives in [ui/blocks/weather_manual/weather_manual_widget.dart](../../../ui/blocks/weather_manual/weather_manual_widget.dart) as a top-level `weatherIconFor` helper so the future API weather block can reuse it.
-- [mood_block_content.dart](mood_block_content.dart) — `MoodBlockContent { String? emoji }` + a curated `moodEmojis` constant list.
+- [mood_block_content.dart](mood_block_content.dart) — `MoodBlockContent { String? emoji }` + a curated `moodEmojis` constant list + `defaultMoodEmoji = '😐'` (seeded by `JournalRepository._materializeOne` into newly-materialized blocks).
   Map shape: `{"emoji": "😄"}` (or absent → `emoji: null`).
   Legacy `{"moodId": "happy"|"neutral"|"sad"}` entries are read back via
   a small migration table inside `fromMap` (happy→😄, neutral→😐, sad→😢);

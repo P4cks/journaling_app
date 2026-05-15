@@ -18,7 +18,8 @@ class BlockWidget extends StatelessWidget {
     required this.data,
     required this.mode,
     this.onChanged,
-    this.onJumpToDate
+    this.onJumpToDate,
+    this.onInteractionLockChanged,
   });
 
   final JournalBlockData data;
@@ -26,18 +27,29 @@ class BlockWidget extends StatelessWidget {
   final ValueChanged<JournalBlockData>? onChanged;
   final ValueChanged<DateTime>? onJumpToDate;
 
+  /// Forwarded to blocks that have an interactive horizontal carousel
+  /// (mood, manual weather). When `locked: true` the block wants the
+  /// outer `JournalPager` to stop responding to horizontal swipes.
+  final void Function(String blockId, bool locked)? onInteractionLockChanged;
+
   @override
   Widget build(BuildContext context) {
     switch (data.type) {
       case BlockType.textBlock:
         return TextBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.moodTracker:
-        return MoodTrackerWidget(data: data, mode: mode, onChanged: onChanged);
+        return MoodTrackerWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onInteractionLockChanged: onInteractionLockChanged,
+        );
       case BlockType.weatherManual:
         return WeatherManualWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onInteractionLockChanged: onInteractionLockChanged,
         );
       case BlockType.promptBlock:
         return PromptBlockWidget(data: data, mode: mode, onChanged: onChanged);

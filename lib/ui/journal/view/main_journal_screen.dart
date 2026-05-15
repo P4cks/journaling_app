@@ -106,9 +106,9 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
     if (confirm == true && mounted) vm.applyLayout(selected);
   }
 
-  void _openEntries() {
+  void _openStatistics() {
     FocusScope.of(context).unfocus();
-    context.push(Routes.entries);
+    context.push(Routes.statistics);
   }
 
   BlockMode _modeFor(JournalEntry entry, {required bool unlockAllDays}) {
@@ -161,9 +161,9 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
                   ),
                 ),
               IconButton(
-                tooltip: 'Entries',
-                onPressed: _openEntries,
-                icon: const AppIcon(PhosphorIconsDuotone.bookOpen),
+                tooltip: 'Statistics',
+                onPressed: _openStatistics,
+                icon: const AppIcon(PhosphorIconsDuotone.chartBar),
               ),
               const ProfileMenuButton(),
             ],

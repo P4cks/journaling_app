@@ -15,7 +15,7 @@ Scaffold
 ├── AppBar
 │   ├── title: JournalTitle (editable title + date subtitle)
 │   └── actions: Change-layout (when editable + hasEntry),
-│                Entries icon (push /entries),
+│                Statistics icon (push /statistics),
 │                ProfileMenuButton (popup with streak/auth + items)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand
 │         └── GestureDetector (unfocus-on-tap)
@@ -46,9 +46,10 @@ Same gate as before the merge. Used for two decisions:
   rebuilds with the pager pointing at the new entry.
 - `_showChangeLayoutSheet()` — opens the picker → confirm dialog →
   `vm.applyLayout`. Destructive; always confirms.
-- `_openEntries()` — `context.push(Routes.entries)`. The list tile
-  taps then `push` back to `/journal/yyyy-mm-dd`, so the back stack is
-  Entries → MainJournalScreen (with that date).
+- `_openStatistics()` — `context.push(Routes.statistics)`. Back
+  returns to `MainJournalScreen` on the same selected date. The
+  former `_openEntries` pushed `/entries`; that route still works
+  if entered directly, but no AppBar action links to it now.
 
 ## Gotchas
 
