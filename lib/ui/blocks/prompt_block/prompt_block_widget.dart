@@ -121,7 +121,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keep my answer'),
+            child: const Text('Keep'),
           ),
         ],
       ),
