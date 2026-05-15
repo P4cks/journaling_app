@@ -5,6 +5,13 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 
+/// Block types intentionally hidden from the layout-editor picker.
+/// Still legal at runtime (already-saved blocks of these types render
+/// normally) — they're just not user-addable yet.
+const _hiddenBlockTypes = <BlockType>{
+  BlockType.locationBlock,
+};
+
 /// Half-screen modal sheet that lets the user pick a `BlockType` to add.
 ///
 /// Renders a 2-column scrollable grid of scaled-down block previews, each
@@ -14,8 +21,13 @@ import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 /// Previews use `BlockMode.readOnly` with sample data from
 /// `BlockTypeDisplay.sampleData` so the grid scales automatically as new
 /// `BlockType` variants are added — extending the enum + adding cases in
-/// `block_type_display.dart` is the only touch needed.
+/// `block_type_display.dart` is the only touch needed. To temporarily
+/// hide a type from the picker (e.g. WIP block), add it to
+/// [_hiddenBlockTypes] above.
 Future<BlockType?> showAddBlockSheet(BuildContext context) {
+  final visibleTypes = BlockType.values
+      .where((t) => !_hiddenBlockTypes.contains(t))
+      .toList(growable: false);
   return showModalBottomSheet<BlockType>(
     context: context,
     isScrollControlled: true,
@@ -68,9 +80,9 @@ Future<BlockType?> showAddBlockSheet(BuildContext context) {
                     childAspectRatio: 0.72,
                   ),
                   delegate: SliverChildBuilderDelegate((gridCtx, i) {
-                    final type = BlockType.values[i];
+                    final type = visibleTypes[i];
                     return _AddBlockCell(type: type);
-                  }, childCount: BlockType.values.length),
+                  }, childCount: visibleTypes.length),
                 ),
               ),
             ],

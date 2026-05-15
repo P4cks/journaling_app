@@ -2,9 +2,11 @@
 
 One `BlockType.weatherApi` block. Auto-fetches current weather via
 [WeatherService](../../../data/services/weather_service.dart) using
-the device's location, then bakes the result into the entry's content.
+the device's location, plus a best-effort reverse-geocode via OSM
+Nominatim, then bakes the result into the entry's content.
 Content shape:
-`{"conditionId": "...", "temperatureC": 12.4, "fetchedDate": "yyyy-MM-dd"}`.
+`{"conditionId": "...", "temperatureC": 12.4, "cityName": "City, Country", "fetchedDate": "yyyy-MM-dd"}`
+(`cityName` is omitted when the reverse-geocode fails or rate-limits).
 Typed wrapper: [WeatherApiBlockContent](../../../data/model/block_content/weather_api_block_content.dart).
 
 ## Files
@@ -20,7 +22,11 @@ Typed wrapper: [WeatherApiBlockContent](../../../data/model/block_content/weathe
   which: checks the day-keyed cache in the `settings` Hive box; on
   miss, requests location permission, gets a coarse `Position`, calls
   Open-Meteo `/v1/forecast?current_weather=true`, maps the `weathercode`
-  to a condition id from the same set as the manual weather block.
+  to a condition id from the same set as the manual weather block,
+  then optionally reverse-geocodes the position via OSM Nominatim
+  (`/reverse?lat=…&lon=…&format=json&zoom=10`) to a `"City, Country"`
+  string. The reverse-geocode failure is non-fatal — `cityName` is
+  simply omitted from the result.
 - **On success** → emits a new `JournalBlockData` with the condition,
   temperature, and fetched date baked in. Subsequent rebuilds read the
   stored snapshot; re-opening the entry never refetches.
@@ -35,8 +41,9 @@ Typed wrapper: [WeatherApiBlockContent](../../../data/model/block_content/weathe
 The widget renders identically in `readOnly` and `editable` (not
 user-editable). When data is present: large Phosphor icon (via the
 shared [`weatherIconFor`](../weather_manual/weather_manual_widget.dart)
-helper) + temperature in °C below. Otherwise: loading spinner, or the
-appropriate failure message + retry.
+helper), temperature in °C, and the reverse-geocoded city name on a
+third line (one-line ellipsis, hidden when null). Otherwise: loading
+spinner, or the appropriate failure message + retry.
 
 ## Permissions
 

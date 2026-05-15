@@ -22,13 +22,16 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock }`.
-  Adding a new variant requires (a) a wrapper in `block_content/`,
-  (b) a widget under `lib/ui/blocks/<type>/`, (c) cases in
-  [block_widget.dart](../../ui/blocks/block_widget.dart),
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock }`.
+  **New values MUST be appended at the end** — Hive serializes enum
+  values by index, so inserting or reordering would corrupt existing
+  entries on disk. Adding a new variant requires (a) a wrapper in
+  `block_content/`, (b) a widget under `lib/ui/blocks/<type>/`,
+  (c) cases in [block_widget.dart](../../ui/blocks/block_widget.dart),
   [block_type_display.dart](../../ui/blocks/block_type_display.dart),
   [journal_entry_emptiness.dart](journal_entry_emptiness.dart), and
-  (d) `flutter pub run build_runner build`.
+  [JournalRepository._materializeOne](../repositories/journal_repository.dart),
+  and (d) `flutter pub run build_runner build`.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
   `id`, `name`, `blocks` (`List<BlockTemplate>` — see below; each
   template carries an optional `configJson` that is baked into the

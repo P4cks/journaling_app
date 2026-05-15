@@ -57,6 +57,12 @@ Same gate as before the merge. Used for two decisions:
   to morph from a Home preview to the editor; with the screens merged
   there is no separate preview to morph from. Don't reintroduce a
   Hero — it would only confuse the swipe pager's animation.
+- **AppBar uses the default `titleSpacing`**. The previous code forced
+  `titleSpacing: 0` when an entry existed (to maximise horizontal room
+  for the editable title). Material's default 16 px provides better
+  breathing room and matches the rest of the app, at the cost of
+  slightly less horizontal room for long titles — the title widget
+  uses `maxLines: 1` + ellipsis so this is fine in practice.
 - **The body's surface color is `scheme.surfaceContainerLow`**, matching
   the old editor (and the old preview). Keep it consistent so any
   future cross-fade or shared-axis transition lands on the same

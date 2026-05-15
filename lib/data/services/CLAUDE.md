@@ -62,14 +62,22 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   Photo bytes are **never stored in Hive** — only the path string is
   persisted via `PhotoBlockContent`.
 - [weather_service.dart](weather_service.dart) — `WeatherService`.
-  Wraps `geolocator` + Open-Meteo's `/v1/forecast?current_weather=true`.
+  Wraps `geolocator` + Open-Meteo's `/v1/forecast?current_weather=true`
+  + OSM Nominatim's `/reverse` endpoint.
   Returns a `WeatherFetchResult` with one of four `WeatherFetchStatus`
-  values: `ok`, `permissionDenied`, `locationDisabled`, `networkFailure`.
+  values: `ok`, `permissionDenied`, `locationDisabled`, `networkFailure`,
+  plus optional `cityName` (best-effort).
   - Caches per `(date, ~10km location bucket)` in the `settings` Hive
-    box under `weather.<yyyy-MM-dd>.<lat_lon>`.
+    box under `weather.<yyyy-MM-dd>.<lat_lon>`. Cache payload now
+    includes `cityName` so a hit doesn't re-call Nominatim.
   - The static `mapWeatherCode(int)` translates WMO codes onto the
     seven condition ids used by the manual weather block, so the
     icon-mapping helper is shared.
+  - `_reverseGeocode(lat, lon)` calls Nominatim with a 6-second
+    timeout and the app-identifying `User-Agent` header required by
+    the Nominatim usage policy. Failure (rate limit, network, parse)
+    returns `null` — the weather fetch still succeeds, just without
+    a city name.
   - All `geolocator` calls are injectable for tests; defaults use
     `Geolocator.checkPermission` / `requestPermission` /
     `getCurrentPosition` with `LocationAccuracy.low`.

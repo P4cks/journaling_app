@@ -39,7 +39,13 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
 
   void _maybeFetch() {
     final content = WeatherApiBlockContent.fromMap(widget.data.content);
-    if (content.isFetched || _fetching) return;
+    // Trigger a fetch on the usual "no weather yet" path, but also
+    // when the weather is already stored without a cityName — that's
+    // the legacy shape from before reverse-geocoding shipped, and we
+    // want to backfill the city without forcing the user to re-create
+    // the entry.
+    final needsCityBackfill = content.isFetched && content.cityName == null;
+    if ((content.isFetched && !needsCityBackfill) || _fetching) return;
     _fetching = true;
     final service = AppDependencies.of(context).weatherService;
     service.getCurrentWeather().then((result) {
@@ -57,6 +63,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
           content: WeatherApiBlockContent(
             conditionId: result.conditionId,
             temperatureC: result.temperatureC,
+            cityName: result.cityName,
             fetchedDate: result.fetchedDate,
           ).toMap(),
         ),
@@ -77,6 +84,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
 
     if (content.isFetched) {
       final temp = content.temperatureC;
+      final city = content.cityName;
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -91,6 +99,21 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
                 '${temp.round()}°C',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (city != null && city.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  city,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
