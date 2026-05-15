@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/location_block/location_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
@@ -63,6 +64,12 @@ class BlockWidget extends StatelessWidget {
         return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.photoBlock:
         return PhotoBlockWidget(data: data, mode: mode, onChanged: onChanged);
+      case BlockType.locationBlock:
+        return LocationBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+        );
     }
   }
 }

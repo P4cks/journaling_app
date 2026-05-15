@@ -134,7 +134,6 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            titleSpacing: hasEntry ? 0 : null,
             title: JournalTitle(
               date: selectedDate,
               title: entry?.title,

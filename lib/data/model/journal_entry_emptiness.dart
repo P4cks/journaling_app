@@ -1,3 +1,4 @@
+import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
@@ -28,6 +29,7 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 /// - `weatherApi` — no observation fetched/stored yet (API-generated,
 ///   so we don't keep an entry alive just because of a failed fetch).
 /// - `photoBlock` — no photo path stored yet.
+/// - `locationBlock` — no pin dropped yet (lat/lon both absent).
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -54,6 +56,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !WeatherApiBlockContent.fromMap(content).isFetched;
       case BlockType.photoBlock:
         return !PhotoBlockContent.fromMap(content).hasPhoto;
+      case BlockType.locationBlock:
+        return !LocationBlockContent.fromMap(content).hasPin;
     }
   }
 }

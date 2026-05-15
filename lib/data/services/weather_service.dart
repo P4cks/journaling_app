@@ -18,12 +18,14 @@ class WeatherFetchResult {
   final WeatherFetchStatus status;
   final String? conditionId;
   final double? temperatureC;
+  final String? cityName; // best-effort, may be null if reverse-geocode fails
   final String? fetchedDate; // yyyy-MM-dd
 
   const WeatherFetchResult({
     required this.status,
     this.conditionId,
     this.temperatureC,
+    this.cityName,
     this.fetchedDate,
   });
 
@@ -59,6 +61,11 @@ class WeatherService {
            ));
 
   static const _endpoint = 'https://api.open-meteo.com/v1/forecast';
+  static const _nominatimEndpoint =
+      'https://nominatim.openstreetmap.org/reverse';
+  // Identifies the app per the Nominatim usage policy.
+  static const _nominatimUserAgent =
+      'journaling_app_rewrite/1.0 (https://github.com/P4cks/journaling_app)';
   static const _keyPrefix = 'weather.';
 
   final Box<String> _box;
@@ -98,11 +105,51 @@ class WeatherService {
           status: WeatherFetchStatus.ok,
           conditionId: decoded['conditionId'] as String?,
           temperatureC: (decoded['temperatureC'] as num?)?.toDouble(),
+          cityName: decoded['cityName'] as String?,
           fetchedDate: decoded['fetchedDate'] as String?,
         );
       } catch (_) {}
     }
     return null;
+  }
+
+  /// Best-effort reverse-geocode via OSM Nominatim. Returns null on any
+  /// failure (rate limit, network, parse error) — callers should treat
+  /// it as "city unknown" and render without it.
+  Future<String?> _reverseGeocode(double lat, double lon) async {
+    try {
+      final uri = Uri.parse(_nominatimEndpoint).replace(
+        queryParameters: {
+          'lat': lat.toString(),
+          'lon': lon.toString(),
+          'format': 'json',
+          'zoom': '10',
+        },
+      );
+      final res = await _http
+          .get(uri, headers: {'User-Agent': _nominatimUserAgent})
+          .timeout(const Duration(seconds: 6));
+      if (res.statusCode != 200) return null;
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map<String, dynamic>) return null;
+      final address = decoded['address'];
+      if (address is! Map) return null;
+      // Nominatim returns one of city/town/village depending on the
+      // place size. Prefer the most specific, fall back to less so.
+      final locality = (address['city'] ??
+              address['town'] ??
+              address['village'] ??
+              address['hamlet'] ??
+              address['municipality'] ??
+              address['county']) as String?;
+      final country = address['country'] as String?;
+      if (locality == null && country == null) return null;
+      if (locality != null && country != null) return '$locality, $country';
+      return locality ?? country;
+    } catch (error) {
+      debugPrint('[WeatherService] reverse-geocode failed: $error');
+      return null;
+    }
   }
 
   /// Maps Open-Meteo's [WMO weather codes](https://open-meteo.com/en/docs)
@@ -187,10 +234,31 @@ class WeatherService {
           final decoded = jsonDecode(cachedRaw);
           if (decoded is Map) {
             debugPrint('[WeatherService] cache hit $cacheKey');
+            var cachedCity = decoded['cityName'] as String?;
+            // Backfill cityName for entries cached before reverse-
+            // geocoding existed. The reverse-geocode call is
+            // best-effort; if it fails we just return without a city
+            // and try again next time.
+            if (cachedCity == null) {
+              cachedCity = await _reverseGeocode(
+                position.latitude,
+                position.longitude,
+              );
+              if (cachedCity != null) {
+                final updated = Map<String, dynamic>.from(decoded);
+                updated['cityName'] = cachedCity;
+                await _box.put(cacheKey, jsonEncode(updated));
+                debugPrint(
+                  '[WeatherService] backfilled cityName for $cacheKey '
+                  '($cachedCity)',
+                );
+              }
+            }
             return WeatherFetchResult(
               status: WeatherFetchStatus.ok,
               conditionId: decoded['conditionId'] as String?,
               temperatureC: (decoded['temperatureC'] as num?)?.toDouble(),
+              cityName: cachedCity,
               fetchedDate: decoded['fetchedDate'] as String?,
             );
           }
@@ -232,19 +300,28 @@ class WeatherService {
       }
       final conditionId = mapWeatherCode(code);
       final fetchedDate = _formatDate(today);
+      // Reverse-geocode is best-effort. Don't fail the whole fetch if
+      // Nominatim is rate-limiting or unreachable.
+      final cityName = await _reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
       final payload = <String, dynamic>{
         'conditionId': conditionId,
         'temperatureC': ?temp,
+        'cityName': ?cityName,
         'fetchedDate': fetchedDate,
       };
       await _box.put(cacheKey, jsonEncode(payload));
       debugPrint(
-        '[WeatherService] fetched + cached $cacheKey ($conditionId, $temp°C)',
+        '[WeatherService] fetched + cached $cacheKey '
+        '($conditionId, $temp°C, $cityName)',
       );
       return WeatherFetchResult(
         status: WeatherFetchStatus.ok,
         conditionId: conditionId,
         temperatureC: temp,
+        cityName: cityName,
         fetchedDate: fetchedDate,
       );
     } catch (error) {

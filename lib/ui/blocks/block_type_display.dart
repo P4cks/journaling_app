@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
@@ -33,6 +34,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Weather (live)';
       case BlockType.photoBlock:
         return 'Photo';
+      case BlockType.locationBlock:
+        return 'Location';
     }
   }
 
@@ -56,6 +59,8 @@ extension BlockTypeDisplay on BlockType {
         return PhosphorIconsDuotone.cloudSun;
       case BlockType.photoBlock:
         return PhosphorIconsDuotone.image;
+      case BlockType.locationBlock:
+        return PhosphorIconsDuotone.mapPin;
     }
   }
 
@@ -79,6 +84,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Auto-fetched weather for your location.';
       case BlockType.photoBlock:
         return 'Attach a photo from your camera or gallery.';
+      case BlockType.locationBlock:
+        return 'Long-press the map to drop a pin.';
     }
   }
 
@@ -162,6 +169,17 @@ extension BlockTypeDisplay on BlockType {
           id: id,
           type: this,
           content: const PhotoBlockContent().toMap(),
+        );
+      case BlockType.locationBlock:
+        // Sample pin sits in the middle of the Atlantic so the preview
+        // shows a recognisable Mercator view of Europe + Americas.
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const LocationBlockContent(
+            latitude: 40.7,
+            longitude: -30,
+          ).toMap(),
         );
     }
   }

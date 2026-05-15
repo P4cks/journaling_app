@@ -20,13 +20,15 @@ block content.
   [PhotoStorageService](../../services/photo_storage_service.dart);
   Hive only persists the path string. Used by `PhotoBlockWidget` and
   `JournalBlockEmptiness` (no photo → empty).
-- [weather_api_block_content.dart](weather_api_block_content.dart) — `WeatherApiBlockContent { String? conditionId; double? temperatureC; String? fetchedDate; String? error }`.
-  Map shape: `{"conditionId": "...", "temperatureC": 12.4, "fetchedDate": "yyyy-MM-dd"}`
+- [weather_api_block_content.dart](weather_api_block_content.dart) — `WeatherApiBlockContent { String? conditionId; double? temperatureC; String? cityName; String? fetchedDate; String? error }`.
+  Map shape: `{"conditionId": "...", "temperatureC": 12.4, "cityName": "Berlin, Germany", "fetchedDate": "yyyy-MM-dd"}`
   (all keys omitted when null). `isFetched` is true when a condition
   is stored. Reuses the `conditionId` strings from
   [weather_block_content.dart](weather_block_content.dart) so the same
-  icon mapping works for both manual and API blocks. Used by
-  `WeatherApiWidget` and `JournalBlockEmptiness` (unfetched → empty).
+  icon mapping works for both manual and API blocks. `cityName` is the
+  best-effort Nominatim reverse-geocode result; may be null if the
+  reverse-geocode call failed or rate-limited. Used by `WeatherApiWidget`
+  and `JournalBlockEmptiness` (unfetched → empty).
 - [memory_block_content.dart](memory_block_content.dart) — `MemoryBlockContent { String? sourceEntryDate; String? sourceBlockId; BlockType? sourceType; String? snapshotJson }`.
   Map shape: `{"sourceEntryDate": "yyyy-MM-dd", "sourceBlockId": "...", "sourceType": "textBlock", "snapshotJson": "..."}`
   (all keys omitted when null). `isSeeded` getter is true when a memory
@@ -54,6 +56,8 @@ block content.
 - [weather_block_content.dart](weather_block_content.dart) — `WeatherBlockContent { String? conditionId }` + a curated `weatherConditionIds` constant list (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`) + `defaultWeatherConditionId = 'cloud'` (seeded by `JournalRepository._materializeOne` into newly-materialized blocks).
   Map shape: `{"conditionId": "rain"}` (or absent → `conditionId: null`).
   `fromMap` ignores unknown ids (returns no-selection rather than throwing). Used by `WeatherManualWidget` (manual picker) and `JournalBlockEmptiness`. The icon mapping lives in [ui/blocks/weather_manual/weather_manual_widget.dart](../../../ui/blocks/weather_manual/weather_manual_widget.dart) as a top-level `weatherIconFor` helper so the future API weather block can reuse it.
+- [location_block_content.dart](location_block_content.dart) — `LocationBlockContent { double? latitude; double? longitude }`.
+  Map shape: `{"latitude": 51.5, "longitude": -0.12}` (both keys omitted when no pin). `hasPin` is true when both are set. Used by `LocationBlockWidget` (long-press to drop a pin on a flutter_map view) and `JournalBlockEmptiness` (no-pin → empty).
 - [mood_block_content.dart](mood_block_content.dart) — `MoodBlockContent { String? emoji }` + a curated `moodEmojis` constant list + `defaultMoodEmoji = '😐'` (seeded by `JournalRepository._materializeOne` into newly-materialized blocks).
   Map shape: `{"emoji": "😄"}` (or absent → `emoji: null`).
   Legacy `{"moodId": "happy"|"neutral"|"sad"}` entries are read back via

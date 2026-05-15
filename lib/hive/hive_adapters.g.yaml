@@ -29,7 +29,7 @@ types:
         index: 2
   BlockType:
     typeId: 2
-    nextIndex: 9
+    nextIndex: 10
     fields:
       textBlock:
         index: 0
@@ -49,6 +49,8 @@ types:
         index: 7
       photoBlock:
         index: 8
+      locationBlock:
+        index: 9
   JournalLayout:
     typeId: 4
     nextIndex: 4

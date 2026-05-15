@@ -55,6 +55,9 @@ both after structural changes.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
+- [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —
+  `LocationBlockWidget`. flutter_map + OSM tiles; long-press drops a pin.
+  See [location_block/CLAUDE.md](location_block/CLAUDE.md).
 - [prompt_block/prompt_block_widget.dart](prompt_block/prompt_block_widget.dart)
 - [todo_block/todo_block_widget.dart](todo_block/todo_block_widget.dart)
 - [quote_block/quote_block_widget.dart](quote_block/quote_block_widget.dart)
