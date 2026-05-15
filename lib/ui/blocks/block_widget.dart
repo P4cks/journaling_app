@@ -59,7 +59,7 @@ class BlockWidget extends StatelessWidget {
       case BlockType.quoteBlock:
         return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.memoryBlock:
-        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged, onJumpToDate: onJumpToDate!);
+        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged, onJumpToDate: onJumpToDate);
       case BlockType.weatherApi:
         return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.photoBlock:

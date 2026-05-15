@@ -1,13 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
-import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -23,14 +21,14 @@ class MemoryBlockWidget extends StatefulWidget {
     super.key,
     required this.data,
     required this.mode,
-    required this.onJumpToDate,
+    this.onJumpToDate,
     this.onChanged,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
-  final ValueChanged<DateTime> onJumpToDate;
+  final ValueChanged<DateTime>? onJumpToDate;
 
   @override
   State<MemoryBlockWidget> createState() => _MemoryBlockWidgetState();
@@ -86,9 +84,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   void _openSource(String isoDate) {
     final parsed = DateTime.tryParse(isoDate);
     if (parsed == null) return;
-    widget.onJumpToDate.call(parsed);
-
-    //vm?._loadEntry(parsed);
+    widget.onJumpToDate?.call(parsed);
   }
 
   @override
@@ -124,7 +120,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: content.sourceEntryDate == null
+      onTap: (widget.onJumpToDate == null || content.sourceEntryDate == null)
           ? null
           : () => _openSource(content.sourceEntryDate!),
       child: Column(

@@ -13,7 +13,11 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 ///   prompt rotates through every slot evenly over time.
 /// - [random] — independent random pick per prompt block at
 ///   materialization time.
-enum PromptStrategy { daily, random }
+/// - [manual] — no prompt is picked at materialization. The widget
+///   prompts the user to choose one via a bottom sheet on first open
+///   of the entry. Long-pressing the block opens the picker again
+///   (regardless of strategy — long-press is a manual override).
+enum PromptStrategy { daily, random, manual }
 
 /// Block-type-global settings, persisted in the `settings` Hive box.
 ///
@@ -65,6 +69,8 @@ class BlockSettings extends ChangeNotifier {
     final strategy = _storage.getBlockPromptStrategy();
     if (strategy == PromptStrategy.random.name) {
       _promptStrategy = PromptStrategy.random;
+    } else if (strategy == PromptStrategy.manual.name) {
+      _promptStrategy = PromptStrategy.manual;
     } else {
       _promptStrategy = PromptStrategy.daily;
     }
@@ -108,9 +114,14 @@ class BlockSettings extends ChangeNotifier {
 
   /// Pick a prompt for a single prompt-block slot.
   ///
-  /// Returns `null` when no prompts are configured — the caller is
-  /// expected to render an empty placeholder.
+  /// Returns `null` when:
+  /// - no prompts are configured, OR
+  /// - the strategy is [PromptStrategy.manual] (the widget will open
+  ///   the picker on first build).
+  ///
+  /// The caller is expected to render an empty placeholder for `null`.
   String? pickPromptFor({required DateTime date, required int slotIndex}) {
+    if (_promptStrategy == PromptStrategy.manual) return null;
     if (_prompts.isEmpty) return null;
     if (_promptStrategy == PromptStrategy.random) {
       return _prompts[_rng.nextInt(_prompts.length)];

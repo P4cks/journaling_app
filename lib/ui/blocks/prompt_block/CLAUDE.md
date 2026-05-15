@@ -1,14 +1,22 @@
 # lib/ui/blocks/prompt_block — Prompt block widget
 
 One `BlockType.promptBlock` block. Renders a question (chosen from the
-user's global prompt list) above an editable answer field. Content
-shape: `{"prompt": "...", "answer": "…"}`. Typed wrapper:
+user's global prompt list, or picked manually by the user) above an
+editable answer field. Content shape: `{"prompt": "...", "answer": "…"}`.
+Typed wrapper:
 [PromptBlockContent](../../../data/model/block_content/prompt_block_content.dart).
 
 ## Files
 
 - [prompt_block_widget.dart](prompt_block_widget.dart) —
-  `PromptBlockWidget`. Stateful (owns its `TextEditingController`).
+  `PromptBlockWidget`. Stateful (owns its `TextEditingController` and
+  a one-shot auto-picker flag).
+- [prompt_picker_sheet.dart](prompt_picker_sheet.dart) —
+  `Future<String?> showPromptPickerSheet(context, {prompts, selected})`.
+  Modal bottom sheet listing the configured prompts plus a "Type
+  custom prompt…" tile that swaps into a `TextField`. Returns the
+  picked prompt string, or `null` on dismiss. Custom-typed prompts are
+  one-off — they are **not** appended to `BlockSettings.prompts`.
 
 ## How the prompt gets there
 
@@ -17,42 +25,74 @@ by [JournalRepository.materializeLayout](../../../data/repositories/journal_repo
 which calls [BlockSettings.pickPromptFor](../../../data/services/block_settings.dart).
 That means:
 
-- The prompt list and strategy (`daily` / `random`) are configured
-  globally in Profile → Block settings → Prompt block.
-- The pick happens **once**, the day the entry is created, and lives
-  in the entry's `contentJson` forever — re-opening the entry never
-  re-rolls.
+- The prompt list and strategy (`daily` / `random` / `manual`) are
+  configured globally in Profile → Block settings → Prompt block.
+- For `daily` / `random`: the pick happens **once**, the day the entry
+  is created, and lives in the entry's `contentJson` forever —
+  re-opening the entry never re-rolls.
+- For `manual`: `pickPromptFor` returns `null`, the materialized
+  prompt is empty, and the widget opens the picker sheet automatically
+  on first build of the editable view.
 - Editing the prompt list afterwards only affects entries created
-  *after* the edit. Historical entries are immutable in this respect.
-- Empty prompt list (or none configured at materialization time) →
-  the widget renders a dimmed italic "No prompt set" placeholder.
+  *after* the edit (for `daily` / `random`); for `manual`, the next
+  picker open reflects the updated list immediately.
+- Empty prompt list AND non-`manual` strategy → the widget renders a
+  dimmed italic "No prompt set" placeholder. In editable mode the
+  placeholder becomes "Tap to pick a prompt".
 
-The widget therefore reads the prompt from `widget.data.content`, not
-from `BlockSettings`. The settings object is only consulted by the
-repository at create time.
+The widget reads the prompt from `widget.data.content`. It only reads
+`BlockSettings` to source the picker's list — never to pick on its own.
+
+## Picker UX
+
+- **Auto-open on first build** — `didChangeDependencies` checks
+  `widget.mode == editable && content.prompt.isEmpty` and, if so,
+  schedules `showPromptPickerSheet` via
+  `WidgetsBinding.instance.addPostFrameCallback`. A `_autoPromptShown`
+  flag prevents re-firing on theme changes or other dependency churn.
+- **Long-press to re-pick** — the editable body is wrapped in a
+  `GestureDetector(onLongPress: …)` *inside* `BlockGrid`'s outer
+  `LongPressDraggable`. The inner gesture wins the long-press; the
+  drag-to-reorder still works on the rest of the tile (this is the
+  same nested pattern the photo block uses).
+- **Tap to recover** — if the user dismisses the auto-picker, the
+  editable view shows a "Tap to choose" body that re-opens the picker.
+- **Re-pick with existing answer** — if the user re-picks a different
+  prompt and the answer is non-empty, a confirm dialog offers
+  `Cancel` / `Clear it` / `Keep my answer`. `Cancel` aborts; `Clear`
+  resets the answer; `Keep` preserves it under the new prompt.
 
 ## Modes
 
 - `BlockMode.readOnly` — prompt label on top (primary-colored,
   semibold), then the user's answer or "Not answered yet" italic
-  placeholder.
+  placeholder. No picker, no long-press.
 - `BlockMode.editable` — prompt label on top, then a multi-line
   `TextField` that fills the remaining vertical space (`Expanded` +
-  `expands: true`). Same per-keystroke save pattern as the text block.
+  `expands: true`). Picker auto-opens on empty-prompt first build;
+  long-press re-opens it. Same per-keystroke save pattern as the text
+  block.
 
 ## Gotchas
 
+- **Never show a modal directly from `didChangeDependencies`** —
+  always defer via `addPostFrameCallback`. `didChangeDependencies` can
+  fire multiple times (theme changes, etc.), and a directly-pushed
+  route is racy.
 - **The widget must round-trip `prompt` on every emit.** When the user
   types into the answer field, the widget reconstructs the content map
   with both `prompt` *and* `answer` so the prompt survives the next
   read. Don't drop the prompt argument from `_emit`.
 - **Empty `answer` makes the block empty** for sweep purposes — the
   prompt text alone doesn't count.
+- **Custom-typed prompts are entry-local**, not added to the global
+  list. If users start asking for "save this prompt", revisit by
+  promoting the typed value into `BlockSettings.setPrompts` before
+  emitting.
 
 ## When to update this file
 
 - The content shape gains a new field (e.g. `placeholder`).
-- The prompt selection strategy changes (e.g. user-overridable per
-  entry).
-- `BlockSettings.pickPromptFor` gains new strategies — describe them
-  here and in [data/services/CLAUDE.md](../../../data/services/CLAUDE.md).
+- The prompt selection strategy changes — `BlockSettings.pickPromptFor`
+  gains new variants, or the auto-open / long-press semantics shift.
+- The picker sheet UX changes (e.g. search, multi-pick, save-to-list).
