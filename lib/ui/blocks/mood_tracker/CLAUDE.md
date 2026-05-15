@@ -6,14 +6,32 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
 ## Files
 
 - [mood_tracker_widget.dart](mood_tracker_widget.dart) — `MoodTrackerWidget`.
-  Stateful — owns the `PageController` so swipe position survives rebuilds.
+  Stateless. Decodes `MoodBlockContent`, renders the centred emoji in
+  `BlockMode.readOnly`, otherwise delegates to
+  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
+  which owns the PageController, expand/collapse state, and timer.
 
 ## Modes
 
 - `BlockMode.readOnly` — renders the selected emoji large and centred. When
   `emoji == null`, renders a dimmed em-dash placeholder.
-- `BlockMode.editable` — horizontal `PageView` (carousel) of the curated
-  emoji set (`moodEmojis` constant in [mood_block_content.dart](../../../data/model/block_content/mood_block_content.dart)). Each page shows one emoji; selected page is full-scale + full-opacity, others scaled down + dimmed. `onPageChanged` writes the centred emoji as the selection (swiping to a page selects it). `FocusScope.of(context).unfocus()` runs on every page change to dismiss any text-field keyboard from a neighbouring block.
+- `BlockMode.editable` — delegates to
+  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
+  with `options: moodEmojis`. The block starts collapsed (same centred
+  emoji or em-dash as read-only); tapping expands a horizontal `PageView`
+  of all emojis. Selected page is full-scale + full-opacity, others
+  scaled down + dimmed. The shared widget's collapse timer fires 1500 ms
+  after **expand** (so tap-without-swipe still auto-collapses) and on
+  every page change (each swipe restarts the 1.5 s window). `onSelected`
+  re-encodes the new emoji into the block via `widget.onChanged`.
+
+### Defaults
+
+- `defaultMoodEmoji = '😐'` (in
+  [mood_block_content.dart](../../../data/model/block_content/mood_block_content.dart))
+  is seeded into newly-materialized mood blocks by
+  `JournalRepository._materializeOne`. Existing entries with empty
+  content keep their em-dash placeholder.
 
 ## Wire shape & migration
 
@@ -37,12 +55,18 @@ index).
 - **Don't index `moodEmojis` to persist the selection.** Persist the
   emoji string itself; otherwise reordering the list breaks past entries.
 - **The current page IS the selection.** Subtle accidental scrolling
-  during list interaction could change the mood. This is acceptable
-  per the chosen UX; if it becomes a problem, switch to "tap to select"
-  with separate browsing.
+  during list interaction could change the mood. The tap-to-expand
+  guard reduces accidents from horizontal swipes meant for the outer
+  date pager.
 - **Persisted emojis are user-visible strings.** Renaming/normalising
   unicode forms could double-write the same logical mood; keep entries
   exactly as the picker emits them.
+- **Expanded state fires `onInteractionLockChanged(blockId, true)`** via
+  `CollapsibleCarouselBlock` so `JournalPager` swaps to
+  `NeverScrollableScrollPhysics` and the outer swipe doesn't fight
+  the carousel. The release lives inside the shared widget; this
+  block doesn't have its own dispose path. See
+  [widgets/CLAUDE.md](../widgets/CLAUDE.md) for the full lifecycle.
 
 ## When to update this file
 

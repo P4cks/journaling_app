@@ -11,7 +11,10 @@ block planned for a later phase — it reuses the same icon mapping.
 ## Files
 
 - [weather_manual_widget.dart](weather_manual_widget.dart) — `WeatherManualWidget`.
-  Stateful — owns the `PageController` so swipe position survives rebuilds.
+  Stateless. Decodes `WeatherBlockContent`, renders the centred icon in
+  `BlockMode.readOnly`, otherwise delegates to
+  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
+  which owns the PageController, expand/collapse state, and timer.
   Also exposes the top-level `weatherIconFor(conditionId, {required selected})`
   helper so the API weather block can reuse the same icon mapping.
 
@@ -19,11 +22,23 @@ block planned for a later phase — it reuses the same icon mapping.
 
 - `BlockMode.readOnly` — large filled Phosphor icon centred in the cell.
   Falls back to a dimmed em-dash placeholder when `conditionId == null`.
-- `BlockMode.editable` — horizontal `PageView` of the 7 conditions
-  (`weatherConditionIds` constant in [weather_block_content.dart](../../../data/model/block_content/weather_block_content.dart)).
+- `BlockMode.editable` — delegates to
+  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
+  with `options: weatherConditionIds`. The block starts collapsed
+  (same centred filled icon, or em-dash placeholder, as read-only);
+  tapping expands a horizontal `PageView` over the 7 conditions.
   Selected page is full-scale + filled icon; others are duotone +
-  scaled down + dimmed. `onPageChanged` writes the centred id (swiping
-  to a page selects it). Same UX as the mood block carousel.
+  scaled down + dimmed. The shared widget's collapse timer fires
+  1500 ms after **expand** (so tap-without-swipe still auto-collapses)
+  and on every page change. Same UX as the mood block carousel.
+
+### Defaults
+
+- `defaultWeatherConditionId = 'cloud'` (in
+  [weather_block_content.dart](../../../data/model/block_content/weather_block_content.dart))
+  is seeded into newly-materialized weather blocks by
+  `JournalRepository._materializeOne`. Existing entries with empty
+  content keep their em-dash placeholder.
 
 ## Condition ids → icons
 
@@ -47,6 +62,11 @@ Unknown ids fall back to `PhosphorIconsDuotone.question` (defensive — should n
   check).
 - **`weatherIconFor` is exported** for the future API weather block.
   Don't inline it back into the widget.
+- **Expanded state fires `onInteractionLockChanged(blockId, true)`** via
+  `CollapsibleCarouselBlock` so `JournalPager` swaps to
+  `NeverScrollableScrollPhysics`. The release lives inside the shared
+  widget; this block doesn't have its own dispose path. See
+  [widgets/CLAUDE.md](../widgets/CLAUDE.md) for the full lifecycle.
 
 ## When to update this file
 

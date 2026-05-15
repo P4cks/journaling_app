@@ -28,8 +28,13 @@ the same three-part shape:
   swipe pager between entries, sticky calendar bar at the bottom.
   Merger of the former Home + journal-entry editor.
 - [journal_entries/CLAUDE.md](journal_entries/CLAUDE.md) — Sectioned
-  list of all entries (plural). Pushed from the main screen's
-  Entries icon.
+  list of all entries (plural). Route still exists at `/entries` but
+  no AppBar action links to it after the stats rewire — kept around
+  so the list view can be restored later without re-implementation.
+- [statistics/CLAUDE.md](statistics/CLAUDE.md) — Stats dashboard
+  (streak, mood distribution / over-time, weekly frequency). Pushed
+  from the main screen's top-bar Statistics icon — replaces the
+  former Entries push.
 - [layouts/CLAUDE.md](layouts/CLAUDE.md) — Layouts CRUD: list, editor,
   icon catalogue, picker sheets. Pushed from the profile dropdown.
 - [profile/CLAUDE.md](profile/CLAUDE.md) — Settings and Block-settings

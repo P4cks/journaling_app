@@ -31,7 +31,8 @@ class BlockGrid extends StatefulWidget {
     this.cardTrailing,
     this.onReorder,
     this.padding = const EdgeInsets.all(16),
-    this.onJumpToDate
+    this.onJumpToDate,
+    this.onInteractionLockChanged,
   });
 
   final List<JournalBlockData> blocks;
@@ -41,6 +42,11 @@ class BlockGrid extends StatefulWidget {
   final Widget Function(JournalBlockData block, int index)? cardTrailing;
   final void Function(int from, int to)? onReorder;
   final EdgeInsets padding;
+
+  /// Forwarded to `BlockWidget`. When a block reports `locked: true`
+  /// the journal pager disables its outer horizontal swipe — see
+  /// [lib/ui/journal/widgets/journal_pager.dart].
+  final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
   @override
   State<BlockGrid> createState() => _BlockGridState();
@@ -319,7 +325,8 @@ class _BlockGridState extends State<BlockGrid> {
         data: block,
         mode: widget.mode,
         onChanged: widget.onBlockChanged,
-        onJumpToDate: widget.onJumpToDate
+        onJumpToDate: widget.onJumpToDate,
+        onInteractionLockChanged: widget.onInteractionLockChanged,
       ),
     );
 

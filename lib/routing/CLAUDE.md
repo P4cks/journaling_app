@@ -11,7 +11,11 @@ every screen has access to repositories without per-route plumbing.
   - `/` → `MainJournalScreen()` (defaults to today)
   - `/journal/:date` → `MainJournalScreen(initialDate: parsed)`
     (deep-link / entries-list tap)
-  - `/entries` → `JournalEntriesScreen`
+  - `/entries` → `JournalEntriesScreen` (kept for future reuse; no
+    AppBar action links to it after the stats rewire — deep-link/URL
+    still works)
+  - `/statistics` → `StatisticsScreen` (linked from the main screen's
+    top-bar Statistics icon)
   - `/settings` → `SettingsScreen`
   - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
   - `/block-settings` (+ `text`, `prompt`) → block settings screens

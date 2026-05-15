@@ -15,6 +15,12 @@ import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_m
 /// Pages render the existing `BlockGrid`. The screen decides which
 /// mode (editable / readOnly) to apply per page based on the entry's
 /// date vs today.
+///
+/// Nested `PageView` carousels in mood/weather blocks would normally
+/// fight this pager for horizontal drags. The blocks report their
+/// "expanded" state via `onInteractionLockChanged`; while the lock-set
+/// is non-empty this pager switches to `NeverScrollableScrollPhysics`
+/// so the inner carousel wins.
 class JournalPager extends StatefulWidget {
   const JournalPager({
     super.key,
@@ -32,6 +38,7 @@ class JournalPager extends StatefulWidget {
 class _JournalPagerState extends State<JournalPager> {
   late PageController _controller;
   int _activeIndex = 0;
+  final Set<String> _lockedBlockIds = <String>{};
 
   @override
   void initState() {
@@ -68,13 +75,29 @@ class _JournalPagerState extends State<JournalPager> {
     super.dispose();
   }
 
+  void _onLockChanged(String blockId, bool locked) {
+    if (!mounted) return;
+    final wasLocked = _lockedBlockIds.isNotEmpty;
+    if (locked) {
+      _lockedBlockIds.add(blockId);
+    } else {
+      _lockedBlockIds.remove(blockId);
+    }
+    final isLocked = _lockedBlockIds.isNotEmpty;
+    if (wasLocked != isLocked) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final entries = widget.viewModel.entries;
     if (entries.isEmpty) return const SizedBox.shrink();
+    final pagerLocked = _lockedBlockIds.isNotEmpty;
     return PageView.builder(
       controller: _controller,
       itemCount: entries.length,
+      physics: pagerLocked ? const NeverScrollableScrollPhysics() : null,
       onPageChanged: (index) {
         _activeIndex = index;
         widget.viewModel.setSelectedDate(entries[index].date);
@@ -92,6 +115,9 @@ class _JournalPagerState extends State<JournalPager> {
               ? widget.viewModel.updateBlock
               : null,
           onJumpToDate: (date) => widget.viewModel.setSelectedDate(date),
+          onInteractionLockChanged: mode == BlockMode.editable
+              ? _onLockChanged
+              : null,
         );
       },
     );

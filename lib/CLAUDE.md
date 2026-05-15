@@ -33,8 +33,9 @@ lib/
     ├── blocks/              BlockGrid, BlockCard, BlockWidget dispatcher
     │   ├── text_block/      TextBlockWidget
     │   └── mood_tracker/    MoodTrackerWidget
-    ├── journal/             Main journal screen — AppBar (editable title + date + entries + profile dropdown), swipe pager, bottom calendar
-    ├── journal_entries/     Sectioned list of all entries (pushed from top-bar icon)
+    ├── journal/             Main journal screen — AppBar (editable title + date + stats + profile dropdown), swipe pager, bottom calendar
+    ├── journal_entries/     Sectioned list of all entries (kept for future reuse — no AppBar action links to it after the stats rewire)
+    ├── statistics/          Stats dashboard (streak, mood, frequency charts) — pushed from main screen's top-bar icon
     ├── layouts/             Layouts list + layout editor + icon picker (pushed from profile dropdown)
     └── profile/             Settings / Block-settings screens + auth card widget (no top-level profile screen — see profile dropdown in journal/widgets/)
 ```

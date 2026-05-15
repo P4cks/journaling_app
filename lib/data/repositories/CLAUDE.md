@@ -30,10 +30,21 @@ coordination live.
       blocks in this layout (not the overall block index), so two
       prompt blocks on the same day get different prompts under
       `daily` strategy.
+    - `moodTracker` — seeded with `defaultMoodEmoji` (😐) from
+      [mood_block_content.dart](../model/block_content/mood_block_content.dart).
+    - `weatherManual` — seeded with `defaultWeatherConditionId`
+      (`cloud`) from
+      [weather_block_content.dart](../model/block_content/weather_block_content.dart).
     - Other types — empty content map; the widget owns its read-time
       reads (e.g. `TextBlockWidget` reads `BlockSettings.textCharLimit`
       live).
     Public so the editor's `applyLayout` path uses the same code.
+    **Side-effect to note**: a mood/weather block seeded with its
+    default is non-empty per `JournalBlockEmptiness`, so a brand-new
+    entry that the user immediately abandons would survive the
+    midnight sweep. Acceptable — the entry carries meaningful data
+    (the user's implicit "neutral / cloudy" pick). Revisit if user
+    feedback contradicts.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.
   - `getAllEntries()` — unsorted; sorting is caller's job

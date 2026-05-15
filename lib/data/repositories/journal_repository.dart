@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -167,9 +169,21 @@ class JournalRepository extends ChangeNotifier {
           type: type,
           content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
         );
-      case BlockType.textBlock:
       case BlockType.moodTracker:
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: const MoodBlockContent(emoji: defaultMoodEmoji).toMap(),
+        );
       case BlockType.weatherManual:
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: const WeatherBlockContent(
+            conditionId: defaultWeatherConditionId,
+          ).toMap(),
+        );
+      case BlockType.textBlock:
       case BlockType.todoBlock:
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:

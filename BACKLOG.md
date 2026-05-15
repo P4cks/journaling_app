@@ -49,7 +49,7 @@ READ CLAUDE.md for further implementation details
 ## Entries tab ideas
 
 * [ ] `M` **Highlights / memories** — surface past entries (“On this day last year…”).
-* [ ] `L` **Entry analytics** — simple insights (most used words, mood trends).
+* [~] `L` **Entry analytics** — initial Statistics page shipped (streak, summary numbers, mood distribution, mood-over-time line, weekly frequency, range selector). Future: word-frequency / most-used-words insights, GitHub-style heatmap, year-in-review summary.
 
 ## Profile implementation
 
