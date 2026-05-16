@@ -45,6 +45,7 @@ READ CLAUDE.md for further implementation details
 * [ ] `XL` **Integration Calender block** - display activities for the day
 * [x] `M` **Memory block** - show random block from a past day (with date and link to the entry). Picks once from any non-empty text or mood block in past entries, locks the snapshot into the entry's content, tap-to-navigate to source.
 * [x] `L` **Photo block** - add or take a foto to add to that day. `image_picker` (camera/gallery); files copied to `<docs>/photos/<uuid>.<ext>` with the path stored in content. Long-press → Replace / Remove. iOS + Android permission strings wired.
+* [ ] `S` Weather api placeholder should have a location exampl
 
 ## Entries tab ideas
 
