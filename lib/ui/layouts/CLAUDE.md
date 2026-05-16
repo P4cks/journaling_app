@@ -26,12 +26,19 @@ tapped:
   AppBar `+` to add a block, swipe-remove via the tile's `cardTrailing`
   X. Saving stores one `LayoutSection(kind: blockGrid)` whose
   `blocks` list is the user's slot list.
-- **fixedFourPlusText** — locked structure: one `blockGrid` section
-  with `rows: 2` and exactly 4 slots (defaulting to `textBlock`)
-  followed by one `text` section. The editor lets the user **swap
-  block types in the 4 slots** (tap the pencil affordance on a tile
-  → `showAddBlockSheet`) but disables add/remove/reorder/resize at
-  the section level. No AppBar `+`.
+- **fixedFourPlusText** — locked structure: a 2×2 cell grid + a
+  `text` section. Cells start empty; each empty cell shows a
+  `+ Add block` placeholder. Tapping a placeholder opens the
+  add-block sheet and fills the cell; filled cells show the type's
+  read-only sample with a small X to remove (tapping a filled tile
+  swaps its type via the same add-block sheet). Filled cells
+  **compress to the front** — deleting the second cell of three
+  filled leaves `[filled, filled, empty, empty]`. The user can save
+  with anywhere from 0 to 4 filled cells. **Only the filled cells
+  are persisted as `BlockTemplate`s, so entries created from this
+  layout only render the actually-chosen blocks** — empty cells
+  never appear in the rendered entry. No add/remove sections, no
+  resize. No AppBar `+`.
 - **custom** — fully editable. The editor renders a vertical stack
   of section cards. Each card has up/down/delete affordances; for
   block-grid sections an inline "Add block" button (the grid grows

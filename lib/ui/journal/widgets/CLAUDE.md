@@ -43,6 +43,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `PageView` swaps to `NeverScrollableScrollPhysics` so an inner
   mood/weather carousel wins the horizontal drag.
 
+  **Empty blockGrid sections render nothing** — when a section's
+  `blocks` list is empty (e.g. a kind-B layout saved with zero filled
+  slots), `_SectionsBody` returns `SizedBox.shrink()` for that
+  section so the entry doesn't have awkward padding around an empty
+  grid. Text sections are still rendered even when their
+  `TextBlockContent` is empty (the user might be about to start
+  typing).
+
 ## Sentinel: TableCalendar `eventLoader`
 
 The week strip and the month sheet both use the same `_kHasEntry` /

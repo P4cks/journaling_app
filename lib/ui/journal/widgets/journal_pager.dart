@@ -169,6 +169,10 @@ class _SectionsBody extends StatelessWidget {
           onChanged: onBlockChanged,
         );
       case SectionKind.blockGrid:
+        // Suppress empty block-grid sections so a layout that materialized
+        // with zero blocks (e.g. a kind-B layout saved with no filled
+        // slots) doesn't leave awkward padding in the entry.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: BlockGrid(

@@ -91,9 +91,20 @@ Common:
   are no-ops; when `to > from`, the effective insert index is
   `to - 1` because the source is removed first.
 
-`fixedFourPlusText`:
-- `replaceSlotType(slotId, newType)` — swap a slot's `BlockType` in
-  place. No add/remove/reorder methods are exposed.
+`fixedFourPlusText` (capacity hard-capped via
+`LayoutEditorViewModel.fixedFourCapacity = 4`):
+- `addBlockInFixedFour(type)` — append a slot to the first section's
+  slot list. No-op when already at capacity.
+- `removeFixedFourSlot(slotId)` — remove a slot from the first
+  section's slot list. Remaining filled slots compress to the front;
+  the editor pads the visual 2×2 grid with empty placeholders.
+- `replaceSlotType(slotId, newType)` — swap a filled slot's
+  `BlockType` in place (tap-on-tile in the editor). No `addBlock` /
+  `removeSlot` / `moveSlot` / section CRUD is exposed.
+
+Only the filled slots are persisted as `BlockTemplate`s — empty
+cells are an editor-only concept. Entries materialized from a kind-B
+layout naturally contain only the chosen blocks.
 
 `custom` (full section toolkit):
 - `addSection(kind)` — append a `SectionDraft`. Block-grid sections

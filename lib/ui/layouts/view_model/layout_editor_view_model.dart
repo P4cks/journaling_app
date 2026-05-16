@@ -180,8 +180,34 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // fixedFourPlusText — only slot-type swaps are exposed.
+  // fixedFourPlusText — 0..4 filled slots in the first section; the editor
+  // pads the visual 2x2 grid with "+ Add block" placeholders.
   // ---------------------------------------------------------------------------
+
+  static const int fixedFourCapacity = 4;
+
+  void addBlockInFixedFour(BlockType type) {
+    assert(_kind == LayoutKind.fixedFourPlusText);
+    final section = _sections.first;
+    if (section.slots.length >= fixedFourCapacity) return;
+    section.slots = [...section.slots, BlockSlot(id: _uuid.v4(), type: type)];
+    debugPrint(
+      '[LayoutEditorVM] addBlockInFixedFour $type (slots=${section.slots.length})',
+    );
+    notifyListeners();
+  }
+
+  void removeFixedFourSlot(String slotId) {
+    assert(_kind == LayoutKind.fixedFourPlusText);
+    final section = _sections.first;
+    final next = [...section.slots]..removeWhere((s) => s.id == slotId);
+    if (next.length == section.slots.length) return;
+    section.slots = next;
+    debugPrint(
+      '[LayoutEditorVM] removeFixedFourSlot $slotId (slots=${section.slots.length})',
+    );
+    notifyListeners();
+  }
 
   void replaceSlotType(String slotId, BlockType newType) {
     for (final section in _sections) {
@@ -339,11 +365,8 @@ class LayoutEditorViewModel extends ChangeNotifier {
           SectionDraft(
             id: _uuid.v4(),
             kind: SectionKind.blockGrid,
-            rows: 2,
-            slots: [
-              for (var i = 0; i < 4; i++)
-                BlockSlot(id: _uuid.v4(), type: BlockType.textBlock),
-            ],
+            rows: 2, // renderer hint only; the editor always shows a 2x2 frame
+            slots: const [],
           ),
           SectionDraft(
             id: _uuid.v4(),

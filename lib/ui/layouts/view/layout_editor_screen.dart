@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
@@ -210,6 +213,13 @@ class _FixedFourPlusTextBody extends StatelessWidget {
   const _FixedFourPlusTextBody({required this.vm});
   final LayoutEditorViewModel vm;
 
+  Future<void> _fillCell(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(context);
+    if (picked == null) return;
+    vm.addBlockInFixedFour(picked);
+  }
+
   Future<void> _swapType(BuildContext context, String slotId) async {
     FocusScope.of(context).unfocus();
     final picked = await showAddBlockSheet(context);
@@ -223,27 +233,38 @@ class _FixedFourPlusTextBody extends StatelessWidget {
     final blockGridSection = vm.sections.firstWhere(
       (s) => s.kind == SectionKind.blockGrid,
     );
-    final blocks = [
-      for (final slot in blockGridSection.slots)
-        slot.type.sampleData(id: slot.id),
-    ];
+    final slots = blockGridSection.slots;
+    final isFull = slots.length >= LayoutEditorViewModel.fixedFourCapacity;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 2×2 grid — tap a tile to swap the block type.
-          BlockGrid(
-            blocks: blocks,
-            mode: BlockMode.readOnly,
-            scrollable: false,
+          // 2x2 grid — filled cells render the block sample, empty cells
+          // show a "+ Add block" placeholder. Filled cells pack to the
+          // front; deleting one compresses the rest.
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            cardTrailing: (block, index) => IconButton(
-              tooltip: 'Change type',
-              iconSize: 16,
-              visualDensity: VisualDensity.compact,
-              icon: const AppIcon(PhosphorIconsBold.pencilSimple),
-              onPressed: () => _swapType(context, block.id),
+            child: StaggeredGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                for (var i = 0; i < LayoutEditorViewModel.fixedFourCapacity; i++)
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: i < slots.length
+                        ? _FilledCell(
+                            slot: slots[i],
+                            onSwapType: () => _swapType(context, slots[i].id),
+                            onRemove: () =>
+                                vm.removeFixedFourSlot(slots[i].id),
+                          )
+                        : _EmptyAddBlockCell(
+                            onTap: isFull ? null : () => _fillCell(context),
+                          ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -278,6 +299,89 @@ class _FixedFourPlusTextBody extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FilledCell extends StatelessWidget {
+  const _FilledCell({
+    required this.slot,
+    required this.onSwapType,
+    required this.onRemove,
+  });
+
+  final BlockSlot slot;
+  final VoidCallback onSwapType;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onSwapType,
+      child: BlockCard(
+        topRight: IconButton(
+          tooltip: 'Remove',
+          iconSize: 16,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.all(2),
+          constraints: const BoxConstraints(),
+          icon: AppIcon(
+            PhosphorIconsBold.x,
+            color: scheme.onSurfaceVariant,
+          ),
+          onPressed: onRemove,
+        ),
+        child: AbsorbPointer(
+          child: BlockWidget(
+            key: ValueKey(slot.id),
+            data: slot.type.sampleData(id: slot.id),
+            mode: BlockMode.readOnly,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyAddBlockCell extends StatelessWidget {
+  const _EmptyAddBlockCell({required this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final disabled = onTap == null;
+    final color = disabled ? theme.disabledColor : scheme.primary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: color.withValues(alpha: 0.5),
+            width: 1.5,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(PhosphorIconsBold.plus, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              'Add block',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
