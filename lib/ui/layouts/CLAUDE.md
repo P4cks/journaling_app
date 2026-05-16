@@ -40,21 +40,13 @@ tapped:
   never appear in the rendered entry. No add/remove sections, no
   resize. No AppBar `+`.
 - **custom** — fully editable. The editor renders a vertical stack
-  of section cards. Each card has up/down/delete affordances. Block
-  grid sections render as a 2-column staggered grid of 1×1 cells:
-  N filled tiles (sample + tap-to-swap-type + X-to-remove, same
-  `_FilledCell` widget as kind B) followed by exactly one trailing
-  `_EmptyAddBlockCell` placeholder that appends a new block when
-  tapped. The grid grows to fit added blocks (no row picker, no
-  cap). Below the last section a dashed "Add section" tap zone
-  opens [add_section_sheet.dart](widgets/add_section_sheet.dart) to
-  append a text or block-grid section. New block-grid sections
-  start empty (just the placeholder). No AppBar `+` — block / section
-  creation both happen via in-grid tap zones.
-  - **No drag-to-reorder** within a custom block-grid section. The
-    hand-rolled grid prioritised visual consistency with kind B
-    over the inherited `BlockGrid` DnD. If you need to change order,
-    delete + re-add.
+  of section cards. Each card has up/down/delete affordances; for
+  block-grid sections an inline "Add block" button (the grid grows
+  to fit added blocks — no row picker). Below the last section a
+  dashed "Add section" tap zone opens [add_section_sheet.dart](widgets/add_section_sheet.dart)
+  to append a text or block-grid section. New block-grid sections
+  start empty. No AppBar `+` — section creation happens at the tap
+  zone.
 
 ## Routes
 

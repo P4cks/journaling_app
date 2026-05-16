@@ -133,10 +133,6 @@ layout naturally contain only the chosen blocks.
   the section's `rows` from the slot count
   (`(slots.length / 2).ceil()`). `rows` is purely a renderer hint;
   the BlockGrid sizes itself to its blocks regardless.
-  `moveSlotInSection` is currently unused by the editor — the
-  custom-kind block-grid body is hand-rolled (1×1 cells + trailing
-  `+ Add block` placeholder) and dropped DnD for visual parity with
-  kind B. Kept on the VM in case drag is re-introduced later.
 
 ## Gotchas
 
