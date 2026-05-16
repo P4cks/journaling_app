@@ -16,18 +16,21 @@ that lives in block-grid sections.
 
 Backed by a `JournalBlockData(type: BlockType.textBlock)` — the same
 `TextBlockContent` (`{"text": "..."}`) used by the 1×1 text block. This
-trick lets the section reuse the existing JSON path, the
-`BlockSettings.textCharLimit` enforcement, and the
+trick lets the section reuse the existing JSON path and the
 `JournalBlockEmptiness` check without introducing a new content type.
+Unlike `TextBlockWidget`, text sections **do not** enforce
+`BlockSettings.textCharLimit` — that cap exists to keep 1×1 tiles
+visually contained, but sections are full-width and meant for
+longer-form writing.
 
 ## Modes
 
 - `BlockMode.readOnly` — plain `Text` in the same padded container.
   Empty text shows "No text yet" in italic + `disabledColor`.
 - `BlockMode.editable` — `TextField` with `maxLines: null`, `minLines: 4`,
-  no `expands`. Grows with content. Suppresses Material's default
-  character counter and renders a small `N/limit` line right-aligned
-  underneath when `BlockSettings.textCharLimit` is set.
+  no `expands`. Grows with content. No `maxLength` cap and no
+  character counter — text sections intentionally ignore
+  `BlockSettings.textCharLimit`.
 
 ## Gotchas
 

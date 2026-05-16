@@ -107,7 +107,21 @@ class LayoutEditorViewModel extends ChangeNotifier {
   bool get isNew => _isNew;
   List<SectionDraft> get sections => List.unmodifiable(_sections);
   String? get iconName => _iconName;
-  bool get canSave => nameController.text.trim().isNotEmpty;
+  bool get canSave => nameController.text.trim().isNotEmpty && !nameConflict;
+
+  /// True when the trimmed, case-insensitive name matches another
+  /// layout in the repository (excluding this one's own id). Used by
+  /// the editor screen to block save with a SnackBar instead of
+  /// silently overwriting or producing two layouts with the same name.
+  bool get nameConflict {
+    final candidate = nameController.text.trim().toLowerCase();
+    if (candidate.isEmpty) return false;
+    for (final layout in _repository.getAll()) {
+      if (layout.id == _id) continue;
+      if (layout.name.trim().toLowerCase() == candidate) return true;
+    }
+    return false;
+  }
 
   bool get isDirty {
     if (nameController.text.trim() != _initialName) return true;
@@ -309,8 +323,15 @@ class LayoutEditorViewModel extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<JournalLayout?> save() async {
-    if (!canSave) {
+    if (nameController.text.trim().isEmpty) {
       debugPrint('[LayoutEditorVM] save skipped (name empty)');
+      return null;
+    }
+    if (nameConflict) {
+      debugPrint(
+        '[LayoutEditorVM] save skipped (name "${nameController.text.trim()}" '
+        'conflicts with an existing layout)',
+      );
       return null;
     }
     final layout = JournalLayout(

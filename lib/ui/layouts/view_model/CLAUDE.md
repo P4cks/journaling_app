@@ -79,9 +79,22 @@ the slot.
 
 Common:
 - `setIconName(name)` — guard against no-op assignment.
-- `save()` — guarded by `canSave`. Builds a `JournalLayout` (with
-  its `kind` and `sections`) from current state, persists via the
-  repository, returns it. The caller pops on success.
+- `save()` — defensively re-checks that the name is non-empty AND
+  `nameConflict` is false (returns `null` on either failure). Builds
+  a `JournalLayout` (with its `kind` and `sections`) from current
+  state, persists via the repository, returns it. The caller pops on
+  success.
+
+Name validation:
+- `canSave` — `true` when the trimmed name is non-empty AND there is
+  no `nameConflict`. The editor screen reads this to enable/disable
+  the AppBar save affordance live; the save-on-leave dialog also
+  checks it before persisting.
+- `nameConflict` — `true` when the trimmed, case-insensitive name
+  matches another layout (excluding this one's own id). Driven off
+  `LayoutRepository.getAll()` each call (cheap; layout volumes are
+  small). The save-on-leave dialog surfaces a SnackBar
+  ("A layout with this name already exists") when this fires.
 
 `blockOnly` (operates on the single implicit section):
 - `addBlock(type)` — append a fresh `BlockSlot`.

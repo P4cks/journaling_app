@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
-import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 /// Full-width text section. Backs onto the same `TextBlockContent`
 /// shape as `TextBlockWidget` so it round-trips through the journal
 /// entry's section blocks list, but renders without a `BlockCard`
-/// chrome — grows with its content and respects
-/// `BlockSettings.textCharLimit`.
+/// chrome — grows with its content. Unlike the 1×1 `TextBlockWidget`,
+/// text sections **do not** enforce `BlockSettings.textCharLimit` —
+/// they're meant for longer-form writing.
 class TextSectionWidget extends StatefulWidget {
   const TextSectionWidget({
     super.key,
@@ -78,61 +77,21 @@ class _TextSectionWidgetState extends State<TextSectionWidget> {
       );
     }
 
-    final blockSettings = AppDependencies.of(context).blockSettings;
-    return ListenableBuilder(
-      listenable: blockSettings,
-      builder: (context, _) => _buildEditable(context, blockSettings),
-    );
-  }
-
-  Widget _buildEditable(BuildContext context, BlockSettings settings) {
-    final theme = Theme.of(context);
-    final limit = settings.textCharLimit;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _controller,
-            maxLines: null,
-            minLines: 4,
-            maxLength: limit,
-            buildCounter:
-                (
-                  context, {
-                  required currentLength,
-                  required isFocused,
-                  required maxLength,
-                }) => null,
-            keyboardType: TextInputType.multiline,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Write something…',
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-            onChanged: _emit,
-          ),
-          if (limit != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return Text(
-                    '${_controller.text.characters.length}/$limit',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 10,
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
+      child: TextField(
+        controller: _controller,
+        maxLines: null,
+        minLines: 4,
+        keyboardType: TextInputType.multiline,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          hintText: 'Write something…',
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+        onChanged: _emit,
       ),
     );
   }

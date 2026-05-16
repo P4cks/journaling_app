@@ -89,10 +89,18 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       case 'discard':
         return true;
       case 'save':
-        if (!vm.canSave) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
+        if (vm.nameController.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Add a name to save')),
+          );
+          return false;
+        }
+        if (vm.nameConflict) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A layout with this name already exists'),
+            ),
+          );
           return false;
         }
         await vm.save();

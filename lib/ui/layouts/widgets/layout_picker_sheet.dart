@@ -41,6 +41,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
   if (layouts.isEmpty) return Future.value(null);
   return showModalBottomSheet<JournalLayout>(
     context: context,
+    isScrollControlled: true,
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -55,14 +56,22 @@ Future<JournalLayout?> showLayoutPickerSheet(
               ),
             ),
           ),
-          for (final layout in layouts)
-            ListTile(
-              leading: AppIcon(layoutIconFor(layout.iconName).duotone),
-              title: Text(layout.name),
-              subtitle: Text(_summarize(layout)),
-              onTap: () => Navigator.of(sheetContext).pop(layout),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(bottom: 8),
+              itemCount: layouts.length,
+              itemBuilder: (context, index) {
+                final layout = layouts[index];
+                return ListTile(
+                  leading: AppIcon(layoutIconFor(layout.iconName).duotone),
+                  title: Text(layout.name),
+                  subtitle: Text(_summarize(layout)),
+                  onTap: () => Navigator.of(sheetContext).pop(layout),
+                );
+              },
             ),
-          const SizedBox(height: 8),
+          ),
         ],
       ),
     ),
