@@ -75,7 +75,8 @@ READ CLAUDE.md for further implementation details
 ## Profile implementation
 
 * [x] `L` **Firebase Auth profile scaffold** — optional Profile sign-in with email/password, Google, and Apple through a Firebase Auth repository boundary. No journaling features are gated and no local Hive data is synced yet.
-* [ ] `M` **Apple Sign In after Enrollment in Apple Developer Program** - Apple sign in and rework Profile workflow
+* [x] `S` **Dedicated Profile screen + dropdown rework** — `/profile` reachable from the journal-AppBar profile dropdown. When signed out, the dropdown shows a "Sign in" row that pushes `/profile` (Email / Google / Apple via the existing `ProfileAuthCard`). When signed in, the dropdown shows the user's name or email plus a "Sign out" row guarded by a confirm dialog. When `authRepository.isConfigured == false` (Firebase init failed) both rows are suppressed so the dropdown stays local-journaling-only.
+* [ ] `M` **Apple Sign In after Enrollment in Apple Developer Program** — UI is wired (Apple button on `/profile`); needs the entitlement / provisioning before it succeeds at runtime.
 * [ ] `XL` **Profile implementation with firebase Firestore/Storage** — add cloud profile data, storage-backed avatar/media, and eventual sync once the auth-only scaffold is stable.
 
 ## Subscription / monetization

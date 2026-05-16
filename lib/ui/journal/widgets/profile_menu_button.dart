@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/app_user.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
@@ -7,70 +8,149 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-/// Top-bar profile button. Opens a popup menu containing a streak +
-/// auth-status header and items for Settings, Layouts, and Block
-/// settings. Replaces the former Profile tab.
+/// Top-bar profile button. Opens a popup menu containing a streak
+/// summary and auth-state-aware items: when signed out, a "Sign in"
+/// row that pushes `/profile`; when signed in, the user's name/email
+/// header plus a "Sign out" row guarded by a confirm dialog. Always
+/// includes navigation rows for Settings, Layouts, Block settings.
+/// Replaces the former Profile tab.
 class ProfileMenuButton extends StatelessWidget {
   const ProfileMenuButton({super.key});
+
+  Future<void> _confirmSignOut(
+    BuildContext context,
+    AuthRepository repository,
+    AppUser user,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: Text(
+          'You will be signed out of ${user.displayName ?? user.email ?? 'this account'}. '
+          'Your local journal stays on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await repository.signOut();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final deps = AppDependencies.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final authRepository = deps.authRepository;
 
-    return PopupMenuButton<String>(
-      tooltip: 'Profile',
-      icon: AppIcon(PhosphorIconsDuotone.userCircle, color: scheme.onSurface),
-      position: PopupMenuPosition.under,
-      onOpened: () => FocusManager.instance.primaryFocus?.unfocus(),
-      onSelected: (value) async {
-        FocusManager.instance.primaryFocus?.unfocus();
-        switch (value) {
-          case 'settings':
-            await context.push(Routes.settings);
-            break;
-          case 'layouts':
-            await context.push(Routes.layouts);
-            break;
-          case 'block-settings':
-            await context.push(Routes.blockSettings);
-            break;
-        }
-        // Defend against focus auto-restoration when the previously-
-        // focused TextField becomes visible again on pop.
-        FocusManager.instance.primaryFocus?.unfocus();
+    // Rebuild the menu icon when auth state changes so the dropdown
+    // reflects the current sign-in state without requiring a manual
+    // reopen.
+    return ListenableBuilder(
+      listenable: authRepository,
+      builder: (context, _) {
+        final user = authRepository.currentUser;
+        final isSignedIn = user != null;
+        final isConfigured = authRepository.isConfigured;
+
+        return PopupMenuButton<String>(
+          tooltip: 'Profile',
+          icon: AppIcon(
+            isSignedIn
+                ? PhosphorIconsDuotone.userCircleCheck
+                : PhosphorIconsDuotone.userCircle,
+            color: scheme.onSurface,
+          ),
+          position: PopupMenuPosition.under,
+          onOpened: () => FocusManager.instance.primaryFocus?.unfocus(),
+          onSelected: (value) async {
+            FocusManager.instance.primaryFocus?.unfocus();
+            switch (value) {
+              case 'sign-in':
+                await context.push(Routes.profile);
+                break;
+              case 'sign-out':
+                if (user != null) {
+                  await _confirmSignOut(context, authRepository, user);
+                }
+                break;
+              case 'settings':
+                await context.push(Routes.settings);
+                break;
+              case 'layouts':
+                await context.push(Routes.layouts);
+                break;
+              case 'block-settings':
+                await context.push(Routes.blockSettings);
+                break;
+            }
+            // Defend against focus auto-restoration when the previously-
+            // focused TextField becomes visible again on pop.
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem<String>(
+              enabled: false,
+              padding: EdgeInsets.zero,
+              child: _StreakHeader(repository: deps.journalRepository),
+            ),
+            if (isSignedIn)
+              PopupMenuItem<String>(
+                enabled: false,
+                padding: EdgeInsets.zero,
+                child: _SignedInHeader(user: user),
+              ),
+            const PopupMenuDivider(),
+            if (isSignedIn)
+              const PopupMenuItem<String>(
+                value: 'sign-out',
+                child: _MenuRow(
+                  icon: PhosphorIconsDuotone.signOut,
+                  label: 'Sign out',
+                ),
+              )
+            else if (isConfigured)
+              const PopupMenuItem<String>(
+                value: 'sign-in',
+                child: _MenuRow(
+                  icon: PhosphorIconsDuotone.signIn,
+                  label: 'Sign in',
+                ),
+              ),
+            const PopupMenuItem<String>(
+              value: 'settings',
+              child: _MenuRow(
+                icon: PhosphorIconsDuotone.gear,
+                label: 'Settings',
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'layouts',
+              child: _MenuRow(
+                icon: PhosphorIconsDuotone.squaresFour,
+                label: 'Layouts',
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'block-settings',
+              child: _MenuRow(
+                icon: PhosphorIconsDuotone.slidersHorizontal,
+                label: 'Block settings',
+              ),
+            ),
+          ],
+        );
       },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          enabled: false,
-          padding: EdgeInsets.zero,
-          child: _StreakHeader(repository: deps.journalRepository),
-        ),
-        PopupMenuItem<String>(
-          enabled: false,
-          padding: EdgeInsets.zero,
-          child: _AuthHeader(repository: deps.authRepository),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: 'settings',
-          child: _MenuRow(icon: PhosphorIconsDuotone.gear, label: 'Settings'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'layouts',
-          child: _MenuRow(
-            icon: PhosphorIconsDuotone.squaresFour,
-            label: 'Layouts',
-          ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'block-settings',
-          child: _MenuRow(
-            icon: PhosphorIconsDuotone.slidersHorizontal,
-            label: 'Block settings',
-          ),
-        ),
-      ],
     );
   }
 }
@@ -149,49 +229,39 @@ class _StreakHeader extends StatelessWidget {
   }
 }
 
-class _AuthHeader extends StatelessWidget {
-  const _AuthHeader({required this.repository});
+class _SignedInHeader extends StatelessWidget {
+  const _SignedInHeader({required this.user});
 
-  final AuthRepository repository;
+  final AppUser user;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-
-    return ListenableBuilder(
-      listenable: repository,
-      builder: (context, _) {
-        final user = repository.currentUser;
-        final label = user == null
-            ? (repository.isConfigured ? 'Not signed in' : 'Auth disabled')
-            : (user.displayName ?? user.email ?? 'Signed in');
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Row(
-            children: [
-              AppIcon(
-                user == null
-                    ? PhosphorIconsDuotone.userCircle
-                    : PhosphorIconsDuotone.userCircleCheck,
-                size: 22,
-                color: scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+    final label = user.displayName ?? user.email ?? 'Signed in';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Row(
+        children: [
+          AppIcon(
+            PhosphorIconsDuotone.userCircleCheck,
+            size: 22,
+            color: scheme.primary,
           ),
-        );
-      },
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -19,11 +19,30 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   with no entry.
 - [profile_menu_button.dart](profile_menu_button.dart) —
   `ProfileMenuButton`. `PopupMenuButton` anchored on a userCircle
-  icon. Header (non-clickable items): compact streak summary + auth
-  status row. Below a divider: Settings, Layouts, Block settings.
-  Replaces the former Profile tab. Both `onOpened` and `onSelected`
-  call `FocusManager.instance.primaryFocus?.unfocus()` so navigating
-  to one of the items (which pushes a new route) doesn't leave focus
+  icon (filled-check variant when signed in). The button wraps in a
+  `ListenableBuilder(listenable: authRepository)` so the icon and
+  menu items react to sign-in / sign-out without requiring a manual
+  reopen. Items, top-to-bottom:
+  1. **Streak header** (always; non-clickable) — current + longest
+     streak via `computeStreak`.
+  2. **Signed-in header** (only when `currentUser != null`;
+     non-clickable) — renders `displayName ?? email ?? 'Signed in'`.
+     Replaces the old "Not signed in / Auth disabled" placeholder
+     header — those states are now expressed by which action row is
+     shown instead.
+  3. **Divider**.
+  4. **Sign out** (when signed in) — opens a confirm `AlertDialog`
+     ("Sign out of <name/email>?") with Cancel / Sign out; on
+     confirm calls `authRepository.signOut()`. Or **Sign in** (when
+     signed out *and* `isConfigured == true`) — pushes `/profile`.
+     When `isConfigured == false` (Firebase init failed →
+     `DisabledAuthService`), neither row renders — the dropdown is
+     local-journaling-only with no dead end.
+  5. **Settings**, **Layouts**, **Block settings** — push the
+     corresponding routes.
+  Both `onOpened` and `onSelected` call
+  `FocusManager.instance.primaryFocus?.unfocus()` so navigating to
+  one of the items (which pushes a new route) doesn't leave focus
   parked on a block — and `onSelected` also unfocuses *again* after
   the `await context.push(...)` returns, because Flutter's automatic
   focus restoration would otherwise re-show the keyboard when the

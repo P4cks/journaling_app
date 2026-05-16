@@ -1,12 +1,20 @@
-# lib/ui/profile/view — Settings screens
+# lib/ui/profile/view — Profile + Settings screens
 
-See [../CLAUDE.md](../CLAUDE.md) for the screen overview. The
-standalone profile screen is gone — its functionality is now the
-profile dropdown in the main screen's AppBar
-([../../journal/widgets/profile_menu_button.dart](../../journal/widgets/profile_menu_button.dart)).
+See [../CLAUDE.md](../CLAUDE.md) for the screen overview. The profile
+dropdown in the main screen's AppBar
+([../../journal/widgets/profile_menu_button.dart](../../journal/widgets/profile_menu_button.dart))
+pushes these screens.
 
 ## Files
 
+- [profile_screen.dart](profile_screen.dart) — public `ProfileScreen`
+  (`StatelessWidget`). Scaffold + AppBar('Profile') + body that
+  embeds [`ProfileAuthCard`](../widgets/profile_auth_card.dart) inside
+  a `ListenableBuilder(listenable: authRepository)`, so the body
+  swaps from signed-out (Email / Google / Apple + bottom-sheet email
+  flow) to signed-in (avatar + name/email + provider + verification +
+  sign-out) the moment auth completes. Pushed via `/profile` from the
+  profile dropdown's "Sign in" row.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
   (`StatelessWidget`) + private color helpers. Pushed via `/settings`
   from the profile dropdown.
