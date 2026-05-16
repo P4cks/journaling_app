@@ -34,6 +34,7 @@ class BlockGrid extends StatefulWidget {
     this.onJumpToDate,
     this.onInteractionLockChanged,
     this.scrollable = true,
+    this.onBlockTap
   });
 
   final List<JournalBlockData> blocks;
@@ -42,6 +43,7 @@ class BlockGrid extends StatefulWidget {
   final ValueChanged<DateTime>? onJumpToDate;
   final Widget Function(JournalBlockData block, int index)? cardTrailing;
   final void Function(int from, int to)? onReorder;
+  final void Function(JournalBlockData block, String id)? onBlockTap;
   final EdgeInsets padding;
 
   /// When `true` (default), the grid wraps its tiles in a
@@ -57,7 +59,7 @@ class BlockGrid extends StatefulWidget {
   final bool scrollable;
 
   /// Forwarded to `BlockWidget`. When a block reports `locked: true`
-  /// the journal pager disables its outer horizontal swipe — see
+  /// the journal pager disables its outer horiz  l swipe — see
   /// [lib/ui/journal/widgets/journal_pager.dart].
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
@@ -334,15 +336,20 @@ class _BlockGridState extends State<BlockGrid> {
   Widget _buildTile(int index) {
     final block = widget.blocks[index];
 
-    final card = BlockCard(
-      topRight: widget.cardTrailing?.call(block, index),
-      child: BlockWidget(
-        key: ValueKey(block.id),
-        data: block,
-        mode: widget.mode,
-        onChanged: widget.onBlockChanged,
-        onJumpToDate: widget.onJumpToDate,
-        onInteractionLockChanged: widget.onInteractionLockChanged,
+    final card = GestureDetector(
+      onTap: widget.onBlockTap == null
+      ? null
+      : () => widget.onBlockTap!(block,block.id),
+      child: BlockCard(
+        topRight: widget.cardTrailing?.call(block, index),
+        child: BlockWidget(
+          key: ValueKey(block.id),
+          data: block,
+          mode: widget.mode,
+          onChanged: widget.onBlockChanged,
+          onJumpToDate: widget.onJumpToDate,
+          onInteractionLockChanged: widget.onInteractionLockChanged,
+        ),
       ),
     );
 

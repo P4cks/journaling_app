@@ -199,6 +199,12 @@ class _BlockOnlyBody extends StatelessWidget {
       blocks: [for (final slot in slots) slot.type.sampleData(id: slot.id)],
       mode: BlockMode.readOnly,
       onReorder: vm.moveSlot,
+      onBlockTap: (block, index) async {
+        final picked = await showAddBlockSheet(context);
+        if (picked != null) {
+          vm.replaceSlotType(index, picked);
+        }
+      },
       cardTrailing: (block, index) => IconButton(
         tooltip: 'Remove',
         iconSize: 18,
@@ -600,6 +606,12 @@ class _BlockGridSectionBody extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             onReorder: (from, to) =>
                 vm.moveSlotInSection(sectionId, from, to),
+            onBlockTap: (block, index) async {
+              final picked = await showAddBlockSheet(context);
+              if (picked != null) {
+                vm.replaceSlotType(index, picked);
+              }
+            },
             cardTrailing: (block, index) => IconButton(
               tooltip: 'Remove',
               iconSize: 16,
