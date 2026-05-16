@@ -566,61 +566,36 @@ class _BlockGridSectionBody extends StatelessWidget {
     vm.addBlockInSection(vm.sections[sectionIndex].id, picked);
   }
 
+  Future<void> _swapType(BuildContext context, String slotId) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(context);
+    if (picked == null) return;
+    vm.replaceSlotType(slotId, picked);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final section = vm.sections[sectionIndex];
     final sectionId = section.id;
-
-    if (section.slots.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () => _addBlock(context),
-            icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
-            label: const Text('Add block'),
-          ),
-        ),
-      );
-    }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: StaggeredGrid.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
         children: [
-          BlockGrid(
-            blocks: [
-              for (final slot in section.slots)
-                slot.type.sampleData(id: slot.id),
-            ],
-            mode: BlockMode.readOnly,
-            scrollable: false,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            onReorder: (from, to) =>
-                vm.moveSlotInSection(sectionId, from, to),
-            cardTrailing: (block, index) => IconButton(
-              tooltip: 'Remove',
-              iconSize: 16,
-              visualDensity: VisualDensity.compact,
-              icon: AppIcon(
-                PhosphorIconsBold.x,
-                color: scheme.onSurfaceVariant,
-              ),
-              onPressed: () => vm.removeSlotInSection(sectionId, block.id),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => _addBlock(context),
-                icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
-                label: const Text('Add block'),
+          for (final slot in section.slots)
+            AspectRatio(
+              aspectRatio: 1,
+              child: _FilledCell(
+                slot: slot,
+                onSwapType: () => _swapType(context, slot.id),
+                onRemove: () => vm.removeSlotInSection(sectionId, slot.id),
               ),
             ),
+          AspectRatio(
+            aspectRatio: 1,
+            child: _EmptyAddBlockCell(onTap: () => _addBlock(context)),
           ),
         ],
       ),
