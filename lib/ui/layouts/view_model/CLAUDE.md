@@ -96,19 +96,19 @@ Common:
   place. No add/remove/reorder methods are exposed.
 
 `custom` (full section toolkit):
-- `addSection(kind, {rows})` — append a `SectionDraft`. For
-  `blockGrid`, seeds `rows * 2` textBlock slots.
+- `addSection(kind)` — append a `SectionDraft`. Block-grid sections
+  start empty (no seeded slots); rows are derived from the slot
+  count as the user adds blocks.
 - `removeSection(sectionId)` — remove by id.
 - `moveSection(from, to)` — straight list reorder (the editor uses
   explicit up/down arrows; the no-op detection from `moveSlot`
   doesn't apply).
-- `setSectionRows(sectionId, rows)` — grows the section's slot list
-  with fresh `textBlock` slots, or truncates from the end. Skips
-  when the section isn't a blockGrid or `rows` is unchanged.
 - `addBlockInSection(sectionId, type)` / `removeSlotInSection` /
   `moveSlotInSection` — per-section equivalents of the blockOnly
-  methods. `addBlockInSection` also bumps `rows` so the renderer
-  reserves space for the new slot.
+  methods. `addBlockInSection` and `removeSlotInSection` recompute
+  the section's `rows` from the slot count
+  (`(slots.length / 2).ceil()`). `rows` is purely a renderer hint;
+  the BlockGrid sizes itself to its blocks regardless.
 
 ## Gotchas
 

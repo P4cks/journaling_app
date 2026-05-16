@@ -160,6 +160,7 @@ extension BlockTypeDisplay on BlockType {
           content: const WeatherApiBlockContent(
             conditionId: 'partly_cloudy',
             temperatureC: 18,
+            cityName: 'Your city',
           ).toMap(),
         );
       case BlockType.photoBlock:

@@ -102,21 +102,24 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
                 ),
               ),
             ],
-            if (city != null && city.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  city,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                (city == null || city.isEmpty) ? '—' : city,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: (city == null || city.isEmpty)
+                      ? theme.disabledColor
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontStyle: (city == null || city.isEmpty)
+                      ? FontStyle.italic
+                      : FontStyle.normal,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-            ],
+            ),
           ],
         ),
       );

@@ -16,13 +16,11 @@ sheet is a stateless top-level function returning the user's pick or
   pops the chosen `BlockType`. Iterates `BlockType.values`, so new
   block types only need cases in `block_type_display.dart` to appear.
 - [add_section_sheet.dart](add_section_sheet.dart) —
-  `Future<AddSectionResult?> showAddSectionSheet(context)`. Two-tile
-  sheet (Text section / Block grid). Tapping "Block grid" swaps the
-  body to a 1/2/3/4 row segmented control + Done button so the user
-  can pick the row count before adding. Custom-layout editor uses
-  this when the user taps the "Add section" zone at the bottom.
-  `kAllowedSectionRows = [1, 2, 3, 4]` is the source of truth for the
-  row-count picker.
+  `Future<SectionKind?> showAddSectionSheet(context)`. Two-tile sheet
+  (Text section / Block grid). Block-grid sections start empty —
+  there is no row picker; the user adds blocks afterwards and the
+  grid grows to fit. Custom-layout editor uses this when the user
+  taps the "Add section" zone at the bottom.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)

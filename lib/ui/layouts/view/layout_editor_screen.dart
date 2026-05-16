@@ -295,7 +295,7 @@ class _CustomBody extends StatelessWidget {
     FocusScope.of(context).unfocus();
     final picked = await showAddSectionSheet(context);
     if (picked == null) return;
-    vm.addSection(picked.kind, rows: picked.rows);
+    vm.addSection(picked);
   }
 
   Future<bool> _confirmRemove(BuildContext context, String label) async {
@@ -391,9 +391,7 @@ class _SectionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    isBlockGrid
-                        ? 'Block grid · ${section.rows ?? 1} row${section.rows == 1 ? '' : 's'}'
-                        : 'Text section',
+                    isBlockGrid ? 'Block grid' : 'Text section',
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -458,94 +456,62 @@ class _BlockGridSectionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final section = vm.sections[sectionIndex];
     final sectionId = section.id;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Rows segmented control
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-          child: Row(
-            children: [
-              Text(
-                'Rows',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 8),
-              SegmentedButton<int>(
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: 1, label: Text('1')),
-                  ButtonSegment(value: 2, label: Text('2')),
-                  ButtonSegment(value: 3, label: Text('3')),
-                  ButtonSegment(value: 4, label: Text('4')),
-                ],
-                selected: {section.rows ?? 1},
-                onSelectionChanged: (sel) =>
-                    vm.setSectionRows(sectionId, sel.first),
-              ),
-            ],
+    if (section.slots.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => _addBlock(context),
+            icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+            label: const Text('Add block'),
           ),
         ),
-        // Slots
-        if (section.slots.isEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: TextButton.icon(
-              onPressed: () => _addBlock(context),
-              icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
-              label: const Text('Add block'),
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                BlockGrid(
-                  blocks: [
-                    for (final slot in section.slots)
-                      slot.type.sampleData(id: slot.id),
-                  ],
-                  mode: BlockMode.readOnly,
-                  scrollable: false,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  onReorder: (from, to) =>
-                      vm.moveSlotInSection(sectionId, from, to),
-                  cardTrailing: (block, index) => IconButton(
-                    tooltip: 'Remove',
-                    iconSize: 16,
-                    visualDensity: VisualDensity.compact,
-                    icon: AppIcon(
-                      PhosphorIconsBold.x,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    onPressed: () =>
-                        vm.removeSlotInSection(sectionId, block.id),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => _addBlock(context),
-                      icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
-                      label: const Text('Add block'),
-                    ),
-                  ),
-                ),
-              ],
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          BlockGrid(
+            blocks: [
+              for (final slot in section.slots)
+                slot.type.sampleData(id: slot.id),
+            ],
+            mode: BlockMode.readOnly,
+            scrollable: false,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            onReorder: (from, to) =>
+                vm.moveSlotInSection(sectionId, from, to),
+            cardTrailing: (block, index) => IconButton(
+              tooltip: 'Remove',
+              iconSize: 16,
+              visualDensity: VisualDensity.compact,
+              icon: AppIcon(
+                PhosphorIconsBold.x,
+                color: scheme.onSurfaceVariant,
+              ),
+              onPressed: () => vm.removeSlotInSection(sectionId, block.id),
             ),
           ),
-      ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _addBlock(context),
+                icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+                label: const Text('Add block'),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

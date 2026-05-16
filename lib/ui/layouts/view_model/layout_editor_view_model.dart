@@ -205,27 +205,17 @@ class LayoutEditorViewModel extends ChangeNotifier {
   // custom — full section toolkit.
   // ---------------------------------------------------------------------------
 
-  void addSection(SectionKind kind, {int? rows}) {
-    final List<BlockSlot> slots;
-    if (kind == SectionKind.blockGrid) {
-      final r = rows ?? 1;
-      slots = [
-        for (var i = 0; i < r * 2; i++)
-          BlockSlot(id: _uuid.v4(), type: BlockType.textBlock),
-      ];
-    } else {
-      slots = const [];
-    }
+  void addSection(SectionKind kind) {
     _sections = [
       ..._sections,
       SectionDraft(
         id: _uuid.v4(),
         kind: kind,
-        rows: kind == SectionKind.blockGrid ? (rows ?? 1) : null,
-        slots: slots,
+        rows: kind == SectionKind.blockGrid ? 0 : null,
+        slots: const [],
       ),
     ];
-    debugPrint('[LayoutEditorVM] addSection $kind (rows=$rows)');
+    debugPrint('[LayoutEditorVM] addSection $kind');
     notifyListeners();
   }
 
@@ -249,34 +239,13 @@ class LayoutEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSectionRows(String sectionId, int rows) {
-    final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.blockGrid) return;
-    if (section.rows == rows) return;
-    final newSlotCount = rows * 2;
-    if (newSlotCount > section.slots.length) {
-      final extra = newSlotCount - section.slots.length;
-      section.slots = [
-        ...section.slots,
-        for (var i = 0; i < extra; i++)
-          BlockSlot(id: _uuid.v4(), type: BlockType.textBlock),
-      ];
-    } else if (newSlotCount < section.slots.length) {
-      section.slots = section.slots.sublist(0, newSlotCount);
-    }
-    section.rows = rows;
-    debugPrint('[LayoutEditorVM] setSectionRows $sectionId -> $rows');
-    notifyListeners();
-  }
-
   void addBlockInSection(String sectionId, BlockType type) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (section.kind != SectionKind.blockGrid) return;
     section.slots = [...section.slots, BlockSlot(id: _uuid.v4(), type: type)];
-    // Custom layouts let the user grow slots beyond `rows*2`; reflect
-    // that by bumping `rows` so the renderer reserves space.
-    final neededRows = (section.slots.length / 2).ceil();
-    if (neededRows > (section.rows ?? 0)) section.rows = neededRows;
+    // `rows` is purely a renderer hint derived from the slot count;
+    // the BlockGrid sizes itself to its blocks regardless.
+    section.rows = (section.slots.length / 2).ceil();
     debugPrint(
       '[LayoutEditorVM] addBlockInSection $sectionId $type '
       '(slots=${section.slots.length}, rows=${section.rows})',
@@ -289,6 +258,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
     final next = [...section.slots]..removeWhere((s) => s.id == slotId);
     if (next.length == section.slots.length) return;
     section.slots = next;
+    section.rows = (section.slots.length / 2).ceil();
     debugPrint('[LayoutEditorVM] removeSlotInSection $sectionId $slotId');
     notifyListeners();
   }

@@ -34,11 +34,12 @@ tapped:
   the section level. No AppBar `+`.
 - **custom** — fully editable. The editor renders a vertical stack
   of section cards. Each card has up/down/delete affordances; for
-  block-grid sections a 1/2/3/4 row segmented control and an
-  inline "Add block" button. Below the last section a dashed
-  "Add section" tap zone opens [add_section_sheet.dart](widgets/add_section_sheet.dart)
-  to append a text or block-grid section. No AppBar `+` — section
-  creation happens at the tap zone.
+  block-grid sections an inline "Add block" button (the grid grows
+  to fit added blocks — no row picker). Below the last section a
+  dashed "Add section" tap zone opens [add_section_sheet.dart](widgets/add_section_sheet.dart)
+  to append a text or block-grid section. New block-grid sections
+  start empty. No AppBar `+` — section creation happens at the tap
+  zone.
 
 ## Routes
 
