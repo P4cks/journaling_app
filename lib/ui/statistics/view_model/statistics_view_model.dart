@@ -296,10 +296,12 @@ class StatisticsViewModel extends ChangeNotifier {
   /// block is set. Entries with multiple mood blocks (rare) take the
   /// first.
   String? _firstMoodEmoji(JournalEntry entry) {
-    for (final block in entry.widgets) {
-      if (block.type != BlockType.moodTracker) continue;
-      final emoji = MoodBlockContent.fromMap(block.content).emoji;
-      if (emoji != null) return emoji;
+    for (final section in entry.sections) {
+      for (final block in section.blocks) {
+        if (block.type != BlockType.moodTracker) continue;
+        final emoji = MoodBlockContent.fromMap(block.content).emoji;
+        if (emoji != null) return emoji;
+      }
     }
     return null;
   }
@@ -307,11 +309,13 @@ class StatisticsViewModel extends ChangeNotifier {
   int _wordCountFor(JournalEntry entry) {
     var total = 0;
     final wsRegex = RegExp(r'\s+');
-    for (final block in entry.widgets) {
-      if (block.type != BlockType.textBlock) continue;
-      final text = TextBlockContent.fromMap(block.content).text;
-      if (text.trim().isEmpty) continue;
-      total += text.trim().split(wsRegex).where((w) => w.isNotEmpty).length;
+    for (final section in entry.sections) {
+      for (final block in section.blocks) {
+        if (block.type != BlockType.textBlock) continue;
+        final text = TextBlockContent.fromMap(block.content).text;
+        if (text.trim().isEmpty) continue;
+        total += text.trim().split(wsRegex).where((w) => w.isNotEmpty).length;
+      }
     }
     return total;
   }

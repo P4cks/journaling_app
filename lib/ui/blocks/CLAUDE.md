@@ -1,10 +1,15 @@
 # lib/ui/blocks — Block widgets
 
-The reusable widget layer for journal blocks. **`BlockGrid` is the only
-widget in the app that lays out blocks** — it's used by the main
-journal screen's swipe pager (each page wraps it) and by the layout
-editor (WYSIWYG). Editing `BlockGrid` affects both surfaces; verify
-both after structural changes.
+The reusable widget layer for journal blocks. **`BlockGrid` lays out
+1×1 blocks in a 2-column staggered grid.** It's used by the main
+journal screen's swipe pager (inside each section of an entry) and
+by the layout editor (WYSIWYG). Editing `BlockGrid` affects both
+surfaces; verify both after structural changes.
+
+Full-width text content lives in its own widget — [text_section/](text_section/)
+— used by the section-aware journal pager for `SectionKind.text`
+sections and stylistically distinct from the `text_block` 1×1 tile
+that lives in block-grid sections.
 
 ## Files
 
@@ -30,6 +35,15 @@ both after structural changes.
     wires this through to disable its outer horizontal swipe while
     any inner carousel is expanded, so nested `PageView`s don't fight
     over the drag.
+  - `scrollable` (default `true`) — when `true` the grid wraps its
+    `StaggeredGrid` in a `SingleChildScrollView` (legacy behavior,
+    suitable when `BlockGrid` is the body of a screen). When `false`
+    the grid sizes itself to its content with no inner scroll view so
+    it can be embedded inside an outer scrolling parent — used by the
+    section-aware journal pager (`SectionKind.blockGrid` sections)
+    and by the custom-layout editor (stacking multiple block-grid
+    sections). Cross-grid drag is NOT supported — each grid's
+    `DragTarget` is isolated.
 
 - [block_card.dart](block_card.dart) — `BlockCard`. The square chrome
   for one block: rounded `Container` on `scheme.surfaceContainerHigh`

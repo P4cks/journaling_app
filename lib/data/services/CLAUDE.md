@@ -11,8 +11,8 @@ directly.
 
 | Box                  | Type                  | Wrapped by                  |
 |----------------------|-----------------------|-----------------------------|
-| `journalEntries_v5`  | `Box<JournalEntry>`   | `HiveStorageService`        |
-| `journalLayouts_v5`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
+| `journalEntries_v6`  | `Box<JournalEntry>`   | `HiveStorageService`        |
+| `journalLayouts_v6`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
 | `settings`           | `Box<String>`         | `SettingsStorageService`    |
 
 The two model boxes are versioned (`_vN` suffix). The settings box is

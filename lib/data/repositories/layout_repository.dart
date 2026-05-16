@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_template.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+import 'package:journaling_app_rewrite/data/model/layout_section.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 import 'package:uuid/uuid.dart';
@@ -24,7 +27,7 @@ class LayoutRepository {
 
   Future<void> save(JournalLayout layout) {
     debugPrint(
-      '[LayoutRepository] save id=${layout.id} name=${layout.name} blocks=${layout.blocks}',
+      '[LayoutRepository] save id=${layout.id} name=${layout.name} kind=${layout.kind} sections=${layout.sections.length}',
     );
     return _layouts.saveLayout(layout);
   }
@@ -73,7 +76,17 @@ class LayoutRepository {
     final seed = JournalLayout(
       id: _uuid.v4(),
       name: 'Default',
-      blocks: [BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock)],
+      kind: LayoutKind.blockOnly,
+      sections: [
+        LayoutSection(
+          id: _uuid.v4(),
+          kind: SectionKind.blockGrid,
+          rows: 1,
+          blocks: [
+            BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock),
+          ],
+        ),
+      ],
     );
     debugPrint(
       '[LayoutRepository] seeding fresh default layout ${seed.name} (${seed.id})',

@@ -1,11 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_kind_picker_sheet.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+String _layoutSummary(JournalLayout layout) {
+  switch (layout.kind) {
+    case LayoutKind.blockOnly:
+      final n = layout.sections.fold<int>(
+        0,
+        (acc, s) => acc + s.blocks.length,
+      );
+      return '$n block${n == 1 ? '' : 's'}';
+    case LayoutKind.fixedFourPlusText:
+      return '4 blocks + text';
+    case LayoutKind.custom:
+      final n = layout.sections.length;
+      final blockGridSections = layout.sections
+          .where((s) => s.kind == SectionKind.blockGrid)
+          .length;
+      return '$n section${n == 1 ? '' : 's'}'
+          '${blockGridSections == n ? '' : ' (incl. text)'}';
+  }
+}
 
 class LayoutsScreen extends StatefulWidget {
   const LayoutsScreen({super.key});
@@ -43,6 +67,14 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
         ? Routes.newLayout
         : Routes.editLayoutFor(layoutId);
     await context.push(path);
+    if (!mounted) return;
+    _viewModel?.refresh();
+  }
+
+  Future<void> _openNewLayoutFlow() async {
+    final kind = await showLayoutKindPickerSheet(context);
+    if (!mounted || kind == null) return;
+    await context.push(Routes.newLayoutFor(kind));
     if (!mounted) return;
     _viewModel?.refresh();
   }
@@ -90,10 +122,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                       isDefault: isDefault,
                     ),
                     title: Text(layout.name),
-                    subtitle: Text(
-                      '${layout.blocks.length} '
-                      'block${layout.blocks.length == 1 ? '' : 's'}',
-                    ),
+                    subtitle: Text(_layoutSummary(layout)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -121,7 +150,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openEditor(null),
+        onPressed: _openNewLayoutFlow,
         tooltip: 'New layout',
         child: const AppIcon(PhosphorIconsBold.plus),
       ),

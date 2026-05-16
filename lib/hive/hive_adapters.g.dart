@@ -20,7 +20,7 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       id: fields[0] as String,
       date: fields[4] as DateTime,
       lastModified: fields[3] as DateTime,
-      widgets: (fields[2] as List).cast<JournalBlockData>(),
+      sections: (fields[6] as List).cast<EntrySection>(),
       title: fields[5] as String?,
     );
   }
@@ -31,14 +31,14 @@ class JournalEntryAdapter extends TypeAdapter<JournalEntry> {
       ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
-      ..writeByte(2)
-      ..write(obj.widgets)
       ..writeByte(3)
       ..write(obj.lastModified)
       ..writeByte(4)
       ..write(obj.date)
       ..writeByte(5)
-      ..write(obj.title);
+      ..write(obj.title)
+      ..writeByte(6)
+      ..write(obj.sections);
   }
 
   @override
@@ -174,7 +174,8 @@ class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
     return JournalLayout(
       id: fields[0] as String,
       name: fields[1] as String,
-      blocks: (fields[2] as List).cast<BlockTemplate>(),
+      kind: fields[4] as LayoutKind,
+      sections: (fields[5] as List).cast<LayoutSection>(),
       iconName: fields[3] as String?,
     );
   }
@@ -182,15 +183,17 @@ class JournalLayoutAdapter extends TypeAdapter<JournalLayout> {
   @override
   void write(BinaryWriter writer, JournalLayout obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
-      ..writeByte(2)
-      ..write(obj.blocks)
       ..writeByte(3)
-      ..write(obj.iconName);
+      ..write(obj.iconName)
+      ..writeByte(4)
+      ..write(obj.kind)
+      ..writeByte(5)
+      ..write(obj.sections);
   }
 
   @override
@@ -240,6 +243,170 @@ class BlockTemplateAdapter extends TypeAdapter<BlockTemplate> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BlockTemplateAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class EntrySectionAdapter extends TypeAdapter<EntrySection> {
+  @override
+  final typeId = 8;
+
+  @override
+  EntrySection read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return EntrySection(
+      id: fields[0] as String,
+      kind: fields[1] as SectionKind,
+      blocks: (fields[3] as List).cast<JournalBlockData>(),
+      rows: (fields[2] as num?)?.toInt(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, EntrySection obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.kind)
+      ..writeByte(2)
+      ..write(obj.rows)
+      ..writeByte(3)
+      ..write(obj.blocks);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EntrySectionAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class LayoutSectionAdapter extends TypeAdapter<LayoutSection> {
+  @override
+  final typeId = 9;
+
+  @override
+  LayoutSection read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return LayoutSection(
+      id: fields[0] as String,
+      kind: fields[1] as SectionKind,
+      blocks: (fields[3] as List).cast<BlockTemplate>(),
+      rows: (fields[2] as num?)?.toInt(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, LayoutSection obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.kind)
+      ..writeByte(2)
+      ..write(obj.rows)
+      ..writeByte(3)
+      ..write(obj.blocks);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LayoutSectionAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class LayoutKindAdapter extends TypeAdapter<LayoutKind> {
+  @override
+  final typeId = 10;
+
+  @override
+  LayoutKind read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return LayoutKind.blockOnly;
+      case 1:
+        return LayoutKind.fixedFourPlusText;
+      case 2:
+        return LayoutKind.custom;
+      default:
+        return LayoutKind.blockOnly;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, LayoutKind obj) {
+    switch (obj) {
+      case LayoutKind.blockOnly:
+        writer.writeByte(0);
+      case LayoutKind.fixedFourPlusText:
+        writer.writeByte(1);
+      case LayoutKind.custom:
+        writer.writeByte(2);
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LayoutKindAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class SectionKindAdapter extends TypeAdapter<SectionKind> {
+  @override
+  final typeId = 11;
+
+  @override
+  SectionKind read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return SectionKind.text;
+      case 1:
+        return SectionKind.blockGrid;
+      default:
+        return SectionKind.text;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, SectionKind obj) {
+    switch (obj) {
+      case SectionKind.text:
+        writer.writeByte(0);
+      case SectionKind.blockGrid:
+        writer.writeByte(1);
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SectionKindAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

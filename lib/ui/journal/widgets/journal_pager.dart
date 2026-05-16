@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/entry_section.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 
 /// Horizontal pager over the user's entries (sorted ascending). The
@@ -12,9 +16,10 @@ import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_m
 /// * Swipe → page change → `onPageChanged` calls `vm.setSelectedDate`
 ///   so the calendar follows.
 ///
-/// Pages render the existing `BlockGrid`. The screen decides which
-/// mode (editable / readOnly) to apply per page based on the entry's
-/// date vs today.
+/// Each page renders the entry's sections vertically: text sections
+/// flow as full-width `TextSectionWidget`s, block-grid sections render
+/// as non-scrolling `BlockGrid`s. The whole stack scrolls together in
+/// a single outer scroll view.
 ///
 /// Nested `PageView` carousels in mood/weather blocks would normally
 /// fight this pager for horizontal drags. The blocks report their
@@ -105,22 +110,79 @@ class _JournalPagerState extends State<JournalPager> {
       itemBuilder: (context, index) {
         final entry = entries[index];
         final mode = widget.modeFor(entry);
-        if (entry.widgets.isEmpty) {
+        if (entry.sections.isEmpty) {
           return _EmptyBlocksMessage();
         }
-        return BlockGrid(
-          blocks: entry.widgets,
+        return _SectionsBody(
+          sections: entry.sections,
           mode: mode,
           onBlockChanged: mode == BlockMode.editable
               ? widget.viewModel.updateBlock
               : null,
           onJumpToDate: (date) => widget.viewModel.setSelectedDate(date),
-          onInteractionLockChanged: mode == BlockMode.editable
-              ? _onLockChanged
-              : null,
+          onLockChanged: mode == BlockMode.editable ? _onLockChanged : null,
         );
       },
     );
+  }
+}
+
+class _SectionsBody extends StatelessWidget {
+  const _SectionsBody({
+    required this.sections,
+    required this.mode,
+    required this.onJumpToDate,
+    this.onBlockChanged,
+    this.onLockChanged,
+  });
+
+  final List<EntrySection> sections;
+  final BlockMode mode;
+  final ValueChanged<DateTime> onJumpToDate;
+  final ValueChanged<JournalBlockData>? onBlockChanged;
+  final void Function(String, bool)? onLockChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final section in sections)
+            _buildSection(section),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(EntrySection section) {
+    switch (section.kind) {
+      case SectionKind.text:
+        // Text sections are materialized as exactly one textBlock; if
+        // somehow malformed, fall back to a placeholder.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        return TextSectionWidget(
+          key: ValueKey(section.id),
+          data: section.blocks.first,
+          mode: mode,
+          onChanged: onBlockChanged,
+        );
+      case SectionKind.blockGrid:
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: BlockGrid(
+            key: ValueKey(section.id),
+            blocks: section.blocks,
+            mode: mode,
+            scrollable: false,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            onBlockChanged: onBlockChanged,
+            onJumpToDate: onJumpToDate,
+            onInteractionLockChanged: onLockChanged,
+          ),
+        );
+    }
   }
 }
 

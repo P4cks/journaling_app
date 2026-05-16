@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/journal/view/main_journal_screen.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/view/journal_entries_screen.dart';
@@ -59,7 +60,14 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'new',
           name: RouteNames.newLayout,
-          builder: (context, state) => const LayoutEditorScreen(layoutId: null),
+          builder: (context, state) {
+            final raw = state.uri.queryParameters[Routes.newLayoutKindQueryParam];
+            final kind = LayoutKind.values.firstWhere(
+              (k) => k.name == raw,
+              orElse: () => LayoutKind.blockOnly,
+            );
+            return LayoutEditorScreen(layoutId: null, initialKind: kind);
+          },
         ),
         GoRoute(
           path: 'edit/:id',

@@ -1,17 +1,17 @@
-import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 
 class JournalEntry {
   final String id;
   final DateTime date;
   final DateTime lastModified;
-  final List<JournalBlockData> widgets;
+  final List<EntrySection> sections;
   final String? title;
 
   const JournalEntry({
     required this.id,
     required this.date,
     required this.lastModified,
-    required this.widgets,
+    required this.sections,
     this.title,
   });
 
@@ -21,18 +21,18 @@ class JournalEntry {
     String? id,
     DateTime? date,
     DateTime? lastModified,
-    List<JournalBlockData>? widgets,
+    List<EntrySection>? sections,
     String? title,
     bool clearTitle = false,
   }) => JournalEntry(
     id: id ?? this.id,
     date: date ?? this.date,
     lastModified: lastModified ?? this.lastModified,
-    widgets: widgets ?? this.widgets,
+    sections: sections ?? this.sections,
     title: clearTitle ? null : (title ?? this.title),
   );
 
   @override
   String toString() =>
-      'JournalEntry(id: $id, date: $date, title: $title, blocks: ${widgets.length})';
+      'JournalEntry(id: $id, date: $date, title: $title, sections: ${sections.length})';
 }

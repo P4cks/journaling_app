@@ -21,7 +21,10 @@ journal/
   updates `_selectedDate` in the VM.
 - **Body** — when the selected date has an entry, renders
   `JournalPager` (a `PageView.builder` over `vm.entries`, sorted
-  ascending). Each page is the existing `BlockGrid`, editable for
+  ascending). Each page renders the entry's sections vertically: a
+  text section becomes a full-width `TextSectionWidget`; a block-grid
+  section becomes a non-scrolling `BlockGrid`. The whole stack scrolls
+  together inside a single outer `SingleChildScrollView`. Editable for
   today (or when `DebugSettings.unlockAllDays` is on), read-only for
   past days.
 - **Empty-day body** — today shows `MakeEntryCta`; past empty days
@@ -37,8 +40,9 @@ journal/
 - **Bottom calendar bar** — `CalendarBottomBar`. Sticky compact week
   strip; the trailing month-icon opens a draggable bottom sheet with
   a full month view. Collapses to zero height when the keyboard is up.
-- **Layout change** is destructive (replaces blocks). Confirmed via a
-  dialog before applying.
+- **Layout change** is destructive (replaces the entry's sections
+  list, re-materializing from the new layout). Confirmed via a dialog
+  before applying.
 - **Swipe semantics** — left/right only between adjacent existing
   entries. Skips empty days. Selecting an empty day in the calendar
   takes the body out of the pager and into the CTA / read-only state.

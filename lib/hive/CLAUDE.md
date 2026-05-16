@@ -6,9 +6,10 @@ are a side effect of editing a model under [data/model/](../data/model/).
 ## Files
 
 - [hive_adapters.dart](hive_adapters.dart) — `@GenerateAdapters([...])`
-  declaration. Listed: `JournalEntry`, `JournalBlockData`, `BlockType`,
-  `JournalLayout`, `BlockTemplate`. Has a `part 'hive_adapters.g.dart';` directive.
-  **This is the only hand-edited file in this directory.**
+  declaration. Listed: `JournalEntry`, `EntrySection`, `JournalBlockData`,
+  `BlockType`, `JournalLayout`, `LayoutSection`, `LayoutKind`,
+  `SectionKind`, `BlockTemplate`. Has a `part 'hive_adapters.g.dart';`
+  directive. **This is the only hand-edited file in this directory.**
 - [hive_adapters.g.dart](hive_adapters.g.dart) — generated. Holds the
   per-class adapter implementations. **Do not edit.**
 - [hive_registrar.g.dart](hive_registrar.g.dart) — generated. Provides

@@ -32,13 +32,16 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
   `JournalRepository.createEntryForDate`. The repository notifies; we
   rebuild `_entries` / `_entriesByDay` and notify. We also notify
   eagerly to avoid the async-tick gap (Home-VM precedent).
-- `updateBlock(updated)` — locates the block by id within the current
-  entry, swaps it, bumps `lastModified`, persists. The repository
-  notification rebuilds our list.
+- `updateBlock(updated)` — walks **every section** of the current
+  entry to find the matching block by id, swaps it, bumps
+  `lastModified`, persists. The repository notification rebuilds our
+  list. Sections that don't own the updated block are copied with an
+  unchanged blocks list (cheap; the comprehension reuses references).
 - `updateTitle(newTitle)` — trim → empty becomes null. No-op on
   unchanged.
 - `applyLayout(layout)` — destructive; re-materializes the entry's
-  blocks. Caller must confirm.
+  **sections** from the new layout (calls
+  `JournalRepository.materializeLayout`). Caller must confirm.
 
 ## Subscriptions
 

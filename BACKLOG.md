@@ -19,7 +19,7 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **Rename Home tab to Journal** — clearer mental model; aligns with core feature.
 * [x] `M` **Preview of block when adding block** - the add block menu should expand to half the screen and show a preview of the block (with the title below) before inserting it
 * [x] `S` **turn "Add block" button into small plus** - and remove Blocks title
-* [ ] `M` **Different layout options** - Add other "layout strategies", like only blocks (already implemented) or alternatively an overarching section layout where you can layout the page into block sections of different sizes (which also makes it easy to implement bigger style blocks) and text sections, these sections would then be layed out in a horizontal style
+* [x] `M` **Different layout options** - Add other "layout strategies", like only blocks (already implemented) or alternatively an overarching section layout where you can layout the page into block sections of different sizes (which also makes it easy to implement bigger style blocks) and text sections, these sections would then be layed out in a horizontal style
 * [x] `S` **Remove checkmark from layouteditor** - remove checkmark icon button and replace it by automatic save on exit, with a popup asking you to save or discard the new layout before leaving the editor (eg. routing to another page)
 * [ ] `M` **Implement swipe gestures** - implement swipe gestures for navigating (especially going back)
 * [ ] `S` **Complete Layout Preview** - Preview should be in layout

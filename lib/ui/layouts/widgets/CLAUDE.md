@@ -1,7 +1,8 @@
-# lib/ui/layouts/widgets — Layout pickers
+# lib/ui/layouts/widgets — Layout pickers + section sheets
 
-Two modal bottom sheets, both stateless top-level functions. Either
-returns the user's pick or `null` on dismiss.
+Four modal bottom sheets and the editor's name title widget. Each
+sheet is a stateless top-level function returning the user's pick or
+`null` on dismiss.
 
 ## Files
 
@@ -14,6 +15,14 @@ returns the user's pick or `null` on dismiss.
   `BlockCard`, plus the type's `label` and `description` below. Tap
   pops the chosen `BlockType`. Iterates `BlockType.values`, so new
   block types only need cases in `block_type_display.dart` to appear.
+- [add_section_sheet.dart](add_section_sheet.dart) —
+  `Future<AddSectionResult?> showAddSectionSheet(context)`. Two-tile
+  sheet (Text section / Block grid). Tapping "Block grid" swaps the
+  body to a 1/2/3/4 row segmented control + Done button so the user
+  can pick the row count before adding. Custom-layout editor uses
+  this when the user taps the "Add section" zone at the bottom.
+  `kAllowedSectionRows = [1, 2, 3, 4]` is the source of truth for the
+  row-count picker.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
@@ -21,17 +30,27 @@ returns the user's pick or `null` on dismiss.
   string) or `null`.
   - Tiles that match `selected` get a `primaryContainer` background
     and a thicker primary border + the fill variant of the glyph.
-  - Used by the layout editor's `_IconWell`. Callers may pass the
-    returned name (or `null`) straight into `vm.setIconName`.
+  - Used by the layout editor's icon AppBar action. Callers may pass
+    the returned name (or `null`) straight into `vm.setIconName`.
+- [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
+  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Three-tile
+  sheet ("Only blocks", "4 blocks + text", "Fully customizable"),
+  each with an icon and one-line description. Shown when the user
+  taps the FAB on the layouts list. Returns the picked `LayoutKind`;
+  the caller pushes the editor with that kind via
+  `Routes.newLayoutFor(kind)`.
+- [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
+  Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
   `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, title})`.
   Modal sheet listing every layout the user has. Returns the picked
-  layout or `null`.
-  - **Stateless and stand-alone** — both the home "Make entry" CTA
-    and the editor's "Change layout" action share this sheet. The
-    editor wraps the result in a destructive-action confirm dialog
-    (layout change replaces existing blocks); the home CTA skips the
-    confirm because there's nothing to replace.
+  layout or `null`. Subtitle text per row summarises the layout via
+  its `kind` (e.g. "4 blocks + text" for `fixedFourPlusText`).
+  - **Stateless and stand-alone** — both the "Make entry" CTA on the
+    main screen and the editor's "Change layout" action share this
+    sheet. The editor wraps the result in a destructive-action
+    confirm dialog (layout change replaces existing sections); the
+    CTA skips the confirm because there's nothing to replace.
   - Returns `null` immediately when `layouts.isEmpty`, without
     showing the sheet — so the caller naturally falls through to
     whatever empty-state behaviour it wants.

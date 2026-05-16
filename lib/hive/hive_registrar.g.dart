@@ -9,9 +9,13 @@ extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(BlockTemplateAdapter());
     registerAdapter(BlockTypeAdapter());
+    registerAdapter(EntrySectionAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());
     registerAdapter(JournalLayoutAdapter());
+    registerAdapter(LayoutKindAdapter());
+    registerAdapter(LayoutSectionAdapter());
+    registerAdapter(SectionKindAdapter());
   }
 }
 
@@ -19,8 +23,12 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(BlockTemplateAdapter());
     registerAdapter(BlockTypeAdapter());
+    registerAdapter(EntrySectionAdapter());
     registerAdapter(JournalBlockDataAdapter());
     registerAdapter(JournalEntryAdapter());
     registerAdapter(JournalLayoutAdapter());
+    registerAdapter(LayoutKindAdapter());
+    registerAdapter(LayoutSectionAdapter());
+    registerAdapter(SectionKindAdapter());
   }
 }

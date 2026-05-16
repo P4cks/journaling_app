@@ -22,32 +22,46 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 
 ## LayoutEditorViewModel (editor)
 
-### `BlockSlot`
+### `BlockSlot` and `SectionDraft`
 
 ```dart
 class BlockSlot { final String id; final BlockType type; }
+class SectionDraft {
+  final String id;
+  final SectionKind kind;
+  int? rows;             // blockGrid only
+  List<BlockSlot> slots; // empty for text sections
+}
 ```
 
-The editor needs **stable per-slot identities** so reorder/remove can
-target the right tile. `BlockSlot` is that lightweight pair. Slots are
-converted to sample-content `JournalBlockData`s by the screen — via
-`BlockType.sampleData(id: slot.id)` (see
+The editor needs **stable per-slot and per-section identities** so
+reorder/remove can target the right tile or section. `BlockSlot` is
+the lightweight `(id, type)` pair. `SectionDraft` mirrors the persisted
+`LayoutSection` shape but holds mutable `slots` (the editor swaps
+the list reference on each change to keep `notifyListeners` cheap).
+Slots are converted to sample-content `JournalBlockData`s by the
+screen — via `BlockType.sampleData(id: slot.id)` (see
 [block_type_display.dart](../../blocks/block_type_display.dart)) — for
 `BlockGrid` rendering (matches the "Add block" sheet's preview style),
 and to a `List<BlockTemplate>` (with empty configJson) for persistence
-(`JournalLayout.blocks`). The sample data is preview-only; the saved
+(`LayoutSection.blocks`). The sample data is preview-only; the saved
 layout never carries it. Block-type-global configuration lives in
 [BlockSettings](../../../data/services/block_settings.dart), not in
 the slot.
 
 ### Construction
 
-- `layoutId == null` → new layout: fresh uuid, empty `_slots`, empty
-  name controller, `_isNew = true`.
-- otherwise → load via `repository.getById`; if found, hydrate. If
-  not found (race: layout deleted between push and build), the
-  fallback is the new-layout path (fresh uuid). Not currently guarded
-  with a UI error.
+- `layoutId == null` → new layout: fresh uuid, `kind = initialKind`
+  (defaults to `blockOnly`), `_sections` seeded per kind:
+  - `blockOnly` → one empty `blockGrid` section.
+  - `fixedFourPlusText` → one `blockGrid(rows: 2)` with four
+    `textBlock` slots followed by one `text` section.
+  - `custom` → empty sections list — user adds via the tap zone.
+- otherwise → load via `repository.getById`; if found, hydrate.
+  Kind comes from the persisted layout. If not found (race: layout
+  deleted between push and build), the fallback is the new-layout
+  path (fresh uuid, default kind). Not currently guarded with a UI
+  error.
 
 ### State
 
@@ -61,18 +75,40 @@ the slot.
   `List.unmodifiable` so callers can't sneak in mutations.
 - `_isNew` — drives the "New Layout" vs "Edit Layout" AppBar title.
 
-### Methods
+### Methods (kind-gated)
 
+Common:
+- `setIconName(name)` — guard against no-op assignment.
+- `save()` — guarded by `canSave`. Builds a `JournalLayout` (with
+  its `kind` and `sections`) from current state, persists via the
+  repository, returns it. The caller pops on success.
+
+`blockOnly` (operates on the single implicit section):
 - `addBlock(type)` — append a fresh `BlockSlot`.
 - `removeSlot(slotId)` — remove by id. No-op if not found.
 - `moveSlot(from, to)` — **insertion-based** semantics matching
   [BlockGrid](../../blocks/CLAUDE.md): `to == from` and `to == from + 1`
   are no-ops; when `to > from`, the effective insert index is
   `to - 1` because the source is removed first.
-- `setIconName(name)` — guard against no-op assignment.
-- `save()` — guarded by `canSave`. Builds a `JournalLayout` from
-  current state, persists via the repository, returns it. The caller
-  pops on success.
+
+`fixedFourPlusText`:
+- `replaceSlotType(slotId, newType)` — swap a slot's `BlockType` in
+  place. No add/remove/reorder methods are exposed.
+
+`custom` (full section toolkit):
+- `addSection(kind, {rows})` — append a `SectionDraft`. For
+  `blockGrid`, seeds `rows * 2` textBlock slots.
+- `removeSection(sectionId)` — remove by id.
+- `moveSection(from, to)` — straight list reorder (the editor uses
+  explicit up/down arrows; the no-op detection from `moveSlot`
+  doesn't apply).
+- `setSectionRows(sectionId, rows)` — grows the section's slot list
+  with fresh `textBlock` slots, or truncates from the end. Skips
+  when the section isn't a blockGrid or `rows` is unchanged.
+- `addBlockInSection(sectionId, type)` / `removeSlotInSection` /
+  `moveSlotInSection` — per-section equivalents of the blockOnly
+  methods. `addBlockInSection` also bumps `rows` so the renderer
+  reserves space for the new slot.
 
 ## Gotchas
 

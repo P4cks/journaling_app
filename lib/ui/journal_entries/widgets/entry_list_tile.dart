@@ -14,13 +14,15 @@ class EntryListTile extends StatelessWidget {
   /// clipped to a short snippet. Falls back to "No content" when no
   /// readable text is present.
   String _previewText() {
-    for (final block in entry.widgets) {
-      if (block.type != BlockType.textBlock) continue;
-      final text = TextBlockContent.fromMap(block.content).text.trim();
-      if (text.isEmpty) continue;
-      // Collapse whitespace + truncate so the preview fits on one line.
-      final flat = text.replaceAll(RegExp(r'\s+'), ' ');
-      return flat.length > 80 ? '${flat.substring(0, 80)}…' : flat;
+    for (final section in entry.sections) {
+      for (final block in section.blocks) {
+        if (block.type != BlockType.textBlock) continue;
+        final text = TextBlockContent.fromMap(block.content).text.trim();
+        if (text.isEmpty) continue;
+        // Collapse whitespace + truncate so the preview fits on one line.
+        final flat = text.replaceAll(RegExp(r'\s+'), ' ');
+        return flat.length > 80 ? '${flat.substring(0, 80)}…' : flat;
+      }
     }
     return 'No content';
   }
