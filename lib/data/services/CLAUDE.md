@@ -11,8 +11,8 @@ directly.
 
 | Box                  | Type                  | Wrapped by                  |
 |----------------------|-----------------------|-----------------------------|
-| `journalEntries_v5`  | `Box<JournalEntry>`   | `HiveStorageService`        |
-| `journalLayouts_v5`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
+| `journalEntries_v6`  | `Box<JournalEntry>`   | `HiveStorageService`        |
+| `journalLayouts_v6`  | `Box<JournalLayout>`  | `LayoutStorageService`      |
 | `settings`           | `Box<String>`         | `SettingsStorageService`    |
 
 The two model boxes are versioned (`_vN` suffix). The settings box is
@@ -44,7 +44,7 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
     `theme.secondary`, `theme.accent`, `theme.customPalettes`,
     `theme.debugSurface`, `block.prompt.list` (JSON-encoded list of
-    strings), `block.prompt.strategy` (`daily` | `random`),
+    strings), `block.prompt.strategy` (`daily` | `random` | `manual`),
     `block.text.charLimit` (positive int as string). If you add
     another, give it a namespaced key and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
@@ -97,8 +97,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   box:
   - `prompts` (`List<String>`) — the curated prompt list shown to
     every prompt block.
-  - `promptStrategy` (`PromptStrategy` enum: `daily` | `random`) —
-    how `pickPromptFor` chooses a prompt.
+  - `promptStrategy` (`PromptStrategy` enum: `daily` | `random` |
+    `manual`) — how `pickPromptFor` chooses a prompt. `manual` is the
+    "user picks per entry" mode: `pickPromptFor` returns `null` and the
+    [prompt block widget](../../ui/blocks/prompt_block/CLAUDE.md) opens
+    its picker sheet on first build.
   - `textCharLimit` (`int?`) — optional hard cap on every text block.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `daily` mode the pick

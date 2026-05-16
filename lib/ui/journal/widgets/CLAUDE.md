@@ -27,15 +27,29 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   in `CalendarFormat.week`, plus a trailing IconButton that opens a
   draggable bottom sheet with the full-month view. Collapses to zero
   height when the keyboard is up (`AnimatedSize` + `viewInsetsOf`).
-- [journal_pager.dart](journal_pager.dart) — `JournalPager`. The
-  swipe pager: `PageView.builder` over `vm.entries` sorted ascending.
-  Two-way sync with `vm.selectedDate` — external changes animate the
-  controller; user swipes call `vm.setSelectedDate`. Each page is the
-  existing `BlockGrid` in mode chosen by the screen's `modeFor` callback.
-  Holds a `Set<String> _lockedBlockIds` populated by
-  `onInteractionLockChanged` from `BlockGrid`. When non-empty, the
-  outer `PageView` swaps to `NeverScrollableScrollPhysics` so an
-  inner mood/weather carousel wins the horizontal drag.
+- [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
+  private `_SectionsBody`. The swipe pager: `PageView.builder` over
+  `vm.entries` sorted ascending. Two-way sync with `vm.selectedDate`
+  — external changes animate the controller; user swipes call
+  `vm.setSelectedDate`. Each page is a `_SectionsBody` that iterates
+  the entry's `sections` and renders them vertically in a single
+  outer `SingleChildScrollView`:
+    - `SectionKind.text` → `TextSectionWidget` (full-width, no card).
+    - `SectionKind.blockGrid` → `BlockGrid(scrollable: false)` with
+      the section's blocks.
+  Mode is chosen by the screen's `modeFor` callback. Holds a
+  `Set<String> _lockedBlockIds` populated by `onInteractionLockChanged`
+  forwarded from each `BlockGrid`. When non-empty, the outer
+  `PageView` swaps to `NeverScrollableScrollPhysics` so an inner
+  mood/weather carousel wins the horizontal drag.
+
+  **Empty blockGrid sections render nothing** — when a section's
+  `blocks` list is empty (e.g. a kind-B layout saved with zero filled
+  slots), `_SectionsBody` returns `SizedBox.shrink()` for that
+  section so the entry doesn't have awkward padding around an empty
+  grid. Text sections are still rendered even when their
+  `TextBlockContent` is empty (the user might be about to start
+  typing).
 
 ## Sentinel: TableCalendar `eventLoader`
 

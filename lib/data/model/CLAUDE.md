@@ -9,12 +9,24 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
 
 - [journal_entry.dart](journal_entry.dart) — `JournalEntry`. Fields:
   `id` (uuid), `date` (DateTime — repository normalizes to local-midnight
-  before keying), `lastModified`, `widgets` (`List<JournalBlockData>`),
+  before keying), `lastModified`, `sections` (`List<EntrySection>`),
   `title` (`String?` — when null, the editor / list fall back to the
   formatted date).
   - `copyWith` supports explicit-null on `title` via `clearTitle: true`.
     Don't try to round-trip `null` through the `title` named param —
     `null` means "keep existing".
+- [entry_section.dart](entry_section.dart) — `EntrySection`. One
+  ordered section of a `JournalEntry`. Fields: `id`, `kind`
+  (`SectionKind`), `rows` (nullable; `blockGrid` only), `blocks`
+  (`List<JournalBlockData>`). For `SectionKind.text` the blocks list
+  is exactly `[JournalBlockData(type: textBlock)]` — the text content
+  lives in that single block's `TextBlockContent`, reusing the
+  existing text JSON path and char-limit enforcement.
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid }`.
+  Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
+- [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
+  Picked by the user at layout-creation time; drives the layout editor's
+  UX. **Append-only.**
 - [journal_block_data.dart](journal_block_data.dart) — `JournalBlockData`.
   Fields: `id`, `type` (`BlockType`), `contentJson` (string). The
   schema-free escape hatch: each block type encodes its data as JSON
@@ -33,15 +45,21 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [JournalRepository._materializeOne](../repositories/journal_repository.dart),
   and (d) `flutter pub run build_runner build`.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
-  `id`, `name`, `blocks` (`List<BlockTemplate>` — see below; each
-  template carries an optional `configJson` that is baked into the
-  initial content of the materialized `JournalBlockData` instance when
-  `JournalRepository.createEntryForDate` runs), `iconName` (`String?`
-  — Phosphor name like `"squaresFour"`, resolved via
+  `id`, `name`, `kind` (`LayoutKind`), `sections`
+  (`List<LayoutSection>` — the structural template; see
+  `LayoutSection` below), `iconName` (`String?` — Phosphor name like
+  `"squaresFour"`, resolved via
   [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
   `copyWith` has `clearIcon: true` for explicit-null on `iconName`.
+- [layout_section.dart](layout_section.dart) — `LayoutSection`. One
+  ordered section of a `JournalLayout`. Fields: `id`, `kind`
+  (`SectionKind`), `rows` (nullable; `blockGrid` only — 1..4 in the
+  editor), `blocks` (`List<BlockTemplate>` — empty for text sections,
+  exactly `2 * rows` templates for block-grid sections). Each
+  template is materialized one-for-one into a `JournalBlockData` when
+  the entry is created.
 - [block_template.dart](block_template.dart) — `BlockTemplate { String id; BlockType type; String configJson }`.
-  The per-slot envelope inside `JournalLayout.blocks`. Mirrors
+  The per-slot envelope inside `LayoutSection.blocks`. Mirrors
   `JournalBlockData`'s `contentJson` shape. The current model only
   uses `type`; `configJson` defaults to `'{}'` and is kept around so
   per-template overrides can be added later without another Hive

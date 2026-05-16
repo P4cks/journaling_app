@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
+
+String _summarize(JournalLayout layout) {
+  switch (layout.kind) {
+    case LayoutKind.blockOnly:
+      final n = layout.sections.fold<int>(
+        0,
+        (acc, s) => acc + s.blocks.length,
+      );
+      return '$n block${n == 1 ? '' : 's'}';
+    case LayoutKind.fixedFourPlusText:
+      return '4 blocks + text';
+    case LayoutKind.custom:
+      final n = layout.sections.length;
+      final allBlockGrid = layout.sections.every(
+        (s) => s.kind == SectionKind.blockGrid,
+      );
+      return '$n section${n == 1 ? '' : 's'}'
+          '${allBlockGrid ? '' : ' (incl. text)'}';
+  }
+}
 
 /// Modal bottom sheet that lets the user pick from [layouts]. Returns the
 /// chosen layout, or `null` if dismissed.
@@ -19,6 +41,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
   if (layouts.isEmpty) return Future.value(null);
   return showModalBottomSheet<JournalLayout>(
     context: context,
+    isScrollControlled: true,
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -33,17 +56,22 @@ Future<JournalLayout?> showLayoutPickerSheet(
               ),
             ),
           ),
-          for (final layout in layouts)
-            ListTile(
-              leading: AppIcon(layoutIconFor(layout.iconName).duotone),
-              title: Text(layout.name),
-              subtitle: Text(
-                '${layout.blocks.length} '
-                'block${layout.blocks.length == 1 ? '' : 's'}',
-              ),
-              onTap: () => Navigator.of(sheetContext).pop(layout),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(bottom: 8),
+              itemCount: layouts.length,
+              itemBuilder: (context, index) {
+                final layout = layouts[index];
+                return ListTile(
+                  leading: AppIcon(layoutIconFor(layout.iconName).duotone),
+                  title: Text(layout.name),
+                  subtitle: Text(_summarize(layout)),
+                  onTap: () => Navigator.of(sheetContext).pop(layout),
+                );
+              },
             ),
-          const SizedBox(height: 8),
+          ),
         ],
       ),
     ),

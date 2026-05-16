@@ -113,6 +113,7 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
               label: Text('One per day'),
             ),
             ButtonSegment(value: PromptStrategy.random, label: Text('Random')),
+            ButtonSegment(value: PromptStrategy.manual, label: Text('Manual')),
           ],
           selected: {_strategy},
           onSelectionChanged: (selection) {
@@ -121,9 +122,14 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
         ),
         const SizedBox(height: 6),
         Text(
-          _strategy == PromptStrategy.daily
-              ? 'Each day rotates through the list. Multiple prompt blocks on the same day get different prompts.'
-              : 'Each prompt block picks a random prompt independently.',
+          switch (_strategy) {
+            PromptStrategy.daily =>
+              'Each day rotates through the list. Multiple prompt blocks on the same day get different prompts.',
+            PromptStrategy.random =>
+              'Each prompt block picks a random prompt independently.',
+            PromptStrategy.manual =>
+              'You pick a prompt for each new entry. Long-press the block to change it.',
+          },
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

@@ -63,6 +63,11 @@ wrapper on the decoded map.
   an entry whose only block is an un-pickable memory (no eligible
   history yet) WILL be swept. That's intentional — a memory-only entry
   with no memory is genuinely empty.
+- **`onJumpToDate` is optional.** In the layout editor preview, no
+  callback is wired — the rendered memory tile is non-interactive
+  rather than throwing. The journal pager always provides a real
+  callback, so tap-to-navigate works there. Don't re-add `required` or
+  force-unwrap it in the dispatcher.
 
 ## When to update this file
 

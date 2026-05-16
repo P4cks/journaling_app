@@ -33,6 +33,8 @@ class BlockGrid extends StatefulWidget {
     this.padding = const EdgeInsets.all(16),
     this.onJumpToDate,
     this.onInteractionLockChanged,
+    this.scrollable = true,
+    this.onBlockTap
   });
 
   final List<JournalBlockData> blocks;
@@ -41,10 +43,23 @@ class BlockGrid extends StatefulWidget {
   final ValueChanged<DateTime>? onJumpToDate;
   final Widget Function(JournalBlockData block, int index)? cardTrailing;
   final void Function(int from, int to)? onReorder;
+  final void Function(JournalBlockData block, String id)? onBlockTap;
   final EdgeInsets padding;
 
+  /// When `true` (default), the grid wraps its tiles in a
+  /// `SingleChildScrollView` and fills the available vertical space —
+  /// the existing behavior for the journal pager (blockOnly) and the
+  /// layout editor.
+  ///
+  /// When `false`, the grid sizes itself to its content with no inner
+  /// scroll view, so it can be embedded inside an outer
+  /// `SingleChildScrollView` (e.g. a section-aware entry body or the
+  /// custom-layout editor stacking multiple sections). Drag-to-reorder
+  /// still works within the grid; cross-grid drag is **not** supported.
+  final bool scrollable;
+
   /// Forwarded to `BlockWidget`. When a block reports `locked: true`
-  /// the journal pager disables its outer horizontal swipe — see
+  /// the journal pager disables its outer horiz  l swipe — see
   /// [lib/ui/journal/widgets/journal_pager.dart].
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
@@ -266,7 +281,7 @@ class _BlockGridState extends State<BlockGrid> {
     final lineInfo = _reorderable ? _insertionLineInfo() : null;
 
     // The stable grid — never mutated during a drag.
-    Widget gridContent = SingleChildScrollView(
+    final staggered = Padding(
       padding: widget.padding,
       child: StaggeredGrid.count(
         crossAxisCount: 2,
@@ -275,6 +290,9 @@ class _BlockGridState extends State<BlockGrid> {
         children: _buildTiles(),
       ),
     );
+    final Widget gridContent = widget.scrollable
+        ? SingleChildScrollView(child: staggered)
+        : staggered;
 
     if (!_reorderable) return gridContent;
 
@@ -318,15 +336,20 @@ class _BlockGridState extends State<BlockGrid> {
   Widget _buildTile(int index) {
     final block = widget.blocks[index];
 
-    final card = BlockCard(
-      topRight: widget.cardTrailing?.call(block, index),
-      child: BlockWidget(
-        key: ValueKey(block.id),
-        data: block,
-        mode: widget.mode,
-        onChanged: widget.onBlockChanged,
-        onJumpToDate: widget.onJumpToDate,
-        onInteractionLockChanged: widget.onInteractionLockChanged,
+    final card = GestureDetector(
+      onTap: widget.onBlockTap == null
+      ? null
+      : () => widget.onBlockTap!(block,block.id),
+      child: BlockCard(
+        topRight: widget.cardTrailing?.call(block, index),
+        child: BlockWidget(
+          key: ValueKey(block.id),
+          data: block,
+          mode: widget.mode,
+          onChanged: widget.onBlockChanged,
+          onJumpToDate: widget.onJumpToDate,
+          onInteractionLockChanged: widget.onInteractionLockChanged,
+        ),
       ),
     );
 

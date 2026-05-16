@@ -31,7 +31,8 @@ lib/
     │   └── format/          date formatters (no `intl` dep)
     ├── theme/               buildAppTheme(), SurfacePalette catalogue, color_hex helpers
     ├── blocks/              BlockGrid, BlockCard, BlockWidget dispatcher
-    │   ├── text_block/      TextBlockWidget
+    │   ├── text_block/      TextBlockWidget (1×1 cell variant)
+    │   ├── text_section/    TextSectionWidget (full-width section variant)
     │   └── mood_tracker/    MoodTrackerWidget
     ├── journal/             Main journal screen — AppBar (editable title + date + stats + profile dropdown), swipe pager, bottom calendar
     ├── journal_entries/     Sectioned list of all entries (kept for future reuse — no AppBar action links to it after the stats rewire)

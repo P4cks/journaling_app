@@ -1,3 +1,5 @@
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+
 class Routes {
   Routes._();
 
@@ -14,6 +16,11 @@ class Routes {
   static const textBlockSettings = '/block-settings/text';
   static const promptBlockSettings = '/block-settings/prompt';
 
+  /// Query-parameter name on `/layouts/new` carrying the chosen
+  /// [LayoutKind]'s `name`. Reads as `null` when absent; the editor
+  /// falls back to [LayoutKind.blockOnly] in that case.
+  static const newLayoutKindQueryParam = 'kind';
+
   static String journalEntryFor(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
@@ -22,6 +29,9 @@ class Routes {
   }
 
   static String editLayoutFor(String id) => '/layouts/edit/$id';
+
+  static String newLayoutFor(LayoutKind kind) =>
+      '$newLayout?$newLayoutKindQueryParam=${kind.name}';
 }
 
 class RouteNames {

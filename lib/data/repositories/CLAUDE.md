@@ -22,22 +22,29 @@ coordination live.
     not check for an existing entry** — that's the caller's job.
     Calls `materializeLayout` to produce the entry's blocks.
   - `materializeLayout(layout, date)` — turns a layout's
-    `List<BlockTemplate>` into fresh `JournalBlockData` instances.
-    Per-type seeding:
-    - `promptBlock` — calls `BlockSettings.pickPromptFor(date,
-      slotIndex)` to bake today's prompt into the entry's content.
-      The `slotIndex` is the prompt block's ordinal among prompt
-      blocks in this layout (not the overall block index), so two
-      prompt blocks on the same day get different prompts under
-      `daily` strategy.
-    - `moodTracker` — seeded with `defaultMoodEmoji` (😐) from
-      [mood_block_content.dart](../model/block_content/mood_block_content.dart).
-    - `weatherManual` — seeded with `defaultWeatherConditionId`
-      (`cloud`) from
-      [weather_block_content.dart](../model/block_content/weather_block_content.dart).
-    - Other types — empty content map; the widget owns its read-time
-      reads (e.g. `TextBlockWidget` reads `BlockSettings.textCharLimit`
-      live).
+    `List<LayoutSection>` into a fresh `List<EntrySection>`. Per
+    section:
+    - `SectionKind.text` — yields an `EntrySection` whose `blocks`
+      list is exactly one fresh `JournalBlockData(type: textBlock)`
+      with empty `TextBlockContent`. This reuses the text-block JSON
+      path so `BlockSettings.textCharLimit` and the existing
+      emptiness check carry over unchanged.
+    - `SectionKind.blockGrid` — materializes one `JournalBlockData`
+      per `BlockTemplate` in the section's `blocks` list. Per-type
+      seeding (same as before):
+      - `promptBlock` — calls `BlockSettings.pickPromptFor(date,
+        slotIndex)`. `slotIndex` is **layout-wide** (a single
+        counter across every block-grid section), so two prompt
+        blocks in different sections on the same day still get
+        different prompts under `daily` strategy.
+      - `moodTracker` — seeded with `defaultMoodEmoji` (😐) from
+        [mood_block_content.dart](../model/block_content/mood_block_content.dart).
+      - `weatherManual` — seeded with `defaultWeatherConditionId`
+        (`cloud`) from
+        [weather_block_content.dart](../model/block_content/weather_block_content.dart).
+      - Other types — empty content map; the widget owns its
+        read-time reads (e.g. `TextBlockWidget` reads
+        `BlockSettings.textCharLimit` live).
     Public so the editor's `applyLayout` path uses the same code.
     **Side-effect to note**: a mood/weather block seeded with its
     default is non-empty per `JournalBlockEmptiness`, so a brand-new
@@ -52,12 +59,13 @@ coordination live.
     each do their own).
   - `pickRandomEligibleBlock({beforeDate, eligibleTypes})` — used by
     [MemoryBlockWidget](../../ui/blocks/memory_block/memory_block_widget.dart)
-    to seed itself. Iterates all entries strictly before `beforeDate`,
-    filters to blocks whose `type` is in `eligibleTypes` AND whose
-    `isEmpty` is false (per `JournalBlockEmptiness`), and uniformly
-    samples. Returns `(date, block)` or `null` when the pool is empty.
-    The caller persists the snapshot into the entry's content so the
-    pick is locked.
+    to seed itself. Walks every section of every entry strictly
+    before `beforeDate`, filters to blocks whose `type` is in
+    `eligibleTypes` AND whose `isEmpty` is false (per
+    `JournalBlockEmptiness`), and uniformly samples. Returns
+    `(date, block)` or `null` when the pool is empty. The caller
+    persists the snapshot into the entry's content so the pick is
+    locked.
   - `sweepEmptyPastEntries({now})` — deletes past-day entries whose
     every block is empty (per `JournalEntry.hasNoContent`). Today's
     entries are never deleted (user may still be drafting). Returns

@@ -87,12 +87,15 @@ class MainJournalViewModel extends ChangeNotifier {
       debugPrint('[MainJournalVM] updateBlock ignored — no entry');
       return;
     }
-    final newBlocks = [
-      for (final b in current.widgets)
-        if (b.id == updated.id) updated else b,
+    final newSections = [
+      for (final section in current.sections)
+        section.copyWith(blocks: [
+          for (final b in section.blocks)
+            if (b.id == updated.id) updated else b,
+        ]),
     ];
     final next = current.copyWith(
-      widgets: newBlocks,
+      sections: newSections,
       lastModified: DateTime.now(),
     );
     _repository.saveJournalEntry(next);
@@ -127,9 +130,9 @@ class MainJournalViewModel extends ChangeNotifier {
       debugPrint('[MainJournalVM] applyLayout ignored — no entry');
       return;
     }
-    final newBlocks = _repository.materializeLayout(layout, _selectedDate);
+    final newSections = _repository.materializeLayout(layout, _selectedDate);
     final next = current.copyWith(
-      widgets: newBlocks,
+      sections: newSections,
       lastModified: DateTime.now(),
     );
     _repository.saveJournalEntry(next);

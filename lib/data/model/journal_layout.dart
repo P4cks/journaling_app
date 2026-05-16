@@ -1,15 +1,18 @@
-import 'package:journaling_app_rewrite/data/model/block_template.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+import 'package:journaling_app_rewrite/data/model/layout_section.dart';
 
 class JournalLayout {
   final String id;
   final String name;
-  final List<BlockTemplate> blocks;
+  final LayoutKind kind;
+  final List<LayoutSection> sections;
   final String? iconName;
 
   const JournalLayout({
     required this.id,
     required this.name,
-    required this.blocks,
+    required this.kind,
+    required this.sections,
     this.iconName,
   });
 
@@ -19,17 +22,19 @@ class JournalLayout {
   JournalLayout copyWith({
     String? id,
     String? name,
-    List<BlockTemplate>? blocks,
+    LayoutKind? kind,
+    List<LayoutSection>? sections,
     String? iconName,
     bool clearIcon = false,
   }) => JournalLayout(
     id: id ?? this.id,
     name: name ?? this.name,
-    blocks: blocks ?? this.blocks,
+    kind: kind ?? this.kind,
+    sections: sections ?? this.sections,
     iconName: clearIcon ? null : (iconName ?? this.iconName),
   );
 
   @override
   String toString() =>
-      'JournalLayout(id: $id, name: $name, icon: $iconName, blocks: $blocks)';
+      'JournalLayout(id: $id, name: $name, kind: $kind, icon: $iconName, sections: ${sections.length})';
 }

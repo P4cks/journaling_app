@@ -1,22 +1,63 @@
 # lib/ui/layouts — Layouts CRUD
 
 The sub-stack under Profile → Layouts. Manages reusable `JournalLayout`
-templates: a name, an icon, and an ordered list of `BlockType`s that
-new entries are pre-populated from.
+templates: a name, an icon, a `LayoutKind`, and an ordered list of
+`LayoutSection`s (each either a text section or a block-grid section
+of 1×1 `BlockType`s) that new entries are pre-populated from.
 
 ```
 layouts/
 ├── layout_icons.dart   curated icon catalogue (top-level, not in a subdir)
 ├── view/               LayoutsScreen (list) + LayoutEditorScreen
-├── view_model/         LayoutsViewModel + LayoutEditorViewModel (+ BlockSlot)
-└── widgets/            layout_icon_picker.dart, layout_picker_sheet.dart
+├── view_model/         LayoutsViewModel + LayoutEditorViewModel (+ BlockSlot, SectionDraft)
+└── widgets/            add_block_sheet, add_section_sheet,
+                        layout_icon_picker, layout_kind_picker_sheet,
+                        layout_name_title, layout_picker_sheet
 ```
+
+## Layout kinds
+
+The three [LayoutKind](../../data/model/layout_kind.dart) values, picked
+by the user from a modal sheet when the FAB on the layouts list is
+tapped:
+
+- **blockOnly** — one implicit `blockGrid` section. Editor UX is
+  identical to the pre-rework editor: a single `BlockGrid` body,
+  AppBar `+` to add a block, swipe-remove via the tile's `cardTrailing`
+  X. Saving stores one `LayoutSection(kind: blockGrid)` whose
+  `blocks` list is the user's slot list.
+- **fixedFourPlusText** — locked structure: a 2×2 cell grid + a
+  `text` section. Cells start empty; each empty cell shows a
+  `+ Add block` placeholder. Tapping a placeholder opens the
+  add-block sheet and fills the cell; filled cells show the type's
+  read-only sample with a small X to remove (tapping a filled tile
+  swaps its type via the same add-block sheet). Filled cells
+  **compress to the front** — deleting the second cell of three
+  filled leaves `[filled, filled, empty, empty]`. The user can save
+  with anywhere from 0 to 4 filled cells. **Only the filled cells
+  are persisted as `BlockTemplate`s, so entries created from this
+  layout only render the actually-chosen blocks** — empty cells
+  never appear in the rendered entry. No add/remove sections, no
+  resize. No AppBar `+`.
+- **custom** — fully editable. The editor renders a vertical stack
+  of section cards. Each card has up/down/delete affordances; for
+  block-grid sections an inline "Add block" button (the grid grows
+  to fit added blocks — no row picker). Below the last section a
+  dashed "Add section" tap zone opens [add_section_sheet.dart](widgets/add_section_sheet.dart)
+  to append a text or block-grid section. New block-grid sections
+  start empty. No AppBar `+` — section creation happens at the tap
+  zone.
 
 ## Routes
 
-- `/profile/layouts` — list (`LayoutsScreen`)
-- `/profile/layouts/new` — editor for a new layout (`LayoutEditorScreen(layoutId: null)`)
-- `/profile/layouts/edit/:id` — editor for an existing layout
+- `/layouts` — list (`LayoutsScreen`)
+- `/layouts/new?kind=<name>` — editor for a new layout
+  (`LayoutEditorScreen(layoutId: null, initialKind: parsed)`).
+  The `kind` query param carries the `LayoutKind.name` chosen from
+  the FAB picker; missing/invalid → falls back to `blockOnly`.
+  Built via `Routes.newLayoutFor(kind)`.
+- `/layouts/edit/:id` — editor for an existing layout (kind is loaded
+  from the persisted `JournalLayout`)
 
 All three live inside the Profile branch so the bottom nav stays
 visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
@@ -55,19 +96,23 @@ entry is materialized from a layout (see
 prompt blocks have their prompt baked in from the global list at that
 moment; other blocks read their settings live at render time.
 
-The `JournalLayout.blocks` field is a `List<BlockTemplate>` whose
-`configJson` is currently always `'{}'` — the wrapper is kept around
-so per-template overrides can be reintroduced later without another
-Hive schema bump.
+Per-section configuration (rows for blockGrid) lives on
+`LayoutSection`. The `BlockTemplate.configJson` field nested inside a
+section's `blocks` list is currently always `'{}'` — kept around so
+per-template overrides can be reintroduced later without another Hive
+schema bump.
 
 ## Reuse: BlockGrid in WYSIWYG mode
 
-The layout editor renders its blocks with the same [BlockGrid](../blocks/CLAUDE.md)
-the home preview and editor use — passing `BlockMode.readOnly` plus
-`onReorder` (to enable DnD) plus `cardTrailing` (to inject a remove-X
-button at the top-right of each tile). The blocks are constructed
-ad-hoc from `BlockSlot`s (the VM's lightweight `(id, type)` pair) via
-`BlockType.sampleData(id: slot.id)` (see
+The layout editor renders its block-grid sections with the same
+[BlockGrid](../blocks/CLAUDE.md) the journal pager uses — passing
+`BlockMode.readOnly` plus `onReorder` (to enable DnD) plus
+`cardTrailing` (to inject a remove-X button at the top-right of each
+tile). For the blockOnly kind the grid scrolls (default `scrollable:
+true`); for fixedFourPlusText and custom the grid is embedded in a
+stacking column and uses `scrollable: false`. The blocks are
+constructed ad-hoc from `BlockSlot`s (the VM's lightweight `(id, type)`
+pair) via `BlockType.sampleData(id: slot.id)` (see
 [block_type_display.dart](../blocks/block_type_display.dart)), so each
 tile renders the same rich, sample-content placeholder shown in the
 "Add block" sheet. The sample is preview-only — it never lands in

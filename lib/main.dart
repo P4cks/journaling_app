@@ -32,8 +32,8 @@ void main() async {
   Hive.registerAdapters();
   debugPrint('[main] Hive initialized, adapters registered');
 
-  final entriesBox = await Hive.openBox<JournalEntry>('journalEntries_v5');
-  final layoutsBox = await Hive.openBox<JournalLayout>('journalLayouts_v5');
+  final entriesBox = await Hive.openBox<JournalEntry>('journalEntries_v6');
+  final layoutsBox = await Hive.openBox<JournalLayout>('journalLayouts_v6');
   final settingsBox = await Hive.openBox<String>('settings');
   debugPrint(
     '[main] boxes opened: entries=${entriesBox.length}, layouts=${layoutsBox.length}, settings=${settingsBox.length}',

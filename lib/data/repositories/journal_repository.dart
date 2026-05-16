@@ -3,12 +3,15 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry_emptiness.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
@@ -55,7 +58,7 @@ class JournalRepository extends ChangeNotifier {
       id: _uuid.v4(),
       date: normalizedDate,
       lastModified: DateTime.now(),
-      widgets: materializeLayout(resolvedLayout, normalizedDate),
+      sections: materializeLayout(resolvedLayout, normalizedDate),
     );
     debugPrint(
       '[JournalRepository] created $entry from layout=${resolvedLayout?.name ?? '<none>'}',
@@ -110,22 +113,48 @@ class JournalRepository extends ChangeNotifier {
     return deleted;
   }
 
-  /// Materializes [layout] into a fresh list of [JournalBlockData]s with
+  /// Materializes [layout] into a fresh list of [EntrySection]s with
   /// per-type initial content seeded from block-type-global settings.
   ///
-  /// Exposed publicly so the entry editor's `applyLayout` flow stays in
-  /// sync with `createEntryForDate`. The [date] argument is used to
-  /// pick prompts for `BlockType.promptBlock` slots (see
-  /// [BlockSettings.pickPromptFor]).
-  List<JournalBlockData> materializeLayout(
+  /// Text sections each get a single fresh `JournalBlockData(textBlock)`
+  /// with empty `TextBlockContent`. Block-grid sections materialize one
+  /// `JournalBlockData` per template in their `blocks` list. Prompt
+  /// slots are numbered layout-wide so multiple prompt blocks (across
+  /// any section) get distinct daily picks.
+  ///
+  /// Exposed publicly so the editor's `applyLayout` / change-layout
+  /// flow stays in sync with `createEntryForDate`.
+  List<EntrySection> materializeLayout(
     JournalLayout? layout,
     DateTime date,
   ) {
     if (layout == null) return const [];
     var promptSlotIndex = 0;
+    int nextPromptSlot() => promptSlotIndex++;
     return [
-      for (final template in layout.blocks)
-        _materializeOne(template.type, date, () => promptSlotIndex++),
+      for (final section in layout.sections)
+        switch (section.kind) {
+          SectionKind.text => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.text,
+            blocks: [
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: const TextBlockContent(text: '').toMap(),
+              ),
+            ],
+          ),
+          SectionKind.blockGrid => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.blockGrid,
+            rows: section.rows,
+            blocks: [
+              for (final template in section.blocks)
+                _materializeOne(template.type, date, nextPromptSlot),
+            ],
+          ),
+        },
     ];
   }
 
@@ -142,10 +171,12 @@ class JournalRepository extends ChangeNotifier {
     final pool = <({DateTime date, JournalBlockData block})>[];
     for (final entry in getAllEntries()) {
       if (!_normalize(entry.date).isBefore(cutoff)) continue;
-      for (final block in entry.widgets) {
-        if (!eligibleTypes.contains(block.type)) continue;
-        if (block.isEmpty) continue;
-        pool.add((date: _normalize(entry.date), block: block));
+      for (final section in entry.sections) {
+        for (final block in section.blocks) {
+          if (!eligibleTypes.contains(block.type)) continue;
+          if (block.isEmpty) continue;
+          pool.add((date: _normalize(entry.date), block: block));
+        }
       }
     }
     if (pool.isEmpty) return null;

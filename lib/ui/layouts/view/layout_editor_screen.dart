@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/add_section_sheet.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LayoutEditorScreen extends StatefulWidget {
-  const LayoutEditorScreen({super.key, required this.layoutId});
+  const LayoutEditorScreen({
+    super.key,
+    required this.layoutId,
+    this.initialKind,
+  });
 
   final String? layoutId;
+  final LayoutKind? initialKind;
 
   @override
   State<LayoutEditorScreen> createState() => _LayoutEditorScreenState();
@@ -33,6 +43,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       _viewModel = LayoutEditorViewModel(
         repository: deps.layoutRepository,
         layoutId: widget.layoutId,
+        initialKind: widget.initialKind,
       );
       _viewModel!.addListener(_onChanged);
     }
@@ -49,11 +60,6 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Resolves the dirty-state dialog when the user tries to leave the
-  /// editor. Returns `true` when leaving is allowed (no dirty state, or
-  /// user picked save/discard), `false` otherwise. Does NOT pop the
-  /// editor — callers do that based on context (back button vs tab
-  /// switch).
   Future<bool> _maybeSaveOnLeave() async {
     final vm = _viewModel;
     if (vm == null || !vm.isDirty) return true;
@@ -83,10 +89,18 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       case 'discard':
         return true;
       case 'save':
-        if (!vm.canSave) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
+        if (vm.nameController.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Add a name to save')),
+          );
+          return false;
+        }
+        if (vm.nameConflict) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A layout with this name already exists'),
+            ),
+          );
           return false;
         }
         await vm.save();
@@ -103,7 +117,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     context.pop();
   }
 
-  Future<void> _addBlock() async {
+  Future<void> _addBlockBlockOnly() async {
     FocusScope.of(context).unfocus();
     final selected = await showAddBlockSheet(context);
     if (selected != null) {
@@ -120,19 +134,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     vm.setIconName(picked);
   }
 
-  List<JournalBlockData> _slotsAsBlockData() {
-    final vm = _viewModel!;
-    return [for (final slot in vm.slots) slot.type.sampleData(id: slot.id)];
-  }
-
   @override
   Widget build(BuildContext context) {
     final vm = _viewModel;
     if (vm == null) return const Scaffold();
-
-    final slots = vm.slots;
-    final scheme = Theme.of(context).colorScheme;
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: _handlePop,
@@ -141,11 +146,12 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           titleSpacing: 0,
           title: LayoutNameTitle(controller: vm.nameController),
           actions: [
-            IconButton(
-              tooltip: 'Add block',
-              onPressed: _addBlock,
-              icon: const AppIcon(PhosphorIconsBold.plus),
-            ),
+            if (vm.kind == LayoutKind.blockOnly)
+              IconButton(
+                tooltip: 'Add block',
+                onPressed: _addBlockBlockOnly,
+                icon: const AppIcon(PhosphorIconsBold.plus),
+              ),
             IconButton(
               tooltip: 'Change icon',
               onPressed: _pickIcon,
@@ -156,32 +162,540 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
-          child: slots.isEmpty
-              ? Center(
-                  child: Text(
-                    'No blocks yet. Tap + to add a block.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).disabledColor,
-                    ),
-                  ),
-                )
-              : BlockGrid(
-                  blocks: _slotsAsBlockData(),
-                  mode: BlockMode.readOnly,
-                  onReorder: vm.moveSlot,
-                  cardTrailing: (block, index) => IconButton(
-                    tooltip: 'Remove',
-                    iconSize: 18,
-                    visualDensity: VisualDensity.compact,
-                    icon: AppIcon(
-                      PhosphorIconsBold.x,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    onPressed: () => vm.removeSlot(block.id),
-                  ),
-                ),
+          child: switch (vm.kind) {
+            LayoutKind.blockOnly => _BlockOnlyBody(vm: vm),
+            LayoutKind.fixedFourPlusText => _FixedFourPlusTextBody(vm: vm),
+            LayoutKind.custom => _CustomBody(vm: vm),
+          },
         ),
       ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Body — blockOnly: matches the previous editor exactly.
+// ---------------------------------------------------------------------------
+
+class _BlockOnlyBody extends StatelessWidget {
+  const _BlockOnlyBody({required this.vm});
+  final LayoutEditorViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final slots = vm.sections.first.slots;
+    if (slots.isEmpty) {
+      return Center(
+        child: Text(
+          'No blocks yet. Tap + to add a block.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).disabledColor,
+          ),
+        ),
+      );
+    }
+    return BlockGrid(
+      blocks: [for (final slot in slots) slot.type.sampleData(id: slot.id)],
+      mode: BlockMode.readOnly,
+      onReorder: vm.moveSlot,
+      onBlockTap: (block, index) async {
+        final picked = await showAddBlockSheet(context);
+        if (picked != null) {
+          vm.replaceSlotType(index, picked);
+        }
+      },
+      cardTrailing: (block, index) => IconButton(
+        tooltip: 'Remove',
+        iconSize: 18,
+        visualDensity: VisualDensity.compact,
+        icon: AppIcon(
+          PhosphorIconsBold.x,
+          color: scheme.onSurfaceVariant,
+        ),
+        onPressed: () => vm.removeSlot(block.id),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Body — fixedFourPlusText: locked structure, only type-swaps allowed.
+// ---------------------------------------------------------------------------
+
+class _FixedFourPlusTextBody extends StatelessWidget {
+  const _FixedFourPlusTextBody({required this.vm});
+  final LayoutEditorViewModel vm;
+
+  Future<void> _fillCell(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(context);
+    if (picked == null) return;
+    vm.addBlockInFixedFour(picked);
+  }
+
+  Future<void> _swapType(BuildContext context, String slotId) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(context);
+    if (picked == null) return;
+    vm.replaceSlotType(slotId, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final blockGridSection = vm.sections.firstWhere(
+      (s) => s.kind == SectionKind.blockGrid,
+    );
+    final slots = blockGridSection.slots;
+    final isFull = slots.length >= LayoutEditorViewModel.fixedFourCapacity;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 2x2 grid — filled cells render the block sample, empty cells
+          // show a "+ Add block" placeholder. Filled cells pack to the
+          // front; deleting one compresses the rest.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: StaggeredGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                for (var i = 0; i < LayoutEditorViewModel.fixedFourCapacity; i++)
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: i < slots.length
+                        ? _FilledCell(
+                            slot: slots[i],
+                            onSwapType: () => _swapType(context, slots[i].id),
+                            onRemove: () =>
+                                vm.removeFixedFourSlot(slots[i].id),
+                          )
+                        : _EmptyAddBlockCell(
+                            onTap: isFull ? null : () => _fillCell(context),
+                          ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Text section preview — content lives in the entry, not the layout.
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Text section',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Each entry created from this layout gets a full-width text area here.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilledCell extends StatelessWidget {
+  const _FilledCell({
+    required this.slot,
+    required this.onSwapType,
+    required this.onRemove,
+  });
+
+  final BlockSlot slot;
+  final VoidCallback onSwapType;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onSwapType,
+      child: BlockCard(
+        topRight: IconButton(
+          tooltip: 'Remove',
+          iconSize: 16,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.all(2),
+          constraints: const BoxConstraints(),
+          icon: AppIcon(
+            PhosphorIconsBold.x,
+            color: scheme.onSurfaceVariant,
+          ),
+          onPressed: onRemove,
+        ),
+        child: AbsorbPointer(
+          child: BlockWidget(
+            key: ValueKey(slot.id),
+            data: slot.type.sampleData(id: slot.id),
+            mode: BlockMode.readOnly,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyAddBlockCell extends StatelessWidget {
+  const _EmptyAddBlockCell({required this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final disabled = onTap == null;
+    final color = disabled ? theme.disabledColor : scheme.primary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: color.withValues(alpha: 0.5),
+            width: 1.5,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(PhosphorIconsBold.plus, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              'Add block',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Body — custom: section list + add-section tap zone.
+// ---------------------------------------------------------------------------
+
+class _CustomBody extends StatelessWidget {
+  const _CustomBody({required this.vm});
+  final LayoutEditorViewModel vm;
+
+  Future<void> _addSection(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddSectionSheet(context);
+    if (picked == null) return;
+    vm.addSection(picked);
+  }
+
+  Future<bool> _confirmRemove(BuildContext context, String label) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Remove $label?'),
+        content: Text('The $label will be removed from this layout.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = vm.sections;
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (sections.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'No sections yet. Tap below to add one.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.disabledColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            for (var i = 0; i < sections.length; i++)
+              _SectionCard(
+                vm: vm,
+                index: i,
+                onConfirmRemove: (label) => _confirmRemove(context, label),
+              ),
+          const SizedBox(height: 12),
+          _AddSectionTapZone(onTap: () => _addSection(context)),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.vm,
+    required this.index,
+    required this.onConfirmRemove,
+  });
+
+  final LayoutEditorViewModel vm;
+  final int index;
+  final Future<bool> Function(String label) onConfirmRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final section = vm.sections[index];
+    final isFirst = index == 0;
+    final isLast = index == vm.sections.length - 1;
+    final isBlockGrid = section.kind == SectionKind.blockGrid;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isBlockGrid ? 'Block grid' : 'Text section',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Move up',
+                  iconSize: 18,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: isFirst ? null : () => vm.moveSection(index, index - 1),
+                  icon: const AppIcon(PhosphorIconsBold.arrowUp),
+                ),
+                IconButton(
+                  tooltip: 'Move down',
+                  iconSize: 18,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: isLast ? null : () => vm.moveSection(index, index + 1),
+                  icon: const AppIcon(PhosphorIconsBold.arrowDown),
+                ),
+                IconButton(
+                  tooltip: 'Remove section',
+                  iconSize: 18,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () async {
+                    final label = isBlockGrid ? 'block grid' : 'text section';
+                    final ok = await onConfirmRemove(label);
+                    if (!ok) return;
+                    vm.removeSection(section.id);
+                  },
+                  icon: AppIcon(
+                    PhosphorIconsBold.trash,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isBlockGrid) _BlockGridSectionBody(vm: vm, sectionIndex: index),
+          if (!isBlockGrid)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: _TextSectionPreview(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BlockGridSectionBody extends StatelessWidget {
+  const _BlockGridSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _addBlock(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(context);
+    if (picked == null) return;
+    vm.addBlockInSection(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+
+    if (section.slots.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => _addBlock(context),
+            icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+            label: const Text('Add block'),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          BlockGrid(
+            blocks: [
+              for (final slot in section.slots)
+                slot.type.sampleData(id: slot.id),
+            ],
+            mode: BlockMode.readOnly,
+            scrollable: false,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            onReorder: (from, to) =>
+                vm.moveSlotInSection(sectionId, from, to),
+            onBlockTap: (block, index) async {
+              final picked = await showAddBlockSheet(context);
+              if (picked != null) {
+                vm.replaceSlotType(index, picked);
+              }
+            },
+            cardTrailing: (block, index) => IconButton(
+              tooltip: 'Remove',
+              iconSize: 16,
+              visualDensity: VisualDensity.compact,
+              icon: AppIcon(
+                PhosphorIconsBold.x,
+                color: scheme.onSurfaceVariant,
+              ),
+              onPressed: () => vm.removeSlotInSection(sectionId, block.id),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _addBlock(context),
+                icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+                label: const Text('Add block'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TextSectionPreview extends StatelessWidget {
+  const _TextSectionPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      'Each entry gets a full-width text area in this section.',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.disabledColor,
+        fontStyle: FontStyle.italic,
+      ),
+    );
+  }
+}
+
+class _AddSectionTapZone extends StatelessWidget {
+  const _AddSectionTapZone({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.4),
+              style: BorderStyle.solid,
+              width: 1.5,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(PhosphorIconsBold.plus, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Add section',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

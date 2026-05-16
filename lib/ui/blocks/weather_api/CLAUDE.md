@@ -41,9 +41,12 @@ Typed wrapper: [WeatherApiBlockContent](../../../data/model/block_content/weathe
 The widget renders identically in `readOnly` and `editable` (not
 user-editable). When data is present: large Phosphor icon (via the
 shared [`weatherIconFor`](../weather_manual/weather_manual_widget.dart)
-helper), temperature in °C, and the reverse-geocoded city name on a
-third line (one-line ellipsis, hidden when null). Otherwise: loading
-spinner, or the appropriate failure message + retry.
+helper), temperature in °C, and a city line — the reverse-geocoded
+name when present, otherwise a dimmed italic `—` placeholder so the
+tile keeps a consistent layout regardless of geocoder success.
+Otherwise: loading spinner, or the appropriate failure message +
+retry. Layout-editor preview tiles use sample data with `cityName:
+'Your city'` so the placeholder reads as intentional.
 
 ## Permissions
 
