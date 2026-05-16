@@ -53,6 +53,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     back to.
   - `vm.save()` re-snapshots the initial state so `isDirty` reads
     false post-save — important for defensive code paths.
+  - **Custom-layout sections** render via a per-`SectionKind` switch
+    in `_SectionCard.build`:
+    - `blockGrid` → `_BlockGridSectionBody` — embedded
+      `BlockGrid(scrollable: false)` plus an inline "Add block" button.
+    - `text` → `_TextSectionPreview` — a dimmed italic explainer
+      (text content lives in the entry, not the layout).
+    - `featureBlock` → `_FeatureBlockSectionBody` — full-width
+      `AspectRatio(1, ...)` that is either an `_EmptyAddBlockCell` or
+      a `_FilledCell`. Tapping opens `showAddBlockSheet(allowedTypes: {photoBlock, memoryBlock})`;
+      the X-remove button calls `vm.clearFeatureBlock`. The same
+      `_EmptyAddBlockCell` / `_FilledCell` widgets are also used by
+      `_FixedFourPlusTextBody`, so they live at the top level of
+      `layout_editor_screen.dart`.
 
 ## Gotchas
 

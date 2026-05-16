@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -41,7 +43,13 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   // Eligible source block types. Memory blocks themselves are excluded
   // to avoid memory-of-a-memory recursion. Prompt blocks are excluded
   // for now (they're shaped differently and feel weird as memories).
-  static const _eligibleTypes = {BlockType.textBlock, BlockType.moodTracker};
+  // Photo blocks are eligible — including 2×2 feature-section photos,
+  // which render as cropped thumbnails inside the (1×1) memory tile.
+  static const _eligibleTypes = {
+    BlockType.textBlock,
+    BlockType.moodTracker,
+    BlockType.photoBlock,
+  };
 
   @override
   void didChangeDependencies() {
@@ -188,6 +196,35 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
         return Center(
           child: Text(emoji ?? '—', style: const TextStyle(fontSize: 48)),
         );
+      case BlockType.photoBlock:
+        final path = PhotoBlockContent.fromMap(decoded).photoPath;
+        if (path == null || path.isEmpty) {
+          return Text(
+            'Photo missing',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: theme.disabledColor,
+            ),
+          );
+        }
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox.expand(
+            child: Image.file(
+              File(path),
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Center(
+                child: Text(
+                  'Photo missing',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.disabledColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
       // Other types aren't currently picked (see `_eligibleTypes`).
       // Render a generic placeholder if the eligibility set is widened
       // later but this widget hasn't been updated.
@@ -197,7 +234,6 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
-      case BlockType.photoBlock:
       case BlockType.locationBlock:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }

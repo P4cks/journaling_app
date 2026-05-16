@@ -154,6 +154,19 @@ class JournalRepository extends ChangeNotifier {
                 _materializeOne(template.type, date, nextPromptSlot),
             ],
           ),
+          SectionKind.featureBlock => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.featureBlock,
+            blocks: section.blocks.isEmpty
+                ? const []
+                : [
+                    _materializeOne(
+                      section.blocks.first.type,
+                      date,
+                      nextPromptSlot,
+                    ),
+                  ],
+          ),
         },
     ];
   }

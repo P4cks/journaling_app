@@ -38,6 +38,15 @@ Future<SectionKind?> showAddSectionSheet(BuildContext context) {
             ),
             onTap: () => Navigator.of(sheetContext).pop(SectionKind.blockGrid),
           ),
+          ListTile(
+            leading: const AppIcon(PhosphorIconsDuotone.frameCorners),
+            title: const Text('Feature block'),
+            subtitle: const Text(
+              'A large 2×2 single block — photo or memory.',
+            ),
+            onTap: () =>
+                Navigator.of(sheetContext).pop(SectionKind.featureBlock),
+          ),
           const SizedBox(height: 8),
         ],
       ),

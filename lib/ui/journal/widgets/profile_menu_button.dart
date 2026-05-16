@@ -22,18 +22,23 @@ class ProfileMenuButton extends StatelessWidget {
       tooltip: 'Profile',
       icon: AppIcon(PhosphorIconsDuotone.userCircle, color: scheme.onSurface),
       position: PopupMenuPosition.under,
-      onSelected: (value) {
+      onOpened: () => FocusManager.instance.primaryFocus?.unfocus(),
+      onSelected: (value) async {
+        FocusManager.instance.primaryFocus?.unfocus();
         switch (value) {
           case 'settings':
-            context.push(Routes.settings);
+            await context.push(Routes.settings);
             break;
           case 'layouts':
-            context.push(Routes.layouts);
+            await context.push(Routes.layouts);
             break;
           case 'block-settings':
-            context.push(Routes.blockSettings);
+            await context.push(Routes.blockSettings);
             break;
         }
+        // Defend against focus auto-restoration when the previously-
+        // focused TextField becomes visible again on pop.
+        FocusManager.instance.primaryFocus?.unfocus();
       },
       itemBuilder: (context) => [
         PopupMenuItem<String>(

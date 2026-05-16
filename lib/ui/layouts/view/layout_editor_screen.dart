@@ -490,7 +490,11 @@ class _SectionCard extends StatelessWidget {
     final section = vm.sections[index];
     final isFirst = index == 0;
     final isLast = index == vm.sections.length - 1;
-    final isBlockGrid = section.kind == SectionKind.blockGrid;
+    final (String header, String removeLabel) = switch (section.kind) {
+      SectionKind.blockGrid => ('Block grid', 'block grid'),
+      SectionKind.text => ('Text section', 'text section'),
+      SectionKind.featureBlock => ('Feature block', 'feature block'),
+    };
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -509,7 +513,7 @@ class _SectionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    isBlockGrid ? 'Block grid' : 'Text section',
+                    header,
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -534,8 +538,7 @@ class _SectionCard extends StatelessWidget {
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
                   onPressed: () async {
-                    final label = isBlockGrid ? 'block grid' : 'text section';
-                    final ok = await onConfirmRemove(label);
+                    final ok = await onConfirmRemove(removeLabel);
                     if (!ok) return;
                     vm.removeSection(section.id);
                   },
@@ -547,12 +550,16 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (isBlockGrid) _BlockGridSectionBody(vm: vm, sectionIndex: index),
-          if (!isBlockGrid)
-            const Padding(
+          switch (section.kind) {
+            SectionKind.blockGrid =>
+              _BlockGridSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.text => const Padding(
               padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: _TextSectionPreview(),
             ),
+            SectionKind.featureBlock =>
+              _FeatureBlockSectionBody(vm: vm, sectionIndex: index),
+          },
         ],
       ),
     );
@@ -635,6 +642,45 @@ class _BlockGridSectionBody extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeatureBlockSectionBody extends StatelessWidget {
+  const _FeatureBlockSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(
+      context,
+      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
+      title: isSwap ? 'Swap block' : 'Choose feature block',
+    );
+    if (picked == null) return;
+    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+    final slots = section.slots;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: slots.isEmpty
+            ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+            : _FilledCell(
+                slot: slots.first,
+                onSwapType: () => _pickType(context, isSwap: true),
+                onRemove: () => vm.clearFeatureBlock(sectionId),
+              ),
       ),
     );
   }
