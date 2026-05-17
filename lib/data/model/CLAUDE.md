@@ -40,7 +40,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
   entries on disk. Adding a new variant requires (a) a wrapper in
@@ -101,6 +101,17 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   email verification state. This is the UI/cloud boundary for future
   Firestore/Storage work; do not expose Firebase `User` objects above
   the service layer.
+- [carousel_item.dart](carousel_item.dart) — `CarouselItem` + `enum
+  CarouselItemKind { emoji, icon }`. Discriminated union of "this is an
+  emoji string" vs "this is a curated Phosphor icon name". Used by
+  custom-carousel definitions AND by the per-block selection content.
+  `fromMap` defaults unknown `kind` to `emoji` for forward compat.
+- [custom_carousel_definition.dart](custom_carousel_definition.dart) —
+  `CustomCarouselDefinition` (`id`, `title`, `items`). Lives in the
+  `BlockSettings` registry; referenced by id from `BlockTemplate.configJson`
+  (layout slots) and from `CustomCarouselBlockContent`. Pure JSON
+  serialization; nothing Hive-adapter-y because the values live in the
+  schema-free `settings` box, not in the layouts / entries box.
 
 ## Implementation details
 

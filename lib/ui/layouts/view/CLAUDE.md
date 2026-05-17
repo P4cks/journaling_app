@@ -71,10 +71,16 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 
 - **`Dismissible` requires unique `Key`s.** Currently `ValueKey(layout.id)`.
   Don't reuse layout ids across deletes (uuids handle this).
-- **`_slotsAsBlockData` constructs sample-content `JournalBlockData`s
-  on every build** via `BlockType.sampleData(id: slot.id)` so the
-  editor's tiles match the "Add block" sheet previews. Cheap, but if
-  you start animating tiles, hoist into the VM with stable identities.
+- **`_slotPreviewData(slot, settings)`** is the single helper that
+  turns a `BlockSlot` into the `JournalBlockData` the BlockGrid
+  renders. Built-in types fall through to `BlockType.sampleData`;
+  custom-carousel slots thread their `definitionId` (and pre-select
+  the first item of the registry definition, if any) so the preview
+  resolves the real title + items instead of falling through to the
+  "Deleted block" placeholder. Used at every slot-render site —
+  don't reintroduce raw `sampleData(id:)` calls.
+- **Sample-content `JournalBlockData`s are constructed on every build.**
+  Cheap, but if you start animating tiles, hoist into the VM with stable identities.
   Sample data is preview-only — it never reaches saved entries (the
   VM's `save()` builds `BlockTemplate.create` with empty `configJson`).
 

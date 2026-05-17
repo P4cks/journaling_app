@@ -1,69 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 
 /// Prompt-block-global configuration. Two settings:
 ///
 /// 1. A list of prompts entered as free text (one per line).
 /// 2. A strategy: `daily` (deterministic per date + slot, balanced
-///    across days so each prompt rotates evenly) or `random`
-///    (independent random pick per slot at entry materialization).
+///    across days so each prompt rotates evenly), `random`
+///    (independent random pick per slot at entry materialization), or
+///    `manual` (user picks per entry).
 ///
-/// Editing here only affects entries created **after** the edit — each
-/// entry locks in its prompt at materialization time so re-opening it
-/// never re-rolls.
-class PromptBlockSettings extends StatefulWidget {
-  const PromptBlockSettings({super.key});
+/// Controlled by the parent `BlockSettingsViewModel` — this widget
+/// only binds to the VM's `promptsController` / `promptStrategy`.
+/// Saving happens screen-wide via `BlockSettingsScreen`'s leave prompt.
+///
+/// Editing here only affects entries created **after** the save —
+/// each entry locks in its prompt at materialization time.
+class PromptBlockSettings extends StatelessWidget {
+  const PromptBlockSettings({super.key, required this.vm});
 
-  @override
-  State<PromptBlockSettings> createState() => _PromptBlockSettingsState();
-}
-
-class _PromptBlockSettingsState extends State<PromptBlockSettings> {
-  final TextEditingController _controller = TextEditingController();
-  bool _initialized = false;
-  PromptStrategy _strategy = PromptStrategy.daily;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialized) return;
-    final settings = AppDependencies.of(context).blockSettings;
-    _controller.text = settings.prompts.join('\n');
-    _strategy = settings.promptStrategy;
-    _initialized = true;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  List<String> _parsePrompts() {
-    return [
-      for (final line in _controller.text.split('\n'))
-        if (line.trim().isNotEmpty) line.trim(),
-    ];
-  }
-
-  Future<void> _save() async {
-    final settings = AppDependencies.of(context).blockSettings;
-    final prompts = _parsePrompts();
-    await settings.setPrompts(prompts);
-    await settings.setPromptStrategy(_strategy);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          prompts.isEmpty
-              ? 'Saved (no prompts configured)'
-              : 'Saved ${prompts.length} prompt${prompts.length == 1 ? '' : 's'}',
-        ),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
+  final BlockSettingsViewModel vm;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +42,7 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
         ),
         const SizedBox(height: 12),
         TextField(
-          controller: _controller,
+          controller: vm.promptsController,
           maxLines: 12,
           minLines: 6,
           textInputAction: TextInputAction.newline,
@@ -115,14 +71,13 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
             ButtonSegment(value: PromptStrategy.random, label: Text('Random')),
             ButtonSegment(value: PromptStrategy.manual, label: Text('Manual')),
           ],
-          selected: {_strategy},
-          onSelectionChanged: (selection) {
-            setState(() => _strategy = selection.first);
-          },
+          selected: {vm.promptStrategy},
+          onSelectionChanged: (selection) =>
+              vm.setPromptStrategy(selection.first),
         ),
         const SizedBox(height: 6),
         Text(
-          switch (_strategy) {
+          switch (vm.promptStrategy) {
             PromptStrategy.daily =>
               'Each day rotates through the list. Multiple prompt blocks on the same day get different prompts.',
             PromptStrategy.random =>
@@ -134,8 +89,6 @@ class _PromptBlockSettingsState extends State<PromptBlockSettings> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 24),
-        FilledButton(onPressed: _save, child: const Text('Save')),
       ],
     );
   }

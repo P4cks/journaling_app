@@ -7,18 +7,24 @@ sheet is a stateless top-level function returning the user's pick or
 ## Files
 
 - [add_block_sheet.dart](add_block_sheet.dart) —
-  `Future<BlockType?> showAddBlockSheet(context, {allowedTypes, title})`.
-  Half-screen `DraggableScrollableSheet` (initial 0.5, max 0.9) with a
-  2-column `SliverGrid` of scaled-down block previews. Each cell
-  renders the real `BlockWidget` in `BlockMode.readOnly` with sample
-  content (from `BlockTypeDisplay.sampleData`) wrapped in
-  `AbsorbPointer` + `BlockCard`, plus the type's `label` and
-  `description` below. Tap pops the chosen `BlockType`. Iterates
-  `BlockType.values`, so new block types only need cases in
-  `block_type_display.dart` to appear. Pass `allowedTypes` to restrict
-  the picker to a subset (used by the feature-block section to limit
-  the choice to photo / memory); `_hiddenBlockTypes` still applies on
-  top of the restriction. The `title` defaults to "Add block".
+  `Future<AddBlockResult?> showAddBlockSheet(context, {allowedTypes, title})`
+  + sealed `AddBlockResult` (`AddBlockResultBuiltin` / `AddBlockResultCustom`).
+  Half-screen `DraggableScrollableSheet` (initial 0.5, max 0.9). Top:
+  a 2-column `SliverGrid` of scaled-down built-in block previews
+  (`BlockWidget` in `BlockMode.readOnly` with `sampleData`), iterating
+  `BlockType.values` minus `_hiddenBlockTypes`. Bottom (when
+  `allowedTypes == null`): a **Custom blocks** section listing every
+  `BlockSettings.customCarousels` definition as its own tile (live
+  `CustomCarouselWidget` preview pointing at the registry), plus an
+  "Add custom block" `OutlinedButton` that pops the sheet and pushes
+  `Routes.newCustomBlock` so the editor stacks on the layout editor.
+  Subscribes to `BlockSettings` via `ListenableBuilder`, so a
+  definition saved in the editor appears in the section without
+  re-opening the sheet. `_hiddenBlockTypes` excludes `locationBlock`
+  (WIP) and `customCarousel` (surfaces only via the per-definition
+  tiles). Pass `allowedTypes` to restrict to a subset (used by
+  feature-block sections — also hides the custom section since feature
+  blocks must be photo/memory). The `title` defaults to "Add block".
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context)`. Three-tile
   sheet (Text section / Block grid / Feature block). Block-grid

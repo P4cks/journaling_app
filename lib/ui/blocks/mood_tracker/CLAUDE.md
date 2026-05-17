@@ -9,7 +9,12 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
   Stateless. Decodes `MoodBlockContent`, renders the centred emoji in
   `BlockMode.readOnly`, otherwise delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  which owns the PageController, expand/collapse state, and timer.
+  which owns the PageController, expand/collapse state, and timer. The
+  body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
+  reading `BlockSettings.moodTitle` via a `ListenableBuilder` — when
+  the title is non-empty a compact label appears above the carousel
+  and the body takes the remaining tile area. When null the title row
+  collapses entirely (no padding cost).
 
 ## Modes
 
@@ -17,13 +22,17 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
   `emoji == null`, renders a dimmed em-dash placeholder.
 - `BlockMode.editable` — delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  with `options: moodEmojis`. The block starts collapsed (same centred
-  emoji or em-dash as read-only); tapping expands a horizontal `PageView`
-  of all emojis. Selected page is full-scale + full-opacity, others
-  scaled down + dimmed. The shared widget's collapse timer fires 1500 ms
-  after **expand** (so tap-without-swipe still auto-collapses) and on
-  every page change (each swipe restarts the 1.5 s window). `onSelected`
-  re-encodes the new emoji into the block via `widget.onChanged`.
+  with `options: moodEmojis`. With a selection: starts collapsed
+  (centred selected emoji); tapping expands a horizontal `PageView`
+  of all emojis. **With no selection**: starts already-expanded so
+  every emoji is visible at the dimmed/non-focused style and the
+  user can swipe to commit straight away — see the carousel widget's
+  CLAUDE for the always-expanded-when-empty contract. Selected page
+  is full-scale + full-opacity, others scaled down + dimmed. The
+  shared widget's collapse timer fires 1500 ms after **expand** (so
+  tap-without-swipe still auto-collapses) and on every page change
+  (each swipe restarts the 1.5 s window). `onSelected` re-encodes
+  the new emoji into the block via `widget.onChanged`.
 
 ## Wire shape & migration
 

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/collapsible_carousel_block.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -53,6 +55,17 @@ class WeatherManualWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = AppDependencies.of(context).blockSettings;
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) => BlockWithTitle(
+        title: settings.weatherTitle,
+        body: _buildBody(context),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     final selected = WeatherBlockContent.fromMap(data.content).conditionId;
 
     if (mode == BlockMode.readOnly) {

@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_template.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -163,7 +165,7 @@ class JournalRepository extends ChangeNotifier {
             rows: section.rows,
             blocks: [
               for (final template in section.blocks)
-                _materializeOne(template.type, date, nextPromptSlot),
+                _materializeOne(template, date, nextPromptSlot),
             ],
           ),
           SectionKind.featureBlock => EntrySection(
@@ -173,7 +175,7 @@ class JournalRepository extends ChangeNotifier {
                 ? const []
                 : [
                     _materializeOne(
-                      section.blocks.first.type,
+                      section.blocks.first,
                       date,
                       nextPromptSlot,
                     ),
@@ -209,10 +211,11 @@ class JournalRepository extends ChangeNotifier {
   }
 
   JournalBlockData _materializeOne(
-    BlockType type,
+    BlockTemplate template,
     DateTime date,
     int Function() nextPromptSlotIndex,
   ) {
+    final type = template.type;
     switch (type) {
       case BlockType.promptBlock:
         final slot = nextPromptSlotIndex();
@@ -224,6 +227,16 @@ class JournalRepository extends ChangeNotifier {
           id: _uuid.v4(),
           type: type,
           content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
+        );
+      case BlockType.customCarousel:
+        // Carry the layout slot's definitionId through to the entry so
+        // the widget can resolve the registry at render time. No
+        // selection yet — the user has to tap to pick.
+        final defId = template.config['definitionId'] as String?;
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: CustomCarouselBlockContent(definitionId: defId).toMap(),
         );
       case BlockType.moodTracker:
       case BlockType.weatherManual:

@@ -14,8 +14,8 @@ class Routes {
   static const newLayout = '/layouts/new';
   static const editLayout = '/layouts/edit/:id';
   static const blockSettings = '/block-settings';
-  static const textBlockSettings = '/block-settings/text';
-  static const promptBlockSettings = '/block-settings/prompt';
+  static const newCustomBlock = '/custom-block/new';
+  static const editCustomBlock = '/custom-block/edit/:id';
 
   /// Query-parameter name on `/layouts/new` carrying the chosen
   /// [LayoutKind]'s `name`. Reads as `null` when absent; the editor
@@ -30,6 +30,8 @@ class Routes {
   }
 
   static String editLayoutFor(String id) => '/layouts/edit/$id';
+
+  static String editCustomBlockFor(String id) => '/custom-block/edit/$id';
 
   static String newLayoutFor(LayoutKind kind) =>
       '$newLayout?$newLayoutKindQueryParam=${kind.name}';
@@ -48,6 +50,6 @@ class RouteNames {
   static const newLayout = 'newLayout';
   static const editLayout = 'editLayout';
   static const blockSettings = 'blockSettings';
-  static const textBlockSettings = 'textBlockSettings';
-  static const promptBlockSettings = 'promptBlockSettings';
+  static const newCustomBlock = 'newCustomBlock';
+  static const editCustomBlock = 'editCustomBlock';
 }

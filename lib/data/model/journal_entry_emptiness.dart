@@ -1,3 +1,4 @@
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
@@ -38,6 +39,7 @@ extension BlockTypeInteraction on BlockType {
       case BlockType.todoBlock:
       case BlockType.photoBlock:
       case BlockType.locationBlock:
+      case BlockType.customCarousel:
         return true;
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
@@ -65,6 +67,9 @@ extension BlockTypeInteraction on BlockType {
 ///   so we don't keep an entry alive just because of a failed fetch).
 /// - `photoBlock` — no photo path stored yet.
 /// - `locationBlock` — no pin dropped yet (lat/lon both absent).
+/// - `customCarousel` — no `selected` item picked yet. The
+///   `definitionId` orphaning case (definition deleted) still counts
+///   as empty: the user can't interact with a missing definition.
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -93,6 +98,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !PhotoBlockContent.fromMap(content).hasPhoto;
       case BlockType.locationBlock:
         return !LocationBlockContent.fromMap(content).hasPin;
+      case BlockType.customCarousel:
+        return CustomCarouselBlockContent.fromMap(content).selected == null;
     }
   }
 }

@@ -25,7 +25,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 ### `BlockSlot` and `SectionDraft`
 
 ```dart
-class BlockSlot { final String id; final BlockType type; }
+class BlockSlot {
+  final String id;
+  final BlockType type;
+  final String? definitionId; // non-null only for customCarousel slots
+}
 class SectionDraft {
   final String id;
   final SectionKind kind;
@@ -33,6 +37,11 @@ class SectionDraft {
   List<BlockSlot> slots; // empty for text sections
 }
 ```
+
+`definitionId` is threaded into `BlockTemplate.configJson` at save
+time (`{"definitionId": "..."}`) and pulled back out on load, so
+custom-carousel slots round-trip correctly through Hive without a
+schema bump.
 
 The editor needs **stable per-slot and per-section identities** so
 reorder/remove can target the right tile or section. `BlockSlot` is
@@ -96,8 +105,17 @@ Name validation:
   small). The save-on-leave dialog surfaces a SnackBar
   ("A layout with this name already exists") when this fires.
 
+All slot-creating methods (`addBlock`, `addBlockInFixedFour`,
+`addBlockInSection`, `replaceSlotType`, `setFeatureBlock`) take an
+`AddBlockResult` (the discriminated return of `showAddBlockSheet`)
+rather than a raw `BlockType`. Internally `_slotFromResult` /
+`_typeAndDefIdFromResult` decode the result into a slot
+(`BlockType` + optional `definitionId`). `setFeatureBlock`
+additionally rejects non-built-in results because feature blocks
+are restricted to photo / memory.
+
 `blockOnly` (operates on the single implicit section):
-- `addBlock(type)` — append a fresh `BlockSlot`.
+- `addBlock(result)` — append a fresh `BlockSlot`.
 - `removeSlot(slotId)` — remove by id. No-op if not found.
 - `moveSlot(from, to)` — **insertion-based** semantics matching
   [BlockGrid](../../blocks/CLAUDE.md): `to == from` and `to == from + 1`
