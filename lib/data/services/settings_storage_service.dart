@@ -15,6 +15,8 @@ class SettingsStorageService {
   static const _blockTextCharLimitKey = 'block.text.charLimit';
   static const _blockMoodTitleKey = 'block.mood.title';
   static const _blockWeatherTitleKey = 'block.weather.title';
+  static const _blockCustomCarouselDefinitionsKey =
+      'block.customCarousel.definitions';
 
   final Box<String> _box;
 
@@ -99,4 +101,12 @@ class SettingsStorageService {
       (value == null || value.isEmpty)
           ? _box.delete(_blockWeatherTitleKey)
           : _box.put(_blockWeatherTitleKey, value);
+
+  String? getBlockCustomCarouselDefinitionsJson() =>
+      _box.get(_blockCustomCarouselDefinitionsKey);
+
+  Future<void> setBlockCustomCarouselDefinitionsJson(String? json) =>
+      (json == null || json.isEmpty)
+          ? _box.delete(_blockCustomCarouselDefinitionsKey)
+          : _box.put(_blockCustomCarouselDefinitionsKey, json);
 }
