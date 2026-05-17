@@ -37,6 +37,18 @@ pushes these screens.
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
+| `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
+| `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
+
+## Top-level helpers (settings_screen.dart)
+
+- `_confirmDestructive(context, {title, message, confirmLabel})` —
+  shared confirm dialog with a red `FilledButton`. Returns true on
+  confirm. Used by the two "Delete all …" debug actions.
+- `_confirmAndDeleteAllEntries(context)` /
+  `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
+  + show a SnackBar with the deleted count. The layouts variant
+  surfaces "default restored" because the repository re-seeds.
 
 ## Private widgets
 

@@ -25,14 +25,6 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
   every page change (each swipe restarts the 1.5 s window). `onSelected`
   re-encodes the new emoji into the block via `widget.onChanged`.
 
-### Defaults
-
-- `defaultMoodEmoji = '😐'` (in
-  [mood_block_content.dart](../../../data/model/block_content/mood_block_content.dart))
-  is seeded into newly-materialized mood blocks by
-  `JournalRepository._materializeOne`. Existing entries with empty
-  content keep their em-dash placeholder.
-
 ## Wire shape & migration
 
 Persisted as `{"emoji": "<single emoji string>"}`. Legacy entries that
