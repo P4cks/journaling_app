@@ -16,7 +16,10 @@ block planned for a later phase — it reuses the same icon mapping.
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
   which owns the PageController, expand/collapse state, and timer.
   Also exposes the top-level `weatherIconFor(conditionId, {required selected})`
-  helper so the API weather block can reuse the same icon mapping.
+  helper so the API weather block can reuse the same icon mapping. The
+  body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
+  reading `BlockSettings.weatherTitle` via a `ListenableBuilder` —
+  same shape as the mood block.
 
 ## Modes
 

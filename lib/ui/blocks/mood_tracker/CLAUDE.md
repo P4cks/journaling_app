@@ -9,7 +9,12 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
   Stateless. Decodes `MoodBlockContent`, renders the centred emoji in
   `BlockMode.readOnly`, otherwise delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  which owns the PageController, expand/collapse state, and timer.
+  which owns the PageController, expand/collapse state, and timer. The
+  body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
+  reading `BlockSettings.moodTitle` via a `ListenableBuilder` — when
+  the title is non-empty a compact label appears above the carousel
+  and the body takes the remaining tile area. When null the title row
+  collapses entirely (no padding cost).
 
 ## Modes
 

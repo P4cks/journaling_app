@@ -1,11 +1,16 @@
 # lib/ui/blocks/widgets — Shared block widgets
 
-Reusable widgets consumed by more than one concrete block type. Today
-that's a single file — the collapsible-carousel body shared between
-the mood and manual-weather blocks.
+Reusable widgets consumed by more than one concrete block type — the
+collapsible-carousel body shared between the mood and manual-weather
+blocks, plus a small title wrapper used by both.
 
 ## Files
 
+- [block_with_title.dart](block_with_title.dart) — `BlockWithTitle`.
+  Wraps a block body with an optional title row above. When the title
+  is null or empty the body is returned unchanged (no padding cost).
+  Used by mood/weather carousels to render their per-type-global
+  title from `BlockSettings.moodTitle` / `weatherTitle`.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
   collapsed centred icon until tapped; tapping expands a horizontal
