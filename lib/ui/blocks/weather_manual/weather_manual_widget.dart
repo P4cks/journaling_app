@@ -3,6 +3,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/weather_block_co
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_pick_row.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/collapsible_carousel_block.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -70,6 +71,23 @@ class WeatherManualWidget extends StatelessWidget {
 
     if (mode == BlockMode.readOnly) {
       return _buildCollapsed(context, selected);
+    }
+
+    if (selected == null) {
+      return CarouselPickRow<String>(
+        options: weatherConditionIds,
+        itemBuilder: (ctx, id) => Opacity(
+          opacity: 0.55,
+          child: AppIcon(weatherIconFor(id, selected: false), size: 28),
+        ),
+        onPick: (id) => onChanged?.call(
+          JournalBlockData.create(
+            id: data.id,
+            type: data.type,
+            content: WeatherBlockContent(conditionId: id).toMap(),
+          ),
+        ),
+      );
     }
 
     return CollapsibleCarouselBlock<String>(

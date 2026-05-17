@@ -20,15 +20,19 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
 
 - `BlockMode.readOnly` — renders the selected emoji large and centred. When
   `emoji == null`, renders a dimmed em-dash placeholder.
-- `BlockMode.editable` — delegates to
+- `BlockMode.editable` + selection — delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  with `options: moodEmojis`. The block starts collapsed (same centred
-  emoji or em-dash as read-only); tapping expands a horizontal `PageView`
-  of all emojis. Selected page is full-scale + full-opacity, others
-  scaled down + dimmed. The shared widget's collapse timer fires 1500 ms
-  after **expand** (so tap-without-swipe still auto-collapses) and on
-  every page change (each swipe restarts the 1.5 s window). `onSelected`
+  with `options: moodEmojis`. The block starts collapsed (centred
+  selected emoji); tapping expands a horizontal `PageView` of all
+  emojis. Selected page is full-scale + full-opacity, others scaled
+  down + dimmed. The shared widget's collapse timer fires 1500 ms after
+  **expand** (so tap-without-swipe still auto-collapses) and on every
+  page change (each swipe restarts the 1.5 s window). `onSelected`
   re-encodes the new emoji into the block via `widget.onChanged`.
+- `BlockMode.editable` + no selection — renders a
+  [CarouselPickRow](../widgets/carousel_pick_row.dart) of every emoji
+  at a dimmed style; tap an emoji to pick it directly. No tap-to-
+  expand needed for a brand-new entry.
 
 ## Wire shape & migration
 

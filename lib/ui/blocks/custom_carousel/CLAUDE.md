@@ -33,22 +33,30 @@ Typed wrapper:
 
 - `BlockMode.readOnly` — large filled icon / emoji centred in the
   cell. Em-dash placeholder when no `selected` is stored.
-- `BlockMode.editable` — delegates to `CollapsibleCarouselBlock`. The
-  selected item is full-scale + filled (for icons); others are
-  scaled-down + duotone-dimmed. Tap-to-expand, auto-collapse after
-  1.5 s, same as the other carousels.
+- `BlockMode.editable` + selection — delegates to
+  `CollapsibleCarouselBlock`. The selected item is full-scale +
+  filled (for icons); others are scaled-down + duotone-dimmed.
+  Tap-to-expand, auto-collapse after 1.5 s, same as the other
+  carousels.
+- `BlockMode.editable` + no selection — renders every item in a
+  `CarouselPickRow` so the user can tap one directly without first
+  expanding the tap-to-show carousel. Once a pick exists, the
+  collapse mechanic takes over.
 
 ## Orphan & itemless states
 
-- **Missing `definitionId`** (e.g. the user deleted the definition
-  from Block Settings while a layout / entry referenced it) →
-  `findCustomCarousel` returns `null` → the widget renders a dimmed
-  italic "Deleted block" placeholder. Same behaviour for an empty
+- **Missing definition + no prior pick**: `findCustomCarousel` returns
+  `null` and `content.selected` is `null` → renders the dimmed italic
+  "Deleted block" placeholder. Same behaviour for an empty
   `definition.items` list.
-- The sweep treats orphan / no-selection blocks as empty because the
-  user can't interact with them, so an otherwise-empty entry whose
-  only block is an orphan custom carousel will still get swept at
-  midnight. Intentional.
+- **Missing definition + previously-saved pick**: when the user had
+  already picked an item before the definition was deleted, the
+  widget renders the verbatim pick (centred, locked — no carousel
+  since the option list is gone). The point: deleting a definition
+  doesn't visually erase what the user logged in past entries.
+- The sweep still treats no-selection-with-orphan-definition blocks
+  as empty because the user can't interact with them. A block that
+  HAS a preserved pick is non-empty and keeps the entry alive.
 
 ## Item rendering
 

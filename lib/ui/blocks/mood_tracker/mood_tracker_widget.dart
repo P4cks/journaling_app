@@ -3,6 +3,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/mood_block_conte
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_pick_row.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/collapsible_carousel_block.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
@@ -35,6 +36,25 @@ class MoodTrackerWidget extends StatelessWidget {
 
     if (mode == BlockMode.readOnly) {
       return _buildCollapsed(context, selected);
+    }
+
+    // Empty editable: render every option in a row so the user can
+    // tap one directly without first expanding the tap-to-show
+    // carousel. Once a selection exists, the normal collapse / tap-
+    // to-expand carousel takes over.
+    if (selected == null) {
+      return CarouselPickRow<String>(
+        options: moodEmojis,
+        itemBuilder: (ctx, emoji) =>
+            Opacity(opacity: 0.55, child: Text(emoji, style: const TextStyle(fontSize: 32))),
+        onPick: (emoji) => onChanged?.call(
+          JournalBlockData.create(
+            id: data.id,
+            type: data.type,
+            content: MoodBlockContent(emoji: emoji).toMap(),
+          ),
+        ),
+      );
     }
 
     return CollapsibleCarouselBlock<String>(

@@ -11,6 +11,13 @@ blocks, plus a small title wrapper used by both.
   is null or empty the body is returned unchanged (no padding cost).
   Used by mood/weather carousels to render their per-type-global
   title from `BlockSettings.moodTitle` / `weatherTitle`.
+- [carousel_pick_row.dart](carousel_pick_row.dart) — `CarouselPickRow<T>`.
+  Renders every option in a horizontal row at a dimmed style; each
+  cell is a tap target that fires `onPick(option)`. Used by the
+  mood / weather / custom carousels as the **empty editable state**
+  (replaces the centred em-dash) so the user can pick directly
+  without first expanding the tap-to-show carousel. Items shrink
+  via `FittedBox` so long item lists still fit a 1×1 tile.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
   collapsed centred icon until tapped; tapping expands a horizontal
