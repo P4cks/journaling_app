@@ -7,6 +7,23 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 - [block_settings_view_model.dart](block_settings_view_model.dart) —
   `BlockSettingsViewModel extends ChangeNotifier`. Backs
   `BlockSettingsScreen`.
+- [custom_block_editor_view_model.dart](custom_block_editor_view_model.dart) —
+  `CustomBlockEditorViewModel extends ChangeNotifier`. Backs
+  `CustomBlockEditorScreen`. Mirrors the same draft / `isDirty` /
+  save-on-leave shape:
+  - `titleController` (`TextEditingController`) + `_items`
+    (`List<CarouselItem>`) drafts; snapshot on construct, re-snapshot
+    after `save()`.
+  - `addItem`, `removeItemAt`, `moveItem` mutate the draft list.
+    `moveItem` adjusts for `ReorderableListView`'s "newIndex one past
+    source when moving forward" semantics so callers can pass the
+    raw indices.
+  - `titleError` — empty title (suppressed on first open until the
+    user edits) OR case-insensitive title conflict with another
+    definition in the registry. `itemsError` — fewer than 2 items.
+    `canSave` is `titleError == null && itemsError == null`.
+  - `save()` writes via `addCustomCarousel` or `updateCustomCarousel`
+    based on `_isNew`.
 
 ## BlockSettingsViewModel
 

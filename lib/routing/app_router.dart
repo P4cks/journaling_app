@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/ui/statistics/view/statistics_screen.dart
 import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view/layouts_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/block_settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/custom_block_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
 
@@ -85,6 +86,18 @@ final GoRouter appRouter = GoRouter(
       path: Routes.blockSettings,
       name: RouteNames.blockSettings,
       builder: (context, state) => const BlockSettingsScreen(),
+    ),
+    GoRoute(
+      path: Routes.newCustomBlock,
+      name: RouteNames.newCustomBlock,
+      builder: (context, state) => const CustomBlockEditorScreen(),
+    ),
+    GoRoute(
+      path: Routes.editCustomBlock,
+      name: RouteNames.editCustomBlock,
+      builder: (context, state) => CustomBlockEditorScreen(
+        definitionId: state.pathParameters['id'],
+      ),
     ),
   ],
 );

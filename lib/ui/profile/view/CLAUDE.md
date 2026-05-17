@@ -18,6 +18,24 @@ pushes these screens.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
   (`StatelessWidget`) + private color helpers. Pushed via `/settings`
   from the profile dropdown.
+- [custom_block_editor_screen.dart](custom_block_editor_screen.dart) —
+  public `CustomBlockEditorScreen({String? definitionId})`. Create
+  (`null` id) or edit (existing id) a `CustomCarouselDefinition`.
+  Same draft + Cancel/Discard/Save-on-leave shape as the layout
+  editor and the block-settings screen. Body: title `TextField` +
+  `ReorderableListView` of items + "Add emoji" / "Add icon"
+  outlined buttons. Pushed via `/custom-block/new` or
+  `/custom-block/edit/:id` — no UI entry point yet (lands with the
+  Add-Block sheet integration and Block Settings sections in the
+  next commits).
+  - Private `_ItemRow` — `Card` with leading preview (`Text` for
+    emoji / `AppIcon` for icon), label, kind subtitle, X-remove,
+    and a `ReorderableDragStartListener` drag handle.
+  - Private `_AddEmojiDialog` — single-line `TextField` with a
+    cancel / add pair. Length-capped at 16 chars (sanity bound;
+    no strict grapheme-cluster validation).
+  - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
+    layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Inline sections for every
   block-type-global configuration (Text block char limit, Prompt
