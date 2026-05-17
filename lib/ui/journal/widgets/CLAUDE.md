@@ -25,11 +25,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   reopen. Items, top-to-bottom:
   1. **Streak header** (always; non-clickable) — current + longest
      streak via `computeStreak`.
-  2. **Signed-in header** (only when `currentUser != null`;
-     non-clickable) — renders `displayName ?? email ?? 'Signed in'`.
-     Replaces the old "Not signed in / Auth disabled" placeholder
-     header — those states are now expressed by which action row is
-     shown instead.
+  2. **Signed-in header** (only when `currentUser != null`) —
+     renders `displayName ?? email ?? 'Signed in'` plus a trailing
+     caret. **Clickable** (`value: 'profile'`); tapping pushes
+     `/profile` so the user can review their account / sign-out from
+     the full card. Replaces the old "Not signed in / Auth disabled"
+     placeholder header — those states are now expressed by which
+     action row is shown instead.
   3. **Divider**.
   4. **Sign out** (when signed in) — opens a confirm `AlertDialog`
      ("Sign out of <name/email>?") with Cancel / Sign out; on

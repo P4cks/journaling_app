@@ -77,6 +77,7 @@ class ProfileMenuButton extends StatelessWidget {
             FocusManager.instance.primaryFocus?.unfocus();
             switch (value) {
               case 'sign-in':
+              case 'profile':
                 await context.push(Routes.profile);
                 break;
               case 'sign-out':
@@ -106,7 +107,7 @@ class ProfileMenuButton extends StatelessWidget {
             ),
             if (isSignedIn)
               PopupMenuItem<String>(
-                enabled: false,
+                value: 'profile',
                 padding: EdgeInsets.zero,
                 child: _SignedInHeader(user: user),
               ),
@@ -259,6 +260,12 @@ class _SignedInHeader extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+          ),
+          const SizedBox(width: 8),
+          AppIcon(
+            PhosphorIconsBold.caretRight,
+            size: 14,
+            color: scheme.onSurfaceVariant,
           ),
         ],
       ),
