@@ -78,6 +78,12 @@ that lives in block-grid sections.
 - [memory_block/memory_block_widget.dart](memory_block/memory_block_widget.dart)
 - [weather_api/weather_api_widget.dart](weather_api/weather_api_widget.dart)
 - [photo_block/photo_block_widget.dart](photo_block/photo_block_widget.dart)
+- [custom_carousel/custom_carousel_widget.dart](custom_carousel/custom_carousel_widget.dart) —
+  `CustomCarouselWidget`. Resolves `definitionId` against the
+  `BlockSettings` registry; renders the definition's title + a
+  `CollapsibleCarouselBlock<CarouselItem>` over its items, or a
+  "Deleted block" placeholder when the lookup fails. See
+  [custom_carousel/CLAUDE.md](custom_carousel/CLAUDE.md).
 
 ---
 
@@ -160,3 +166,41 @@ Insertion-based:
 
 ```dart
 final to = insertAt > from ? insertAt - 1 : insertAt;
+```
+
+---
+
+## Keyboard dismissal — modal edit mode
+
+While a TextField is focused (any block, or the title) the parent
+screen enters a "modal editing" state managed by `MainJournalScreen`:
+
+- The screen tracks `_editing` via `WidgetsBindingObserver.didChangeMetrics`
+  (reading `platformDispatcher.views.first.viewInsets.bottom > 0`).
+  **`MediaQuery.viewInsetsOf(context)` inside the Scaffold body
+  returns zero** because Scaffold's `resizeToAvoidBottomInset`
+  consumes the bottom insets before they reach descendants —
+  detecting via the platform dispatcher is the workaround.
+- When `_editing == true`:
+  - The AppBar's `actions` collapse to a single `Done` `TextButton`
+    that calls `FocusManager.instance.primaryFocus?.unfocus()` — the
+    Statistics / Change-layout / Profile actions are removed.
+  - `JournalPager.externalLock = true` swaps the `PageView` physics
+    to `NeverScrollableScrollPhysics`, so horizontal swipe to adjacent
+    entries is disabled.
+  - The body-level `GestureDetector(unfocus)` is disabled (onTap:
+    null) — the only way out of edit mode is to tap Done.
+- When `_editing == false`, all of the above revert to normal.
+
+This applies symmetrically to title edits and block edits — both
+raise the keyboard and trigger the same flag. The return key on the
+keyboard still inserts newlines in multi-line block TextFields.
+
+AppBar actions (Statistics, ProfileMenuButton, Change-layout) also
+call `FocusManager.instance.primaryFocus?.unfocus()` before
+navigating AND once more on return — defending against Flutter's
+automatic focus restoration when the previously-focused TextField
+becomes visible again on pop. In the modal edit state these actions
+aren't reachable anyway (they're replaced by Done), but the unfocus
+calls remain in place for the non-editing flow.
+

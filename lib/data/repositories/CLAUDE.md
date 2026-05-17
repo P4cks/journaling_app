@@ -37,23 +37,19 @@ coordination live.
         counter across every block-grid section), so two prompt
         blocks in different sections on the same day still get
         different prompts under `daily` strategy.
-      - `moodTracker` — seeded with `defaultMoodEmoji` (😐) from
-        [mood_block_content.dart](../model/block_content/mood_block_content.dart).
-      - `weatherManual` — seeded with `defaultWeatherConditionId`
-        (`cloud`) from
-        [weather_block_content.dart](../model/block_content/weather_block_content.dart).
-      - Other types — empty content map; the widget owns its
-        read-time reads (e.g. `TextBlockWidget` reads
+      - All other types — empty content map. Mood and weather start
+        with no selection (`emoji: null` / `conditionId: null`), so an
+        untouched entry remains empty per `JournalBlockEmptiness` and
+        gets swept at end of day if the user never interacts. The
+        widget owns its read-time reads (e.g. `TextBlockWidget` reads
         `BlockSettings.textCharLimit` live).
     Public so the editor's `applyLayout` path uses the same code.
-    **Side-effect to note**: a mood/weather block seeded with its
-    default is non-empty per `JournalBlockEmptiness`, so a brand-new
-    entry that the user immediately abandons would survive the
-    midnight sweep. Acceptable — the entry carries meaningful data
-    (the user's implicit "neutral / cloudy" pick). Revisit if user
-    feedback contradicts.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.
+  - `deleteAllEntries()` — destructive bulk delete used by the
+    debug menu. Iterates every entry and removes it; notifies once
+    if any were deleted. Returns the count. Layouts and settings
+    are untouched.
   - `getAllEntries()` — unsorted; sorting is caller's job
     (`JournalEntriesViewModel` and `HomeViewModel.entriesByDay`
     each do their own).
@@ -67,12 +63,15 @@ coordination live.
     persists the snapshot into the entry's content so the pick is
     locked.
   - `sweepEmptyPastEntries({now})` — deletes past-day entries whose
-    every block is empty (per `JournalEntry.hasNoContent`). Today's
-    entries are never deleted (user may still be drafting). Returns
-    the count; notifies once if anything was deleted.
-    **Called from three places**: `main.dart` cold-start, `MyApp`'s
-    `didChangeAppLifecycleState` resume, and `HomeScreen._openEditor`
-    on editor-pop.
+    every **user-interactive** block is empty (per
+    `JournalEntry.hasNoContent`). Auto-seeded blocks (quote, memory,
+    weather API) are intentionally ignored — a successful API fetch on
+    an otherwise-untouched entry should NOT keep it alive past
+    midnight. Today's entries are never deleted (user may still be
+    drafting). Returns the count; notifies once if anything was
+    deleted. **Called from three places**: `main.dart` cold-start,
+    `MyApp`'s `didChangeAppLifecycleState` resume, and
+    `HomeScreen._openEditor` on editor-pop.
 - [layout_repository.dart](layout_repository.dart) — `LayoutRepository`.
   **Not a `ChangeNotifier`** (layout edits are infrequent and the
   Layouts screen refreshes manually on push-pop). Methods:
@@ -90,6 +89,11 @@ coordination live.
     marks it as default. If the box is non-empty but no default is
     set (e.g. the user deleted the previously-default), adopts the
     first layout.
+  - `deleteAllLayouts()` — destructive bulk delete used by the
+    debug menu. Deletes every layout, clears the default-id setting,
+    then calls `seedDefaultIfEmpty()` so the user is never stranded
+    without a layout. Returns the number of deleted layouts
+    (excludes the freshly-seeded default).
 
 ## Implementation details
 

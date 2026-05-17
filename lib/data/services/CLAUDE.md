@@ -45,8 +45,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `theme.secondary`, `theme.accent`, `theme.customPalettes`,
     `theme.debugSurface`, `block.prompt.list` (JSON-encoded list of
     strings), `block.prompt.strategy` (`daily` | `random` | `manual`),
-    `block.text.charLimit` (positive int as string). If you add
-    another, give it a namespaced key and add a typed accessor pair.
+    `block.text.charLimit` (positive int as string),
+    `block.mood.title` (optional plain string), `block.weather.title`
+    (optional plain string), `block.customCarousel.definitions`
+    (JSON-encoded list of `CustomCarouselDefinition`s; absent means
+    no user-defined carousels yet). If you add another, give it a
+    namespaced key and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
@@ -103,6 +107,16 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     [prompt block widget](../../ui/blocks/prompt_block/CLAUDE.md) opens
     its picker sheet on first build.
   - `textCharLimit` (`int?`) — optional hard cap on every text block.
+  - `moodTitle` (`String?`) / `weatherTitle` (`String?`) — optional
+    titles rendered above the Mood and Weather carousels respectively.
+    Per-type-global; no per-layout-slot overrides.
+  - `customCarousels` (`List<CustomCarouselDefinition>`) — registry
+    of user-defined carousel "types" (title + ordered items, each
+    emoji or curated icon). `addCustomCarousel`, `updateCustomCarousel`,
+    `deleteCustomCarousel`, and `findCustomCarousel` mutate / look up.
+    Caller owns id generation and uniqueness validation. Persisted as
+    a JSON list; orphan-tolerant (delete doesn't cascade into layouts
+    / entries — the widget renders a "deleted block" placeholder).
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `daily` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so

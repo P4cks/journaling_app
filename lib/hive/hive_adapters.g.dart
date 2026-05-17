@@ -119,6 +119,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.photoBlock;
       case 9:
         return BlockType.locationBlock;
+      case 10:
+        return BlockType.customCarousel;
       default:
         return BlockType.textBlock;
     }
@@ -147,6 +149,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(8);
       case BlockType.locationBlock:
         writer.writeByte(9);
+      case BlockType.customCarousel:
+        writer.writeByte(10);
     }
   }
 
@@ -385,6 +389,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         return SectionKind.text;
       case 1:
         return SectionKind.blockGrid;
+      case 2:
+        return SectionKind.featureBlock;
       default:
         return SectionKind.text;
     }
@@ -397,6 +403,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         writer.writeByte(0);
       case SectionKind.blockGrid:
         writer.writeByte(1);
+      case SectionKind.featureBlock:
+        writer.writeByte(2);
     }
   }
 

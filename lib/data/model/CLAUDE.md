@@ -21,9 +21,15 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   (`List<JournalBlockData>`). For `SectionKind.text` the blocks list
   is exactly `[JournalBlockData(type: textBlock)]` — the text content
   lives in that single block's `TextBlockContent`, reusing the
-  existing text JSON path and char-limit enforcement.
-- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid }`.
+  existing text JSON path and char-limit enforcement. For
+  `SectionKind.featureBlock` the blocks list contains exactly one
+  materialized block (a `photoBlock` or `memoryBlock`) rendered at
+  2×2 (full body width, square).
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
+  `featureBlock` is a single-tile 2×2 section; the layout editor
+  restricts the block type to `photoBlock` or `memoryBlock` (defended
+  by `LayoutEditorViewModel.featureBlockAllowedTypes`).
 - [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**
@@ -34,14 +40,18 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [block_content/](block_content/). Use the `JournalBlockData.create`
   factory (takes a `Map` and `jsonEncode`s it) rather than passing a
   raw JSON string.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
   entries on disk. Adding a new variant requires (a) a wrapper in
   `block_content/`, (b) a widget under `lib/ui/blocks/<type>/`,
   (c) cases in [block_widget.dart](../../ui/blocks/block_widget.dart),
   [block_type_display.dart](../../ui/blocks/block_type_display.dart),
-  [journal_entry_emptiness.dart](journal_entry_emptiness.dart), and
+  [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — both
+  `JournalBlockEmptiness.isEmpty` (per-type emptiness) **and**
+  `BlockTypeInteraction.isUserInteractive` (user-driven vs. auto-seeded
+  — decides whether content keeps the entry alive past the midnight
+  sweep), and
   [JournalRepository._materializeOne](../repositories/journal_repository.dart),
   and (d) `flutter pub run build_runner build`.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
@@ -55,9 +65,9 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   ordered section of a `JournalLayout`. Fields: `id`, `kind`
   (`SectionKind`), `rows` (nullable; `blockGrid` only — 1..4 in the
   editor), `blocks` (`List<BlockTemplate>` — empty for text sections,
-  exactly `2 * rows` templates for block-grid sections). Each
-  template is materialized one-for-one into a `JournalBlockData` when
-  the entry is created.
+  exactly `2 * rows` templates for block-grid sections, exactly one
+  template for `featureBlock` sections). Each template is materialized
+  one-for-one into a `JournalBlockData` when the entry is created.
 - [block_template.dart](block_template.dart) — `BlockTemplate { String id; BlockType type; String configJson }`.
   The per-slot envelope inside `LayoutSection.blocks`. Mirrors
   `JournalBlockData`'s `contentJson` shape. The current model only
@@ -67,14 +77,23 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [BlockSettings](../services/block_settings.dart) instead — read at
   materialization (`JournalRepository.materializeLayout`) or at render
   time (`TextBlockWidget`).
-- [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — two
+- [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — three
   extension methods:
+  - `BlockType.isUserInteractive` — whether the block's content comes
+    from explicit user action. User-interactive blocks (text, mood,
+    weatherManual, prompt, todo, photo, location) keep an entry alive;
+    auto-seeded blocks (quote, memory, weatherApi) populate themselves
+    from APIs / repo state and must NOT keep an otherwise-untouched
+    entry alive. **Every new `BlockType` MUST be classified here** —
+    see the doc comment for the rule of thumb.
   - `JournalBlockData.isEmpty` — per-type emptiness; unknown types are
     conservatively treated as **non-empty** so we never sweep something
     we don't yet understand.
-  - `JournalEntry.hasNoContent` — true when `widgets.isEmpty` or every
-    block is empty. Title is intentionally ignored — a title alone
-    doesn't count as content. Used by both
+  - `JournalEntry.hasNoContent` — true when `sections.isEmpty` or
+    every **user-interactive** block is empty. Auto-seeded blocks are
+    skipped (so a successful quote/weather-API fetch doesn't keep an
+    untouched entry from being swept). Title is intentionally ignored
+    — a title alone doesn't count as content. Used by both
     `JournalRepository.sweepEmptyPastEntries` and `computeStreak` to
     decide what counts.
 - [app_user.dart](app_user.dart) — `AppUser`. Auth-facing value object
@@ -82,6 +101,17 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   email verification state. This is the UI/cloud boundary for future
   Firestore/Storage work; do not expose Firebase `User` objects above
   the service layer.
+- [carousel_item.dart](carousel_item.dart) — `CarouselItem` + `enum
+  CarouselItemKind { emoji, icon }`. Discriminated union of "this is an
+  emoji string" vs "this is a curated Phosphor icon name". Used by
+  custom-carousel definitions AND by the per-block selection content.
+  `fromMap` defaults unknown `kind` to `emoji` for forward compat.
+- [custom_carousel_definition.dart](custom_carousel_definition.dart) —
+  `CustomCarouselDefinition` (`id`, `title`, `items`). Lives in the
+  `BlockSettings` registry; referenced by id from `BlockTemplate.configJson`
+  (layout slots) and from `CustomCarouselBlockContent`. Pure JSON
+  serialization; nothing Hive-adapter-y because the values live in the
+  schema-free `settings` box, not in the layouts / entries box.
 
 ## Implementation details
 

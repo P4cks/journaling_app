@@ -1,13 +1,27 @@
-# lib/ui/profile — Settings + Block-settings screens
+# lib/ui/profile — Profile + Settings + Block-settings screens
 
-There is **no top-level Profile screen** anymore. The main journal
-screen's AppBar exposes a profile dropdown
+The main journal screen's AppBar exposes a profile dropdown
 ([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart))
-with a streak + auth header and three items — Settings, Layouts,
-Block settings — that push to the corresponding screens. This
-directory hosts the pushed screens (Settings, Block-settings) plus
-the widgets (`ProfileAuthCard`, theme/palette pickers) reused by both
-Settings and the dropdown.
+with a streak header, an auth-state-aware row (Sign in / Sign out),
+and navigation rows for Settings, Layouts, Block settings. This
+directory hosts the pushed screens:
+
+- **Profile** (`/profile`) — the canonical sign-in entry point.
+  Reuses `ProfileAuthCard` for both signed-out (Email / Google / Apple
+  + bottom-sheet email flow) and signed-in (avatar + name/email +
+  provider + verification + sign-out) states. Reachable from the
+  dropdown's "Sign in" row when signed out; deep-linking in the
+  signed-in state surfaces the same card's signed-in view.
+- **Settings** (`/settings`) — Appearance / Journal templates /
+  Blocks / Debug. Still embeds `ProfileAuthCard` as a section for
+  parity with the dedicated Profile screen — both surface the same
+  signed-in/out widget; if that duplication starts to bite, retire
+  the Settings copy and keep `/profile` as the only entry point.
+- **Block-settings** (`/block-settings`) — every block type's
+  configuration inline on one screen. Edits are kept as drafts in
+  `BlockSettingsViewModel`; a Cancel / Discard / Save dialog runs on
+  leave, mirroring the layout editor. No more per-type push-into-
+  sub-screen routes.
 
 Settings contains:
 
@@ -19,36 +33,49 @@ Settings contains:
 4. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
    surface override, and HSL free-pick for secondary/accent.
 
-Block-settings contains an index that drills into text and prompt
-sub-screens (persist to [BlockSettings](../../data/services/block_settings.dart)).
+Block-settings is rendered inline by `BlockSettingsScreen` —
+sections for Text block (char limit), Prompt block (list + strategy),
+Mood tracker (title), Manual weather (title). Edits go into draft
+state in `BlockSettingsViewModel`; the screen prompts Cancel /
+Discard / Save on leave. Saves write back to
+[BlockSettings](../../data/services/block_settings.dart).
 
 ```
 profile/
-├── view/        SettingsScreen, BlockSettingsScreen
-└── widgets/     palette_picker, swatch_grid_picker, theme_mode_selector,
-                profile_auth_card, prompt_block_settings, text_block_settings
+├── view/         SettingsScreen, ProfileScreen, BlockSettingsScreen
+├── view_model/   BlockSettingsViewModel
+└── widgets/      palette_picker, swatch_grid_picker, theme_mode_selector,
+                  profile_auth_card, prompt_block_settings, text_block_settings
 ```
 
-## Stateless screen + listeners
+## Screen patterns
 
-`SettingsScreen` and `BlockSettingsScreen` are both `StatelessWidget`s.
-They pull the settings/repositories they need from `AppDependencies`
-and sprinkle `ListenableBuilder`s where each section needs to react:
+`SettingsScreen` and `ProfileScreen` are `StatelessWidget`s. They
+pull settings/repositories from `AppDependencies` and sprinkle
+`ListenableBuilder`s where each section needs to react:
 
 - The optional auth card listens to `authRepository`.
 - Each appearance / debug color row listens to `themeSettings`.
 - The `Show debug menu` and `unlockAllDays` switches listen to
   `debugSettings`.
 
-These are the **only profile-area screens** that use `ListenableBuilder`
-directly instead of the standard view-model pattern. Justified because
-there's no derived state to compute — everything maps 1:1 to the
-underlying settings notifiers.
+`BlockSettingsScreen` follows the **VM + save-on-leave** pattern
+instead, mirroring [`LayoutEditorScreen`](../layouts/view/layout_editor_screen.dart):
+- `StatefulWidget`; constructs `BlockSettingsViewModel` in
+  `didChangeDependencies`.
+- `PopScope(canPop: false, onPopInvokedWithResult: _handlePop)` runs
+  `_maybeSaveOnLeave` when the user tries to leave dirty.
+- `TextBlockSettings` and `PromptBlockSettings` are now **controlled
+  by the VM** — they take a `BlockSettingsViewModel` and bind to its
+  controllers. No internal Save buttons, no `ScaffoldMessenger`
+  "Saved" toasts (the save dialog is screen-wide now).
 
 ## Subdirectory CLAUDE.md files
 
-- [view/CLAUDE.md](view/CLAUDE.md) — `SettingsScreen`,
+- [view/CLAUDE.md](view/CLAUDE.md) — `SettingsScreen`, `ProfileScreen`,
   `BlockSettingsScreen`.
+- [view_model/CLAUDE.md](view_model/CLAUDE.md) —
+  `BlockSettingsViewModel`.
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `PalettePicker`,
   `ThemeModeSelector`, `showSwatchPicker` (the color dialog),
   `ProfileAuthCard`, `PromptBlockSettings`, `TextBlockSettings`.

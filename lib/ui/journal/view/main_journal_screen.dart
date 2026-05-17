@@ -28,13 +28,28 @@ class MainJournalScreen extends StatefulWidget {
   State<MainJournalScreen> createState() => _MainJournalScreenState();
 }
 
-class _MainJournalScreenState extends State<MainJournalScreen> {
+class _MainJournalScreenState extends State<MainJournalScreen>
+    with WidgetsBindingObserver {
   MainJournalViewModel? _viewModel;
+
+  /// True when the on-screen keyboard is up. Drives the "modal editing"
+  /// AppBar (only a Done button) and locks the journal pager swipe.
+  /// Updated from [didChangeMetrics] because [MediaQuery.viewInsetsOf]
+  /// inside the Scaffold's body returns zero — Scaffold's
+  /// `resizeToAvoidBottomInset` consumes the bottom insets before they
+  /// reach descendants.
+  bool _editing = false;
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   bool _isToday(DateTime d) => _isSameDay(d, DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void didChangeDependencies() {
@@ -52,19 +67,34 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel?.removeListener(_onChanged);
     _viewModel?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final bottomInsets =
+        WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
+    final keyboardUp = bottomInsets > 0;
+    if (keyboardUp != _editing) {
+      setState(() => _editing = keyboardUp);
+    }
   }
 
   void _onChanged() {
     if (mounted) setState(() {});
   }
 
+  void _onDone() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   Future<void> _onMakeEntry() async {
     final vm = _viewModel;
     if (vm == null) return;
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
@@ -77,7 +107,7 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
   Future<void> _showChangeLayoutSheet() async {
     final vm = _viewModel;
     if (vm == null) return;
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     final selected = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
@@ -106,9 +136,10 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
     if (confirm == true && mounted) vm.applyLayout(selected);
   }
 
-  void _openStatistics() {
-    FocusScope.of(context).unfocus();
-    context.push(Routes.statistics);
+  Future<void> _openStatistics() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await context.push(Routes.statistics);
+    if (mounted) FocusManager.instance.primaryFocus?.unfocus();
   }
 
   BlockMode _modeFor(JournalEntry entry, {required bool unlockAllDays}) {
@@ -132,6 +163,49 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
         final editable = _isToday(selectedDate) || debug.unlockAllDays;
         final scheme = Theme.of(context).colorScheme;
 
+        // While the keyboard is up the AppBar collapses to a single
+        // Done action and the pager swipe is disabled — so editing a
+        // block (or the title) can't accidentally navigate away.
+        final List<Widget> appBarActions = _editing
+            ? [
+                TextButton(
+                  onPressed: _onDone,
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.primary,
+                    textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Done'),
+                ),
+                const SizedBox(width: 4),
+              ]
+            : [
+                if (editable && hasEntry)
+                  IconButton(
+                    tooltip: 'Change layout',
+                    onPressed: _showChangeLayoutSheet,
+                    icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
+                  )
+                else if (!editable)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Tooltip(
+                      message: 'Past entries are read-only',
+                      child: AppIcon(
+                        PhosphorIconsDuotone.lock,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                IconButton(
+                  tooltip: 'Statistics',
+                  onPressed: _openStatistics,
+                  icon: const AppIcon(PhosphorIconsDuotone.chartBar),
+                ),
+                const ProfileMenuButton(),
+              ];
+
         return Scaffold(
           appBar: AppBar(
             title: JournalTitle(
@@ -141,35 +215,13 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
               hasEntry: hasEntry,
               onChanged: vm.updateTitle,
             ),
-            actions: [
-              if (editable && hasEntry)
-                IconButton(
-                  tooltip: 'Change layout',
-                  onPressed: _showChangeLayoutSheet,
-                  icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
-                )
-              else if (!editable)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Tooltip(
-                    message: 'Past entries are read-only',
-                    child: AppIcon(
-                      PhosphorIconsDuotone.lock,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              IconButton(
-                tooltip: 'Statistics',
-                onPressed: _openStatistics,
-                icon: const AppIcon(PhosphorIconsDuotone.chartBar),
-              ),
-              const ProfileMenuButton(),
-            ],
+            actions: appBarActions,
           ),
           body: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => FocusScope.of(context).unfocus(),
+            onTap: _editing
+                ? null
+                : () => FocusManager.instance.primaryFocus?.unfocus(),
             child: Material(
               color: scheme.surfaceContainerLow,
               child: SizedBox.expand(
@@ -178,6 +230,7 @@ class _MainJournalScreenState extends State<MainJournalScreen> {
                         viewModel: vm,
                         modeFor: (e) =>
                             _modeFor(e, unlockAllDays: debug.unlockAllDays),
+                        externalLock: _editing,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

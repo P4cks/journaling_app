@@ -29,7 +29,7 @@ types:
         index: 2
   BlockType:
     typeId: 2
-    nextIndex: 10
+    nextIndex: 11
     fields:
       textBlock:
         index: 0
@@ -51,6 +51,8 @@ types:
         index: 8
       locationBlock:
         index: 9
+      customCarousel:
+        index: 10
   JournalLayout:
     typeId: 4
     nextIndex: 6
@@ -111,9 +113,11 @@ types:
         index: 2
   SectionKind:
     typeId: 11
-    nextIndex: 2
+    nextIndex: 3
     fields:
       text:
         index: 0
       blockGrid:
         index: 1
+      featureBlock:
+        index: 2

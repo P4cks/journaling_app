@@ -1,11 +1,16 @@
 # lib/ui/blocks/widgets — Shared block widgets
 
-Reusable widgets consumed by more than one concrete block type. Today
-that's a single file — the collapsible-carousel body shared between
-the mood and manual-weather blocks.
+Reusable widgets consumed by more than one concrete block type — the
+collapsible-carousel body shared between the mood and manual-weather
+blocks, plus a small title wrapper used by both.
 
 ## Files
 
+- [block_with_title.dart](block_with_title.dart) — `BlockWithTitle`.
+  Wraps a block body with an optional title row above. When the title
+  is null or empty the body is returned unchanged (no padding cost).
+  Used by mood/weather carousels to render their per-type-global
+  title from `BlockSettings.moodTitle` / `weatherTitle`.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
   collapsed centred icon until tapped; tapping expands a horizontal
@@ -15,6 +20,18 @@ the mood and manual-weather blocks.
   - Tap-and-don't-swipe still auto-collapses after the delay.
   - Steady swipes keep the carousel open until 1.5 s after the last
     interaction.
+
+  **Initial-expanded when `selected == null`**: if no selection
+  exists at mount time, the widget starts in the expanded state with
+  the outer-pager lock engaged. Every item renders at its
+  unselected style (none focused) so the user sees the full picker
+  at a glance and can swipe to commit. Auto-collapse is suppressed
+  while `selected` is still null — the carousel can't fall back to
+  a placeholder if there's nothing to show. Once `onPageChanged`
+  fires (user committed) the parent rebuilds with the new
+  `selected`, the next scheduled collapse proceeds normally, and
+  the block returns to the standard collapsed → tap-to-expand
+  behaviour.
 
   Props:
   - `blockId` — opaque string used by `onInteractionLockChanged`.
@@ -51,10 +68,9 @@ the mood and manual-weather blocks.
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.
 - **`_initialIndex` defaults to 0 when `selected` is null or unknown.**
-  With the new materialize-time defaults
-  ([defaultMoodEmoji](../../../data/model/block_content/mood_block_content.dart),
-  [defaultWeatherConditionId](../../../data/model/block_content/weather_block_content.dart))
-  this is rarely hit for newly-created blocks.
+  Newly-materialized mood/weather blocks have no selection yet, so the
+  carousel opens at index 0 (the first option in the list) on first
+  tap.
 
 ## When to update this file
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 
 /// How a prompt is chosen when materializing a prompt block.
@@ -46,10 +47,24 @@ class BlockSettings extends ChangeNotifier {
   List<String> _prompts = const [];
   PromptStrategy _promptStrategy = PromptStrategy.daily;
   int? _textCharLimit;
+  String? _moodTitle;
+  String? _weatherTitle;
+  List<CustomCarouselDefinition> _customCarousels = const [];
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
   int? get textCharLimit => _textCharLimit;
+  String? get moodTitle => _moodTitle;
+  String? get weatherTitle => _weatherTitle;
+  List<CustomCarouselDefinition> get customCarousels =>
+      List.unmodifiable(_customCarousels);
+
+  CustomCarouselDefinition? findCustomCarousel(String id) {
+    for (final def in _customCarousels) {
+      if (def.id == id) return def;
+    }
+    return null;
+  }
 
   void _load() {
     final raw = _storage.getBlockPromptListJson();
@@ -79,6 +94,37 @@ class BlockSettings extends ChangeNotifier {
       final parsed = int.tryParse(limitRaw);
       if (parsed != null && parsed > 0) _textCharLimit = parsed;
     }
+    final moodTitleRaw = _storage.getBlockMoodTitle();
+    if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {
+      _moodTitle = moodTitleRaw;
+    }
+    final weatherTitleRaw = _storage.getBlockWeatherTitle();
+    if (weatherTitleRaw != null && weatherTitleRaw.trim().isNotEmpty) {
+      _weatherTitle = weatherTitleRaw;
+    }
+    final customCarouselsRaw =
+        _storage.getBlockCustomCarouselDefinitionsJson();
+    if (customCarouselsRaw != null && customCarouselsRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(customCarouselsRaw);
+        if (decoded is List) {
+          _customCarousels = [
+            for (final raw in decoded)
+              if (raw is Map<String, dynamic>)
+                CustomCarouselDefinition.fromMap(raw),
+          ];
+        }
+      } catch (_) {
+        // Corrupt JSON — fall back to empty.
+      }
+    }
+  }
+
+  Future<void> _persistCustomCarousels() async {
+    final json = _customCarousels.isEmpty
+        ? null
+        : jsonEncode([for (final def in _customCarousels) def.toMap()]);
+    await _storage.setBlockCustomCarouselDefinitionsJson(json);
   }
 
   Future<void> setPrompts(List<String> prompts) async {
@@ -109,6 +155,66 @@ class BlockSettings extends ChangeNotifier {
     _textCharLimit = normalized;
     await _storage.setBlockTextCharLimit(normalized);
     debugPrint('[BlockSettings] setTextCharLimit -> $normalized');
+    notifyListeners();
+  }
+
+  Future<void> setMoodTitle(String? title) async {
+    final normalized = (title == null || title.trim().isEmpty)
+        ? null
+        : title.trim();
+    if (_moodTitle == normalized) return;
+    _moodTitle = normalized;
+    await _storage.setBlockMoodTitle(normalized);
+    debugPrint('[BlockSettings] setMoodTitle -> $normalized');
+    notifyListeners();
+  }
+
+  Future<void> setWeatherTitle(String? title) async {
+    final normalized = (title == null || title.trim().isEmpty)
+        ? null
+        : title.trim();
+    if (_weatherTitle == normalized) return;
+    _weatherTitle = normalized;
+    await _storage.setBlockWeatherTitle(normalized);
+    debugPrint('[BlockSettings] setWeatherTitle -> $normalized');
+    notifyListeners();
+  }
+
+  /// Append a new custom carousel definition to the registry. The caller
+  /// is responsible for the id (uuid) and for title uniqueness checks —
+  /// `BlockSettings` just persists and notifies.
+  Future<void> addCustomCarousel(CustomCarouselDefinition definition) async {
+    _customCarousels = [..._customCarousels, definition];
+    await _persistCustomCarousels();
+    debugPrint(
+      '[BlockSettings] addCustomCarousel id=${definition.id} title="${definition.title}"',
+    );
+    notifyListeners();
+  }
+
+  /// Replace a custom carousel by id. No-op when id is not found.
+  Future<void> updateCustomCarousel(CustomCarouselDefinition definition) async {
+    final next = [..._customCarousels];
+    final i = next.indexWhere((d) => d.id == definition.id);
+    if (i < 0) return;
+    next[i] = definition;
+    _customCarousels = next;
+    await _persistCustomCarousels();
+    debugPrint(
+      '[BlockSettings] updateCustomCarousel id=${definition.id} title="${definition.title}"',
+    );
+    notifyListeners();
+  }
+
+  /// Remove a custom carousel by id. Existing layouts / entries that
+  /// reference it are left untouched — the widget renders a deleted
+  /// placeholder when the lookup fails.
+  Future<void> deleteCustomCarousel(String id) async {
+    final next = [..._customCarousels]..removeWhere((d) => d.id == id);
+    if (next.length == _customCarousels.length) return;
+    _customCarousels = next;
+    await _persistCustomCarousels();
+    debugPrint('[BlockSettings] deleteCustomCarousel id=$id');
     notifyListeners();
   }
 

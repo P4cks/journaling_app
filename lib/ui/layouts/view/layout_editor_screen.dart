@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -17,6 +21,30 @@ import 'package:journaling_app_rewrite/ui/layouts/widgets/add_section_sheet.dart
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+/// Build a preview `JournalBlockData` for a layout-editor slot. For
+/// built-in types we delegate to `BlockTypeDisplay.sampleData`. For
+/// `customCarousel` slots we thread the slot's `definitionId` (and
+/// pre-select the first item, if any) so the preview resolves the
+/// real definition's title + items instead of falling through to the
+/// "Deleted block" placeholder.
+JournalBlockData _slotPreviewData(BlockSlot slot, BlockSettings settings) {
+  if (slot.type != BlockType.customCarousel) {
+    return slot.type.sampleData(id: slot.id);
+  }
+  final defId = slot.definitionId;
+  if (defId == null) return slot.type.sampleData(id: slot.id);
+  final def = settings.findCustomCarousel(defId);
+  final sample = (def == null || def.items.isEmpty) ? null : def.items.first;
+  return JournalBlockData.create(
+    id: slot.id,
+    type: slot.type,
+    content: CustomCarouselBlockContent(
+      definitionId: defId,
+      selected: sample,
+    ).toMap(),
+  );
+}
 
 class LayoutEditorScreen extends StatefulWidget {
   const LayoutEditorScreen({
@@ -184,6 +212,7 @@ class _BlockOnlyBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     final slots = vm.sections.first.slots;
     if (slots.isEmpty) {
       return Center(
@@ -196,7 +225,7 @@ class _BlockOnlyBody extends StatelessWidget {
       );
     }
     return BlockGrid(
-      blocks: [for (final slot in slots) slot.type.sampleData(id: slot.id)],
+      blocks: [for (final slot in slots) _slotPreviewData(slot, settings)],
       mode: BlockMode.readOnly,
       onReorder: vm.moveSlot,
       onBlockTap: (block, index) async {
@@ -332,6 +361,7 @@ class _FilledCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     return GestureDetector(
       onTap: onSwapType,
       child: BlockCard(
@@ -350,7 +380,7 @@ class _FilledCell extends StatelessWidget {
         child: AbsorbPointer(
           child: BlockWidget(
             key: ValueKey(slot.id),
-            data: slot.type.sampleData(id: slot.id),
+            data: _slotPreviewData(slot, settings),
             mode: BlockMode.readOnly,
           ),
         ),
@@ -490,7 +520,11 @@ class _SectionCard extends StatelessWidget {
     final section = vm.sections[index];
     final isFirst = index == 0;
     final isLast = index == vm.sections.length - 1;
-    final isBlockGrid = section.kind == SectionKind.blockGrid;
+    final (String header, String removeLabel) = switch (section.kind) {
+      SectionKind.blockGrid => ('Block grid', 'block grid'),
+      SectionKind.text => ('Text section', 'text section'),
+      SectionKind.featureBlock => ('Feature block', 'feature block'),
+    };
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -509,7 +543,7 @@ class _SectionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    isBlockGrid ? 'Block grid' : 'Text section',
+                    header,
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -534,8 +568,7 @@ class _SectionCard extends StatelessWidget {
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
                   onPressed: () async {
-                    final label = isBlockGrid ? 'block grid' : 'text section';
-                    final ok = await onConfirmRemove(label);
+                    final ok = await onConfirmRemove(removeLabel);
                     if (!ok) return;
                     vm.removeSection(section.id);
                   },
@@ -547,12 +580,16 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (isBlockGrid) _BlockGridSectionBody(vm: vm, sectionIndex: index),
-          if (!isBlockGrid)
-            const Padding(
+          switch (section.kind) {
+            SectionKind.blockGrid =>
+              _BlockGridSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.text => const Padding(
               padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: _TextSectionPreview(),
             ),
+            SectionKind.featureBlock =>
+              _FeatureBlockSectionBody(vm: vm, sectionIndex: index),
+          },
         ],
       ),
     );
@@ -575,6 +612,7 @@ class _BlockGridSectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     final section = vm.sections[sectionIndex];
     final sectionId = section.id;
 
@@ -599,7 +637,7 @@ class _BlockGridSectionBody extends StatelessWidget {
           BlockGrid(
             blocks: [
               for (final slot in section.slots)
-                slot.type.sampleData(id: slot.id),
+                _slotPreviewData(slot, settings),
             ],
             mode: BlockMode.readOnly,
             scrollable: false,
@@ -635,6 +673,45 @@ class _BlockGridSectionBody extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeatureBlockSectionBody extends StatelessWidget {
+  const _FeatureBlockSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(
+      context,
+      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
+      title: isSwap ? 'Swap block' : 'Choose feature block',
+    );
+    if (picked == null) return;
+    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+    final slots = section.slots;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: slots.isEmpty
+            ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+            : _FilledCell(
+                slot: slots.first,
+                onSwapType: () => _pickType(context, isSwap: true),
+                onRemove: () => vm.clearFeatureBlock(sectionId),
+              ),
       ),
     );
   }

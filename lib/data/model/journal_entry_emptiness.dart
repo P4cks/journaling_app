@@ -1,3 +1,4 @@
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
@@ -11,6 +12,42 @@ import 'package:journaling_app_rewrite/data/model/block_content/weather_block_co
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
+
+/// Whether a block type requires explicit user action (typing, tapping,
+/// dropping a pin, adding a photo) to be populated. Used by
+/// [JournalEntryEmptiness.hasNoContent] to decide whether the user
+/// actually did anything with the entry — auto-seeded blocks (quote,
+/// memory, weather API) populate themselves and must NOT keep an
+/// otherwise-untouched entry alive past the midnight sweep.
+///
+/// **When adding a new BlockType, you MUST also add a case here.** Ask
+/// yourself: does the block's content come from explicit user action,
+/// or does it seed itself from an API / generator / repository state?
+///   - User typing, tapping, picking, dropping → `true`
+///   - API fetch, random pick from past entries, scheduled poll → `false`
+///
+/// If unsure, ask. Getting this wrong means either (a) entries silently
+/// vanish at midnight despite the user filling them in, or (b) entries
+/// accumulate forever because an API block keeps them alive.
+extension BlockTypeInteraction on BlockType {
+  bool get isUserInteractive {
+    switch (this) {
+      case BlockType.textBlock:
+      case BlockType.moodTracker:
+      case BlockType.weatherManual:
+      case BlockType.promptBlock:
+      case BlockType.todoBlock:
+      case BlockType.photoBlock:
+      case BlockType.locationBlock:
+      case BlockType.customCarousel:
+        return true;
+      case BlockType.quoteBlock:
+      case BlockType.memoryBlock:
+      case BlockType.weatherApi:
+        return false;
+    }
+  }
+}
 
 /// Block-level emptiness: a block has no meaningful content yet.
 ///
@@ -30,6 +67,9 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 ///   so we don't keep an entry alive just because of a failed fetch).
 /// - `photoBlock` — no photo path stored yet.
 /// - `locationBlock` — no pin dropped yet (lat/lon both absent).
+/// - `customCarousel` — no `selected` item picked yet. The
+///   `definitionId` orphaning case (definition deleted) still counts
+///   as empty: the user can't interact with a missing definition.
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -58,18 +98,25 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !PhotoBlockContent.fromMap(content).hasPhoto;
       case BlockType.locationBlock:
         return !LocationBlockContent.fromMap(content).hasPin;
+      case BlockType.customCarousel:
+        return CustomCarouselBlockContent.fromMap(content).selected == null;
     }
   }
 }
 
-/// Entry-level emptiness: every block in every section is empty (or
-/// there are no sections / no blocks at all).
+/// Entry-level emptiness: the user has done nothing with this entry.
+/// Only [BlockTypeInteraction.isUserInteractive] blocks are considered —
+/// auto-seeded blocks (quote, memory, weather API) are skipped so an
+/// otherwise-untouched entry doesn't survive the midnight sweep just
+/// because an API succeeded. Returns true when there are no sections,
+/// or every user-interactive block is empty.
 /// Title is intentionally ignored — a title alone does not count as content.
 extension JournalEntryEmptiness on JournalEntry {
   bool get hasNoContent {
     if (sections.isEmpty) return true;
     for (final section in sections) {
       for (final block in section.blocks) {
+        if (!block.type.isUserInteractive) continue;
         if (!block.isEmpty) return false;
       }
     }

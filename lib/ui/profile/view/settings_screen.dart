@@ -211,6 +211,43 @@ class SettingsScreen extends StatelessWidget {
                       },
                     ),
                   ),
+                  Builder(
+                    builder: (context) {
+                      final errorColor = Theme.of(context).colorScheme.error;
+                      return Column(
+                        children: [
+                          ListTile(
+                            leading: Icon(
+                              PhosphorIconsDuotone.trash,
+                              color: errorColor,
+                            ),
+                            title: Text(
+                              'Delete all entries',
+                              style: TextStyle(color: errorColor),
+                            ),
+                            subtitle: const Text(
+                              'Wipe every journal entry. Cannot be undone.',
+                            ),
+                            onTap: () => _confirmAndDeleteAllEntries(context),
+                          ),
+                          ListTile(
+                            leading: Icon(
+                              PhosphorIconsDuotone.trash,
+                              color: errorColor,
+                            ),
+                            title: Text(
+                              'Delete all layouts',
+                              style: TextStyle(color: errorColor),
+                            ),
+                            subtitle: const Text(
+                              'Wipe every layout. A fresh default is recreated.',
+                            ),
+                            onTap: () => _confirmAndDeleteAllLayouts(context),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ],
             ),
@@ -219,6 +256,84 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<bool> _confirmDestructive(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+}) async {
+  final errorColor = Theme.of(context).colorScheme.error;
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: errorColor),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(confirmLabel),
+        ),
+      ],
+    ),
+  );
+  return result == true;
+}
+
+Future<void> _confirmAndDeleteAllEntries(BuildContext context) async {
+  final ok = await _confirmDestructive(
+    context,
+    title: 'Delete all entries?',
+    message:
+        'This deletes every journal entry. This cannot be undone. Layouts and settings are kept.',
+    confirmLabel: 'Delete entries',
+  );
+  if (!ok || !context.mounted) return;
+  final deleted = await AppDependencies.of(
+    context,
+  ).journalRepository.deleteAllEntries();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        deleted == 0
+            ? 'No entries to delete'
+            : 'Deleted $deleted entr${deleted == 1 ? 'y' : 'ies'}',
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
+  final ok = await _confirmDestructive(
+    context,
+    title: 'Delete all layouts?',
+    message:
+        'This deletes every layout. A fresh "Default" layout is recreated immediately so you can keep journaling. Entries are not affected.',
+    confirmLabel: 'Delete layouts',
+  );
+  if (!ok || !context.mounted) return;
+  final deleted = await AppDependencies.of(
+    context,
+  ).layoutRepository.deleteAllLayouts();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        deleted == 0
+            ? 'No layouts to delete'
+            : 'Deleted $deleted layout${deleted == 1 ? '' : 's'}; default restored',
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
 }
 
 class _ExpansionTitle extends StatelessWidget {

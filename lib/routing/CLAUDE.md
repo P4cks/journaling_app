@@ -17,8 +17,17 @@ every screen has access to repositories without per-route plumbing.
   - `/statistics` → `StatisticsScreen` (linked from the main screen's
     top-bar Statistics icon)
   - `/settings` → `SettingsScreen`
+  - `/profile` → `ProfileScreen` (linked from the profile dropdown's
+    "Sign in" row when signed out; the screen itself shows the
+    signed-in card when an account exists, so it's safe to deep-link
+    in either state)
   - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
-  - `/block-settings` (+ `text`, `prompt`) → block settings screens
+  - `/block-settings` → `BlockSettingsScreen` (inline sections; no
+    per-type sub-routes after the save-on-leave rewrite)
+  - `/custom-block/new` → `CustomBlockEditorScreen()` (create a new
+    custom-carousel definition)
+  - `/custom-block/edit/:id` → `CustomBlockEditorScreen(definitionId:
+    parsed)` (edit an existing definition)
 
   `initialLocation: Routes.home` so cold start lands on the merged
   main screen.
@@ -29,6 +38,7 @@ every screen has access to repositories without per-route plumbing.
     path with zero-padded segments. `DateTime.parse` on the other side
     expects exactly this shape.
   - `Routes.editLayoutFor(String id)` builds `/layouts/edit/<id>`.
+  - `Routes.editCustomBlockFor(String id)` builds `/custom-block/edit/<id>`.
 
 ## Implementation details
 
@@ -60,6 +70,6 @@ every screen has access to repositories without per-route plumbing.
 - A new top-level route is added — add the constant to
   [routes.dart](routes.dart) and a `GoRoute` to
   [app_router.dart](app_router.dart).
-- A nested sub-route is added beneath `/layouts` or `/block-settings`.
+- A nested sub-route is added beneath `/layouts`.
 - The main screen's date model changes (e.g. range selection, week
   view of `:date`).

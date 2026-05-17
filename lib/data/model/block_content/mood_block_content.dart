@@ -15,10 +15,6 @@ const moodEmojis = <String>[
   '🤔',
 ];
 
-/// Default emoji seeded into newly-materialized mood blocks. Must be
-/// present in [moodEmojis] so the carousel can resolve its index.
-const defaultMoodEmoji = '😐';
-
 /// Legacy `moodId` (enum-name) → emoji migration.
 /// Pre-emoji wire format only stored these three names.
 const _legacyMoodIdToEmoji = <String, String>{

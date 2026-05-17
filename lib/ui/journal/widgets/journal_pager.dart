@@ -3,8 +3,10 @@ import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 
@@ -31,10 +33,18 @@ class JournalPager extends StatefulWidget {
     super.key,
     required this.viewModel,
     required this.modeFor,
+    this.externalLock = false,
   });
 
   final MainJournalViewModel viewModel;
   final BlockMode Function(JournalEntry entry) modeFor;
+
+  /// When true, the pager disables its horizontal swipe physics even
+  /// if no inner carousel is expanded. Used by the screen to lock the
+  /// pager while a TextField (block or title) is being edited — the
+  /// AppBar collapses to a Done button in the same state, so the only
+  /// way out of edit mode is the Done tap.
+  final bool externalLock;
 
   @override
   State<JournalPager> createState() => _JournalPagerState();
@@ -98,7 +108,7 @@ class _JournalPagerState extends State<JournalPager> {
   Widget build(BuildContext context) {
     final entries = widget.viewModel.entries;
     if (entries.isEmpty) return const SizedBox.shrink();
-    final pagerLocked = _lockedBlockIds.isNotEmpty;
+    final pagerLocked = _lockedBlockIds.isNotEmpty || widget.externalLock;
     return PageView.builder(
       controller: _controller,
       itemCount: entries.length,
@@ -184,6 +194,27 @@ class _SectionsBody extends StatelessWidget {
             onBlockChanged: onBlockChanged,
             onJumpToDate: onJumpToDate,
             onInteractionLockChanged: onLockChanged,
+          ),
+        );
+      case SectionKind.featureBlock:
+        // A single 2×2 block — full body width, square aspect ratio.
+        // Suppress empty feature sections (no template) so nothing
+        // renders in entries created before the slot was filled.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: BlockCard(
+              child: BlockWidget(
+                key: ValueKey(section.id),
+                data: section.blocks.first,
+                mode: mode,
+                onChanged: onBlockChanged,
+                onJumpToDate: onJumpToDate,
+                onInteractionLockChanged: onLockChanged,
+              ),
+            ),
           ),
         );
     }

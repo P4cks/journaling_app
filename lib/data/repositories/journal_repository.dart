@@ -1,10 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
-import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_template.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -87,6 +87,20 @@ class JournalRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Wipes every entry. Destructive — exposed for the debug menu's
+  /// "Delete all entries" action. Returns the number deleted; notifies
+  /// once if anything was deleted.
+  Future<int> deleteAllEntries() async {
+    final all = getAllEntries();
+    if (all.isEmpty) return 0;
+    for (final entry in all) {
+      await _storage.deleteJournalEntry(_dateKey(entry.date));
+    }
+    debugPrint('[JournalRepository] deleteAllEntries removed ${all.length}');
+    notifyListeners();
+    return all.length;
+  }
+
   /// Removes past-day entries whose every block is at its default empty
   /// state. Today's entries are never deleted — the user may still be
   /// drafting. Pass [now] in tests; defaults to `DateTime.now()`.
@@ -151,8 +165,21 @@ class JournalRepository extends ChangeNotifier {
             rows: section.rows,
             blocks: [
               for (final template in section.blocks)
-                _materializeOne(template.type, date, nextPromptSlot),
+                _materializeOne(template, date, nextPromptSlot),
             ],
+          ),
+          SectionKind.featureBlock => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.featureBlock,
+            blocks: section.blocks.isEmpty
+                ? const []
+                : [
+                    _materializeOne(
+                      section.blocks.first,
+                      date,
+                      nextPromptSlot,
+                    ),
+                  ],
           ),
         },
     ];
@@ -184,10 +211,11 @@ class JournalRepository extends ChangeNotifier {
   }
 
   JournalBlockData _materializeOne(
-    BlockType type,
+    BlockTemplate template,
     DateTime date,
     int Function() nextPromptSlotIndex,
   ) {
+    final type = template.type;
     switch (type) {
       case BlockType.promptBlock:
         final slot = nextPromptSlotIndex();
@@ -200,20 +228,18 @@ class JournalRepository extends ChangeNotifier {
           type: type,
           content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
         );
+      case BlockType.customCarousel:
+        // Carry the layout slot's definitionId through to the entry so
+        // the widget can resolve the registry at render time. No
+        // selection yet — the user has to tap to pick.
+        final defId = template.config['definitionId'] as String?;
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: CustomCarouselBlockContent(definitionId: defId).toMap(),
+        );
       case BlockType.moodTracker:
-        return JournalBlockData.create(
-          id: _uuid.v4(),
-          type: type,
-          content: const MoodBlockContent(emoji: defaultMoodEmoji).toMap(),
-        );
       case BlockType.weatherManual:
-        return JournalBlockData.create(
-          id: _uuid.v4(),
-          type: type,
-          content: const WeatherBlockContent(
-            conditionId: defaultWeatherConditionId,
-          ).toMap(),
-        );
       case BlockType.textBlock:
       case BlockType.todoBlock:
       case BlockType.quoteBlock:

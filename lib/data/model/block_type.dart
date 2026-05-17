@@ -12,4 +12,5 @@ enum BlockType {
   // values by index, so reordering or inserting would corrupt existing
   // entries on disk.
   locationBlock,
+  customCarousel,
 }

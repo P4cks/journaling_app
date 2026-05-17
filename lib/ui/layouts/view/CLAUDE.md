@@ -53,15 +53,34 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     back to.
   - `vm.save()` re-snapshots the initial state so `isDirty` reads
     false post-save — important for defensive code paths.
+  - **Custom-layout sections** render via a per-`SectionKind` switch
+    in `_SectionCard.build`:
+    - `blockGrid` → `_BlockGridSectionBody` — embedded
+      `BlockGrid(scrollable: false)` plus an inline "Add block" button.
+    - `text` → `_TextSectionPreview` — a dimmed italic explainer
+      (text content lives in the entry, not the layout).
+    - `featureBlock` → `_FeatureBlockSectionBody` — full-width
+      `AspectRatio(1, ...)` that is either an `_EmptyAddBlockCell` or
+      a `_FilledCell`. Tapping opens `showAddBlockSheet(allowedTypes: {photoBlock, memoryBlock})`;
+      the X-remove button calls `vm.clearFeatureBlock`. The same
+      `_EmptyAddBlockCell` / `_FilledCell` widgets are also used by
+      `_FixedFourPlusTextBody`, so they live at the top level of
+      `layout_editor_screen.dart`.
 
 ## Gotchas
 
 - **`Dismissible` requires unique `Key`s.** Currently `ValueKey(layout.id)`.
   Don't reuse layout ids across deletes (uuids handle this).
-- **`_slotsAsBlockData` constructs sample-content `JournalBlockData`s
-  on every build** via `BlockType.sampleData(id: slot.id)` so the
-  editor's tiles match the "Add block" sheet previews. Cheap, but if
-  you start animating tiles, hoist into the VM with stable identities.
+- **`_slotPreviewData(slot, settings)`** is the single helper that
+  turns a `BlockSlot` into the `JournalBlockData` the BlockGrid
+  renders. Built-in types fall through to `BlockType.sampleData`;
+  custom-carousel slots thread their `definitionId` (and pre-select
+  the first item of the registry definition, if any) so the preview
+  resolves the real title + items instead of falling through to the
+  "Deleted block" placeholder. Used at every slot-render site —
+  don't reintroduce raw `sampleData(id:)` calls.
+- **Sample-content `JournalBlockData`s are constructed on every build.**
+  Cheap, but if you start animating tiles, hoist into the VM with stable identities.
   Sample data is preview-only — it never reaches saved entries (the
   VM's `save()` builds `BlockTemplate.create` with empty `configJson`).
 
