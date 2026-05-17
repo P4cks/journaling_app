@@ -51,10 +51,9 @@ the mood and manual-weather blocks.
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.
 - **`_initialIndex` defaults to 0 when `selected` is null or unknown.**
-  With the new materialize-time defaults
-  ([defaultMoodEmoji](../../../data/model/block_content/mood_block_content.dart),
-  [defaultWeatherConditionId](../../../data/model/block_content/weather_block_content.dart))
-  this is rarely hit for newly-created blocks.
+  Newly-materialized mood/weather blocks have no selection yet, so the
+  carousel opens at index 0 (the first option in the list) on first
+  tap.
 
 ## When to update this file
 

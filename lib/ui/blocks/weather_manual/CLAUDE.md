@@ -32,14 +32,6 @@ block planned for a later phase — it reuses the same icon mapping.
   1500 ms after **expand** (so tap-without-swipe still auto-collapses)
   and on every page change. Same UX as the mood block carousel.
 
-### Defaults
-
-- `defaultWeatherConditionId = 'cloud'` (in
-  [weather_block_content.dart](../../../data/model/block_content/weather_block_content.dart))
-  is seeded into newly-materialized weather blocks by
-  `JournalRepository._materializeOne`. Existing entries with empty
-  content keep their em-dash placeholder.
-
 ## Condition ids → icons
 
 | id              | duotone (unselected) | fill (selected)     |

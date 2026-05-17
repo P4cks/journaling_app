@@ -41,6 +41,22 @@ class LayoutRepository {
     }
   }
 
+  /// Wipes every layout, then immediately re-seeds a fresh "Default"
+  /// layout so the user isn't stranded with no way to create entries.
+  /// Destructive — exposed for the debug menu's "Delete all layouts"
+  /// action. Returns the number deleted (excludes the re-seeded
+  /// default).
+  Future<int> deleteAllLayouts() async {
+    final all = _layouts.getAllLayouts();
+    for (final layout in all) {
+      await _layouts.deleteLayout(layout.id);
+    }
+    await _settings.clearDefaultLayoutId();
+    debugPrint('[LayoutRepository] deleteAllLayouts removed ${all.length}');
+    await seedDefaultIfEmpty();
+    return all.length;
+  }
+
   JournalLayout? getDefault() {
     final id = _settings.getDefaultLayoutId();
     if (id == null) {

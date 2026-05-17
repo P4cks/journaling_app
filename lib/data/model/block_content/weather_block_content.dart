@@ -15,10 +15,6 @@ const weatherConditionIds = <String>[
   'fog',
 ];
 
-/// Default condition id seeded into newly-materialized manual weather
-/// blocks. Must be present in [weatherConditionIds].
-const defaultWeatherConditionId = 'cloud';
-
 class WeatherBlockContent {
   final String? conditionId;
 

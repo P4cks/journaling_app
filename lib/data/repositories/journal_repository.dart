@@ -1,10 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
-import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -85,6 +83,20 @@ class JournalRepository extends ChangeNotifier {
     debugPrint('[JournalRepository] deleteEntry $entry');
     await _storage.deleteJournalEntry(_dateKey(entry.date));
     notifyListeners();
+  }
+
+  /// Wipes every entry. Destructive — exposed for the debug menu's
+  /// "Delete all entries" action. Returns the number deleted; notifies
+  /// once if anything was deleted.
+  Future<int> deleteAllEntries() async {
+    final all = getAllEntries();
+    if (all.isEmpty) return 0;
+    for (final entry in all) {
+      await _storage.deleteJournalEntry(_dateKey(entry.date));
+    }
+    debugPrint('[JournalRepository] deleteAllEntries removed ${all.length}');
+    notifyListeners();
+    return all.length;
   }
 
   /// Removes past-day entries whose every block is at its default empty
@@ -201,19 +213,7 @@ class JournalRepository extends ChangeNotifier {
           content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
         );
       case BlockType.moodTracker:
-        return JournalBlockData.create(
-          id: _uuid.v4(),
-          type: type,
-          content: const MoodBlockContent(emoji: defaultMoodEmoji).toMap(),
-        );
       case BlockType.weatherManual:
-        return JournalBlockData.create(
-          id: _uuid.v4(),
-          type: type,
-          content: const WeatherBlockContent(
-            conditionId: defaultWeatherConditionId,
-          ).toMap(),
-        );
       case BlockType.textBlock:
       case BlockType.todoBlock:
       case BlockType.quoteBlock:

@@ -41,7 +41,11 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `block_content/`, (b) a widget under `lib/ui/blocks/<type>/`,
   (c) cases in [block_widget.dart](../../ui/blocks/block_widget.dart),
   [block_type_display.dart](../../ui/blocks/block_type_display.dart),
-  [journal_entry_emptiness.dart](journal_entry_emptiness.dart), and
+  [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — both
+  `JournalBlockEmptiness.isEmpty` (per-type emptiness) **and**
+  `BlockTypeInteraction.isUserInteractive` (user-driven vs. auto-seeded
+  — decides whether content keeps the entry alive past the midnight
+  sweep), and
   [JournalRepository._materializeOne](../repositories/journal_repository.dart),
   and (d) `flutter pub run build_runner build`.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
@@ -67,14 +71,23 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   [BlockSettings](../services/block_settings.dart) instead — read at
   materialization (`JournalRepository.materializeLayout`) or at render
   time (`TextBlockWidget`).
-- [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — two
+- [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — three
   extension methods:
+  - `BlockType.isUserInteractive` — whether the block's content comes
+    from explicit user action. User-interactive blocks (text, mood,
+    weatherManual, prompt, todo, photo, location) keep an entry alive;
+    auto-seeded blocks (quote, memory, weatherApi) populate themselves
+    from APIs / repo state and must NOT keep an otherwise-untouched
+    entry alive. **Every new `BlockType` MUST be classified here** —
+    see the doc comment for the rule of thumb.
   - `JournalBlockData.isEmpty` — per-type emptiness; unknown types are
     conservatively treated as **non-empty** so we never sweep something
     we don't yet understand.
-  - `JournalEntry.hasNoContent` — true when `widgets.isEmpty` or every
-    block is empty. Title is intentionally ignored — a title alone
-    doesn't count as content. Used by both
+  - `JournalEntry.hasNoContent` — true when `sections.isEmpty` or
+    every **user-interactive** block is empty. Auto-seeded blocks are
+    skipped (so a successful quote/weather-API fetch doesn't keep an
+    untouched entry from being swept). Title is intentionally ignored
+    — a title alone doesn't count as content. Used by both
     `JournalRepository.sweepEmptyPastEntries` and `computeStreak` to
     decide what counts.
 - [app_user.dart](app_user.dart) — `AppUser`. Auth-facing value object
