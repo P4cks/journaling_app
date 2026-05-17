@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -17,6 +21,30 @@ import 'package:journaling_app_rewrite/ui/layouts/widgets/add_section_sheet.dart
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+/// Build a preview `JournalBlockData` for a layout-editor slot. For
+/// built-in types we delegate to `BlockTypeDisplay.sampleData`. For
+/// `customCarousel` slots we thread the slot's `definitionId` (and
+/// pre-select the first item, if any) so the preview resolves the
+/// real definition's title + items instead of falling through to the
+/// "Deleted block" placeholder.
+JournalBlockData _slotPreviewData(BlockSlot slot, BlockSettings settings) {
+  if (slot.type != BlockType.customCarousel) {
+    return slot.type.sampleData(id: slot.id);
+  }
+  final defId = slot.definitionId;
+  if (defId == null) return slot.type.sampleData(id: slot.id);
+  final def = settings.findCustomCarousel(defId);
+  final sample = (def == null || def.items.isEmpty) ? null : def.items.first;
+  return JournalBlockData.create(
+    id: slot.id,
+    type: slot.type,
+    content: CustomCarouselBlockContent(
+      definitionId: defId,
+      selected: sample,
+    ).toMap(),
+  );
+}
 
 class LayoutEditorScreen extends StatefulWidget {
   const LayoutEditorScreen({
@@ -184,6 +212,7 @@ class _BlockOnlyBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     final slots = vm.sections.first.slots;
     if (slots.isEmpty) {
       return Center(
@@ -196,7 +225,7 @@ class _BlockOnlyBody extends StatelessWidget {
       );
     }
     return BlockGrid(
-      blocks: [for (final slot in slots) slot.type.sampleData(id: slot.id)],
+      blocks: [for (final slot in slots) _slotPreviewData(slot, settings)],
       mode: BlockMode.readOnly,
       onReorder: vm.moveSlot,
       onBlockTap: (block, index) async {
@@ -332,6 +361,7 @@ class _FilledCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     return GestureDetector(
       onTap: onSwapType,
       child: BlockCard(
@@ -350,7 +380,7 @@ class _FilledCell extends StatelessWidget {
         child: AbsorbPointer(
           child: BlockWidget(
             key: ValueKey(slot.id),
-            data: slot.type.sampleData(id: slot.id),
+            data: _slotPreviewData(slot, settings),
             mode: BlockMode.readOnly,
           ),
         ),
@@ -582,6 +612,7 @@ class _BlockGridSectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = AppDependencies.of(context).blockSettings;
     final section = vm.sections[sectionIndex];
     final sectionId = section.id;
 
@@ -606,7 +637,7 @@ class _BlockGridSectionBody extends StatelessWidget {
           BlockGrid(
             blocks: [
               for (final slot in section.slots)
-                slot.type.sampleData(id: slot.id),
+                _slotPreviewData(slot, settings),
             ],
             mode: BlockMode.readOnly,
             scrollable: false,
