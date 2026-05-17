@@ -235,6 +235,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
       case BlockType.locationBlock:
+      case BlockType.customCarousel:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }

@@ -64,6 +64,17 @@ block content.
   a small migration table inside `fromMap` (happy→😄, neutral→😐, sad→😢);
   new writes only emit `emoji`. Used by `MoodTrackerWidget` and
   `JournalBlockEmptiness`.
+- [custom_carousel_block_content.dart](custom_carousel_block_content.dart) — `CustomCarouselBlockContent { String? definitionId; CarouselItem? selected }`.
+  Map shape: `{"definitionId": "uuid", "selected": {"kind": "emoji", "value": "⚡"}}`
+  (both keys omitted when null). `definitionId` resolves to a
+  [CustomCarouselDefinition](../custom_carousel_definition.dart) in
+  the `BlockSettings` registry; missing/orphan → widget shows a
+  deleted placeholder. `selected` is stored **verbatim** (not as an
+  index) so reordering items in the definition leaves existing picks
+  intact. Used by `CustomCarouselWidget` and `JournalBlockEmptiness`
+  (`selected == null` → empty). The shared `CarouselItem` /
+  `CarouselItemKind` types live in
+  [data/model/carousel_item.dart](../carousel_item.dart).
 
 ## Implementation details
 

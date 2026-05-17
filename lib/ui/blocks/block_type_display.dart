@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
@@ -10,6 +11,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/weather_api_bloc
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -36,6 +38,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Photo';
       case BlockType.locationBlock:
         return 'Location';
+      case BlockType.customCarousel:
+        return 'Custom carousel';
     }
   }
 
@@ -61,6 +65,8 @@ extension BlockTypeDisplay on BlockType {
         return PhosphorIconsDuotone.image;
       case BlockType.locationBlock:
         return PhosphorIconsDuotone.mapPin;
+      case BlockType.customCarousel:
+        return PhosphorIconsDuotone.squaresFour;
     }
   }
 
@@ -86,6 +92,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Attach a photo from your camera or gallery.';
       case BlockType.locationBlock:
         return 'Long-press the map to drop a pin.';
+      case BlockType.customCarousel:
+        return 'A carousel of your own icons or emojis.';
     }
   }
 
@@ -180,6 +188,18 @@ extension BlockTypeDisplay on BlockType {
           content: const LocationBlockContent(
             latitude: 40.7,
             longitude: -30,
+          ).toMap(),
+        );
+      case BlockType.customCarousel:
+        // No definitionId — the picker preview renders the deleted
+        // placeholder. Real picker tiles in the Add Block sheet
+        // override this with a per-definition preview (handled in
+        // add_block_sheet.dart).
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const CustomCarouselBlockContent(
+            selected: CarouselItem(kind: CarouselItemKind.emoji, value: '⚡'),
           ).toMap(),
         );
     }

@@ -78,6 +78,12 @@ that lives in block-grid sections.
 - [memory_block/memory_block_widget.dart](memory_block/memory_block_widget.dart)
 - [weather_api/weather_api_widget.dart](weather_api/weather_api_widget.dart)
 - [photo_block/photo_block_widget.dart](photo_block/photo_block_widget.dart)
+- [custom_carousel/custom_carousel_widget.dart](custom_carousel/custom_carousel_widget.dart) —
+  `CustomCarouselWidget`. Resolves `definitionId` against the
+  `BlockSettings` registry; renders the definition's title + a
+  `CollapsibleCarouselBlock<CarouselItem>` over its items, or a
+  "Deleted block" placeholder when the lookup fails. See
+  [custom_carousel/CLAUDE.md](custom_carousel/CLAUDE.md).
 
 ---
 

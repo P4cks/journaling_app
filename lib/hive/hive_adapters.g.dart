@@ -119,6 +119,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.photoBlock;
       case 9:
         return BlockType.locationBlock;
+      case 10:
+        return BlockType.customCarousel;
       default:
         return BlockType.textBlock;
     }
@@ -147,6 +149,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(8);
       case BlockType.locationBlock:
         writer.writeByte(9);
+      case BlockType.customCarousel:
+        writer.writeByte(10);
     }
   }
 
