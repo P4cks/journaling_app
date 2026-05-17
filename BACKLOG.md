@@ -65,6 +65,7 @@ READ CLAUDE.md for further implementation details
 * [ ] `M` **Spending block** — amount + category for one-off expense tracking.
 * [x] `M` **Memory block** - show random block from a past day (with date and link to the entry). Picks once from any non-empty text or mood block in past entries, locks the snapshot into the entry's content, tap-to-navigate to source.
 * [x] `L` **Photo block** - add or take a foto to add to that day. `image_picker` (camera/gallery); files copied to `<docs>/photos/<uuid>.<ext>` with the path stored in content. Long-press → Replace / Remove. iOS + Android permission strings wired.
+* [x] `L` **Custom carousel block** — user-defined carousel "types" with a title + ordered list of emoji/icon items, created from the layout editor's Add-Block sheet via "Add custom block" → editor screen. Definitions live in a `BlockSettings` registry; referenced by id from layout templates and entry blocks, so edits propagate live to every existing instance. Selections stored verbatim (survives item reorders). Deletion is cascade-tolerant — orphan blocks render a "Deleted block" placeholder. Mood and manual-weather carousels gained an optional title from the same Block-Settings screen, which is now a single inline save-on-leave page (no more per-type sub-screens). Plus debug-menu Delete all entries / Delete all layouts (the latter re-seeds the default).
 * [ ] `S` Weather api placeholder should have a location exampl
 
 ## Entries tab ideas

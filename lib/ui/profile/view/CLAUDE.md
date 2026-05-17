@@ -39,15 +39,29 @@ pushes these screens.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Inline sections for every
   block-type-global configuration (Text block char limit, Prompt
-  block list + strategy, Mood title, Weather title). All edits live
-  on `BlockSettingsViewModel` as drafts; `PopScope` runs
-  `_maybeSaveOnLeave` which mirrors `LayoutEditorScreen`'s Cancel /
-  Discard / Save dialog. The save dialog surfaces a SnackBar
-  ("Fix the highlighted fields before saving") and stays on the
-  screen when `vm.canSave` is false. Pushed via `/block-settings`.
+  block list + strategy, Mood title, Weather title), followed by one
+  section per custom-carousel definition + an "Add custom block"
+  button. Built-in fields live on `BlockSettingsViewModel` as drafts;
+  `PopScope` runs `_maybeSaveOnLeave` which mirrors
+  `LayoutEditorScreen`'s Cancel / Discard / Save dialog. The save
+  dialog surfaces a SnackBar ("Fix the highlighted fields before
+  saving") and stays on the screen when `vm.canSave` is false.
+  Pushed via `/block-settings`.
   - Private `_TitleField` widget renders the optional-title row used
     by both Mood and Weather sections (label + hint + 40-char max
     `TextField` bound to the VM's controller).
+  - Private `_CustomCarouselSections` subscribes to `BlockSettings`
+    directly via `ListenableBuilder` (NOT through the VM — the
+    custom-block editor screen writes through `BlockSettings`
+    immediately on save, not as a draft). Each definition gets a
+    section with Edit + Delete buttons. Edit pushes
+    `/custom-block/edit/<id>`; Delete shows a confirm dialog with
+    the usage count across layouts ("Used in N layouts — existing
+    entries keep their pick…"). Before pushing the editor route the
+    parent's `_maybeSaveOnLeave` runs so a dirty built-in draft
+    isn't silently buried under another screen.
+  - Private `_CustomDefinitionRow` renders the per-definition body
+    (item count + Edit / Delete actions).
 
 ## SettingsScreen composition
 
