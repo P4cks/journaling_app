@@ -13,6 +13,8 @@ class SettingsStorageService {
   static const _blockPromptListKey = 'block.prompt.list';
   static const _blockPromptStrategyKey = 'block.prompt.strategy';
   static const _blockTextCharLimitKey = 'block.text.charLimit';
+  static const _blockMoodTitleKey = 'block.mood.title';
+  static const _blockWeatherTitleKey = 'block.weather.title';
 
   final Box<String> _box;
 
@@ -83,4 +85,18 @@ class SettingsStorageService {
   Future<void> setBlockTextCharLimit(int? value) => value == null
       ? _box.delete(_blockTextCharLimitKey)
       : _box.put(_blockTextCharLimitKey, value.toString());
+
+  String? getBlockMoodTitle() => _box.get(_blockMoodTitleKey);
+
+  Future<void> setBlockMoodTitle(String? value) =>
+      (value == null || value.isEmpty)
+          ? _box.delete(_blockMoodTitleKey)
+          : _box.put(_blockMoodTitleKey, value);
+
+  String? getBlockWeatherTitle() => _box.get(_blockWeatherTitleKey);
+
+  Future<void> setBlockWeatherTitle(String? value) =>
+      (value == null || value.isEmpty)
+          ? _box.delete(_blockWeatherTitleKey)
+          : _box.put(_blockWeatherTitleKey, value);
 }

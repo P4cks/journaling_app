@@ -46,10 +46,14 @@ class BlockSettings extends ChangeNotifier {
   List<String> _prompts = const [];
   PromptStrategy _promptStrategy = PromptStrategy.daily;
   int? _textCharLimit;
+  String? _moodTitle;
+  String? _weatherTitle;
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
   int? get textCharLimit => _textCharLimit;
+  String? get moodTitle => _moodTitle;
+  String? get weatherTitle => _weatherTitle;
 
   void _load() {
     final raw = _storage.getBlockPromptListJson();
@@ -78,6 +82,14 @@ class BlockSettings extends ChangeNotifier {
     if (limitRaw != null) {
       final parsed = int.tryParse(limitRaw);
       if (parsed != null && parsed > 0) _textCharLimit = parsed;
+    }
+    final moodTitleRaw = _storage.getBlockMoodTitle();
+    if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {
+      _moodTitle = moodTitleRaw;
+    }
+    final weatherTitleRaw = _storage.getBlockWeatherTitle();
+    if (weatherTitleRaw != null && weatherTitleRaw.trim().isNotEmpty) {
+      _weatherTitle = weatherTitleRaw;
     }
   }
 
@@ -109,6 +121,28 @@ class BlockSettings extends ChangeNotifier {
     _textCharLimit = normalized;
     await _storage.setBlockTextCharLimit(normalized);
     debugPrint('[BlockSettings] setTextCharLimit -> $normalized');
+    notifyListeners();
+  }
+
+  Future<void> setMoodTitle(String? title) async {
+    final normalized = (title == null || title.trim().isEmpty)
+        ? null
+        : title.trim();
+    if (_moodTitle == normalized) return;
+    _moodTitle = normalized;
+    await _storage.setBlockMoodTitle(normalized);
+    debugPrint('[BlockSettings] setMoodTitle -> $normalized');
+    notifyListeners();
+  }
+
+  Future<void> setWeatherTitle(String? title) async {
+    final normalized = (title == null || title.trim().isEmpty)
+        ? null
+        : title.trim();
+    if (_weatherTitle == normalized) return;
+    _weatherTitle = normalized;
+    await _storage.setBlockWeatherTitle(normalized);
+    debugPrint('[BlockSettings] setWeatherTitle -> $normalized');
     notifyListeners();
   }
 
