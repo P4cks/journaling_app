@@ -25,18 +25,16 @@ block planned for a later phase — it reuses the same icon mapping.
 
 - `BlockMode.readOnly` — large filled Phosphor icon centred in the cell.
   Falls back to a dimmed em-dash placeholder when `conditionId == null`.
-- `BlockMode.editable` + selection — delegates to
+- `BlockMode.editable` — delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  with `options: weatherConditionIds`. The block starts collapsed
-  (centred filled icon); tapping expands a horizontal `PageView`
-  over the 7 conditions. Selected page is full-scale + filled icon;
-  others are duotone + scaled down + dimmed. The shared widget's
-  collapse timer fires 1500 ms after **expand** (so tap-without-swipe
-  still auto-collapses) and on every page change. Same UX as the mood
-  block carousel.
-- `BlockMode.editable` + no selection — renders a
-  [CarouselPickRow](../widgets/carousel_pick_row.dart) of every
-  condition icon at a dimmed style; tap to pick directly.
+  with `options: weatherConditionIds`. With a selection: starts
+  collapsed (centred filled icon); tapping expands a horizontal
+  `PageView` over the 7 conditions. **With no selection**: starts
+  already-expanded so every condition is visible at the duotone +
+  dimmed style and the user can swipe to commit straight away —
+  same always-expanded-when-empty contract as the mood block. The
+  shared widget's collapse timer fires 1500 ms after **expand** and
+  on every page change.
 
 ## Condition ids → icons
 

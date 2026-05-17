@@ -33,15 +33,12 @@ Typed wrapper:
 
 - `BlockMode.readOnly` — large filled icon / emoji centred in the
   cell. Em-dash placeholder when no `selected` is stored.
-- `BlockMode.editable` + selection — delegates to
-  `CollapsibleCarouselBlock`. The selected item is full-scale +
-  filled (for icons); others are scaled-down + duotone-dimmed.
-  Tap-to-expand, auto-collapse after 1.5 s, same as the other
-  carousels.
-- `BlockMode.editable` + no selection — renders every item in a
-  `CarouselPickRow` so the user can tap one directly without first
-  expanding the tap-to-show carousel. Once a pick exists, the
-  collapse mechanic takes over.
+- `BlockMode.editable` — delegates to `CollapsibleCarouselBlock`.
+  With a selection: tap-to-expand, full-scale focused item, others
+  scaled down + dimmed, auto-collapse after 1.5 s. **With no
+  selection**: starts already-expanded so all items are visible at
+  the dimmed style and the user can swipe to commit straight away
+  — same always-expanded-when-empty contract as mood / weather.
 
 ## Orphan & itemless states
 

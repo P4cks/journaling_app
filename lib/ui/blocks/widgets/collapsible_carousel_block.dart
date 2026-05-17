@@ -62,7 +62,7 @@ class CollapsibleCarouselBlock<T> extends StatefulWidget {
 class _CollapsibleCarouselBlockState<T>
     extends State<CollapsibleCarouselBlock<T>> {
   late final PageController _controller;
-  bool _expanded = false;
+  late bool _expanded;
 
   /// Monotonically-incremented token. Pending `Future.delayed` collapse
   /// callbacks capture the current value; when they fire they bail out
@@ -80,10 +80,25 @@ class _CollapsibleCarouselBlockState<T>
   @override
   void initState() {
     super.initState();
+    // When the user hasn't picked anything yet, render the carousel
+    // already expanded so every option is visible (none focused, all
+    // at the unselected itemBuilder style). The user can swipe to
+    // commit; auto-collapse fires after they do, NOT before — so the
+    // empty state stays visible until there's a selection to fall
+    // back to. The outer pager interaction lock is engaged from the
+    // start so vertical-ish swipes inside the carousel don't fight
+    // the date pager.
+    _expanded = widget.selected == null;
     _controller = PageController(
       initialPage: _initialIndex,
       viewportFraction: widget.viewportFraction,
     );
+    if (_expanded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onInteractionLockChanged?.call(widget.blockId, true);
+      });
+    }
   }
 
   @override
@@ -119,6 +134,12 @@ class _CollapsibleCarouselBlockState<T>
     final gen = _collapseGen;
     Future.delayed(widget.collapseDelay, () {
       if (!mounted || gen != _collapseGen || !_expanded) return;
+      // Don't collapse to the placeholder while there's still no
+      // pick — the carousel needs to stay visible so the user can
+      // make one. Once `widget.selected` is non-null (the parent
+      // rebuilt after onPageChanged), the next scheduled collapse
+      // proceeds normally.
+      if (widget.selected == null) return;
       setState(() => _expanded = false);
       widget.onInteractionLockChanged?.call(widget.blockId, false);
     });

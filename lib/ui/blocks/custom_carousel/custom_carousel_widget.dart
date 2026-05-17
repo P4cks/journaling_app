@@ -6,7 +6,6 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_pick_row.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/collapsible_carousel_block.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -94,26 +93,6 @@ class CustomCarouselWidget extends StatelessWidget {
 
     if (mode == BlockMode.readOnly) {
       return _buildCollapsed(context, selectedInDef);
-    }
-
-    // Empty editable: show every option in a row so the user can
-    // tap one directly. Mirrors the mood / weather empty state.
-    if (selectedInDef == null) {
-      return CarouselPickRow<CarouselItem>(
-        options: items,
-        itemBuilder: (ctx, item) =>
-            Opacity(opacity: 0.55, child: _renderItem(item, false)),
-        onPick: (item) => onChanged?.call(
-          JournalBlockData.create(
-            id: data.id,
-            type: data.type,
-            content: CustomCarouselBlockContent(
-              definitionId: definition.id,
-              selected: item,
-            ).toMap(),
-          ),
-        ),
-      );
     }
 
     return CollapsibleCarouselBlock<CarouselItem>(
