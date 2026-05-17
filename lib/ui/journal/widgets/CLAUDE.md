@@ -80,6 +80,11 @@ with per-day lists; doing so would walk the entry set per cell.
   on the same day), collapsing one keeps the other's lock in place.
   The block widgets release on `_collapse()` and again, defensively,
   in `dispose()` to avoid a stuck `NeverScrollableScrollPhysics`.
+- **Carousel lock rebuilds are post-frame.** Expanded carousel widgets
+  may release their lock from `dispose()`, which can happen while
+  Flutter has the widget tree locked. `JournalPager._onLockChanged`
+  mutates the lock set immediately but defers its `setState` with a
+  post-frame callback; don't switch it back to synchronous `setState`.
 
 ## When to update this file
 
