@@ -21,9 +21,15 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   (`List<JournalBlockData>`). For `SectionKind.text` the blocks list
   is exactly `[JournalBlockData(type: textBlock)]` — the text content
   lives in that single block's `TextBlockContent`, reusing the
-  existing text JSON path and char-limit enforcement.
-- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid }`.
+  existing text JSON path and char-limit enforcement. For
+  `SectionKind.featureBlock` the blocks list contains exactly one
+  materialized block (a `photoBlock` or `memoryBlock`) rendered at
+  2×2 (full body width, square).
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
+  `featureBlock` is a single-tile 2×2 section; the layout editor
+  restricts the block type to `photoBlock` or `memoryBlock` (defended
+  by `LayoutEditorViewModel.featureBlockAllowedTypes`).
 - [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**
@@ -55,9 +61,9 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   ordered section of a `JournalLayout`. Fields: `id`, `kind`
   (`SectionKind`), `rows` (nullable; `blockGrid` only — 1..4 in the
   editor), `blocks` (`List<BlockTemplate>` — empty for text sections,
-  exactly `2 * rows` templates for block-grid sections). Each
-  template is materialized one-for-one into a `JournalBlockData` when
-  the entry is created.
+  exactly `2 * rows` templates for block-grid sections, exactly one
+  template for `featureBlock` sections). Each template is materialized
+  one-for-one into a `JournalBlockData` when the entry is created.
 - [block_template.dart](block_template.dart) — `BlockTemplate { String id; BlockType type; String configJson }`.
   The per-slot envelope inside `LayoutSection.blocks`. Mirrors
   `JournalBlockData`'s `contentJson` shape. The current model only

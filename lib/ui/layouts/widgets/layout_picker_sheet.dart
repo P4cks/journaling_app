@@ -33,6 +33,10 @@ String _summarize(JournalLayout layout) {
 /// sheet. The editor wraps the result in a destructive-action confirm
 /// dialog (existing blocks will be replaced); the home CTA skips the
 /// confirm because there is nothing to replace.
+///
+/// Uses the same `DraggableScrollableSheet` UX as `add_block_sheet` so
+/// long layout lists scroll inside the sheet instead of pushing the
+/// AppBar off-screen.
 Future<JournalLayout?> showLayoutPickerSheet(
   BuildContext context, {
   required List<JournalLayout> layouts,
@@ -42,38 +46,61 @@ Future<JournalLayout?> showLayoutPickerSheet(
   return showModalBottomSheet<JournalLayout>(
     context: context,
     isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+    useSafeArea: true,
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) {
+          final theme = Theme.of(ctx);
+          return CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.only(bottom: 8),
-              itemCount: layouts.length,
-              itemBuilder: (context, index) {
-                final layout = layouts[index];
-                return ListTile(
-                  leading: AppIcon(layoutIconFor(layout.iconName).duotone),
-                  title: Text(layout.name),
-                  subtitle: Text(_summarize(layout)),
-                  onTap: () => Navigator.of(sheetContext).pop(layout),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate((listCtx, index) {
+                  final layout = layouts[index];
+                  return ListTile(
+                    leading: AppIcon(layoutIconFor(layout.iconName).duotone),
+                    title: Text(layout.name),
+                    subtitle: Text(_summarize(layout)),
+                    onTap: () => Navigator.of(listCtx).pop(layout),
+                  );
+                }, childCount: layouts.length),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            ],
+          );
+        },
+      );
+    },
   );
 }

@@ -24,9 +24,18 @@ const _hiddenBlockTypes = <BlockType>{
 /// `block_type_display.dart` is the only touch needed. To temporarily
 /// hide a type from the picker (e.g. WIP block), add it to
 /// [_hiddenBlockTypes] above.
-Future<BlockType?> showAddBlockSheet(BuildContext context) {
+///
+/// Pass [allowedTypes] to restrict the picker to a specific subset
+/// (e.g. `{photoBlock, memoryBlock}` for the feature-block section).
+/// `_hiddenBlockTypes` still applies on top of any restriction.
+Future<BlockType?> showAddBlockSheet(
+  BuildContext context, {
+  Set<BlockType>? allowedTypes,
+  String title = 'Add block',
+}) {
   final visibleTypes = BlockType.values
       .where((t) => !_hiddenBlockTypes.contains(t))
+      .where((t) => allowedTypes == null || allowedTypes.contains(t))
       .toList(growable: false);
   return showModalBottomSheet<BlockType>(
     context: context,
@@ -62,7 +71,7 @@ Future<BlockType?> showAddBlockSheet(BuildContext context) {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Add block',
+                          title,
                           style: theme.textTheme.titleMedium,
                         ),
                       ),

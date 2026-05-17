@@ -14,16 +14,40 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 Scaffold
 ├── AppBar
 │   ├── title: JournalTitle (editable title + date subtitle)
-│   └── actions: Change-layout (when editable + hasEntry),
-│                Statistics icon (push /statistics),
-│                ProfileMenuButton (popup with streak/auth + items)
+│   └── actions: normal: Change-layout (editable + hasEntry),
+│                        Statistics icon (push /statistics),
+│                        ProfileMenuButton (popup with streak/auth + items)
+│                editing: Done (unfocus)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand
-│         └── GestureDetector (unfocus-on-tap)
+│         └── GestureDetector (unfocus-on-tap; disabled when editing)
 │              └── hasEntry
-│                   ? JournalPager(vm, modeFor: …)
+│                   ? JournalPager(vm, modeFor: …, externalLock: editing)
 │                   : editable ? MakeEntryCta : NoEntryReadOnly
 └── bottomNavigationBar: CalendarBottomBar(selectedDate, entriesByDay, onDateSelected)
 ```
+
+## Modal edit mode (`_editing`)
+
+The screen state holds a `_editing` flag, updated from
+`WidgetsBindingObserver.didChangeMetrics` (true iff
+`platformDispatcher.views.first.viewInsets.bottom > 0`). When true:
+
+- **AppBar `actions`** collapses to a single Done `TextButton` that
+  calls `FocusManager.instance.primaryFocus?.unfocus()`. The normal
+  trio (Change-layout / Statistics / ProfileMenu) is hidden so the
+  user can't navigate away mid-edit.
+- **`JournalPager.externalLock`** is `true`, which puts the pager on
+  `NeverScrollableScrollPhysics` (in addition to the existing inner-
+  carousel lock). Horizontal swipe to adjacent entries is disabled.
+- **Body `GestureDetector.onTap`** is set to `null`, so tap-outside
+  doesn't dismiss either. Only Done can leave the modal state.
+
+The flag is symmetric for block edits and title edits — both raise
+the keyboard. **Don't try to read `MediaQuery.viewInsetsOf(context)`
+inside the body** — Scaffold's `resizeToAvoidBottomInset` consumes
+the bottom insets before they reach descendants, so the value is
+zero. Reading via `WidgetsBinding.instance.platformDispatcher` in
+`didChangeMetrics` is the workaround.
 
 ## Edit-mode formula
 

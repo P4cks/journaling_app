@@ -1,13 +1,24 @@
-# lib/ui/profile — Settings + Block-settings screens
+# lib/ui/profile — Profile + Settings + Block-settings screens
 
-There is **no top-level Profile screen** anymore. The main journal
-screen's AppBar exposes a profile dropdown
+The main journal screen's AppBar exposes a profile dropdown
 ([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart))
-with a streak + auth header and three items — Settings, Layouts,
-Block settings — that push to the corresponding screens. This
-directory hosts the pushed screens (Settings, Block-settings) plus
-the widgets (`ProfileAuthCard`, theme/palette pickers) reused by both
-Settings and the dropdown.
+with a streak header, an auth-state-aware row (Sign in / Sign out),
+and navigation rows for Settings, Layouts, Block settings. This
+directory hosts the pushed screens:
+
+- **Profile** (`/profile`) — the canonical sign-in entry point.
+  Reuses `ProfileAuthCard` for both signed-out (Email / Google / Apple
+  + bottom-sheet email flow) and signed-in (avatar + name/email +
+  provider + verification + sign-out) states. Reachable from the
+  dropdown's "Sign in" row when signed out; deep-linking in the
+  signed-in state surfaces the same card's signed-in view.
+- **Settings** (`/settings`) — Appearance / Journal templates /
+  Blocks / Debug. Still embeds `ProfileAuthCard` as a section for
+  parity with the dedicated Profile screen — both surface the same
+  signed-in/out widget; if that duplication starts to bite, retire
+  the Settings copy and keep `/profile` as the only entry point.
+- **Block-settings** (`/block-settings`) — index of configurable
+  block types; drills into text and prompt sub-screens.
 
 Settings contains:
 

@@ -19,9 +19,11 @@ Typed wrapper:
 - **First build with unseeded content** → asks
   [`JournalRepository.pickRandomEligibleBlock`](../../../data/repositories/journal_repository.dart)
   for a non-empty block of one of the *eligible* types (currently
-  `textBlock` and `moodTracker`) from any entry strictly before today.
-  Self-referential memory blocks are excluded by the eligibility set,
-  not by id.
+  `textBlock`, `moodTracker`, and `photoBlock`) from any entry
+  strictly before today. Self-referential memory blocks are excluded
+  by the eligibility set, not by id. Photos from 2×2 feature-section
+  photo blocks are eligible too — they snapshot the same way (path
+  + JSON content) and render in this 1×1 tile as a cropped thumbnail.
 - **On pick** → emits a new `JournalBlockData` via `onChanged` that
   bakes the snapshot, source id, source date, and source type into the
   entry's content. The memory is now **locked for the lifetime of this
@@ -38,6 +40,10 @@ Typed wrapper:
 - **Body** — switches on `sourceType`:
   - `textBlock` → scrollable `Text` with the snapshot's text.
   - `moodTracker` → large centred emoji.
+  - `photoBlock` → `Image.file(path)` clipped with a rounded corner,
+    filling the tile with `BoxFit.cover`. Missing-path / read-failure
+    falls through an `errorBuilder` to a dimmed italic "Photo missing"
+    placeholder so a deleted source photo doesn't throw.
   - Anything else → "Memory" fallback (shouldn't render in practice
     given the eligibility set).
 - **Tap target** — the whole card; pushes `Routes.journalEntryFor(parsed)`

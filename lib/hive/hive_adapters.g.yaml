@@ -111,9 +111,11 @@ types:
         index: 2
   SectionKind:
     typeId: 11
-    nextIndex: 2
+    nextIndex: 3
     fields:
       text:
         index: 0
       blockGrid:
         index: 1
+      featureBlock:
+        index: 2

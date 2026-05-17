@@ -23,6 +23,8 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **Remove checkmark from layouteditor** - remove checkmark icon button and replace it by automatic save on exit, with a popup asking you to save or discard the new layout before leaving the editor (eg. routing to another page)
 * [ ] `M` **Implement swipe gestures** - implement swipe gestures for navigating (especially going back)
 * [ ] `S` **Complete Layout Preview** - Preview should be in layout
+* [x] `S` **Modal editing mode** — while a block (or the title) is being edited, the AppBar collapses to a single Done button and the swipe pager is locked, so editing can't accidentally navigate away. Tapping Done unfocuses the TextField. Driven off `WidgetsBindingObserver.didChangeMetrics` on `MainJournalScreen` (MediaQuery.viewInsetsOf inside the body returns 0 due to Scaffold's `resizeToAvoidBottomInset`). AppBar actions also unfocus before AND after navigation in the non-modal path to defend against Flutter's focus auto-restoration.
+* [x] `M` **Choose-layout sheet — half-screen scrollable** — `showLayoutPickerSheet` reworked to use the same `DraggableScrollableSheet` pattern as `showAddBlockSheet`, so long layout lists scroll inside the sheet instead of pushing the AppBar off-screen.
 
 ## Theming / typography
 
@@ -32,17 +34,35 @@ READ CLAUDE.md for further implementation details
 * [ ] `L` **Animations** - rework animations for navigation to be smoother and visually appealing but discrete/
 * [ ] `S` **Change shadows on boxes**
 
+## Section ideas
+
+* [ ] `M` **2-up row section** — locked 2×1 row of two 1×1 blocks side by side (no add/remove), available inside custom layouts.
+* [ ] `L` **Banner section** — full-width 2×1 rectangular block (half the height of a featureBlock) for weather/quote/mood headers.
+* [ ] `L` **Header + body section** — a single 1×1 block pinned next to a multi-line text area (asymmetric block + text combo).
+* [ ] `XL` **Per-section background color** — let custom-layout sections pick a tint to visually group blocks on long entries.
+
 ## Widget / block ideas
 
 * [x] `M` **Todo block** — checkable list items inside an entry. Items are per-entry (no layout template); add/toggle/delete inline; sweep-empty when every item has empty-after-trim text.
 * [x] `S` **Text block: character limit** — optional/configurable cap on the text block to encourage brevity. Configured globally in Profile → Block settings → Text block; hard cap via `TextField.maxLength` with a tiny counter overlay.
-* [ ] `L` **Variable-sized blocks** — allow certain blocks (starting with text) to expand dynamically based on content instead of fixed height.
+* [x] `M` **Feature block section (2×2 single block)** — new `SectionKind.featureBlock` available inside custom layouts. Holds exactly one block at 2×2 (full-width square), restricted to photo or memory in the layout editor. Memory block also gained photo support: it can now snapshot photos from past entries (1×1 or 2×2) and render them as cropped thumbnails. Replaces the earlier "text expanding dynamically" framing — content-driven expansion is deferred.
 * [x] `S` **Weather block (manual)** — user picks a weather icon for the day (Phosphor sun, cloud, raindrops, snowflake, etc.). Carousel of 7 conditions (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`); icon mapping shared with the future API weather block.
 * [x] `L` **Weather block (API)** — fetches weather by location for the entry's date. Open-Meteo + `geolocator`; permission-denied / network-failure / location-disabled states surface with retry. Caches per-day per-location in the settings box; icon mapping shared with the manual weather block.
 * [x] `M` **Quote of the day (API)** — fetches a daily quote from a public API; non-editable display. ZenQuotes `/api/today`, cached per-day in the settings box; on first build the block fetches and bakes the quote/author into the entry's content forever.
 * [x] `S` **Prompt block** — configurable text block that displays a question above the input ("What surprised you today?"); the user answers in the field. New `BlockType.promptBlock`; prompt list + strategy (`daily` / `random`) configured globally in Profile → Block settings → Prompt block; the chosen prompt is baked into each new entry at materialization time.
 * [x] `S` **Mood block** - center it more and remove text. Replaced 3-Phosphor-icon ChoiceChip row with a swipeable emoji carousel (😄 😊 😌 😐 😢 😠 😩 😍 🤔). Schema-tolerant: legacy `moodId` values still decode (happy→😄, neutral→😐, sad→😢).
 * [ ] `XL` **Integration Calender block** - display activities for the day
+* [ ] `S` **Gratitude block** — three short input lines.
+* [ ] `M` **Habit tracker block** — fixed list of habits with check-off, per-day state.
+* [ ] `S` **Sleep block** — hours numeric + optional quality emoji.
+* [ ] `S` **Water/hydration counter block** — tap-to-increment with a daily target.
+* [ ] `M` **Voice note block** — record a short clip; store under `<docs>/audio/<uuid>.<ext>` mirroring photo storage.
+* [ ] `S` **Reading log block** — book title + page number.
+* [ ] `M` **Drawing block** — small canvas, save as png in the photo storage dir.
+* [ ] `S` **Three highlights block** — three short bullet lines.
+* [ ] `S` **Daily affirmation block** — user-defined pool, picked daily (like quote block, but local).
+* [ ] `S` **Tag/cluster block** — pick from a configurable list of tags ("work", "social", "exercise"…).
+* [ ] `M` **Spending block** — amount + category for one-off expense tracking.
 * [x] `M` **Memory block** - show random block from a past day (with date and link to the entry). Picks once from any non-empty text or mood block in past entries, locks the snapshot into the entry's content, tap-to-navigate to source.
 * [x] `L` **Photo block** - add or take a foto to add to that day. `image_picker` (camera/gallery); files copied to `<docs>/photos/<uuid>.<ext>` with the path stored in content. Long-press → Replace / Remove. iOS + Android permission strings wired.
 * [ ] `S` Weather api placeholder should have a location exampl
@@ -55,7 +75,8 @@ READ CLAUDE.md for further implementation details
 ## Profile implementation
 
 * [x] `L` **Firebase Auth profile scaffold** — optional Profile sign-in with email/password, Google, and Apple through a Firebase Auth repository boundary. No journaling features are gated and no local Hive data is synced yet.
-* [ ] `M` **Apple Sign In after Enrollment in Apple Developer Program** - Apple sign in and rework Profile workflow
+* [x] `S` **Dedicated Profile screen + dropdown rework** — `/profile` reachable from the journal-AppBar profile dropdown. When signed out, the dropdown shows a "Sign in" row that pushes `/profile` (Email / Google / Apple via the existing `ProfileAuthCard`). When signed in, the dropdown shows the user's name or email plus a "Sign out" row guarded by a confirm dialog. When `authRepository.isConfigured == false` (Firebase init failed) both rows are suppressed so the dropdown stays local-journaling-only.
+* [ ] `M` **Apple Sign In after Enrollment in Apple Developer Program** — UI is wired (Apple button on `/profile`); needs the entitlement / provisioning before it succeeds at runtime.
 * [ ] `XL` **Profile implementation with firebase Firestore/Storage** — add cloud profile data, storage-backed avatar/media, and eventual sync once the auth-only scaffold is stable.
 
 ## Subscription / monetization

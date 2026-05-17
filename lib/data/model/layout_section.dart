@@ -11,6 +11,9 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 ///   has exactly `2 * rows` templates whose `type` determines what each
 ///   tile renders. Templates are materialised one-for-one when an entry
 ///   is created.
+/// - [SectionKind.featureBlock] — `rows` is `null`, `blocks` has
+///   exactly one template (a `photoBlock` or `memoryBlock`)
+///   materialised one-for-one into a 2×2 entry block.
 ///
 /// `BlockTemplate.configJson` is currently always `'{}'` — see
 /// [block_template.dart] for the forward-compat reasoning.

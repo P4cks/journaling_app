@@ -17,6 +17,10 @@ every screen has access to repositories without per-route plumbing.
   - `/statistics` → `StatisticsScreen` (linked from the main screen's
     top-bar Statistics icon)
   - `/settings` → `SettingsScreen`
+  - `/profile` → `ProfileScreen` (linked from the profile dropdown's
+    "Sign in" row when signed out; the screen itself shows the
+    signed-in card when an account exists, so it's safe to deep-link
+    in either state)
   - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
   - `/block-settings` (+ `text`, `prompt`) → block settings screens
 

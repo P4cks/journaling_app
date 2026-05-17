@@ -385,6 +385,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         return SectionKind.text;
       case 1:
         return SectionKind.blockGrid;
+      case 2:
+        return SectionKind.featureBlock;
       default:
         return SectionKind.text;
     }
@@ -397,6 +399,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         writer.writeByte(0);
       case SectionKind.blockGrid:
         writer.writeByte(1);
+      case SectionKind.featureBlock:
+        writer.writeByte(2);
     }
   }
 

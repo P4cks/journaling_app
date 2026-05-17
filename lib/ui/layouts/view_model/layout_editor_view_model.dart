@@ -259,6 +259,43 @@ class LayoutEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------------------------------------------------------------------
+  // featureBlock — exactly-one-slot section restricted to photo/memory.
+  // ---------------------------------------------------------------------------
+
+  /// Allowed block types for a feature-block section. The layout editor
+  /// passes this set to `showAddBlockSheet` so the picker only shows
+  /// these types; the VM also defensively validates here.
+  static const Set<BlockType> featureBlockAllowedTypes = {
+    BlockType.photoBlock,
+    BlockType.memoryBlock,
+  };
+
+  /// Either fills an empty feature-block section, or swaps the type of
+  /// the existing slot. No-op if the section is not a `featureBlock`
+  /// or `type` is not in [featureBlockAllowedTypes].
+  void setFeatureBlock(String sectionId, BlockType type) {
+    final section = _sections.firstWhere((s) => s.id == sectionId);
+    if (section.kind != SectionKind.featureBlock) return;
+    if (!featureBlockAllowedTypes.contains(type)) return;
+    if (section.slots.length == 1 && section.slots.first.type == type) return;
+    section.slots = [BlockSlot(id: _uuid.v4(), type: type)];
+    debugPrint(
+      '[LayoutEditorVM] setFeatureBlock $sectionId -> $type',
+    );
+    notifyListeners();
+  }
+
+  /// Empties a feature-block section. No-op for non-feature sections.
+  void clearFeatureBlock(String sectionId) {
+    final section = _sections.firstWhere((s) => s.id == sectionId);
+    if (section.kind != SectionKind.featureBlock) return;
+    if (section.slots.isEmpty) return;
+    section.slots = const [];
+    debugPrint('[LayoutEditorVM] clearFeatureBlock $sectionId');
+    notifyListeners();
+  }
+
   void removeSection(String sectionId) {
     final next = [..._sections]..removeWhere((s) => s.id == sectionId);
     if (next.length == _sections.length) return;

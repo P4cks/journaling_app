@@ -10,6 +10,9 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 ///   lives in that block's `TextBlockContent`. `rows` is `null`.
 /// - [SectionKind.blockGrid] — `rows` is 1..4, `blocks` has `2 * rows`
 ///   materialised entries, one per layout template.
+/// - [SectionKind.featureBlock] — `rows` is `null`, `blocks` has
+///   exactly one materialised entry (a `photoBlock` or `memoryBlock`)
+///   rendered at 2×2 (full body width, square).
 class EntrySection {
   final String id;
   final SectionKind kind;
