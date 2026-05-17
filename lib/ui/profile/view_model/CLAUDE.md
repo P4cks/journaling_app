@@ -18,10 +18,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     `moveItem` adjusts for `ReorderableListView`'s "newIndex one past
     source when moving forward" semantics so callers can pass the
     raw indices.
-  - `titleError` — empty title (suppressed on first open until the
-    user edits) OR case-insensitive title conflict with another
-    definition in the registry. `itemsError` — fewer than 2 items.
-    `canSave` is `titleError == null && itemsError == null`.
+  - `titleError` — empty title OR case-insensitive title conflict
+    with another definition in the registry. Always blocks save when
+    empty; the error shows inline from first open so the requirement
+    is obvious. `itemsError` — fewer than 2 items. `canSave` is
+    `titleError == null && itemsError == null`.
   - `save()` writes via `addCustomCarousel` or `updateCustomCarousel`
     based on `_isNew`.
 

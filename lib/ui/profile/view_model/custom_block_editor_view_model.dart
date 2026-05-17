@@ -72,16 +72,12 @@ class CustomBlockEditorViewModel extends ChangeNotifier {
   }
 
   /// Non-null when the title is empty or clashes (case-insensitive)
-  /// with another definition's title in the registry. Suppressed when
-  /// the user hasn't typed anything yet on a brand-new definition so
-  /// the error doesn't flash on first open.
+  /// with another definition's title in the registry. Always blocks
+  /// save when empty — custom blocks must have a title so they're
+  /// addressable in the Add-Block sheet and Block Settings sections.
   String? get titleError {
     final raw = titleController.text.trim();
-    if (raw.isEmpty) {
-      return _isNew && _initialTitle.isEmpty && !_titleEverEdited
-          ? null
-          : 'Add a title';
-    }
+    if (raw.isEmpty) return 'Add a title';
     final candidate = raw.toLowerCase();
     for (final def in _settings.customCarousels) {
       if (def.id == _id) continue;
@@ -91,8 +87,6 @@ class CustomBlockEditorViewModel extends ChangeNotifier {
     }
     return null;
   }
-
-  bool get _titleEverEdited => titleController.text != _initialTitle;
 
   /// Non-null when items doesn't meet the minimum size (2). Surfaced
   /// inline near the items list and gates [canSave].
