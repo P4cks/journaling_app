@@ -43,6 +43,17 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   shows the disabled configuration message. Signed-in state shows the
   user's name/email, provider label, optional email verification hint,
   and sign-out.
+- [text_block_settings.dart](text_block_settings.dart) +
+  [prompt_block_settings.dart](prompt_block_settings.dart) — section
+  widgets for `BlockSettingsScreen`. Both are **controlled by**
+  `BlockSettingsViewModel` (passed in via the `vm` ctor param):
+  - `TextBlockSettings` binds `vm.textCharLimitController` + surfaces
+    `vm.textCharLimitError`.
+  - `PromptBlockSettings` binds `vm.promptsController` + reads/writes
+    `vm.promptStrategy` via the segmented button.
+  Neither owns its own controller, has an internal Save button, or
+  shows a "Saved" toast — the screen-level Cancel / Discard / Save
+  dialog handles persistence.
 
 ## Gotchas
 

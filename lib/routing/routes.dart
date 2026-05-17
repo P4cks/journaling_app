@@ -14,8 +14,6 @@ class Routes {
   static const newLayout = '/layouts/new';
   static const editLayout = '/layouts/edit/:id';
   static const blockSettings = '/block-settings';
-  static const textBlockSettings = '/block-settings/text';
-  static const promptBlockSettings = '/block-settings/prompt';
 
   /// Query-parameter name on `/layouts/new` carrying the chosen
   /// [LayoutKind]'s `name`. Reads as `null` when absent; the editor
@@ -48,6 +46,4 @@ class RouteNames {
   static const newLayout = 'newLayout';
   static const editLayout = 'editLayout';
   static const blockSettings = 'blockSettings';
-  static const textBlockSettings = 'textBlockSettings';
-  static const promptBlockSettings = 'promptBlockSettings';
 }

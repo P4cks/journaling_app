@@ -22,7 +22,8 @@ every screen has access to repositories without per-route plumbing.
     signed-in card when an account exists, so it's safe to deep-link
     in either state)
   - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
-  - `/block-settings` (+ `text`, `prompt`) → block settings screens
+  - `/block-settings` → `BlockSettingsScreen` (inline sections; no
+    per-type sub-routes after the save-on-leave rewrite)
 
   `initialLocation: Routes.home` so cold start lands on the merged
   main screen.
@@ -64,6 +65,6 @@ every screen has access to repositories without per-route plumbing.
 - A new top-level route is added — add the constant to
   [routes.dart](routes.dart) and a `GoRoute` to
   [app_router.dart](app_router.dart).
-- A nested sub-route is added beneath `/layouts` or `/block-settings`.
+- A nested sub-route is added beneath `/layouts`.
 - The main screen's date model changes (e.g. range selection, week
   view of `:date`).

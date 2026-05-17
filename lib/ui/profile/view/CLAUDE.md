@@ -19,9 +19,17 @@ pushes these screens.
   (`StatelessWidget`) + private color helpers. Pushed via `/settings`
   from the profile dropdown.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
-  `BlockSettingsScreen` (`StatelessWidget`). Index of configurable
-  block types; drills into per-type screens. Pushed via
-  `/block-settings`.
+  `BlockSettingsScreen` (`StatefulWidget`). Inline sections for every
+  block-type-global configuration (Text block char limit, Prompt
+  block list + strategy, Mood title, Weather title). All edits live
+  on `BlockSettingsViewModel` as drafts; `PopScope` runs
+  `_maybeSaveOnLeave` which mirrors `LayoutEditorScreen`'s Cancel /
+  Discard / Save dialog. The save dialog surfaces a SnackBar
+  ("Fix the highlighted fields before saving") and stays on the
+  screen when `vm.canSave` is false. Pushed via `/block-settings`.
+  - Private `_TitleField` widget renders the optional-title row used
+    by both Mood and Weather sections (label + hint + 40-char max
+    `TextField` bound to the VM's controller).
 
 ## SettingsScreen composition
 
