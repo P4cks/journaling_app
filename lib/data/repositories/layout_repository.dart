@@ -25,6 +25,24 @@ class LayoutRepository {
 
   JournalLayout? getById(String id) => _layouts.getLayout(id);
 
+  /// Counts layout template slots that reference a custom carousel definition.
+  ///
+  /// [definitionId] is the custom block definition id stored in a template's
+  /// config map. The output is the number of layout block slots that currently
+  /// point at that definition, which callers use to warn before deletion.
+  int countCustomCarouselUsage(String definitionId) {
+    var count = 0;
+    for (final layout in _layouts.getAllLayouts()) {
+      for (final section in layout.sections) {
+        for (final template in section.blocks) {
+          if (template.type != BlockType.customCarousel) continue;
+          if (template.config['definitionId'] == definitionId) count++;
+        }
+      }
+    }
+    return count;
+  }
+
   Future<void> save(JournalLayout layout) {
     debugPrint(
       '[LayoutRepository] save id=${layout.id} name=${layout.name} kind=${layout.kind} sections=${layout.sections.length}',

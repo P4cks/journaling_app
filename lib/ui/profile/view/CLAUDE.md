@@ -55,11 +55,11 @@ pushes these screens.
     custom-block editor screen writes through `BlockSettings`
     immediately on save, not as a draft). Each definition gets a
     section with Edit + Delete buttons. Edit pushes
-    `/custom-block/edit/<id>`; Delete shows a confirm dialog with
-    the usage count across layouts ("Used in N layouts — existing
-    entries keep their pick…"). Before pushing the editor route the
-    parent's `_maybeSaveOnLeave` runs so a dirty built-in draft
-    isn't silently buried under another screen.
+    `/custom-block/edit/<id>`; Delete asks `LayoutRepository` for
+    the usage count across layouts before showing the confirm dialog
+    ("Used in N layouts — existing entries keep their pick…"). Before
+    pushing the editor route the parent's `_maybeSaveOnLeave` runs so
+    a dirty built-in draft isn't silently buried under another screen.
   - Private `_CustomDefinitionRow` renders the per-definition body
     (item count + Edit / Delete actions).
 

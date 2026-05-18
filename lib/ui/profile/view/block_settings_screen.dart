@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
@@ -186,24 +185,11 @@ class _CustomCarouselSections extends StatelessWidget {
     }
   }
 
-  int _countUsages(String definitionId) {
-    var n = 0;
-    for (final layout in layoutRepository.getAll()) {
-      for (final section in layout.sections) {
-        for (final template in section.blocks) {
-          if (template.type != BlockType.customCarousel) continue;
-          if (template.config['definitionId'] == definitionId) n++;
-        }
-      }
-    }
-    return n;
-  }
-
   Future<void> _confirmDelete(
     BuildContext context,
     CustomCarouselDefinition def,
   ) async {
-    final uses = _countUsages(def.id);
+    final uses = layoutRepository.countCustomCarouselUsage(def.id);
     final errorColor = Theme.of(context).colorScheme.error;
     final ok = await showDialog<bool>(
       context: context,

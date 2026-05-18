@@ -5,10 +5,6 @@ small behavior-preserving cleanup commits.
 
 ## Open
 
-- `lib/ui/profile/view/block_settings_screen.dart` counts custom-carousel usage
-  inside a private widget by walking layouts directly. Consider moving that
-  query into a view model or repository helper so the UI only renders the result
-  and the usage-count logic can be tested independently.
 - Several UI files are large enough to hide responsibilities
   (`layout_editor_screen.dart`, `settings_screen.dart`, `block_grid.dart`,
   `profile_auth_card.dart`). Split them only when touching their feature areas,
@@ -23,3 +19,7 @@ small behavior-preserving cleanup commits.
   `ListenableBuilder` layers around the Appearance section. The theme controls
   now live in `_AppearanceSettingsContent`, leaving `SettingsScreen` focused on
   section ordering.
+- `lib/ui/profile/view/block_settings_screen.dart` counted custom-carousel
+  usage by walking layout sections directly. The query now lives on
+  `LayoutRepository.countCustomCarouselUsage`, so the UI only renders the
+  repository result in the delete confirmation.

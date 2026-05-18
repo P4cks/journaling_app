@@ -79,6 +79,10 @@ coordination live.
   - `getDefault` — resolves the `defaultLayoutId` setting → `JournalLayout?`.
     Returns `null` when the setting is unset, or when the id is set but
     the layout was deleted (orphan id).
+  - `countCustomCarouselUsage(definitionId)` — counts layout block slots
+    whose `customCarousel` template points at a custom block definition.
+    Used by Block Settings delete confirmation so users see whether a
+    definition is still present in any layouts.
   - `setDefault(id)` — async write to settings.
   - **`delete(id)` clears the default-id setting if the deleted layout
     was the default.** Otherwise next entry-create would resolve to
