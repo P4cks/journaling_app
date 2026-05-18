@@ -3,6 +3,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/text_block_conte
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 class TextBlockWidget extends StatefulWidget {
@@ -21,37 +22,13 @@ class TextBlockWidget extends StatefulWidget {
   State<TextBlockWidget> createState() => _TextBlockWidgetState();
 }
 
-class _TextBlockWidgetState extends State<TextBlockWidget> {
-  late final TextEditingController _controller;
+class _TextBlockWidgetState extends State<TextBlockWidget>
+    with TextContentControllerMixin<TextBlockWidget> {
+  @override
+  JournalBlockData get data => widget.data;
 
   @override
-  void initState() {
-    super.initState();
-    final content = TextBlockContent.fromMap(widget.data.content);
-    _controller = TextEditingController(text: content.text);
-  }
-
-  @override
-  void didUpdateWidget(covariant TextBlockWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.data.id != widget.data.id) {
-      final content = TextBlockContent.fromMap(widget.data.content);
-      _controller.text = content.text;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _emit(String value) {
-    final updated = widget.data.copyWith(
-      content: TextBlockContent(text: value).toMap(),
-    );
-    widget.onChanged?.call(updated);
-  }
+  ValueChanged<JournalBlockData>? get onChanged => widget.onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +58,7 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
       children: [
         SizedBox.expand(
           child: TextField(
-            controller: _controller,
+            controller: controller,
             expands: true,
             maxLines: null,
             minLines: null,
@@ -104,7 +81,7 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
               isDense: true,
               contentPadding: EdgeInsets.zero,
             ),
-            onChanged: _emit,
+            onChanged: emitText,
           ),
         ),
         if (limit != null)
@@ -112,10 +89,10 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
             right: 0,
             bottom: 0,
             child: AnimatedBuilder(
-              animation: _controller,
+              animation: controller,
               builder: (context, _) {
                 return Text(
-                  '${_controller.text.characters.length}/$limit',
+                  '${controller.text.characters.length}/$limit',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10,

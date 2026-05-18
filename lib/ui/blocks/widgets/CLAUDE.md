@@ -1,11 +1,26 @@
 # lib/ui/blocks/widgets — Shared block widgets
 
-Reusable widgets consumed by more than one concrete block type — the
-collapsible-carousel body shared between the mood and manual-weather
-blocks, plus a small title wrapper used by both.
+Reusable widgets and mixins consumed by more than one concrete block
+type — the collapsible-carousel body shared between the mood and
+manual-weather blocks, a small title wrapper used by both, and a
+controller-lifecycle mixin shared between the 1×1 text block and the
+full-width text section.
 
 ## Files
 
+- [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
+  `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
+  Owns the `TextEditingController` lifecycle for State classes whose
+  widget renders a single `TextBlockContent`-backed block. Subclasses
+  expose `data` (the `JournalBlockData`) and `onChanged` (typically
+  delegating to `widget.data` / `widget.onChanged`); the mixin owns
+  `initState` (build the controller from the current text),
+  `didUpdateWidget` (swap text only when `data.id` changes — never
+  on per-keystroke re-renders), `dispose`, and `emitText(String)`
+  which wraps a new string into a fresh `JournalBlockData` and forwards
+  it through `onChanged`. Used by both `TextBlockWidget` and
+  `TextSectionWidget` so they share one source of truth for the
+  controller dance.
 - [block_with_title.dart](block_with_title.dart) — `BlockWithTitle`.
   Wraps a block body with an optional title row above. When the title
   is null or empty the body is returned unchanged (no padding cost).
@@ -77,6 +92,8 @@ blocks, plus a small title wrapper used by both.
 
 ## When to update this file
 
-- A new shared block widget is added.
+- A new shared block widget or mixin is added.
 - The collapse semantics change (e.g. tap-outside-to-close, swipe-to-dismiss).
 - A new tunable is exposed on the carousel.
+- The text-content controller mixin grows new lifecycle hooks or its
+  abstract surface changes.
