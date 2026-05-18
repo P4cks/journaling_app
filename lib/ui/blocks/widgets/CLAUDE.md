@@ -23,15 +23,15 @@ blocks, plus a small title wrapper used by both.
 
   **Initial-expanded when `selected == null`**: if no selection
   exists at mount time, the widget starts in the expanded state with
-  the outer-pager lock engaged. Every item renders at its
-  unselected style (none focused) so the user sees the full picker
-  at a glance and can swipe to commit. Auto-collapse is suppressed
-  while `selected` is still null — the carousel can't fall back to
-  a placeholder if there's nothing to show. Once `onPageChanged`
-  fires (user committed) the parent rebuilds with the new
-  `selected`, the next scheduled collapse proceeds normally, and
-  the block returns to the standard collapsed → tap-to-expand
-  behaviour.
+  no outer-pager lock. Every item renders at its unselected style
+  (none focused) so the user sees the full picker at a glance and
+  can swipe to commit, but can still swipe to another journal entry
+  before choosing. Auto-collapse is suppressed while `selected` is
+  still null — the carousel can't fall back to a placeholder if
+  there's nothing to show. Once `onPageChanged` fires (user
+  committed) the parent rebuilds with the new `selected`, the next
+  scheduled collapse proceeds normally, and the block returns to
+  the standard collapsed → tap-to-expand behaviour.
 
   Props:
   - `blockId` — opaque string used by `onInteractionLockChanged`.
@@ -64,6 +64,9 @@ blocks, plus a small title wrapper used by both.
 - **`dispose` unconditionally releases the lock** when `_expanded` is
   true. Without this, navigating away mid-expansion would leave
   `JournalPager` stuck in `NeverScrollableScrollPhysics`.
+- **Initial empty expansion does not acquire the lock.** The block may
+  still send a defensive unlock from `dispose()`, but the pager treats
+  that as a no-op when the block never locked in the first place.
 - **`AnimatedSwitcher` uses two distinct `ValueKey`s** (`'carousel-collapsed'`
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.

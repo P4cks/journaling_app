@@ -21,8 +21,8 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **turn "Add block" button into small plus** - and remove Blocks title
 * [x] `M` **Different layout options** - Add other "layout strategies", like only blocks (already implemented) or alternatively an overarching section layout where you can layout the page into block sections of different sizes (which also makes it easy to implement bigger style blocks) and text sections, these sections would then be layed out in a horizontal style
 * [x] `S` **Remove checkmark from layouteditor** - remove checkmark icon button and replace it by automatic save on exit, with a popup asking you to save or discard the new layout before leaving the editor (eg. routing to another page)
-* [ ] `M` **Implement swipe gestures** - implement swipe gestures for navigating (especially going back)
-* [ ] `S` **Complete Layout Preview** - Preview should be in layout
+* [x] `M` **Implement swipe gestures** - implement swipe gestures for navigating (especially going back)
+* [x] `S` **Complete Layout Preview** - Preview should be in layout
 * [x] `S` **Modal editing mode** — while a block (or the title) is being edited, the AppBar collapses to a single Done button and the swipe pager is locked, so editing can't accidentally navigate away. Tapping Done unfocuses the TextField. Driven off `WidgetsBindingObserver.didChangeMetrics` on `MainJournalScreen` (MediaQuery.viewInsetsOf inside the body returns 0 due to Scaffold's `resizeToAvoidBottomInset`). AppBar actions also unfocus before AND after navigation in the non-modal path to defend against Flutter's focus auto-restoration.
 * [x] `M` **Choose-layout sheet — half-screen scrollable** — `showLayoutPickerSheet` reworked to use the same `DraggableScrollableSheet` pattern as `showAddBlockSheet`, so long layout lists scroll inside the sheet instead of pushing the AppBar off-screen.
 

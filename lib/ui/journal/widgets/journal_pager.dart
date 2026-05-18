@@ -54,6 +54,7 @@ class _JournalPagerState extends State<JournalPager> {
   late PageController _controller;
   int _activeIndex = 0;
   final Set<String> _lockedBlockIds = <String>{};
+  bool _lockRebuildScheduled = false;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _JournalPagerState extends State<JournalPager> {
   @override
   void didUpdateWidget(covariant JournalPager old) {
     super.didUpdateWidget(old);
+    _pruneLocksForCurrentEntry();
     final target = widget.viewModel.pageIndexForDate(
       widget.viewModel.selectedDate,
     );
@@ -100,8 +102,36 @@ class _JournalPagerState extends State<JournalPager> {
     }
     final isLocked = _lockedBlockIds.isNotEmpty;
     if (wasLocked != isLocked) {
-      setState(() {});
+      _scheduleLockRebuild();
     }
+  }
+
+  void _scheduleLockRebuild() {
+    if (_lockRebuildScheduled) return;
+    _lockRebuildScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _lockRebuildScheduled = false;
+      setState(() {});
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _pruneLocksForCurrentEntry() {
+    if (_lockedBlockIds.isEmpty) return;
+    final target = widget.viewModel.pageIndexForDate(
+      widget.viewModel.selectedDate,
+    );
+    if (target == null) {
+      _lockedBlockIds.clear();
+      return;
+    }
+
+    final visibleBlockIds = <String>{
+      for (final section in widget.viewModel.entries[target].sections)
+        for (final block in section.blocks) block.id,
+    };
+    _lockedBlockIds.removeWhere((id) => !visibleBlockIds.contains(id));
   }
 
   @override
@@ -158,10 +188,7 @@ class _SectionsBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final section in sections)
-            _buildSection(section),
-        ],
+        children: [for (final section in sections) _buildSection(section)],
       ),
     );
   }

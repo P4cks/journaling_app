@@ -85,20 +85,14 @@ class _CollapsibleCarouselBlockState<T>
     // at the unselected itemBuilder style). The user can swipe to
     // commit; auto-collapse fires after they do, NOT before — so the
     // empty state stays visible until there's a selection to fall
-    // back to. The outer pager interaction lock is engaged from the
-    // start so vertical-ish swipes inside the carousel don't fight
-    // the date pager.
+    // back to. This initial empty state does not lock the outer date
+    // pager, so the user can still move to another entry before
+    // choosing an option.
     _expanded = widget.selected == null;
     _controller = PageController(
       initialPage: _initialIndex,
       viewportFraction: widget.viewportFraction,
     );
-    if (_expanded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        widget.onInteractionLockChanged?.call(widget.blockId, true);
-      });
-    }
   }
 
   @override
@@ -181,9 +175,7 @@ class _CollapsibleCarouselBlockState<T>
       itemBuilder: (context, index) {
         final option = widget.options[index];
         final isSelected = option == widget.selected;
-        return Center(
-          child: widget.itemBuilder(context, option, isSelected),
-        );
+        return Center(child: widget.itemBuilder(context, option, isSelected));
       },
     );
   }
