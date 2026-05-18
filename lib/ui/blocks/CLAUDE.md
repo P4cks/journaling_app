@@ -116,6 +116,14 @@ animations affect the grid's RenderBoxes or insertion-index math:
   shadow (blur 14 → 24, alpha ×1.6). The `LongPressDraggable.feedback`
   is also a `PostItBlock` with `isDragging: true` for the same look
   on the floating preview.
+- **Tap wiggle**: `PostItBlock` wraps its card in a `Listener` that
+  fires on `onPointerDown` without consuming the gesture (so inner
+  TextFields, carousels, and the outer `LongPressDraggable` still
+  receive their events). On post-it mode + not-currently-dragging, it
+  drives a damped ±3° `TweenSequence` rotation that adds onto the
+  static `visuals.rotationDeg`. Acts as edit-affordance feedback —
+  the user sees the post-it react before any inner widget responds.
+  Skipped in classic mode (the calm look stays still).
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.
