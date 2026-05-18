@@ -44,7 +44,7 @@ READ CLAUDE.md for further implementation details
 ## Widget / block ideas
 
 * [x] `M` **Todo block** — checkable list items inside an entry. Items are per-entry (no layout template); add/toggle/delete inline; sweep-empty when every item has empty-after-trim text.
-* [x] `S` **Text block: character limit** — optional/configurable cap on the text block to encourage brevity. Configured globally in Profile → Block settings → Text block; hard cap via `TextField.maxLength` with a tiny counter overlay.
+* [ ] ~~`S` **Text block: character limit**~~ — shipped briefly, then removed. Block-type-global cap proved unwanted complexity; text blocks now have no per-type-global settings.
 * [x] `M` **Feature block section (2×2 single block)** — new `SectionKind.featureBlock` available inside custom layouts. Holds exactly one block at 2×2 (full-width square), restricted to photo or memory in the layout editor. Memory block also gained photo support: it can now snapshot photos from past entries (1×1 or 2×2) and render them as cropped thumbnails. Replaces the earlier "text expanding dynamically" framing — content-driven expansion is deferred.
 * [x] `S` **Weather block (manual)** — user picks a weather icon for the day (Phosphor sun, cloud, raindrops, snowflake, etc.). Carousel of 7 conditions (`sun`, `partly_cloudy`, `cloud`, `rain`, `thunderstorm`, `snow`, `fog`); icon mapping shared with the future API weather block.
 * [x] `L` **Weather block (API)** — fetches weather by location for the entry's date. Open-Meteo + `geolocator`; permission-denied / network-failure / location-disabled states surface with retry. Caches per-day per-location in the settings box; icon mapping shared with the manual weather block.

@@ -9,7 +9,6 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
-import 'package:journaling_app_rewrite/ui/profile/widgets/text_block_settings.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block-type-global configuration screen.
@@ -114,10 +113,6 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         appBar: AppBar(title: const Text('Block settings')),
         body: ListView(
           children: [
-            SettingsSection(
-              label: 'Text Block',
-              children: [TextBlockSettings(vm: vm)],
-            ),
             SettingsSection(
               label: 'Prompt Block',
               children: [PromptBlockSettings(vm: vm)],

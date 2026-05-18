@@ -36,33 +36,29 @@ because nothing was written.
 
 ### State
 
-- `_initialPrompts`, `_initialPromptStrategy`, `_initialTextCharLimit`,
-  `_initialMoodTitle`, `_initialWeatherTitle` — snapshot fields used
-  by `isDirty` to compare against current drafts. Re-set inside
-  `save()` so post-save `isDirty` reads false.
-- `promptsController`, `textCharLimitController`, `moodTitleController`,
-  `weatherTitleController` — `TextEditingController`s owned by the VM
-  (disposed in `dispose`). Bound by the section widgets.
-- `_promptStrategy` — non-controller draft (segmented button).
+- `_initialPrompts`, `_initialPromptStrategy`, `_initialMoodTitle`,
+  `_initialWeatherTitle` — snapshot fields used by `isDirty` to compare
+  against current drafts. Re-set inside `save()` so post-save
+  `isDirty` reads false.
+- `promptsController`, `moodTitleController`, `weatherTitleController` —
+  `TextEditingController`s owned by the VM (disposed in `dispose`).
+  Bound by the section widgets.
+- `_promptStrategy` — non-controller draft (manual-mode toggle).
 
 ### Computed
 
 - `isDirty` — true if any parsed/normalised draft differs from its
   snapshot. Prompts compare via `listEquals` on the parsed list;
-  titles compare after trim + null-empty normalisation; char limit
-  compares parsed int.
-- `textCharLimitError` — non-null when the field has content but
-  isn't a positive whole number. Surfaced on the TextField and gates
-  `canSave`.
-- `canSave` — `textCharLimitError == null`. The save-on-leave dialog
-  surfaces a SnackBar and stays on the screen when this is false.
+  titles compare after trim + null-empty normalisation.
+- `canSave` — currently always `true`. Kept as a getter so the screen's
+  save-on-leave dialog keeps the same code path if validation comes
+  back later.
 
 ### `save()`
 
 Writes the four BlockSettings setters in order (`setPrompts`,
-`setPromptStrategy`, `setTextCharLimit`, `setMoodTitle`,
-`setWeatherTitle`) and re-snapshots. Returns false (without writing)
-when validation fails.
+`setPromptStrategy`, `setMoodTitle`, `setWeatherTitle`) and
+re-snapshots.
 
 ## Gotchas
 

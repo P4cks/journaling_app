@@ -7,9 +7,7 @@ import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller
 /// Full-width text section. Backs onto the same `TextBlockContent`
 /// shape as `TextBlockWidget` so it round-trips through the journal
 /// entry's section blocks list, but renders without a `BlockCard`
-/// chrome — grows with its content. Unlike the 1×1 `TextBlockWidget`,
-/// text sections **do not** enforce `BlockSettings.textCharLimit` —
-/// they're meant for longer-form writing.
+/// chrome — grows with its content. No cap on input length.
 class TextSectionWidget extends StatefulWidget {
   const TextSectionWidget({
     super.key,

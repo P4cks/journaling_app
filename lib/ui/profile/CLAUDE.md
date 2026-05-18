@@ -21,7 +21,8 @@ directory hosts the pushed screens:
   configuration inline on one screen. Edits are kept as drafts in
   `BlockSettingsViewModel`; a Cancel / Discard / Save dialog runs on
   leave, mirroring the layout editor. No more per-type push-into-
-  sub-screen routes.
+  sub-screen routes. **No text-block config** — text blocks have no
+  per-type-global settings; their content is purely per-entry.
 
 Settings contains:
 
@@ -54,7 +55,7 @@ profile/
 ├── view/         SettingsScreen, ProfileScreen, BlockSettingsScreen
 ├── view_model/   BlockSettingsViewModel
 └── widgets/      palette_picker, swatch_grid_picker, theme_mode_selector,
-                  profile_auth_card, prompt_block_settings, text_block_settings
+                  profile_auth_card, prompt_block_settings
 ```
 
 ## Screen patterns
@@ -74,10 +75,10 @@ instead, mirroring [`LayoutEditorScreen`](../layouts/view/layout_editor_screen.d
   `didChangeDependencies`.
 - `PopScope(canPop: false, onPopInvokedWithResult: _handlePop)` runs
   `_maybeSaveOnLeave` when the user tries to leave dirty.
-- `TextBlockSettings` and `PromptBlockSettings` are now **controlled
-  by the VM** — they take a `BlockSettingsViewModel` and bind to its
-  controllers. No internal Save buttons, no `ScaffoldMessenger`
-  "Saved" toasts (the save dialog is screen-wide now).
+- `PromptBlockSettings` is **controlled by the VM** — it takes a
+  `BlockSettingsViewModel` and binds to its controllers. No internal
+  Save button, no `ScaffoldMessenger` "Saved" toast (the save dialog
+  is screen-wide now).
 
 ## Subdirectory CLAUDE.md files
 
@@ -87,9 +88,9 @@ instead, mirroring [`LayoutEditorScreen`](../layouts/view/layout_editor_screen.d
   `BlockSettingsViewModel`.
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `PalettePicker`,
   `ThemeModeSelector`, `showSwatchPicker` (the color dialog),
-  `ProfileAuthCard`, `PromptBlockSettings`, `TextBlockSettings`.
-  Note: `StreakStatCard` lives in [../core/widgets/](../core/widgets/)
-  and is reused by the entries list and the profile dropdown.
+  `ProfileAuthCard`, `PromptBlockSettings`. Note: `StreakStatCard`
+  lives in [../core/widgets/](../core/widgets/) and is reused by the
+  entries list and the profile dropdown.
 
 ## Theme override semantics
 

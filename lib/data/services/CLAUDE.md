@@ -48,8 +48,7 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     list of `#RRGGBB` hex strings; absent → ships with the
     `kDefaultPostItPalette` muted pastels), `block.prompt.list`
     (JSON-encoded list of strings), `block.prompt.strategy`
-    (`daily` | `random` | `manual`), `block.text.charLimit`
-    (positive int as string), `block.mood.title` (optional plain
+    (`daily` | `manual`), `block.mood.title` (optional plain
     string), `block.weather.title` (optional plain string),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
@@ -105,12 +104,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   box:
   - `prompts` (`List<String>`) — the curated prompt list shown to
     every prompt block.
-  - `promptStrategy` (`PromptStrategy` enum: `daily` | `random` |
-    `manual`) — how `pickPromptFor` chooses a prompt. `manual` is the
-    "user picks per entry" mode: `pickPromptFor` returns `null` and the
+  - `promptStrategy` (`PromptStrategy` enum: `daily` | `manual`) —
+    how `pickPromptFor` chooses a prompt. `manual` is the "user picks
+    per entry" mode: `pickPromptFor` returns `null` and the
     [prompt block widget](../../ui/blocks/prompt_block/CLAUDE.md) opens
     its picker sheet on first build.
-  - `textCharLimit` (`int?`) — optional hard cap on every text block.
   - `moodTitle` (`String?`) / `weatherTitle` (`String?`) — optional
     titles rendered above the Mood and Weather carousels respectively.
     Per-type-global; no per-layout-slot overrides.
@@ -126,6 +124,8 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
     multiple prompt blocks on the same day get *different* prompts
     and each prompt rotates through every slot evenly over time.
+    In `manual` mode it returns `null` so the widget can prompt the
+    user.
   - Setters guard against no-op assignment and persist atomically.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
   Mirrors a `ColorScheme` configuration:

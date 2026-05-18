@@ -46,14 +46,12 @@ class BlockSettings extends ChangeNotifier {
 
   List<String> _prompts = const [];
   PromptStrategy _promptStrategy = PromptStrategy.daily;
-  int? _textCharLimit;
   String? _moodTitle;
   String? _weatherTitle;
   List<CustomCarouselDefinition> _customCarousels = const [];
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
-  int? get textCharLimit => _textCharLimit;
   String? get moodTitle => _moodTitle;
   String? get weatherTitle => _weatherTitle;
   List<CustomCarouselDefinition> get customCarousels =>
@@ -88,11 +86,6 @@ class BlockSettings extends ChangeNotifier {
       _promptStrategy = PromptStrategy.manual;
     } else {
       _promptStrategy = PromptStrategy.daily;
-    }
-    final limitRaw = _storage.getBlockTextCharLimit();
-    if (limitRaw != null) {
-      final parsed = int.tryParse(limitRaw);
-      if (parsed != null && parsed > 0) _textCharLimit = parsed;
     }
     final moodTitleRaw = _storage.getBlockMoodTitle();
     if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {
@@ -146,15 +139,6 @@ class BlockSettings extends ChangeNotifier {
     _promptStrategy = strategy;
     await _storage.setBlockPromptStrategy(strategy.name);
     debugPrint('[BlockSettings] setPromptStrategy -> ${strategy.name}');
-    notifyListeners();
-  }
-
-  Future<void> setTextCharLimit(int? limit) async {
-    final normalized = (limit != null && limit > 0) ? limit : null;
-    if (_textCharLimit == normalized) return;
-    _textCharLimit = normalized;
-    await _storage.setBlockTextCharLimit(normalized);
-    debugPrint('[BlockSettings] setTextCharLimit -> $normalized');
     notifyListeners();
   }
 

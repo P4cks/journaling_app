@@ -12,7 +12,6 @@ class SettingsStorageService {
   static const _themeDebugSurfaceKey = 'theme.debugSurface';
   static const _blockPromptListKey = 'block.prompt.list';
   static const _blockPromptStrategyKey = 'block.prompt.strategy';
-  static const _blockTextCharLimitKey = 'block.text.charLimit';
   static const _blockMoodTitleKey = 'block.mood.title';
   static const _blockWeatherTitleKey = 'block.weather.title';
   static const _blockCustomCarouselDefinitionsKey =
@@ -83,12 +82,6 @@ class SettingsStorageService {
 
   Future<void> setBlockPromptStrategy(String value) =>
       _box.put(_blockPromptStrategyKey, value);
-
-  String? getBlockTextCharLimit() => _box.get(_blockTextCharLimitKey);
-
-  Future<void> setBlockTextCharLimit(int? value) => value == null
-      ? _box.delete(_blockTextCharLimitKey)
-      : _box.put(_blockTextCharLimitKey, value.toString());
 
   String? getBlockMoodTitle() => _box.get(_blockMoodTitleKey);
 
