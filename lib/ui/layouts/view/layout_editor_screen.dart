@@ -7,7 +7,7 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
+import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
@@ -364,7 +364,7 @@ class _FilledCell extends StatelessWidget {
     final settings = AppDependencies.of(context).blockSettings;
     return GestureDetector(
       onTap: onSwapType,
-      child: BlockCard(
+      child: PostItBlock(
         topRight: IconButton(
           tooltip: 'Remove',
           iconSize: 16,

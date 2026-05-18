@@ -57,9 +57,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
       }
       _failureStatus = null;
       widget.onChanged?.call(
-        JournalBlockData.create(
-          id: widget.data.id,
-          type: widget.data.type,
+        widget.data.copyWith(
           content: WeatherApiBlockContent(
             conditionId: result.conditionId,
             temperatureC: result.temperatureC,

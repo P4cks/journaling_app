@@ -45,13 +45,14 @@ void main() async {
 
   final layoutRepository = LayoutRepository(layoutStorage, settingsStorage);
   final blockSettings = BlockSettings(settingsStorage);
+  final themeSettings = ThemeSettings(settingsStorage);
   final journalRepository = JournalRepository(
     entryStorage,
     layoutRepository,
     blockSettings,
+    themeSettings,
   );
   final debugSettings = DebugSettings(settingsStorage);
-  final themeSettings = ThemeSettings(settingsStorage);
   final quoteService = QuoteService(settingsBox);
   final weatherService = WeatherService(settingsBox);
   final photoStorage = PhotoStorageService();

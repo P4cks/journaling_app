@@ -3,7 +3,7 @@ import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
+import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
@@ -232,7 +232,8 @@ class _SectionsBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: AspectRatio(
             aspectRatio: 1,
-            child: BlockCard(
+            child: PostItBlock(
+              visuals: section.blocks.first.visuals,
               child: BlockWidget(
                 key: ValueKey(section.id),
                 data: section.blocks.first,

@@ -43,14 +43,18 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
     `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
     `theme.secondary`, `theme.accent`, `theme.customPalettes`,
-    `theme.debugSurface`, `block.prompt.list` (JSON-encoded list of
-    strings), `block.prompt.strategy` (`daily` | `random` | `manual`),
-    `block.text.charLimit` (positive int as string),
-    `block.mood.title` (optional plain string), `block.weather.title`
-    (optional plain string), `block.customCarousel.definitions`
-    (JSON-encoded list of `CustomCarouselDefinition`s; absent means
-    no user-defined carousels yet). If you add another, give it a
-    namespaced key and add a typed accessor pair.
+    `theme.debugSurface`, `theme.postItMode` (`true`/`false`;
+    absent → default `true`), `theme.postItPalette` (JSON-encoded
+    list of `#RRGGBB` hex strings; absent → ships with the
+    `kDefaultPostItPalette` muted pastels), `block.prompt.list`
+    (JSON-encoded list of strings), `block.prompt.strategy`
+    (`daily` | `random` | `manual`), `block.text.charLimit`
+    (positive int as string), `block.mood.title` (optional plain
+    string), `block.weather.title` (optional plain string),
+    `block.customCarousel.definitions` (JSON-encoded list of
+    `CustomCarouselDefinition`s; absent means no user-defined
+    carousels yet). If you add another, give it a namespaced key
+    and add a typed accessor pair.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
@@ -130,13 +134,22 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - `palettes` (Graphite plus persisted user themes)
   - `secondaryOverride`, `accentOverride`, `debugSurfaceOverride`
     (all nullable; `null` means "use the palette's default")
+  - `postItModeEnabled` (`bool`, default `true`) — gates the playful
+    rotation/offset/color visuals in `PostItBlock`. When `false`, the
+    grid renders blocks as flat cards (the pre-post-it look).
+  - `postItPalette` (`List<String>`) — user-managed list of `#RRGGBB`
+    hex strings. Random-picked per block at materialization. Defaults
+    to `kDefaultPostItPalette` (7 muted pastels) on first launch.
   - User themes are persisted as a single `theme.customPalettes` JSON
     list. Each item stores `id`, `name`, and `#RRGGBB` `surface`,
     `secondary`, `accent`, and `text` values. Legacy slot-map JSON is
-    still decoded.
+    still decoded. Post-it palette is **separate** — a flat list of
+    single colors, not surface palettes.
   - `effectiveSecondary` / `effectiveAccent` getters resolve override →
     palette default. Use these from non-debug UI; the raw `*Override`
     getters are for the Profile screen to show "is overridden".
+  - `setPostItModeEnabled`, `addPostItColor`, `removePostItColorAt`,
+    `setPostItPalette` mutate the post-it state and notify.
   - Persists every setter to `SettingsStorageService`. Subscribed to by
     `main.dart`'s root `ListenableBuilder` so a setter call rebuilds
     the entire `MaterialApp.router` with the new theme.

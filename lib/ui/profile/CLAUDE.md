@@ -28,9 +28,18 @@ Settings contains:
 1. **Appearance** — expanded by default; theme mode (segmented), surface
    palette grid, secondary/accent color pickers for built-ins, and
    full surface/secondary/accent/text editing for custom slots.
-2. **Journal templates** — `Manage templates` row that pushes `/layouts`.
-3. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
-4. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
+2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
+   (defaults to on; flipping it off restores the pre-post-it flat-card
+   look without rebuilding any data), followed by a `Wrap` of color
+   swatches showing `themeSettings.postItPalette` plus a `+` tile that
+   opens `showSwatchPicker(allowFreePick: true)` and appends the
+   picked color via `addPostItColor`. Each swatch has an `×` cap that
+   calls `removePostItColorAt(index)`. The palette manager stays
+   visible-but-disabled when the toggle is off so users can curate
+   while previewing classic mode.
+3. **Journal templates** — `Manage templates` row that pushes `/layouts`.
+4. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
+5. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
    surface override, and HSL free-pick for secondary/accent.
 
 Block-settings is rendered inline by `BlockSettingsScreen` —

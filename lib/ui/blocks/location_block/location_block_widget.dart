@@ -66,9 +66,7 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
   void _onLongPress(TapPosition tap, LatLng point) {
     if (widget.mode != BlockMode.editable) return;
     widget.onChanged?.call(
-      JournalBlockData.create(
-        id: widget.data.id,
-        type: widget.data.type,
+      widget.data.copyWith(
         content: LocationBlockContent(
           latitude: point.latitude,
           longitude: point.longitude,

@@ -74,6 +74,7 @@ pushes these screens.
 | `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
 | `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
 | `SettingsSection` "Debug" | `debugSettings`         | debug rows render only when enabled |
+| `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |

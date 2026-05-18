@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_card.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 // ---------------------------------------------------------------------------
-// BlockGrid — Notion-style drag-to-reorder
+// BlockGrid — Notion-style drag-to-reorder with post-it motion.
 //
-// Design:
-//  • The grid layout stays completely stable while dragging. No ghost tiles
-//    are injected into the StaggeredGrid, so there is no reflow jank.
-//  • A single DragTarget wraps the entire scrollable area.  Its onMove
-//    callback converts the pointer position into a logical insertion index
-//    by iterating over the RenderBoxes of each tile key.
-//  • A CustomPainter draws a coloured insertion line between the two tiles
-//    that straddle the current insertion index.  The line is rendered in an
-//    overlay Stack so it never affects layout.
-//  • The dragged tile is rendered semi-transparent (0.35 opacity) so the
-//    user can still see where it came from.
+// Layout invariants (unchanged from the pre-post-it design):
+//  • Grid is never mutated during drag (no ghost tiles, no reflow).
+//  • A single DragTarget wraps the area; an insertion-line overlay shows
+//    the drop point.
+//  • Tile RenderBoxes stay axis-aligned — the rotation/offset in
+//    `PostItBlock` are visual only, so the insertion-index math is safe.
+//
+// Motion layered on top:
+//  • Dragging tile scales to 1.03 with stronger shadow (via `PostItBlock`).
+//  • Newly-added tiles fade + scale in (flutter_animate, keyed by block id).
+//  • Deleted tiles animate out via an overlay "ghost" rendered above the
+//    grid using the tile's last known bounds; ghosts are cleaned up after
+//    their animation finishes.
+//  • All motion respects `themeSettings.postItModeEnabled` — when off,
+//    flutter_animate effects are disabled so the grid behaves like the
+//    pre-post-it build.
 // ---------------------------------------------------------------------------
 
 class BlockGrid extends StatefulWidget {
@@ -34,7 +41,7 @@ class BlockGrid extends StatefulWidget {
     this.onJumpToDate,
     this.onInteractionLockChanged,
     this.scrollable = true,
-    this.onBlockTap
+    this.onBlockTap,
   });
 
   final List<JournalBlockData> blocks;
@@ -45,22 +52,7 @@ class BlockGrid extends StatefulWidget {
   final void Function(int from, int to)? onReorder;
   final void Function(JournalBlockData block, String id)? onBlockTap;
   final EdgeInsets padding;
-
-  /// When `true` (default), the grid wraps its tiles in a
-  /// `SingleChildScrollView` and fills the available vertical space —
-  /// the existing behavior for the journal pager (blockOnly) and the
-  /// layout editor.
-  ///
-  /// When `false`, the grid sizes itself to its content with no inner
-  /// scroll view, so it can be embedded inside an outer
-  /// `SingleChildScrollView` (e.g. a section-aware entry body or the
-  /// custom-layout editor stacking multiple sections). Drag-to-reorder
-  /// still works within the grid; cross-grid drag is **not** supported.
   final bool scrollable;
-
-  /// Forwarded to `BlockWidget`. When a block reports `locked: true`
-  /// the journal pager disables its outer horiz  l swipe — see
-  /// [lib/ui/journal/widgets/journal_pager.dart].
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
   @override
@@ -68,25 +60,16 @@ class BlockGrid extends StatefulWidget {
 }
 
 class _BlockGridState extends State<BlockGrid> {
-  // Logical insertion index where the item will land (0 … blocks.length).
-  // null = no active drag or cursor has left the grid.
   int? _insertionIndex;
-
-  // One GlobalKey per tile so we can measure each tile's screen position.
-  // Initialised inline (not `late`) so it is never uninitialized, even if
-  // something accesses it before initState runs (e.g. during a hot-reload
-  // didUpdateWidget call that arrives before initState completes).
+  int? _draggingIndex;
   List<GlobalKey> _tileKeys = const [];
-
-  // Key on the Stack that wraps the whole grid, used as the RenderBox
-  // ancestor for coordinate conversions.
   final GlobalKey _gridKey = GlobalKey();
 
-  bool get _reorderable => widget.onReorder != null;
+  // Ids and last-known-rects for tiles that just got removed — rendered
+  // in an overlay so we can animate them out after they leave the grid.
+  final List<_PendingDelete> _pendingDeletes = [];
 
-  // -------------------------------------------------------------------------
-  // Lifecycle
-  // -------------------------------------------------------------------------
+  bool get _reorderable => widget.onReorder != null;
 
   List<GlobalKey> _buildKeys(int length) =>
       List.generate(length, (_) => GlobalKey());
@@ -100,38 +83,40 @@ class _BlockGridState extends State<BlockGrid> {
   @override
   void didUpdateWidget(BlockGrid old) {
     super.didUpdateWidget(old);
+
+    // Detect removals before we replace _tileKeys: snapshot the rect of
+    // any disappearing block so the overlay ghost can position itself.
+    final oldIds = {for (final b in old.blocks) b.id};
+    final newIds = {for (final b in widget.blocks) b.id};
+    final removed = oldIds.difference(newIds);
+    if (removed.isNotEmpty) {
+      for (var i = 0; i < old.blocks.length; i++) {
+        final block = old.blocks[i];
+        if (!removed.contains(block.id)) continue;
+        final rect = _tileRect(i, keys: _tileKeys);
+        if (rect == null) continue;
+        _pendingDeletes.add(
+          _PendingDelete(block: block, rect: rect, mountedAt: DateTime.now()),
+        );
+      }
+    }
+
     if (widget.blocks.length != _tileKeys.length) {
       _tileKeys = _buildKeys(widget.blocks.length);
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Coordinate helpers
-  // -------------------------------------------------------------------------
-
-  /// Returns the [Rect] of tile [index] in the grid Stack's local space,
-  /// or null if it hasn't been laid out yet.
-  Rect? _tileRect(int index) {
-    if (index < 0 || index >= _tileKeys.length) return null;
+  Rect? _tileRect(int index, {List<GlobalKey>? keys}) {
+    final keyList = keys ?? _tileKeys;
+    if (index < 0 || index >= keyList.length) return null;
     final tileBox =
-        _tileKeys[index].currentContext?.findRenderObject() as RenderBox?;
+        keyList[index].currentContext?.findRenderObject() as RenderBox?;
     final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (tileBox == null || gridBox == null) return null;
     final topLeft = tileBox.localToGlobal(Offset.zero, ancestor: gridBox);
     return topLeft & tileBox.size;
   }
 
-  // -------------------------------------------------------------------------
-  // Insertion-index computation
-  // -------------------------------------------------------------------------
-
-  /// Converts a pointer offset (global coordinates) to the best logical
-  /// insertion index using the Notion heuristic:
-  ///
-  ///  1. Find the row (group of tiles sharing the same centre-Y) nearest to
-  ///     the cursor's Y.
-  ///  2. On that row, find the tile whose centre-X is nearest to the cursor's X.
-  ///  3. Left half of that tile → insert before it; right half → insert after.
   int _computeInsertionIndex(Offset globalPos) {
     final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (gridBox == null) return widget.blocks.length;
@@ -140,10 +125,8 @@ class _BlockGridState extends State<BlockGrid> {
     final n = widget.blocks.length;
     if (n == 0) return 0;
 
-    // Build centre list (may contain nulls for not-yet-laid-out tiles).
     final centres = List<Offset?>.generate(n, (i) => _tileRect(i)?.center);
 
-    // 1. Find the row (by Y) closest to local.dy.
     double bestDy = double.infinity;
     int closestIdx = 0;
     for (var i = 0; i < n; i++) {
@@ -156,7 +139,6 @@ class _BlockGridState extends State<BlockGrid> {
       }
     }
 
-    // 2. Collect all tile indices on the same row.
     final rowY = centres[closestIdx]?.dy ?? 0;
     const rowEpsilon = 4.0;
     final rowIndices = <int>[
@@ -164,7 +146,6 @@ class _BlockGridState extends State<BlockGrid> {
         if (centres[i] != null && (centres[i]!.dy - rowY).abs() < rowEpsilon) i,
     ];
 
-    // 3. Within that row, find the tile nearest horizontally.
     double bestDx = double.infinity;
     int nearest = closestIdx;
     for (final i in rowIndices) {
@@ -175,17 +156,13 @@ class _BlockGridState extends State<BlockGrid> {
       }
     }
 
-    // 4. Left/right half decision.
     final cx = centres[nearest]?.dx ?? local.dx;
     return local.dx < cx ? nearest : nearest + 1;
   }
 
-  // -------------------------------------------------------------------------
-  // Drag lifecycle
-  // -------------------------------------------------------------------------
-
-  void _onDragStarted() {
+  void _onDragStarted(int index) {
     setState(() {
+      _draggingIndex = index;
       _insertionIndex = null;
     });
   }
@@ -209,20 +186,21 @@ class _BlockGridState extends State<BlockGrid> {
 
   void _onDragEnd() {
     if (!mounted) return;
-    setState(() => _insertionIndex = null);
+    setState(() {
+      _insertionIndex = null;
+      _draggingIndex = null;
+    });
   }
 
   void _onAccept(int from) {
     final insertAt = _insertionIndex ?? widget.blocks.length;
-    setState(() => _insertionIndex = null);
-    // Normalise: when inserting after the source the logical index shifts by 1.
+    setState(() {
+      _insertionIndex = null;
+      _draggingIndex = null;
+    });
     final to = insertAt > from ? insertAt - 1 : insertAt;
     if (from != to) widget.onReorder!(from, to);
   }
-
-  // -------------------------------------------------------------------------
-  // Insertion line geometry
-  // -------------------------------------------------------------------------
 
   _InsertionLineInfo? _insertionLineInfo() {
     final idx = _insertionIndex;
@@ -230,7 +208,6 @@ class _BlockGridState extends State<BlockGrid> {
     final n = widget.blocks.length;
     if (n == 0) return null;
 
-    // Drop after the last tile → vertical line to the right of it.
     if (idx >= n) {
       final r = _tileRect(n - 1);
       if (r == null) return null;
@@ -243,12 +220,10 @@ class _BlockGridState extends State<BlockGrid> {
     final targetRect = _tileRect(idx);
     if (targetRect == null) return null;
 
-    // Check for a left neighbour on the same row.
     if (idx > 0) {
       final prevRect = _tileRect(idx - 1);
       if (prevRect != null &&
           (prevRect.center.dy - targetRect.center.dy).abs() < 4) {
-        // Same row: vertical line in the gap between the two tiles.
         final x = (prevRect.right + targetRect.left) / 2;
         final top = prevRect.top < targetRect.top
             ? prevRect.top
@@ -263,117 +238,150 @@ class _BlockGridState extends State<BlockGrid> {
       }
     }
 
-    // First tile on a row (or idx == 0): vertical line to its left.
     return _InsertionLineInfo(
       start: Offset(targetRect.left - 5, targetRect.top),
       end: Offset(targetRect.left - 5, targetRect.bottom),
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Build
-  // -------------------------------------------------------------------------
-
   static const double _crossAxisSpacing = 12;
 
   @override
   Widget build(BuildContext context) {
     final lineInfo = _reorderable ? _insertionLineInfo() : null;
+    final postIt = AppDependencies.of(context).themeSettings.postItModeEnabled;
 
-    // The stable grid — never mutated during a drag.
     final staggered = Padding(
       padding: widget.padding,
       child: StaggeredGrid.count(
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: _crossAxisSpacing,
-        children: _buildTiles(),
+        children: _buildTiles(postIt: postIt),
       ),
     );
     final Widget gridContent = widget.scrollable
         ? SingleChildScrollView(child: staggered)
         : staggered;
 
-    if (!_reorderable) return gridContent;
+    final Widget body;
+    if (_reorderable) {
+      final dragTarget = DragTarget<int>(
+        onWillAcceptWithDetails: (_) => true,
+        onMove: _onDragUpdate,
+        onLeave: (_) {
+          if (_insertionIndex != null) {
+            setState(() => _insertionIndex = null);
+          }
+        },
+        onAcceptWithDetails: (details) => _onAccept(details.data),
+        builder: (_, _, _) => gridContent,
+      );
 
-    // Wrap in a full-area DragTarget so pointer events reach us everywhere.
-    final dragTarget = DragTarget<int>(
-      onWillAcceptWithDetails: (_) => true,
-      onMove: _onDragUpdate,
-      onLeave: (_) {
-        if (_insertionIndex != null) {
-          setState(() => _insertionIndex = null);
-        }
-      },
-      onAcceptWithDetails: (details) => _onAccept(details.data),
-      builder: (_, _, _) => gridContent,
-    );
-
-    return Stack(
-      key: _gridKey,
-      children: [
-        dragTarget,
-        // Insertion-line overlay — pointer events pass through.
-        if (lineInfo != null)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(
-                painter: _InsertionLinePainter(
-                  info: lineInfo,
-                  color: Theme.of(context).colorScheme.primary,
+      body = Stack(
+        key: _gridKey,
+        children: [
+          dragTarget,
+          if (lineInfo != null)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _InsertionLinePainter(
+                    info: lineInfo,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
-    );
+          ..._buildGhosts(postIt: postIt),
+        ],
+      );
+    } else {
+      body = Stack(
+        key: _gridKey,
+        children: [
+          gridContent,
+          ..._buildGhosts(postIt: postIt),
+        ],
+      );
+    }
+
+    return body;
   }
 
-  List<Widget> _buildTiles() {
-    return [for (var i = 0; i < widget.blocks.length; i++) _buildTile(i)];
+  List<Widget> _buildTiles({required bool postIt}) {
+    return [
+      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i, postIt: postIt),
+    ];
   }
 
-  Widget _buildTile(int index) {
+  Widget _buildTile(int index, {required bool postIt}) {
     final block = widget.blocks[index];
+    final isDragging = _draggingIndex == index;
+
+    final inner = BlockWidget(
+      key: ValueKey('content-${block.id}'),
+      data: block,
+      mode: widget.mode,
+      onChanged: widget.onBlockChanged,
+      onJumpToDate: widget.onJumpToDate,
+      onInteractionLockChanged: widget.onInteractionLockChanged,
+    );
 
     final card = GestureDetector(
       onTap: widget.onBlockTap == null
-      ? null
-      : () => widget.onBlockTap!(block,block.id),
-      child: BlockCard(
+          ? null
+          : () => widget.onBlockTap!(block, block.id),
+      child: PostItBlock(
+        visuals: block.visuals,
+        isDragging: isDragging,
         topRight: widget.cardTrailing?.call(block, index),
-        child: BlockWidget(
-          key: ValueKey(block.id),
-          data: block,
-          mode: widget.mode,
-          onChanged: widget.onBlockChanged,
-          onJumpToDate: widget.onJumpToDate,
-          onInteractionLockChanged: widget.onInteractionLockChanged,
-        ),
+        child: inner,
       ),
     );
 
-    Widget content = card;
+    // Add animation: scale 0.9 → 1.0 + fade. Runs once on mount, keyed
+    // by block.id so re-orders don't replay it. Skipped when post-it
+    // mode is off so the classic look stays still.
+    final tileWidget = postIt
+        ? Animate(
+            key: ValueKey('animate-${block.id}'),
+            effects: [
+              const FadeEffect(
+                duration: Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+              ),
+              const ScaleEffect(
+                begin: Offset(0.9, 0.9),
+                end: Offset(1.0, 1.0),
+                duration: Duration(milliseconds: 280),
+                curve: Curves.easeOutBack,
+              ),
+            ],
+            child: card,
+          )
+        : card;
+
+    Widget content = tileWidget;
 
     if (_reorderable) {
-      // Feedback widget shown under the finger/cursor while dragging.
-      // We use a LayoutBuilder so the feedback matches the actual tile size.
       final feedback = _DraggableFeedback(
         tileKey: _tileKeys[index],
-        child: BlockCard(
+        child: PostItBlock(
+          visuals: block.visuals,
+          isDragging: true,
           child: BlockWidget(data: block, mode: BlockMode.readOnly),
         ),
       );
 
       content = LongPressDraggable<int>(
         data: index,
-        onDragStarted: _onDragStarted,
+        onDragStarted: () => _onDragStarted(index),
         onDragEnd: (_) => _onDragEnd(),
         onDraggableCanceled: (_, _) => _onDragEnd(),
         feedback: feedback,
-        // Dim the source tile; it stays in place (no grid reflow).
-        childWhenDragging: Opacity(opacity: 0.35, child: card),
-        child: card,
+        childWhenDragging: Opacity(opacity: 0.35, child: tileWidget),
+        child: tileWidget,
       );
     }
 
@@ -384,11 +392,83 @@ class _BlockGridState extends State<BlockGrid> {
       child: content,
     );
   }
+
+  // ---------------------------------------------------------------------
+  // Delete overlay ghosts — rendered above the grid in the same Stack so
+  // they can animate out at the tile's last known position even after
+  // the source list has dropped them.
+  // ---------------------------------------------------------------------
+
+  List<Widget> _buildGhosts({required bool postIt}) {
+    if (_pendingDeletes.isEmpty) return const [];
+    return [
+      for (final pending in List<_PendingDelete>.from(_pendingDeletes))
+        Positioned(
+          left: pending.rect.left,
+          top: pending.rect.top,
+          width: pending.rect.width,
+          height: pending.rect.height,
+          child: IgnorePointer(
+            child: Animate(
+              key: ValueKey('delete-${pending.block.id}'),
+              onComplete: (_) {
+                if (!mounted) return;
+                setState(() {
+                  _pendingDeletes.removeWhere((p) => p == pending);
+                });
+              },
+              effects: [
+                const FadeEffect(
+                  begin: 1,
+                  end: 0,
+                  duration: Duration(milliseconds: 320),
+                  curve: Curves.easeIn,
+                ),
+                const ScaleEffect(
+                  begin: Offset(1.0, 1.0),
+                  end: Offset(0.7, 0.7),
+                  duration: Duration(milliseconds: 320),
+                  curve: Curves.easeIn,
+                ),
+                if (postIt)
+                  const RotateEffect(
+                    begin: 0,
+                    end: 0.04,
+                    duration: Duration(milliseconds: 320),
+                    curve: Curves.easeIn,
+                  ),
+                const MoveEffect(
+                  begin: Offset.zero,
+                  end: Offset(0, 16),
+                  duration: Duration(milliseconds: 320),
+                  curve: Curves.easeIn,
+                ),
+              ],
+              child: PostItBlock(
+                visuals: pending.block.visuals,
+                child: BlockWidget(
+                  data: pending.block,
+                  mode: BlockMode.readOnly,
+                ),
+              ),
+            ),
+          ),
+        ),
+    ];
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Helper widget: sizes the drag feedback to match the source tile exactly.
-// ---------------------------------------------------------------------------
+class _PendingDelete {
+  _PendingDelete({
+    required this.block,
+    required this.rect,
+    required this.mountedAt,
+  });
+
+  final JournalBlockData block;
+  final Rect rect;
+  final DateTime mountedAt;
+}
 
 class _DraggableFeedback extends StatelessWidget {
   const _DraggableFeedback({required this.tileKey, required this.child});
@@ -406,15 +486,11 @@ class _DraggableFeedback extends StatelessWidget {
       child: SizedBox(
         width: size.width,
         height: size.height,
-        child: Opacity(opacity: 0.85, child: child),
+        child: child,
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Insertion line data + painter
-// ---------------------------------------------------------------------------
 
 class _InsertionLineInfo {
   const _InsertionLineInfo({required this.start, required this.end});
@@ -438,7 +514,6 @@ class _InsertionLinePainter extends CustomPainter {
 
     canvas.drawLine(info.start, info.end, linePaint);
 
-    // Notion-style dot caps at each end of the line.
     final dotPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;

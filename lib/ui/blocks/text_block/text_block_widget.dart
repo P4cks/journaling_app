@@ -47,9 +47,7 @@ class _TextBlockWidgetState extends State<TextBlockWidget> {
   }
 
   void _emit(String value) {
-    final updated = JournalBlockData.create(
-      id: widget.data.id,
-      type: widget.data.type,
+    final updated = widget.data.copyWith(
       content: TextBlockContent(text: value).toMap(),
     );
     widget.onChanged?.call(updated);

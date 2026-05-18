@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -8,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.dart';
+import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -29,6 +31,15 @@ class SettingsScreen extends StatelessWidget {
             SettingsSection(
               label: "Appearance",
               children: [_AppearanceSettingsContent(theme: theme)],
+            ),
+            SettingsSection(
+              label: "Post-it style",
+              widget: [
+                ListenableBuilder(
+                  listenable: theme,
+                  builder: (context, _) => _PostItStyleSection(theme: theme),
+                ),
+              ],
             ),
             SettingsSection(
               label: "Journal templates",
@@ -353,6 +364,194 @@ Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
       duration: const Duration(seconds: 2),
     ),
   );
+}
+
+class _PostItStyleSection extends StatelessWidget {
+  const _PostItStyleSection({required this.theme});
+
+  final ThemeSettings theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = theme.postItModeEnabled;
+    final palette = theme.postItPalette;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          secondary: const AppIcon(PhosphorIconsDuotone.note),
+          title: const Text('Playful post-it style'),
+          subtitle: const Text(
+            'Slight rotation, offset, and color on each block.',
+          ),
+          value: enabled,
+          onChanged: theme.setPostItModeEnabled,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Text(
+            'Block colors',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: AnimatedOpacity(
+            opacity: enabled ? 1.0 : 0.5,
+            duration: const Duration(milliseconds: 180),
+            child: IgnorePointer(
+              ignoring: !enabled,
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (var i = 0; i < palette.length; i++)
+                    _PostItSwatch(
+                      hex: palette[i],
+                      onRemove: () => theme.removePostItColorAt(i),
+                    ),
+                  _AddPostItSwatch(
+                    onPick: () async {
+                      final result = await showSwatchPicker(
+                        context,
+                        title: 'Add post-it color',
+                        initial: scheme.surfaceContainerHigh,
+                        allowFreePick: true,
+                      );
+                      if (result == null || result.isReset) return;
+                      final picked = result.color;
+                      if (picked != null) {
+                        await theme.addPostItColor(picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (palette.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Text(
+              'No colors yet — blocks will use the default surface color.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PostItSwatch extends StatelessWidget {
+  const _PostItSwatch({required this.hex, required this.onRemove});
+
+  final String hex;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = colorFromHex(hex) ?? Theme.of(context).colorScheme.surface;
+    final scheme = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: scheme.outline.withValues(alpha: 0.4)),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: 0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: -4,
+          right: -4,
+          child: InkResponse(
+            onTap: onRemove,
+            radius: 16,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Icon(
+                PhosphorIconsBold.x,
+                size: 12,
+                color: scheme.onSurface,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AddPostItSwatch extends StatelessWidget {
+  const _AddPostItSwatch({required this.onPick});
+
+  final Future<void> Function() onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkResponse(
+      onTap: onPick,
+      radius: 28,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: scheme.outline.withValues(alpha: 0.6),
+            style: BorderStyle.solid,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(PhosphorIconsBold.plus, size: 18, color: scheme.onSurface),
+      ),
+    );
+  }
+}
+
+class _ExpansionTitle extends StatelessWidget {
+  const _ExpansionTitle(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: scheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
 }
 
 Future<SurfacePalette?> showThemeEditorSheet(

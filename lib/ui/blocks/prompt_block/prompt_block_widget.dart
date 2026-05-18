@@ -64,9 +64,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
   }
 
   void _emit({required String prompt, required String answer}) {
-    final updated = JournalBlockData.create(
-      id: widget.data.id,
-      type: widget.data.type,
+    final updated = widget.data.copyWith(
       content: PromptBlockContent(prompt: prompt, answer: answer).toMap(),
     );
     widget.onChanged?.call(updated);

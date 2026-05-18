@@ -111,9 +111,7 @@ class CustomCarouselWidget extends StatelessWidget {
         ),
       ),
       onSelected: (item) => onChanged?.call(
-        JournalBlockData.create(
-          id: data.id,
-          type: data.type,
+        data.copyWith(
           content: CustomCarouselBlockContent(
             definitionId: definition.id,
             selected: item,
