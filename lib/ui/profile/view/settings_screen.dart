@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
-import 'package:journaling_app_rewrite/ui/core/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.dart';
@@ -27,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
           children: [
             SettingsSection(
               label: "Appearance",
-              widget: [
+              children: [
                 ListenableBuilder(
                   listenable: theme,
                   builder: (context, _) => Column(
@@ -85,7 +85,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Journal templates",
-              widget: [
+              children: [
                 ListTile(
                   leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
                   title: const Text('Manage templates'),
@@ -96,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Blocks",
-              widget: [
+              children: [
                 ListTile(
                   leading: const AppIcon(
                     PhosphorIconsDuotone.slidersHorizontal,
@@ -109,7 +109,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Debug",
-              widget: [
+              children: [
                 Padding(
                   padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
                   child: SwitchListTile(

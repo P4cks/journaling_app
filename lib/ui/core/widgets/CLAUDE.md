@@ -20,7 +20,9 @@ for how they fit together; this file is per-file notes.
 - [section_header.dart](section_header.dart) — `SectionHeader`.
   Accent-tinted titleSmall label used by Settings and the entries list.
 - [settings_section.dart](settings_section.dart) — `SettingsSection`.
-  Stack of a section header + grouped rows used by Settings.
+  Canonical grouped-settings wrapper: `label` renders through
+  `SectionHeader`, and `children` are padded rows/controls followed by
+  a divider. Import this file directly for settings-style groups.
 - [streak_stat_card.dart](streak_stat_card.dart) — `StreakStatCard` +
   private nudge widget. Renders a `StreakResult` from
   [services/streak_service.dart](../../../data/services/streak_service.dart).

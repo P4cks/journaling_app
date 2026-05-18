@@ -5,9 +5,9 @@ import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dar
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
-import 'package:journaling_app_rewrite/ui/core/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/text_block_settings.dart';
@@ -117,15 +117,15 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
           children: [
             SettingsSection(
               label: 'Text Block',
-              widget: [TextBlockSettings(vm: vm)],
+              children: [TextBlockSettings(vm: vm)],
             ),
             SettingsSection(
               label: 'Prompt Block',
-              widget: [PromptBlockSettings(vm: vm)],
+              children: [PromptBlockSettings(vm: vm)],
             ),
             SettingsSection(
               label: 'Mood Tracker',
-              widget: [
+              children: [
                 _TitleField(
                   controller: vm.moodTitleController,
                   hint: 'e.g. How are you feeling?',
@@ -134,7 +134,7 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
             ),
             SettingsSection(
               label: 'Manual Weather',
-              widget: [
+              children: [
                 _TitleField(
                   controller: vm.weatherTitleController,
                   hint: "e.g. Today's weather",
@@ -245,7 +245,7 @@ class _CustomCarouselSections extends StatelessWidget {
             for (final def in defs)
               SettingsSection(
                 label: def.title.isEmpty ? 'Untitled' : def.title,
-                widget: [
+                children: [
                   _CustomDefinitionRow(
                     definition: def,
                     onEdit: () => _navigateToEditor(context, def.id),

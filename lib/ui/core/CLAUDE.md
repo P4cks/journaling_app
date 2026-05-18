@@ -13,8 +13,9 @@ screen-specific.
 
 - [widgets/app_dependencies.dart](widgets/app_dependencies.dart) —
   `AppDependencies extends InheritedWidget`. The DI root. Holds
-  `JournalRepository`, `LayoutRepository`, `DebugSettings`,
-  `ThemeSettings`, `NavigationGuard`. Accessed via
+  `AuthRepository`, `JournalRepository`, `LayoutRepository`,
+  `DebugSettings`, `ThemeSettings`, `BlockSettings`, `QuoteService`,
+  `WeatherService`, and `PhotoStorageService`. Accessed via
   `AppDependencies.of(context)`. The static accessor `assert`s that
   an ancestor exists — failing fast in development is better than
   mysterious nulls.
@@ -33,6 +34,9 @@ screen-specific.
   Use `PhosphorIconsDuotone.xxx` for default and `PhosphorIconsFill.xxx`
   for selected/active states. **Never use raw `Icons.*`** — analyzer
   won't catch it but it'll look out of place.
+- [widgets/settings_section.dart](widgets/settings_section.dart) —
+  canonical `SettingsSection` wrapper for settings-style groups. Use
+  its `children` parameter for already-built rows or controls.
 
 ## format/
 
