@@ -336,24 +336,6 @@ Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
   );
 }
 
-class _ExpansionTitle extends StatelessWidget {
-  const _ExpansionTitle(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: scheme.primary,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
 Future<SurfacePalette?> showThemeEditorSheet(
   BuildContext context, {
   required String title,

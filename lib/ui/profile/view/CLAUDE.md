@@ -67,12 +67,14 @@ pushes these screens.
 
 | Block                       | Listens to              | Notes                              |
 |-----------------------------|-------------------------|------------------------------------|
-| `ExpansionTile` "Appearance"| —                       | expanded by default                |
+| `SettingsSection` "Appearance" | `themeSettings`      | mode selector + palette strip      |
 | `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
 | "Theme" + `PalettePicker` | `themeSettings` | horizontal Graphite/user-theme strip |
 | `showThemeEditorSheet`    | —                       | add/edit user themes                |
+| `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
+| `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
+| `SettingsSection` "Debug" | `debugSettings`         | debug rows render only when enabled |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
-| `ExpansionTile` "Debug"     | `debugSettings`         | collapsed by default, conditional  |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
@@ -92,9 +94,6 @@ pushes these screens.
 
 ## Private widgets
 
-- `_SectionHeader` — accent-tinted titleSmall with letter-spacing.
-- `_ExpansionTitle` — same accent-tinted titleSmall styling, used in
-  `SettingsScreen` `ExpansionTile.title`.
 - `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
   for user themes; edits name, surface tint, secondary, accent, and text
   colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.
@@ -125,5 +124,5 @@ pushes these screens.
 
 - A new section or Profile entry row is added (and update the relevant
   composition table here).
-- A row is moved between sections — the section-header dividers are
-  hand-placed, so reordering needs a manual re-check.
+- A row is moved between sections — the `SettingsSection` grouping should
+  still match the composition table above.
