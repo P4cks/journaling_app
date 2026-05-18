@@ -5,10 +5,6 @@ small behavior-preserving cleanup commits.
 
 ## Open
 
-- `lib/ui/profile/view/settings_screen.dart` has nested `Column` and
-  `ListenableBuilder` layers around the Appearance section that could be
-  extracted into an `AppearanceSettingsSection` widget. That would make the
-  theme editor callbacks easier to scan without changing the settings flow.
 - `lib/ui/profile/view/block_settings_screen.dart` counts custom-carousel usage
   inside a private widget by walking layouts directly. Consider moving that
   query into a view model or repository helper so the UI only renders the result
@@ -23,3 +19,7 @@ small behavior-preserving cleanup commits.
 - `SettingsSection` had two identical implementations. The canonical shared
   widget now lives in `lib/ui/core/widgets/settings_section.dart`, and profile
   settings screens import that copy directly.
+- `lib/ui/profile/view/settings_screen.dart` had redundant nested `Column` and
+  `ListenableBuilder` layers around the Appearance section. The theme controls
+  now live in `_AppearanceSettingsContent`, leaving `SettingsScreen` focused on
+  section ordering.

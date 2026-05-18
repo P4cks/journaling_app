@@ -16,8 +16,8 @@ pushes these screens.
   sign-out) the moment auth completes. Pushed via `/profile` from the
   profile dropdown's "Sign in" row.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
-  (`StatelessWidget`) + private color helpers. Pushed via `/settings`
-  from the profile dropdown.
+  (`StatelessWidget`) + private appearance/theme and color helpers.
+  Pushed via `/settings` from the profile dropdown.
 - [custom_block_editor_screen.dart](custom_block_editor_screen.dart) —
   public `CustomBlockEditorScreen({String? definitionId})`. Create
   (`null` id) or edit (existing id) a `CustomCarouselDefinition`.
@@ -94,6 +94,10 @@ pushes these screens.
 
 ## Private widgets
 
+- `_AppearanceSettingsContent` — owns the Appearance section's live
+  `ThemeSettings` listener, mode selector, palette strip, and add/edit/delete
+  custom-theme callbacks. `SettingsScreen` only decides where the section sits
+  in the list.
 - `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
   for user themes; edits name, surface tint, secondary, accent, and text
   colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.

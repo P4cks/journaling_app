@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -27,61 +28,7 @@ class SettingsScreen extends StatelessWidget {
           children: [
             SettingsSection(
               label: "Appearance",
-              children: [
-                ListenableBuilder(
-                  listenable: theme,
-                  builder: (context, _) => Column(
-                    children: [
-                      Column(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Center(
-                                child: ThemeModeSelector(
-                                  value: theme.themeMode,
-                                  onChanged: theme.setThemeMode,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Theme',
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              PalettePicker(
-                                selectedId: theme.paletteId,
-                                palettes: theme.palettes,
-                                onSelected: theme.setPaletteId,
-                                onAdd: () async {
-                                  final palette = await showThemeEditorSheet(
-                                    context,
-                                    title: 'Add theme',
-                                    initial: theme.customPaletteTemplate(),
-                                  );
-                                  if (palette == null) return;
-                                  await theme.addCustomPalette(palette);
-                                },
-                                onEdit: (palette) async {
-                                  final updated = await showThemeEditorSheet(
-                                    context,
-                                    title: 'Edit theme',
-                                    initial: palette,
-                                  );
-                                  if (updated == null) return;
-                                  await theme.updateCustomPalette(updated);
-                                },
-                                onDelete: (palette) =>
-                                    theme.deleteCustomPalette(palette.id),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              children: [_AppearanceSettingsContent(theme: theme)],
             ),
             SettingsSection(
               label: "Journal templates",
@@ -253,6 +200,78 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Renders the live theme controls for the Settings appearance section.
+///
+/// The [theme] input is the app-wide settings notifier. This widget returns a
+/// vertical set of controls and rebuilds when the theme mode, selected palette,
+/// or custom-palette list changes.
+class _AppearanceSettingsContent extends StatelessWidget {
+  const _AppearanceSettingsContent({required this.theme});
+
+  final ThemeSettings theme;
+
+  /// Opens the theme editor with a blank custom-palette template.
+  ///
+  /// [context] supplies the modal route. The output is a completed future after
+  /// either canceling or persisting the new palette.
+  Future<void> _addPalette(BuildContext context) async {
+    final palette = await showThemeEditorSheet(
+      context,
+      title: 'Add theme',
+      initial: theme.customPaletteTemplate(),
+    );
+    if (palette == null) return;
+    await theme.addCustomPalette(palette);
+  }
+
+  /// Opens the theme editor for an existing custom palette.
+  ///
+  /// [context] supplies the modal route, and [palette] is the palette being
+  /// edited. The output is a completed future after canceling or saving the
+  /// updated palette.
+  Future<void> _editPalette(
+    BuildContext context,
+    SurfacePalette palette,
+  ) async {
+    final updated = await showThemeEditorSheet(
+      context,
+      title: 'Edit theme',
+      initial: palette,
+    );
+    if (updated == null) return;
+    await theme.updateCustomPalette(updated);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: theme,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: ThemeModeSelector(
+              value: theme.themeMode,
+              onChanged: theme.setThemeMode,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Theme', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 8),
+          PalettePicker(
+            selectedId: theme.paletteId,
+            palettes: theme.palettes,
+            onSelected: theme.setPaletteId,
+            onAdd: () => _addPalette(context),
+            onEdit: (palette) => _editPalette(context, palette),
+            onDelete: (palette) => theme.deleteCustomPalette(palette.id),
+          ),
+        ],
       ),
     );
   }
