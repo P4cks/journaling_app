@@ -19,7 +19,7 @@ types:
         index: 6
   JournalBlockData:
     typeId: 1
-    nextIndex: 4
+    nextIndex: 5
     fields:
       id:
         index: 0
@@ -27,6 +27,8 @@ types:
         index: 1
       contentJson:
         index: 2
+      visualsJson:
+        index: 4
   BlockType:
     typeId: 2
     nextIndex: 11

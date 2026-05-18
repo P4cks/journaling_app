@@ -53,9 +53,7 @@ class MoodTrackerWidget extends StatelessWidget {
         ),
       ),
       onSelected: (emoji) => onChanged?.call(
-        JournalBlockData.create(
-          id: data.id,
-          type: data.type,
+        data.copyWith(
           content: MoodBlockContent(emoji: emoji).toMap(),
         ),
       ),

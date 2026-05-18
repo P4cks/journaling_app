@@ -12,9 +12,11 @@ import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry_emptiness.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
@@ -26,8 +28,14 @@ class JournalRepository extends ChangeNotifier {
   final HiveStorageService _storage;
   final LayoutRepository _layouts;
   final BlockSettings _blockSettings;
+  final ThemeSettings _themeSettings;
 
-  JournalRepository(this._storage, this._layouts, this._blockSettings);
+  JournalRepository(
+    this._storage,
+    this._layouts,
+    this._blockSettings,
+    this._themeSettings,
+  );
 
   final Random _rng = Random();
 
@@ -216,6 +224,7 @@ class JournalRepository extends ChangeNotifier {
     int Function() nextPromptSlotIndex,
   ) {
     final type = template.type;
+    final visuals = BlockVisuals.random(_rng, _themeSettings.postItPalette);
     switch (type) {
       case BlockType.promptBlock:
         final slot = nextPromptSlotIndex();
@@ -227,6 +236,7 @@ class JournalRepository extends ChangeNotifier {
           id: _uuid.v4(),
           type: type,
           content: PromptBlockContent(prompt: prompt ?? '', answer: '').toMap(),
+          visuals: visuals,
         );
       case BlockType.customCarousel:
         // Carry the layout slot's definitionId through to the entry so
@@ -237,6 +247,7 @@ class JournalRepository extends ChangeNotifier {
           id: _uuid.v4(),
           type: type,
           content: CustomCarouselBlockContent(definitionId: defId).toMap(),
+          visuals: visuals,
         );
       case BlockType.moodTracker:
       case BlockType.weatherManual:
@@ -251,6 +262,7 @@ class JournalRepository extends ChangeNotifier {
           id: _uuid.v4(),
           type: type,
           content: const {},
+          visuals: visuals,
         );
     }
   }

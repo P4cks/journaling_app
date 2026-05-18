@@ -17,6 +17,8 @@ class SettingsStorageService {
   static const _blockWeatherTitleKey = 'block.weather.title';
   static const _blockCustomCarouselDefinitionsKey =
       'block.customCarousel.definitions';
+  static const _themePostItModeKey = 'theme.postItMode';
+  static const _themePostItPaletteKey = 'theme.postItPalette';
 
   final Box<String> _box;
 
@@ -109,4 +111,21 @@ class SettingsStorageService {
       (json == null || json.isEmpty)
           ? _box.delete(_blockCustomCarouselDefinitionsKey)
           : _box.put(_blockCustomCarouselDefinitionsKey, json);
+
+  // null = key absent (use the default, currently `true`).
+  bool? getThemePostItMode() {
+    final raw = _box.get(_themePostItModeKey);
+    if (raw == null) return null;
+    return raw == 'true';
+  }
+
+  Future<void> setThemePostItMode(bool value) =>
+      _box.put(_themePostItModeKey, value.toString());
+
+  String? getThemePostItPalette() => _box.get(_themePostItPaletteKey);
+
+  Future<void> setThemePostItPalette(String? json) =>
+      (json == null || json.isEmpty)
+          ? _box.delete(_themePostItPaletteKey)
+          : _box.put(_themePostItPaletteKey, json);
 }

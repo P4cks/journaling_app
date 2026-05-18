@@ -56,9 +56,7 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
       }
       _failed = false;
       widget.onChanged?.call(
-        JournalBlockData.create(
-          id: widget.data.id,
-          type: widget.data.type,
+        widget.data.copyWith(
           content: QuoteBlockContent(
             quote: daily.quote,
             author: daily.author,

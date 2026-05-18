@@ -28,18 +28,28 @@ are a side effect of editing a model under [data/model/](../data/model/).
 
 ## Schema-change protocol
 
-When you **add, remove, rename, or retype a field** on any class in the
-adapter list, existing serialized data in the box becomes incompatible
-with the regenerated adapter:
+When you **add a field with a safe default** to a class in the adapter
+list, the regenerated adapter is backward-compatible — `hive_ce`'s
+byte-indexed reader returns `null` for missing fields and the model's
+default takes effect. Example: `JournalBlockData.visualsJson` was
+added with a `'{}'` default; existing entries decode unchanged and
+the box name stayed at `journalEntries_v6`.
+
+When you **rename, retype, remove, or reorder** a field, the adapter
+becomes incompatible with on-disk bytes:
 
 1. Edit the model.
 2. Run `build_runner` (as above).
-3. **Bump the box name** in `main.dart` (e.g. `journalEntries_v5` →
-   `journalEntries_v6`). Old boxes are orphaned on disk; harmless but
+3. **Bump the box name** in `main.dart` (e.g. `journalEntries_v6` →
+   `journalEntries_v7`). Old boxes are orphaned on disk; harmless but
    never read again.
 4. If a UI screen relied on data persisted under the old name (it
    shouldn't, but if so), surface a one-time migration before the
    first read of the new box.
+
+Rule of thumb: if the change preserves the wire-level shape (new
+field with a default, or expanding an enum at the END), no bump is
+needed; otherwise bump.
 
 The current box names are documented in [data/services/CLAUDE.md](../data/services/CLAUDE.md).
 Update both files when bumping.

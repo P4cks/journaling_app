@@ -71,6 +71,7 @@ pushes these screens.
 | `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
 | "Theme" + `PalettePicker` | `themeSettings` | horizontal Graphite/user-theme strip |
 | `showThemeEditorSheet`    | —                       | add/edit user themes                |
+| `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `ExpansionTile` "Debug"     | `debugSettings`         | collapsed by default, conditional  |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
