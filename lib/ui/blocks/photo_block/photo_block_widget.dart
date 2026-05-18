@@ -41,9 +41,7 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       _storage.deleteAtPath(previousPath);
     }
     widget.onChanged?.call(
-      JournalBlockData.create(
-        id: widget.data.id,
-        type: widget.data.type,
+      widget.data.copyWith(
         content: PhotoBlockContent(photoPath: newPath).toMap(),
       ),
     );

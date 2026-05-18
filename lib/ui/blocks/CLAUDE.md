@@ -45,12 +45,30 @@ that lives in block-grid sections.
     sections). Cross-grid drag is NOT supported — each grid's
     `DragTarget` is isolated.
 
-- [block_card.dart](block_card.dart) — `BlockCard`. The square chrome
-  for one block: rounded `Container` on `scheme.surfaceContainerHigh`
-  with an explicit `BoxShadow` (alpha 0.55 dark / 0.18 light, 14px blur,
-  +4 Y offset). **Plain `Container`, not `Material(elevation: N)`** —
-  Material elevation in M3 dark themes is mostly tint, which doesn't
-  read against dimmed surfaces. Don't "simplify" back to elevation.
+- [post_it_block.dart](post_it_block.dart) — `PostItBlock`. The square
+  chrome for one block. Replaces the old `BlockCard` and adds the
+  playful post-it look layered on top of it:
+  - **Outer transforms** (visual only — RenderBox stays axis-aligned,
+    so insertion-index math in `BlockGrid` is unaffected):
+    `Transform.translate(visuals.offset)` →
+    `Transform.rotate(visuals.rotationDeg * π/180)` →
+    `AnimatedScale(isDragging ? 1.03 : 1.0)`.
+  - **Decoration**: rounded `Container` (radius 16, 14 in classic
+    mode) with `color = colorFromHex(visuals.colorHex) ?? scheme.surfaceContainerHigh`
+    and an `AnimatedContainer`-tweened `BoxShadow` that grows in
+    blur + alpha when `isDragging`. **Plain `Container`, not
+    `Material(elevation: N)`** — Material elevation in M3 dark themes
+    is mostly tint and doesn't read against dimmed surfaces. Don't
+    "simplify" back to elevation.
+  - **Foreground propagation**: `DefaultTextStyle.merge` +
+    `IconTheme.merge` wrap children with `contrastOn(bg)` so emoji /
+    icons / text stay legible on whatever palette color the block
+    drew.
+  - **Classic mode**: reads `themeSettings.postItModeEnabled` (via
+    `AppDependencies.of(context)`). When `false`, all transforms
+    short-circuit to identity, color falls back to
+    `surfaceContainerHigh`, and the corner radius reverts to 14 —
+    visually identical to the pre-post-it `BlockCard`.
 
 - [block_widget.dart](block_widget.dart) — `BlockWidget`. Dispatches on
   `data.type` and constructs the per-type widget. Adding a new
@@ -86,6 +104,43 @@ that lives in block-grid sections.
   [custom_carousel/CLAUDE.md](custom_carousel/CLAUDE.md).
 
 ---
+
+## Motion on top of drag-and-drop (post-it era)
+
+Layered on the stable-layout drag system below — none of these
+animations affect the grid's RenderBoxes or insertion-index math:
+
+- **Drag**: the source tile's `PostItBlock` receives `isDragging:
+  true` while its index matches `_draggingIndex`. That triggers the
+  `AnimatedScale` to 1.03 and the `AnimatedContainer` to grow the
+  shadow (blur 14 → 24, alpha ×1.6). The `LongPressDraggable.feedback`
+  is also a `PostItBlock` with `isDragging: true` for the same look
+  on the floating preview.
+- **Tap wiggle**: `PostItBlock` wraps its card in a `Listener` that
+  fires on `onPointerDown` without consuming the gesture (so inner
+  TextFields, carousels, and the outer `LongPressDraggable` still
+  receive their events). On post-it mode + not-currently-dragging, it
+  drives a damped ±3° `TweenSequence` rotation that adds onto the
+  static `visuals.rotationDeg`. Acts as edit-affordance feedback —
+  the user sees the post-it react before any inner widget responds.
+  Skipped in classic mode (the calm look stays still).
+- **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
+  with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
+  Effects only run on first mount, so re-orders don't replay them.
+  Skipped when `postItModeEnabled` is false (classic mode stays
+  still).
+- **Delete**: when `didUpdateWidget` notices a block id has gone
+  missing, the tile's last-known `Rect` is snapshotted into a
+  `_PendingDelete` and rendered as an overlay ghost above the grid.
+  The ghost runs `fade → 0` + `scale → 0.7` + `move y +16` (plus a
+  small `rotate` when post-it mode is on) for ~320 ms, then removes
+  itself in `Animate.onComplete`.
+- **Swap (post-drop) is intentionally not animated.** Re-animating
+  swapped tiles requires either remounting (loses TextField focus)
+  or per-tile `AnimationController` plumbing keyed by block id —
+  both have cross-cutting cost. The drop visual is the insertion
+  line + the smooth shadow snap from `isDragging: false`; revisit
+  if the result feels too abrupt.
 
 ## Drag-and-drop (BlockGrid) — how it works
 

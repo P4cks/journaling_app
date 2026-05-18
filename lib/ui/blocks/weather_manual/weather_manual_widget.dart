@@ -91,9 +91,7 @@ class WeatherManualWidget extends StatelessWidget {
         ),
       ),
       onSelected: (id) => onChanged?.call(
-        JournalBlockData.create(
-          id: data.id,
-          type: data.type,
+        data.copyWith(
           content: WeatherBlockContent(conditionId: id).toMap(),
         ),
       ),

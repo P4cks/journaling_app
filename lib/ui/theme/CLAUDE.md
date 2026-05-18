@@ -62,6 +62,13 @@ text colour / brightness flips rebuild live.
   after Graphite, and notifies listeners when a theme is added, edited,
   or deleted. Legacy `custom1`/`custom2`/`custom3` map JSON is still
   decoded for users who tried the earlier slot implementation.
+- **Post-it palette is a separate concept.** `SurfacePalette` is the
+  *theme* palette (one active at a time, owns surface + secondary +
+  accent + text). The post-it palette — a flat `List<String>` of
+  `#RRGGBB` hex on `ThemeSettings.postItPalette` — feeds the random
+  per-block background color in `BlockVisuals.random` at entry
+  materialization. Foreground is computed by `contrastOn(bg)` at
+  render time (in `PostItBlock`), not stored.
 
 ## Gotchas
 

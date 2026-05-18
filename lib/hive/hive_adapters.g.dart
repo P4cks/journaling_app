@@ -66,19 +66,22 @@ class JournalBlockDataAdapter extends TypeAdapter<JournalBlockData> {
       id: fields[0] as String,
       type: fields[1] as BlockType,
       contentJson: fields[2] as String,
+      visualsJson: fields[4] == null ? '{}' : fields[4] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, JournalBlockData obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.type)
       ..writeByte(2)
-      ..write(obj.contentJson);
+      ..write(obj.contentJson)
+      ..writeByte(4)
+      ..write(obj.visualsJson);
   }
 
   @override

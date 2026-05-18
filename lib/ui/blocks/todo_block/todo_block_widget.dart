@@ -59,9 +59,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
 
   void _emit(List<TodoItem> items) {
     widget.onChanged?.call(
-      JournalBlockData.create(
-        id: widget.data.id,
-        type: widget.data.type,
+      widget.data.copyWith(
         content: TodoBlockContent(items: items).toMap(),
       ),
     );

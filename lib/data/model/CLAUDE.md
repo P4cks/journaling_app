@@ -34,12 +34,31 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**
 - [journal_block_data.dart](journal_block_data.dart) — `JournalBlockData`.
-  Fields: `id`, `type` (`BlockType`), `contentJson` (string). The
-  schema-free escape hatch: each block type encodes its data as JSON
-  inside `contentJson`. Typed accessors live in
+  Fields: `id`, `type` (`BlockType`), `contentJson` (string),
+  `visualsJson` (string, defaults to `'{}'`). The `contentJson` field
+  is the schema-free escape hatch: each block type encodes its data
+  as JSON inside it. Typed accessors live in
   [block_content/](block_content/). Use the `JournalBlockData.create`
-  factory (takes a `Map` and `jsonEncode`s it) rather than passing a
-  raw JSON string.
+  factory (takes a `Map` for content + an optional `BlockVisuals`)
+  rather than passing raw JSON strings.
+  - **`visualsJson`** carries the post-it look (per-entry rotation,
+    offset, color hex) as a separate envelope so block-content
+    wrappers can stay focused on their own shape. Parsed lazily via
+    the `visuals` getter (`BlockVisuals.fromJson`).
+  - **`copyWith({contentJson, content, visuals})`** is the safe way
+    to update a block — it preserves `visualsJson` when only
+    `content` changes (use this in widget edit paths). Calling
+    `JournalBlockData.create(...)` without a `visuals` arg would
+    reset the visuals to zero, which wipes the random seed; the
+    `_materializeOne` path is the only place that legitimately
+    constructs fresh visuals via `BlockVisuals.random`.
+- [block_visuals.dart](block_visuals.dart) — `BlockVisuals`. Plain
+  value class wrapping the post-it look:
+  `{ rotationDeg (-2..+2), offsetX (-4..+4), offsetY (-4..+4), colorHex }`.
+  `fromMap` / `fromJson` are tolerant of missing keys (return
+  `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
+  JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
+  used at entry materialization.
 - [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing

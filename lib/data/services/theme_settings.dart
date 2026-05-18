@@ -5,6 +5,19 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
+/// Default post-it palette seeded on first run when the user has not
+/// picked their own colors yet. Muted pastels chosen to read against
+/// both light and dark themes.
+const List<String> kDefaultPostItPalette = [
+  '#FFE066',
+  '#FFADAD',
+  '#FFD6A5',
+  '#CAFFBF',
+  '#9BF6FF',
+  '#BDB2FF',
+  '#FFC6FF',
+];
+
 class ThemeSettings extends ChangeNotifier {
   ThemeSettings(this._settings)
     : _themeMode = _parseMode(_settings.getThemeMode()),
@@ -17,7 +30,9 @@ class ThemeSettings extends ChangeNotifier {
       ),
       _secondaryOverride = colorFromHex(_settings.getThemeSecondary()),
       _accentOverride = colorFromHex(_settings.getThemeAccent()),
-      _debugSurfaceOverride = colorFromHex(_settings.getThemeDebugSurface());
+      _debugSurfaceOverride = colorFromHex(_settings.getThemeDebugSurface()),
+      _postItModeEnabled = _settings.getThemePostItMode() ?? true,
+      _postItPalette = _decodePostItPalette(_settings.getThemePostItPalette());
 
   final SettingsStorageService _settings;
 
@@ -27,6 +42,8 @@ class ThemeSettings extends ChangeNotifier {
   Color? _secondaryOverride;
   Color? _accentOverride;
   Color? _debugSurfaceOverride;
+  bool _postItModeEnabled;
+  List<String> _postItPalette;
 
   ThemeMode get themeMode => _themeMode;
   String get paletteId => _paletteId;
@@ -50,6 +67,51 @@ class ThemeSettings extends ChangeNotifier {
   Color get effectiveSecondary =>
       _secondaryOverride ?? palette.defaultSecondary;
   Color get effectiveAccent => _accentOverride ?? palette.defaultAccent;
+
+  bool get postItModeEnabled => _postItModeEnabled;
+
+  /// Hex strings of the user-configured post-it color palette. Empty when
+  /// the user has cleared every color; new entries materialize with no
+  /// `colorHex` and the block falls back to `surfaceContainerHigh`.
+  List<String> get postItPalette => List.unmodifiable(_postItPalette);
+
+  Future<void> setPostItModeEnabled(bool value) async {
+    if (_postItModeEnabled == value) return;
+    _postItModeEnabled = value;
+    debugPrint('[ThemeSettings] postItModeEnabled -> $value');
+    await _settings.setThemePostItMode(value);
+    notifyListeners();
+  }
+
+  Future<void> addPostItColor(Color color) async {
+    final hex = colorToHex(color);
+    if (_postItPalette.contains(hex)) return;
+    _postItPalette = [..._postItPalette, hex];
+    debugPrint('[ThemeSettings] postItPalette += $hex');
+    await _settings.setThemePostItPalette(jsonEncode(_postItPalette));
+    notifyListeners();
+  }
+
+  Future<void> removePostItColorAt(int index) async {
+    if (index < 0 || index >= _postItPalette.length) return;
+    final next = [..._postItPalette]..removeAt(index);
+    _postItPalette = next;
+    debugPrint('[ThemeSettings] postItPalette[$index] -> removed');
+    await _settings.setThemePostItPalette(
+      next.isEmpty ? null : jsonEncode(next),
+    );
+    notifyListeners();
+  }
+
+  Future<void> setPostItPalette(List<Color> colors) async {
+    final next = [for (final c in colors) colorToHex(c)];
+    _postItPalette = next;
+    debugPrint('[ThemeSettings] postItPalette -> ${next.length} entries');
+    await _settings.setThemePostItPalette(
+      next.isEmpty ? null : jsonEncode(next),
+    );
+    notifyListeners();
+  }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     if (_themeMode == mode) return;
@@ -269,6 +331,20 @@ class ThemeSettings extends ChangeNotifier {
   }
 
   static String? _stringValue(Object? value) => value is String ? value : null;
+
+  static List<String> _decodePostItPalette(String? raw) {
+    if (raw == null || raw.isEmpty) return List.of(kDefaultPostItPalette);
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return [
+          for (final item in decoded)
+            if (item is String && item.isNotEmpty) item,
+        ];
+      }
+    } catch (_) {}
+    return List.of(kDefaultPostItPalette);
+  }
 
   static String _encodeCustomPalettes(List<SurfacePalette> palettes) {
     final encoded = [
