@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
-import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -34,7 +33,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Post-it style",
-              widget: [
+              children: [
                 ListenableBuilder(
                   listenable: theme,
                   builder: (context, _) => _PostItStyleSection(theme: theme),
@@ -531,24 +530,6 @@ class _AddPostItSwatch extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Icon(PhosphorIconsBold.plus, size: 18, color: scheme.onSurface),
-      ),
-    );
-  }
-}
-
-class _ExpansionTitle extends StatelessWidget {
-  const _ExpansionTitle(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: scheme.primary,
-        fontWeight: FontWeight.w600,
       ),
     );
   }
