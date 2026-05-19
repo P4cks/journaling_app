@@ -6,16 +6,16 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
 ## Files
 
 - [mood_tracker_widget.dart](mood_tracker_widget.dart) — `MoodTrackerWidget`.
-  Stateless. Decodes `MoodBlockContent`, renders the centred emoji in
-  `BlockMode.readOnly`, otherwise delegates to
-  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  which owns the PageController, expand/collapse state, and timer. The
-  body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
-  with the hardcoded label `"How are you feeling?"` when
-  `BlockSettings.carouselTitlesEnabled` is true (read via a
-  `ListenableBuilder` on `BlockSettings`), or `null` (no title row)
-  when the global toggle is off. The user does **not** edit this
-  string anywhere — it is per-block-type and intentional.
+  Stateless. Thin wrapper around
+  [CarouselBlockScaffold](../widgets/carousel_block_scaffold.dart)`<String>`:
+  decodes `MoodBlockContent.emoji`, supplies `moodEmojis` as the
+  options list, and renders each option as `Text(emoji, fontSize: 56)`.
+  The hardcoded title `"How are you feeling?"` is gated by
+  `BlockSettings.carouselTitlesEnabled` (read via a `ListenableBuilder`
+  on `BlockSettings`). The scaffold owns the read-only em-dash
+  placeholder, the focus animation, and the `BlockWithTitle` wrap.
+  The user does **not** edit the title — it is per-block-type and
+  intentional.
 
 ## Modes
 

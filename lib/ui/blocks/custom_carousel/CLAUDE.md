@@ -17,16 +17,17 @@ Typed wrapper:
 
 - [custom_carousel_widget.dart](custom_carousel_widget.dart) —
   `CustomCarouselWidget`. Stateless. Subscribes to `BlockSettings` via
-  `ListenableBuilder` so registry edits propagate. Wraps the body in
-  [BlockWithTitle](../widgets/block_with_title.dart) using the
-  definition's title — but only when `BlockSettings.carouselTitlesEnabled`
-  is true. When the global toggle is off, every custom carousel
-  passes `null` to `BlockWithTitle` regardless of the per-definition
-  title. (When the toggle is on, an empty `definition.title` still
-  collapses the row via `BlockWithTitle`'s null/empty-skip.)
-  Delegates to
-  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)`<CarouselItem>`
-  for the carousel mechanic (same UX as mood / weatherManual).
+  `ListenableBuilder` so registry edits propagate. Handles orphan /
+  itemless-definition / preserved-pick branches locally
+  (`_DeletedPlaceholder`, raw `Center(_renderItem(preserved, true))`).
+  Once a non-null definition with non-empty items resolves, delegates
+  to [CarouselBlockScaffold](../widgets/carousel_block_scaffold.dart)`<CarouselItem>`
+  with `definition.title` (gated by `BlockSettings.carouselTitlesEnabled`)
+  and the local `_renderItem` switch as the `itemBuilder`. The scaffold
+  owns the focus animation, the read-only em-dash placeholder for the
+  not-yet-picked state, and the `BlockWithTitle` wrap; orphan handling
+  intentionally stays here because the scaffold only sees a resolved
+  definition.
 - [carousel_icon_catalogue.dart](carousel_icon_catalogue.dart) —
   `CarouselIcon` + `kCarouselIcons` curated list (~40 Phosphor
   duotone/fill pairs covering nature, activities, food, productivity,
