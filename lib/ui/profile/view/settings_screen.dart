@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/settings_nav_tile.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
@@ -42,25 +42,21 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Journal templates",
-              children: [
-                ListTile(
-                  leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
-                  title: const Text('Manage templates'),
-                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
-                  onTap: () => context.push(Routes.layouts),
+              children: const [
+                SettingsNavTile(
+                  icon: PhosphorIconsDuotone.squaresFour,
+                  title: 'Manage templates',
+                  route: Routes.layouts,
                 ),
               ],
             ),
             SettingsSection(
               label: "Blocks",
-              children: [
-                ListTile(
-                  leading: const AppIcon(
-                    PhosphorIconsDuotone.slidersHorizontal,
-                  ),
-                  title: const Text('Configure blocks'),
-                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
-                  onTap: () => context.push(Routes.blockSettings),
+              children: const [
+                SettingsNavTile(
+                  icon: PhosphorIconsDuotone.slidersHorizontal,
+                  title: 'Configure blocks',
+                  route: Routes.blockSettings,
                 ),
               ],
             ),

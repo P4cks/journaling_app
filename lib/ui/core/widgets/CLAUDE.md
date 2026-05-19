@@ -23,6 +23,11 @@ for how they fit together; this file is per-file notes.
   Canonical grouped-settings wrapper: `label` renders through
   `SectionHeader`, and `children` are padded rows/controls followed by
   a divider. Import this file directly for settings-style groups.
+- [settings_nav_tile.dart](settings_nav_tile.dart) — `SettingsNavTile`.
+  Icon + title + caret-right `ListTile` that pushes a named `route`
+  via `context.push`. Used for navigation rows inside settings
+  sections that only route to another screen (e.g. Settings → Manage
+  templates / Configure blocks).
 - [streak_stat_card.dart](streak_stat_card.dart) — `StreakStatCard` +
   private nudge widget. Renders a `StreakResult` from
   [services/streak_service.dart](../../../data/services/streak_service.dart).
