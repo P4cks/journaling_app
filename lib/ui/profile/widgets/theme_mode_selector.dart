@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ThemeModeSelector extends StatelessWidget {
   const ThemeModeSelector({
@@ -15,21 +15,21 @@ class ThemeModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SegmentedButton<ThemeMode>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: ThemeMode.system,
-          label: Text('System'),
-          icon: AppIcon(PhosphorIconsDuotone.deviceMobile),
+          label: const Text('System'),
+          icon: AppIcon(HugeIcons.strokeRoundedSmartPhone01),
         ),
         ButtonSegment(
           value: ThemeMode.light,
-          label: Text('Light'),
-          icon: AppIcon(PhosphorIconsDuotone.sun),
+          label: const Text('Light'),
+          icon: AppIcon(HugeIcons.strokeRoundedSun01),
         ),
         ButtonSegment(
           value: ThemeMode.dark,
-          label: Text('Dark'),
-          icon: AppIcon(PhosphorIconsDuotone.moon),
+          label: const Text('Dark'),
+          icon: AppIcon(HugeIcons.strokeRoundedMoon),
         ),
       ],
       selected: {value},

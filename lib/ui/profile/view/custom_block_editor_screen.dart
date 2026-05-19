@@ -4,8 +4,8 @@ import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/custom_block_editor_view_model.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Create / edit a `CustomCarouselDefinition`. Mirrors
 /// `LayoutEditorScreen`'s draft + Cancel/Discard/Save-on-leave pattern.
@@ -209,7 +209,7 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _addEmoji,
-                    icon: const AppIcon(PhosphorIconsDuotone.smiley),
+                    icon: AppIcon(HugeIcons.strokeRoundedSmile),
                     label: const Text('Add emoji'),
                   ),
                 ),
@@ -217,7 +217,7 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _addIcon,
-                    icon: const AppIcon(PhosphorIconsDuotone.shapes),
+                    icon: AppIcon(HugeIcons.strokeRoundedShapes),
                     label: const Text('Add icon'),
                   ),
                 ),
@@ -253,8 +253,7 @@ class _ItemRow extends StatelessWidget {
       ),
       CarouselItemKind.icon =>
         AppIcon(
-          carouselIconFor(item.value)?.duotone ??
-              PhosphorIconsDuotone.question,
+          carouselIconFor(item.value)?.icon ?? HugeIcons.strokeRoundedQuestion,
           size: 28,
         ),
     };
@@ -274,17 +273,17 @@ class _ItemRow extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onRemove,
-              icon: Icon(
-                PhosphorIconsDuotone.x,
+              icon: AppIcon(
+                HugeIcons.strokeRoundedCancel01,
                 color: theme.colorScheme.error,
               ),
               tooltip: 'Remove',
             ),
             ReorderableDragStartListener(
               index: index,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: AppIcon(PhosphorIconsDuotone.dotsSixVertical),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: AppIcon(HugeIcons.strokeRoundedMoreVertical),
               ),
             ),
           ],
@@ -421,7 +420,7 @@ class _PickerTile extends StatelessWidget {
             border: Border.all(color: scheme.outlineVariant),
           ),
           alignment: Alignment.center,
-          child: AppIcon(icon.duotone, size: 28),
+          child: AppIcon(icon.icon, size: 28),
         ),
       ),
     );

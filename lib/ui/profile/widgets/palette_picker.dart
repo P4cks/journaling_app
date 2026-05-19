@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class PalettePicker extends StatelessWidget {
   const PalettePicker({
@@ -71,7 +71,7 @@ class _AddThemeTile extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppIcon(PhosphorIconsDuotone.plusCircle, size: 18),
+            AppIcon(HugeIcons.strokeRoundedPlusSignCircle, size: 18),
             const SizedBox(width: 8),
             Text('Add theme', style: Theme.of(context).textTheme.labelLarge),
           ],
@@ -137,7 +137,7 @@ class _PaletteTile extends StatelessWidget {
                 const Spacer(),
                 if (selected)
                   AppIcon(
-                    PhosphorIconsFill.checkCircle,
+                    HugeIcons.strokeRoundedCheckmarkCircle01,
                     size: 18,
                     color: scheme.primary,
                   ),
@@ -161,12 +161,12 @@ class _PaletteTile extends StatelessWidget {
                 if (canEdit) ...[
                   const SizedBox(width: 12),
                   _TileIconButton(
-                    icon: PhosphorIconsDuotone.pencilSimple,
+                    icon: HugeIcons.strokeRoundedPencil,
                     color: foreground,
                     onTap: onEdit!,
                   ),
                   _TileIconButton(
-                    icon: PhosphorIconsDuotone.trash,
+                    icon: HugeIcons.strokeRoundedDelete02,
                     color: foreground,
                     onTap: onDelete!,
                   ),
@@ -187,7 +187,7 @@ class _TileIconButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final Color color;
   final VoidCallback onTap;
 
@@ -198,7 +198,7 @@ class _TileIconButton extends StatelessWidget {
       radius: 18,
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: AppIcon(icon, size: 18, color: color, secondaryColor: color),
+        child: AppIcon(icon, size: 18, color: color),
       ),
     );
   }

@@ -1,224 +1,192 @@
-import 'package:flutter/widgets.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
-/// Curated catalogue of icons selectable for a `JournalLayout`. Names are
-/// the Phosphor identifier (e.g. `"squaresFour"`) so we persist plain
-/// strings — no need for a Hive adapter on `IconData`. New entries can be
-/// appended; removing one would orphan any layout that was saved with
-/// that name (it would fall back to the default icon, which is fine).
+/// Curated catalogue of icons selectable for a `JournalLayout`. Names
+/// are stable string ids (originally Phosphor identifiers; kept as-is
+/// after the HugeIcons migration so existing saved layouts still
+/// resolve). We persist plain strings — no need for a Hive adapter on
+/// the underlying icon data. New entries can be appended; removing one
+/// would orphan any layout that was saved with that name (it falls
+/// back to the default icon, which is fine).
 class LayoutIcon {
   const LayoutIcon({
     required this.name,
-    required this.duotone,
-    required this.fill,
+    required this.icon,
     required this.label,
   });
 
   final String name;
-  final IconData duotone;
-  final IconData fill;
+  final HugeIconData icon;
   final String label;
 }
 
 const kDefaultLayoutIconName = 'squaresFour';
 
-const kLayoutIcons = <LayoutIcon>[
+final kLayoutIcons = <LayoutIcon>[
   // Default
   LayoutIcon(
     name: 'squaresFour',
-    duotone: PhosphorIconsDuotone.squaresFour,
-    fill: PhosphorIconsFill.squaresFour,
+    icon: HugeIcons.strokeRoundedGrid,
     label: 'Grid',
   ),
   // Writing & notes
   LayoutIcon(
     name: 'notebook',
-    duotone: PhosphorIconsDuotone.notebook,
-    fill: PhosphorIconsFill.notebook,
+    icon: HugeIcons.strokeRoundedNotebook01,
     label: 'Notebook',
   ),
   LayoutIcon(
     name: 'notepad',
-    duotone: PhosphorIconsDuotone.notepad,
-    fill: PhosphorIconsFill.notepad,
+    icon: HugeIcons.strokeRoundedNotebook02,
     label: 'Notepad',
   ),
   LayoutIcon(
     name: 'book',
-    duotone: PhosphorIconsDuotone.book,
-    fill: PhosphorIconsFill.book,
+    icon: HugeIcons.strokeRoundedBook01,
     label: 'Book',
   ),
   LayoutIcon(
     name: 'bookOpen',
-    duotone: PhosphorIconsDuotone.bookOpen,
-    fill: PhosphorIconsFill.bookOpen,
+    icon: HugeIcons.strokeRoundedBookOpen01,
     label: 'Book open',
   ),
   LayoutIcon(
     name: 'pencilSimple',
-    duotone: PhosphorIconsDuotone.pencilSimple,
-    fill: PhosphorIconsFill.pencilSimple,
+    icon: HugeIcons.strokeRoundedPencil,
     label: 'Pencil',
   ),
   LayoutIcon(
     name: 'feather',
-    duotone: PhosphorIconsDuotone.feather,
-    fill: PhosphorIconsFill.feather,
+    icon: HugeIcons.strokeRoundedQuillWrite01,
     label: 'Feather',
   ),
   // Mood / mind
   LayoutIcon(
     name: 'smiley',
-    duotone: PhosphorIconsDuotone.smiley,
-    fill: PhosphorIconsFill.smiley,
+    icon: HugeIcons.strokeRoundedSmile,
     label: 'Mood',
   ),
   LayoutIcon(
     name: 'heart',
-    duotone: PhosphorIconsDuotone.heart,
-    fill: PhosphorIconsFill.heart,
+    icon: HugeIcons.strokeRoundedFavourite,
     label: 'Heart',
   ),
   LayoutIcon(
     name: 'brain',
-    duotone: PhosphorIconsDuotone.brain,
-    fill: PhosphorIconsFill.brain,
+    icon: HugeIcons.strokeRoundedBrain,
     label: 'Brain',
   ),
   LayoutIcon(
     name: 'lightbulb',
-    duotone: PhosphorIconsDuotone.lightbulb,
-    fill: PhosphorIconsFill.lightbulb,
+    icon: HugeIcons.strokeRoundedBulb,
     label: 'Idea',
   ),
   LayoutIcon(
     name: 'star',
-    duotone: PhosphorIconsDuotone.star,
-    fill: PhosphorIconsFill.star,
+    icon: HugeIcons.strokeRoundedStar,
     label: 'Star',
   ),
   LayoutIcon(
     name: 'flame',
-    duotone: PhosphorIconsDuotone.flame,
-    fill: PhosphorIconsFill.flame,
+    icon: HugeIcons.strokeRoundedFire,
     label: 'Flame',
   ),
   // Lists / planning
   LayoutIcon(
     name: 'listChecks',
-    duotone: PhosphorIconsDuotone.listChecks,
-    fill: PhosphorIconsFill.listChecks,
+    icon: HugeIcons.strokeRoundedCheckList,
     label: 'Checklist',
   ),
   LayoutIcon(
     name: 'listBullets',
-    duotone: PhosphorIconsDuotone.listBullets,
-    fill: PhosphorIconsFill.listBullets,
+    icon: HugeIcons.strokeRoundedLeftToRightListBullet,
     label: 'List',
   ),
   LayoutIcon(
     name: 'target',
-    duotone: PhosphorIconsDuotone.target,
-    fill: PhosphorIconsFill.target,
+    icon: HugeIcons.strokeRoundedTarget01,
     label: 'Target',
   ),
   LayoutIcon(
     name: 'flag',
-    duotone: PhosphorIconsDuotone.flag,
-    fill: PhosphorIconsFill.flag,
+    icon: HugeIcons.strokeRoundedFlag01,
     label: 'Flag',
   ),
   // Weather / nature
   LayoutIcon(
     name: 'sun',
-    duotone: PhosphorIconsDuotone.sun,
-    fill: PhosphorIconsFill.sun,
+    icon: HugeIcons.strokeRoundedSun01,
     label: 'Sun',
   ),
   LayoutIcon(
     name: 'moon',
-    duotone: PhosphorIconsDuotone.moon,
-    fill: PhosphorIconsFill.moon,
+    icon: HugeIcons.strokeRoundedMoon,
     label: 'Moon',
   ),
   LayoutIcon(
     name: 'cloud',
-    duotone: PhosphorIconsDuotone.cloud,
-    fill: PhosphorIconsFill.cloud,
+    icon: HugeIcons.strokeRoundedCloud,
     label: 'Cloud',
   ),
   LayoutIcon(
     name: 'drop',
-    duotone: PhosphorIconsDuotone.drop,
-    fill: PhosphorIconsFill.drop,
+    icon: HugeIcons.strokeRoundedDroplet,
     label: 'Drop',
   ),
   LayoutIcon(
     name: 'leaf',
-    duotone: PhosphorIconsDuotone.leaf,
-    fill: PhosphorIconsFill.leaf,
+    icon: HugeIcons.strokeRoundedLeaf01,
     label: 'Leaf',
   ),
   LayoutIcon(
     name: 'tree',
-    duotone: PhosphorIconsDuotone.tree,
-    fill: PhosphorIconsFill.tree,
+    icon: HugeIcons.strokeRoundedTree01,
     label: 'Tree',
   ),
   LayoutIcon(
     name: 'mountains',
-    duotone: PhosphorIconsDuotone.mountains,
-    fill: PhosphorIconsFill.mountains,
+    icon: HugeIcons.strokeRoundedMountain,
     label: 'Mountains',
   ),
   // Lifestyle
   LayoutIcon(
     name: 'coffee',
-    duotone: PhosphorIconsDuotone.coffee,
-    fill: PhosphorIconsFill.coffee,
+    icon: HugeIcons.strokeRoundedCoffee01,
     label: 'Coffee',
   ),
   LayoutIcon(
     name: 'forkKnife',
-    duotone: PhosphorIconsDuotone.forkKnife,
-    fill: PhosphorIconsFill.forkKnife,
+    icon: HugeIcons.strokeRoundedRestaurant01,
     label: 'Food',
   ),
   LayoutIcon(
     name: 'barbell',
-    duotone: PhosphorIconsDuotone.barbell,
-    fill: PhosphorIconsFill.barbell,
+    icon: HugeIcons.strokeRoundedDumbbell01,
     label: 'Workout',
   ),
   LayoutIcon(
     name: 'musicNote',
-    duotone: PhosphorIconsDuotone.musicNote,
-    fill: PhosphorIconsFill.musicNote,
+    icon: HugeIcons.strokeRoundedMusicNote01,
     label: 'Music',
   ),
   LayoutIcon(
     name: 'camera',
-    duotone: PhosphorIconsDuotone.camera,
-    fill: PhosphorIconsFill.camera,
+    icon: HugeIcons.strokeRoundedCamera01,
     label: 'Camera',
   ),
   LayoutIcon(
     name: 'airplane',
-    duotone: PhosphorIconsDuotone.airplane,
-    fill: PhosphorIconsFill.airplane,
+    icon: HugeIcons.strokeRoundedAirplane01,
     label: 'Travel',
   ),
   LayoutIcon(
     name: 'gift',
-    duotone: PhosphorIconsDuotone.gift,
-    fill: PhosphorIconsFill.gift,
+    icon: HugeIcons.strokeRoundedGift,
     label: 'Gift',
   ),
   LayoutIcon(
     name: 'briefcase',
-    duotone: PhosphorIconsDuotone.briefcase,
-    fill: PhosphorIconsFill.briefcase,
+    icon: HugeIcons.strokeRoundedBriefcase01,
     label: 'Work',
   ),
 ];

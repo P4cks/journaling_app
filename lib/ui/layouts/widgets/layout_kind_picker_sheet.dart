@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Modal bottom sheet that lets the user pick a [LayoutKind] when
 /// creating a new layout. Returns the chosen kind, or `null` if
@@ -24,14 +24,14 @@ Future<LayoutKind?> showLayoutKindPickerSheet(BuildContext context) {
             ),
           ),
           _KindTile(
-            icon: PhosphorIconsDuotone.squaresFour,
+            icon: HugeIcons.strokeRoundedGrid,
             label: 'Only blocks',
             description:
                 'A single grid of 1×1 blocks. Add, remove, and reorder them freely.',
             onTap: () => Navigator.of(sheetContext).pop(LayoutKind.blockOnly),
           ),
           _KindTile(
-            icon: PhosphorIconsDuotone.layout,
+            icon: HugeIcons.strokeRoundedLayout01,
             label: '4 blocks + text',
             description:
                 'A 2×2 block grid above a text section. Pick the four block types — structure is locked.',
@@ -39,7 +39,7 @@ Future<LayoutKind?> showLayoutKindPickerSheet(BuildContext context) {
                 Navigator.of(sheetContext).pop(LayoutKind.fixedFourPlusText),
           ),
           _KindTile(
-            icon: PhosphorIconsDuotone.stackPlus,
+            icon: HugeIcons.strokeRoundedAddCircle,
             label: 'Fully customizable',
             description:
                 'Add as many sections as you like — text or block-grid (1–4 rows).',
@@ -60,7 +60,7 @@ class _KindTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String label;
   final String description;
   final VoidCallback onTap;

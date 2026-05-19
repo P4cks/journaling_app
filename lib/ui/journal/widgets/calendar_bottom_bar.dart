@@ -3,7 +3,7 @@ import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 /// `TableCalendar.eventLoader` sentinel — the package only checks list
@@ -89,7 +89,7 @@ class _Bar extends StatelessWidget {
                 tooltip: 'Open month view',
                 onPressed: () => _openMonthSheet(context),
                 icon: AppIcon(
-                  PhosphorIconsDuotone.calendarBlank,
+                  HugeIcons.strokeRoundedCalendar01,
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -282,11 +282,11 @@ class _MonthCalendarState extends State<_MonthCalendar> {
                 ) ??
                 TextStyle(color: scheme.onSurface),
             leftChevronIcon: AppIcon(
-              PhosphorIconsDuotone.caretLeft,
+              HugeIcons.strokeRoundedArrowLeft01,
               color: scheme.onSurface,
             ),
             rightChevronIcon: AppIcon(
-              PhosphorIconsDuotone.caretRight,
+              HugeIcons.strokeRoundedArrowRight01,
               color: scheme.onSurface,
             ),
           ),

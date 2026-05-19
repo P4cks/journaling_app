@@ -12,8 +12,8 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
@@ -163,7 +163,7 @@ class _AddBlockSheetBody extends StatelessWidget {
                     Navigator.of(context).pop();
                     context.push(Routes.newCustomBlock);
                   },
-                  icon: const AppIcon(PhosphorIconsDuotone.plus),
+                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
                   label: const Text('Add custom block'),
                 ),
               ),

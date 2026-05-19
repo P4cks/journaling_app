@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Modal bottom sheet that picks a new section type — text or
 /// block-grid. Returns the picked [SectionKind] or `null` on dismiss.
@@ -25,13 +25,13 @@ Future<SectionKind?> showAddSectionSheet(BuildContext context) {
             ),
           ),
           ListTile(
-            leading: const AppIcon(PhosphorIconsDuotone.textT),
+            leading: AppIcon(HugeIcons.strokeRoundedTextFont),
             title: const Text('Text section'),
             subtitle: const Text('A full-width multi-line text area.'),
             onTap: () => Navigator.of(sheetContext).pop(SectionKind.text),
           ),
           ListTile(
-            leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
+            leading: AppIcon(HugeIcons.strokeRoundedGrid),
             title: const Text('Block grid'),
             subtitle: const Text(
               'A 2-column grid of 1×1 blocks. Add blocks to grow it.',
@@ -39,7 +39,7 @@ Future<SectionKind?> showAddSectionSheet(BuildContext context) {
             onTap: () => Navigator.of(sheetContext).pop(SectionKind.blockGrid),
           ),
           ListTile(
-            leading: const AppIcon(PhosphorIconsDuotone.frameCorners),
+            leading: AppIcon(HugeIcons.strokeRoundedKeyframe),
             title: const Text('Feature block'),
             subtitle: const Text(
               'A large 2×2 single block — photo or memory.',

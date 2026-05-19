@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/app_user.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Top-bar profile button. Opens a popup menu containing a streak
 /// summary and auth-state-aware items: when signed out, a "Sign in"
@@ -67,8 +67,8 @@ class ProfileMenuButton extends StatelessWidget {
           tooltip: 'Profile',
           icon: AppIcon(
             isSignedIn
-                ? PhosphorIconsDuotone.userCircleCheck
-                : PhosphorIconsDuotone.userCircle,
+                ? HugeIcons.strokeRoundedUserCheck01
+                : HugeIcons.strokeRoundedUserCircle,
             color: scheme.onSurface,
           ),
           position: PopupMenuPosition.under,
@@ -113,39 +113,39 @@ class ProfileMenuButton extends StatelessWidget {
               ),
             const PopupMenuDivider(),
             if (isSignedIn)
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'sign-out',
                 child: _MenuRow(
-                  icon: PhosphorIconsDuotone.signOut,
+                  icon: HugeIcons.strokeRoundedLogout01,
                   label: 'Sign out',
                 ),
               )
             else if (isConfigured)
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'sign-in',
                 child: _MenuRow(
-                  icon: PhosphorIconsDuotone.signIn,
+                  icon: HugeIcons.strokeRoundedLogin01,
                   label: 'Sign in',
                 ),
               ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'settings',
               child: _MenuRow(
-                icon: PhosphorIconsDuotone.gear,
+                icon: HugeIcons.strokeRoundedSettings01,
                 label: 'Settings',
               ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'layouts',
               child: _MenuRow(
-                icon: PhosphorIconsDuotone.squaresFour,
+                icon: HugeIcons.strokeRoundedGrid,
                 label: 'Layouts',
               ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'block-settings',
               child: _MenuRow(
-                icon: PhosphorIconsDuotone.slidersHorizontal,
+                icon: HugeIcons.strokeRoundedFilterHorizontal,
                 label: 'Block settings',
               ),
             ),
@@ -159,7 +159,7 @@ class ProfileMenuButton extends StatelessWidget {
 class _MenuRow extends StatelessWidget {
   const _MenuRow({required this.icon, required this.label});
 
-  final IconData icon;
+  final HugeIconData icon;
   final String label;
 
   @override
@@ -194,7 +194,7 @@ class _StreakHeader extends StatelessWidget {
           child: Row(
             children: [
               AppIcon(
-                PhosphorIconsDuotone.flame,
+                HugeIcons.strokeRoundedFire,
                 size: 22,
                 color: scheme.primary,
               ),
@@ -245,7 +245,7 @@ class _SignedInHeader extends StatelessWidget {
       child: Row(
         children: [
           AppIcon(
-            PhosphorIconsDuotone.userCircleCheck,
+            HugeIcons.strokeRoundedUserCheck01,
             size: 22,
             color: scheme.primary,
           ),
@@ -263,7 +263,7 @@ class _SignedInHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           AppIcon(
-            PhosphorIconsBold.caretRight,
+            HugeIcons.strokeRoundedArrowRight01,
             size: 14,
             color: scheme.onSurfaceVariant,
           ),

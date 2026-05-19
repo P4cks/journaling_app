@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 
@@ -52,7 +52,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
         delegate: SliverChildBuilderDelegate((listCtx, index) {
           final layout = layouts[index];
           return ListTile(
-            leading: AppIcon(layoutIconFor(layout.iconName).duotone),
+            leading: HugeIcon(icon: layoutIconFor(layout.iconName).icon),
             title: Text(layout.name),
             subtitle: Text(_summarize(layout)),
             onTap: () => Navigator.of(listCtx).pop(layout),

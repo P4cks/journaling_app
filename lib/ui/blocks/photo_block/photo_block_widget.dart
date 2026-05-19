@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -8,7 +9,6 @@ import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart'
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// One image filling the 1×1 cell. Empty state shows a centred "+ Add
 /// photo" affordance that opens a Camera / Gallery action sheet. Once
@@ -75,12 +75,12 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const AppIcon(PhosphorIconsDuotone.camera),
+                leading: AppIcon(HugeIcons.strokeRoundedCamera01),
                 title: const Text('Take photo'),
                 onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
               ),
               ListTile(
-                leading: const AppIcon(PhosphorIconsDuotone.image),
+                leading: AppIcon(HugeIcons.strokeRoundedImage01),
                 title: const Text('Choose from library'),
                 onTap: () =>
                     Navigator.of(sheetContext).pop(ImageSource.gallery),
@@ -104,13 +104,13 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const AppIcon(PhosphorIconsDuotone.swap),
+                leading: AppIcon(HugeIcons.strokeRoundedExchange01),
                 title: const Text('Replace'),
                 onTap: () => Navigator.of(sheetContext).pop('replace'),
               ),
               ListTile(
                 leading: AppIcon(
-                  PhosphorIconsDuotone.trash,
+                  HugeIcons.strokeRoundedDelete02,
                   color: Theme.of(sheetContext).colorScheme.error,
                 ),
                 title: Text(
@@ -162,7 +162,7 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               AppIcon(
-                PhosphorIconsBold.plus,
+                HugeIcons.strokeRoundedPlusSign,
                 size: 32,
                 color: theme.colorScheme.primary,
               ),

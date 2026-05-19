@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -13,7 +14,6 @@ import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/no_entry_read_only.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/profile_menu_button.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// The merged main screen. Hosts the AppBar (editable title + date
 /// subtitle + Change-layout / Entries / Profile actions), the swipe
@@ -185,7 +185,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                   IconButton(
                     tooltip: 'Change layout',
                     onPressed: _showChangeLayoutSheet,
-                    icon: const AppIcon(PhosphorIconsDuotone.squaresFour),
+                    icon: AppIcon(HugeIcons.strokeRoundedGrid),
                   )
                 else if (!editable)
                   Padding(
@@ -193,7 +193,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                     child: Tooltip(
                       message: 'Past entries are read-only',
                       child: AppIcon(
-                        PhosphorIconsDuotone.lock,
+                        HugeIcons.strokeRoundedLock,
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
@@ -201,7 +201,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                 IconButton(
                   tooltip: 'Statistics',
                   onPressed: _openStatistics,
-                  icon: const AppIcon(PhosphorIconsDuotone.chartBar),
+                  icon: AppIcon(HugeIcons.strokeRoundedChartBarLine),
                 ),
                 const ProfileMenuButton(),
               ];

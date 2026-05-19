@@ -19,8 +19,8 @@ import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_section_sheet.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_icon_picker.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Build a preview `JournalBlockData` for a layout-editor slot. For
 /// built-in types we delegate to `BlockTypeDisplay.sampleData`. For
@@ -178,12 +178,12 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               IconButton(
                 tooltip: 'Add block',
                 onPressed: _addBlockBlockOnly,
-                icon: const AppIcon(PhosphorIconsBold.plus),
+                icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
               ),
             IconButton(
               tooltip: 'Change icon',
               onPressed: _pickIcon,
-              icon: AppIcon(layoutIconFor(vm.iconName).duotone),
+              icon: AppIcon(layoutIconFor(vm.iconName).icon),
             ),
           ],
         ),
@@ -239,7 +239,7 @@ class _BlockOnlyBody extends StatelessWidget {
         iconSize: 18,
         visualDensity: VisualDensity.compact,
         icon: AppIcon(
-          PhosphorIconsBold.x,
+          HugeIcons.strokeRoundedCancel01,
           color: scheme.onSurfaceVariant,
         ),
         onPressed: () => vm.removeSlot(block.id),
@@ -372,7 +372,7 @@ class _FilledCell extends StatelessWidget {
           padding: const EdgeInsets.all(2),
           constraints: const BoxConstraints(),
           icon: AppIcon(
-            PhosphorIconsBold.x,
+            HugeIcons.strokeRoundedCancel01,
             color: scheme.onSurfaceVariant,
           ),
           onPressed: onRemove,
@@ -415,7 +415,7 @@ class _EmptyAddBlockCell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(PhosphorIconsBold.plus, color: color, size: 24),
+            AppIcon(HugeIcons.strokeRoundedPlusSign, color: color, size: 24),
             const SizedBox(height: 4),
             Text(
               'Add block',
@@ -554,14 +554,14 @@ class _SectionCard extends StatelessWidget {
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
                   onPressed: isFirst ? null : () => vm.moveSection(index, index - 1),
-                  icon: const AppIcon(PhosphorIconsBold.arrowUp),
+                  icon: AppIcon(HugeIcons.strokeRoundedArrowUp01),
                 ),
                 IconButton(
                   tooltip: 'Move down',
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
                   onPressed: isLast ? null : () => vm.moveSection(index, index + 1),
-                  icon: const AppIcon(PhosphorIconsBold.arrowDown),
+                  icon: AppIcon(HugeIcons.strokeRoundedArrowDown01),
                 ),
                 IconButton(
                   tooltip: 'Remove section',
@@ -573,7 +573,7 @@ class _SectionCard extends StatelessWidget {
                     vm.removeSection(section.id);
                   },
                   icon: AppIcon(
-                    PhosphorIconsBold.trash,
+                    HugeIcons.strokeRoundedDelete02,
                     color: theme.colorScheme.error,
                   ),
                 ),
@@ -623,7 +623,7 @@ class _BlockGridSectionBody extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
             onPressed: () => _addBlock(context),
-            icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+            icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
             label: const Text('Add block'),
           ),
         ),
@@ -655,7 +655,7 @@ class _BlockGridSectionBody extends StatelessWidget {
               iconSize: 16,
               visualDensity: VisualDensity.compact,
               icon: AppIcon(
-                PhosphorIconsBold.x,
+                HugeIcons.strokeRoundedCancel01,
                 color: scheme.onSurfaceVariant,
               ),
               onPressed: () => vm.removeSlotInSection(sectionId, block.id),
@@ -667,7 +667,7 @@ class _BlockGridSectionBody extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 onPressed: () => _addBlock(context),
-                icon: const AppIcon(PhosphorIconsBold.plus, size: 16),
+                icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
                 label: const Text('Add block'),
               ),
             ),
@@ -759,7 +759,7 @@ class _AddSectionTapZone extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppIcon(PhosphorIconsBold.plus, color: theme.colorScheme.primary),
+              AppIcon(HugeIcons.strokeRoundedPlusSign, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'Add section',

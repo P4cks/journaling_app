@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SummaryNumbersCard extends StatelessWidget {
   const SummaryNumbersCard({
@@ -33,7 +33,7 @@ class SummaryNumbersCard extends StatelessWidget {
           children: [
             Expanded(
               child: _Cell(
-                icon: PhosphorIconsDuotone.bookOpen,
+                icon: HugeIcons.strokeRoundedBookOpen01,
                 label: 'Entries',
                 value: totalEntries,
               ),
@@ -41,7 +41,7 @@ class SummaryNumbersCard extends StatelessWidget {
             _Divider(),
             Expanded(
               child: _Cell(
-                icon: PhosphorIconsDuotone.textT,
+                icon: HugeIcons.strokeRoundedTextFont,
                 label: 'Words',
                 value: totalWords,
               ),
@@ -49,7 +49,7 @@ class SummaryNumbersCard extends StatelessWidget {
             _Divider(),
             Expanded(
               child: _Cell(
-                icon: PhosphorIconsDuotone.smiley,
+                icon: HugeIcons.strokeRoundedSmile,
                 label: 'Moods',
                 value: totalMoodEntries,
               ),
@@ -57,7 +57,7 @@ class SummaryNumbersCard extends StatelessWidget {
             _Divider(),
             Expanded(
               child: _Cell(
-                icon: PhosphorIconsDuotone.flame,
+                icon: HugeIcons.strokeRoundedFire,
                 label: 'Streak',
                 value: currentStreak,
               ),
@@ -76,7 +76,7 @@ class _Cell extends StatelessWidget {
     required this.value,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String label;
   final int value;
 

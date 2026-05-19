@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Icon + title + caret-right `ListTile` that pushes [route].
 ///
@@ -16,7 +16,7 @@ class SettingsNavTile extends StatelessWidget {
     required this.route,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String title;
   final String route;
 
@@ -25,7 +25,7 @@ class SettingsNavTile extends StatelessWidget {
     return ListTile(
       leading: AppIcon(icon),
       title: Text(title),
-      trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
+      trailing: AppIcon(HugeIcons.strokeRoundedArrowRight01),
       onTap: () => context.push(route),
     );
   }

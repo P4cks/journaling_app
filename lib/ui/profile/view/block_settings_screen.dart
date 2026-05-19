@@ -7,9 +7,9 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block-type-global configuration screen.
 ///
@@ -236,7 +236,7 @@ class _CustomCarouselList extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: OutlinedButton.icon(
                   onPressed: () => _navigateToEditor(context, null),
-                  icon: const AppIcon(PhosphorIconsDuotone.plus),
+                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
                   label: const Text('Add custom block'),
                 ),
               ),
@@ -289,7 +289,7 @@ class _CustomDefinitionRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onEdit,
-                  icon: const AppIcon(PhosphorIconsDuotone.pencilSimple),
+                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
                   label: const Text('Edit'),
                 ),
               ),
@@ -297,7 +297,7 @@ class _CustomDefinitionRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onDelete,
-                  icon: Icon(PhosphorIconsDuotone.trash, color: errorColor),
+                  icon: AppIcon(HugeIcons.strokeRoundedDelete02, color: errorColor),
                   label: Text('Delete', style: TextStyle(color: errorColor)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: errorColor),

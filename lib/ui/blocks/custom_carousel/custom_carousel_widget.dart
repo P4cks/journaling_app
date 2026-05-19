@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -7,7 +8,6 @@ import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_c
 import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_block_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block widget for a `BlockType.customCarousel` instance. Resolves
 /// `definitionId` against the `BlockSettings` registry and then either:
@@ -114,12 +114,9 @@ class CustomCarouselWidget extends StatelessWidget {
       case CarouselItemKind.icon:
         final icon = carouselIconFor(item.value);
         if (icon == null) {
-          return const AppIcon(PhosphorIconsDuotone.question, size: 56);
+          return AppIcon(HugeIcons.strokeRoundedQuestion, size: 56);
         }
-        return AppIcon(
-          selected ? icon.fill : icon.duotone,
-          size: 56,
-        );
+        return AppIcon(icon.icon, size: 56);
     }
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Renders today's ZenQuotes quote.
 ///
@@ -125,7 +125,7 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: _retry,
-              icon: const AppIcon(PhosphorIconsBold.arrowsClockwise, size: 16),
+              icon: AppIcon(HugeIcons.strokeRoundedRefresh, size: 16),
               label: const Text('Retry'),
             ),
           ],

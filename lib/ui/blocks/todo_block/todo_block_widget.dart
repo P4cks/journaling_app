@@ -3,7 +3,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/todo_block_conte
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
@@ -171,7 +171,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppIcon(
-                  PhosphorIconsBold.plus,
+                  HugeIcons.strokeRoundedPlusSign,
                   size: 14,
                   color: theme.colorScheme.primary,
                 ),
@@ -250,7 +250,7 @@ class _TodoRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(4),
               child: AppIcon(
-                PhosphorIconsBold.x,
+                HugeIcons.strokeRoundedCancel01,
                 size: 12,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -285,7 +285,7 @@ class _CheckBubble extends StatelessWidget {
       child: done
           ? Center(
               child: AppIcon(
-                PhosphorIconsBold.check,
+                HugeIcons.strokeRoundedTick01,
                 size: size * 0.65,
                 color: scheme.onPrimary,
               ),

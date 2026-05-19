@@ -1,40 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_block_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-IconData weatherIconFor(String conditionId, {required bool selected}) {
+/// Resolve a `conditionId` (e.g. `'sun'`) to its HugeIcons glyph. The
+/// `selected` parameter is retained for call-site compatibility — the
+/// free HugeIcons package only ships the stroke-rounded family, so the
+/// glyph is the same regardless. Selection state should be communicated
+/// via colour instead.
+HugeIconData weatherIconFor(String conditionId, {required bool selected}) {
   switch (conditionId) {
     case 'sun':
-      return selected ? PhosphorIconsFill.sun : PhosphorIconsDuotone.sun;
+      return HugeIcons.strokeRoundedSun01;
     case 'partly_cloudy':
-      return selected
-          ? PhosphorIconsFill.cloudSun
-          : PhosphorIconsDuotone.cloudSun;
+      return HugeIcons.strokeRoundedSunCloud01;
     case 'cloud':
-      return selected ? PhosphorIconsFill.cloud : PhosphorIconsDuotone.cloud;
+      return HugeIcons.strokeRoundedCloud;
     case 'rain':
-      return selected
-          ? PhosphorIconsFill.cloudRain
-          : PhosphorIconsDuotone.cloudRain;
+      return HugeIcons.strokeRoundedCloudMidRain;
     case 'thunderstorm':
-      return selected
-          ? PhosphorIconsFill.cloudLightning
-          : PhosphorIconsDuotone.cloudLightning;
+      return HugeIcons.strokeRoundedCloudAngledZap;
     case 'snow':
-      return selected
-          ? PhosphorIconsFill.snowflake
-          : PhosphorIconsDuotone.snowflake;
+      return HugeIcons.strokeRoundedSnow;
     case 'fog':
-      return selected
-          ? PhosphorIconsFill.cloudFog
-          : PhosphorIconsDuotone.cloudFog;
+      return HugeIcons.strokeRoundedCloudFastWind;
     default:
-      return PhosphorIconsDuotone.question;
+      return HugeIcons.strokeRoundedQuestion;
   }
 }
 
