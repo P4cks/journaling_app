@@ -25,20 +25,23 @@ by [JournalRepository.materializeLayout](../../../data/repositories/journal_repo
 which calls [BlockSettings.pickPromptFor](../../../data/services/block_settings.dart).
 That means:
 
-- The prompt list and strategy (`daily` / `random` / `manual`) are
-  configured globally in Profile → Block settings → Prompt block.
-- For `daily` / `random`: the pick happens **once**, the day the entry
-  is created, and lives in the entry's `contentJson` forever —
-  re-opening the entry never re-rolls.
+- The prompt list and strategy (`daily` or `manual`) are configured
+  globally in Profile → Block settings → Prompt block. The strategy is
+  surfaced as a "Manual prompts" `SwitchListTile`: OFF = `daily`,
+  ON = `manual`. (Legacy `random` values on existing devices read back
+  as `daily`.)
+- For `daily`: the pick happens **once**, the day the entry is created,
+  and lives in the entry's `contentJson` forever — re-opening the entry
+  never re-rolls.
 - For `manual`: `pickPromptFor` returns `null`, the materialized
   prompt is empty, and the widget opens the picker sheet automatically
   on first build of the editable view.
 - Editing the prompt list afterwards only affects entries created
-  *after* the edit (for `daily` / `random`); for `manual`, the next
-  picker open reflects the updated list immediately.
-- Empty prompt list AND non-`manual` strategy → the widget renders a
-  dimmed italic "No prompt set" placeholder. In editable mode the
-  placeholder becomes "Tap to pick a prompt".
+  *after* the edit (for `daily`); for `manual`, the next picker open
+  reflects the updated list immediately.
+- Empty prompt list AND `daily` strategy → the widget renders a dimmed
+  italic "No prompt set" placeholder. In editable mode the placeholder
+  becomes "Tap to pick a prompt".
 
 The widget reads the prompt from `widget.data.content`. It only reads
 `BlockSettings` to source the picker's list — never to pick on its own.

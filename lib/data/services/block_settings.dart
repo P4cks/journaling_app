@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
@@ -12,13 +11,14 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 ///   same prompt. Different slots on the same date → different prompts
 ///   (when the list is at least as long as the slot count). Each
 ///   prompt rotates through every slot evenly over time.
-/// - [random] — independent random pick per prompt block at
-///   materialization time.
 /// - [manual] — no prompt is picked at materialization. The widget
 ///   prompts the user to choose one via a bottom sheet on first open
 ///   of the entry. Long-pressing the block opens the picker again
 ///   (regardless of strategy — long-press is a manual override).
-enum PromptStrategy { daily, random, manual }
+///
+/// Legacy `random` values stored on existing users' devices read back
+/// as [daily] (the toggle's default OFF position).
+enum PromptStrategy { daily, manual }
 
 /// Block-type-global settings, persisted in the `settings` Hive box.
 ///
@@ -38,7 +38,6 @@ class BlockSettings extends ChangeNotifier {
   }
 
   final SettingsStorageService _storage;
-  final Random _rng = Random();
 
   // Day 0 for the daily deterministic pick. The exact date is
   // unimportant — only the relative day count matters.
@@ -80,9 +79,9 @@ class BlockSettings extends ChangeNotifier {
       }
     }
     final strategy = _storage.getBlockPromptStrategy();
-    if (strategy == PromptStrategy.random.name) {
-      _promptStrategy = PromptStrategy.random;
-    } else if (strategy == PromptStrategy.manual.name) {
+    // Legacy 'random' values fall through to daily — the toggle no
+    // longer surfaces a random option.
+    if (strategy == PromptStrategy.manual.name) {
       _promptStrategy = PromptStrategy.manual;
     } else {
       _promptStrategy = PromptStrategy.daily;
@@ -213,9 +212,6 @@ class BlockSettings extends ChangeNotifier {
   String? pickPromptFor({required DateTime date, required int slotIndex}) {
     if (_promptStrategy == PromptStrategy.manual) return null;
     if (_prompts.isEmpty) return null;
-    if (_promptStrategy == PromptStrategy.random) {
-      return _prompts[_rng.nextInt(_prompts.length)];
-    }
     final day = DateTime(date.year, date.month, date.day);
     final ordinal = day.difference(_dailyEpoch).inDays;
     final n = _prompts.length;
