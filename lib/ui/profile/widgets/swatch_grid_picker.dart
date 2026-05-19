@@ -38,6 +38,17 @@ Future<SwatchResult?> showSwatchPicker(
   );
 }
 
+/// Three-valued outcome from [showSwatchPicker], used so callers can
+/// distinguish "user picked a color", "user reset to the palette
+/// default", and "user dismissed without committing." The picker's
+/// `Future` resolves to `null` for dismiss, a [SwatchResult.color] for
+/// a pick, and a [SwatchResult.reset] for an explicit reset.
+///
+/// Don't conflate the three: callers need all three branches to
+/// preserve the difference between "leave the override alone" and
+/// "clear the override". Settings tiles read this pattern as
+/// `null → do nothing`, `isReset → setXxxOverride(null)`,
+/// `color != null → setXxxOverride(color)`.
 class SwatchResult {
   const SwatchResult._(this.color, this.isReset);
   factory SwatchResult.color(Color c) => SwatchResult._(c, false);

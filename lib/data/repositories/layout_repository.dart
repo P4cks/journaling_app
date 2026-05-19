@@ -93,6 +93,24 @@ class LayoutRepository {
     return _settings.setDefaultLayoutId(id);
   }
 
+  /// First-launch invariant: guarantees there is at least one layout
+  /// and one default selection so the journal editor never has to
+  /// branch on "no layouts exist."
+  ///
+  /// Behaviour, idempotent across launches:
+  /// - If the layouts box already has entries: keep them. If no default
+  ///   id is set, adopt the existing default (or the first stored
+  ///   layout if there's no `getDefault()` hit) so subsequent calls to
+  ///   `JournalRepository.createEntryForDate(date, layout: null)`
+  ///   always resolve.
+  /// - If the box is empty: create a minimal block-only layout named
+  ///   "Default" with one row and a single text block, persist it, and
+  ///   set it as the default.
+  ///
+  /// Called from `main.dart` after services are wired and before
+  /// `runApp`. Also called from [deleteAllLayouts] so the debug
+  /// "Delete all layouts" action never leaves the user stranded.
+  /// Returns the layout that ended up as the default.
   Future<JournalLayout> seedDefaultIfEmpty() async {
     if (!_layouts.isEmpty) {
       final existing = getDefault() ?? _layouts.getAllLayouts().first;
