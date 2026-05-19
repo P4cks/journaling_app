@@ -5,17 +5,20 @@ import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view
 /// Prompt-block-global configuration. Two settings:
 ///
 /// 1. A list of prompts entered as free text (one per line).
-/// 2. A strategy: `daily` (deterministic per date + slot, balanced
-///    across days so each prompt rotates evenly), `random`
-///    (independent random pick per slot at entry materialization), or
-///    `manual` (user picks per entry).
+/// 2. A `Random Prompts` toggle:
+///    - **on** (default) → `PromptStrategy.random`: deterministic per
+///      date + slot, balanced across days so each prompt rotates
+///      evenly. The prompt is baked into the entry at materialization.
+///    - **off** → `PromptStrategy.manual`: the widget opens its picker
+///      sheet on first build of each new entry so the user chooses.
 ///
 /// Controlled by the parent `BlockSettingsViewModel` — this widget
 /// only binds to the VM's `promptsController` / `promptStrategy`.
 /// Saving happens screen-wide via `BlockSettingsScreen`'s leave prompt.
 ///
 /// Editing here only affects entries created **after** the save —
-/// each entry locks in its prompt at materialization time.
+/// each entry locks in its prompt at materialization time (or, in
+/// manual mode, the first time the user opens its picker).
 class PromptBlockSettings extends StatelessWidget {
   const PromptBlockSettings({super.key, required this.vm});
 
@@ -24,6 +27,7 @@ class PromptBlockSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isRandom = vm.promptStrategy == PromptStrategy.random;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,39 +58,18 @@ class PromptBlockSettings extends StatelessWidget {
             alignLabelWithHint: true,
           ),
         ),
-        const SizedBox(height: 24),
-        Text(
-          'Pick strategy',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+        const SizedBox(height: 20),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Random Prompts'),
+          subtitle: Text(
+            isRandom
+                ? 'Chooses prompts automatically.'
+                : 'You pick a prompt for each new entry. Long-press the block to change it.',
           ),
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<PromptStrategy>(
-          segments: const [
-            ButtonSegment(
-              value: PromptStrategy.daily,
-              label: Text('One per day'),
-            ),
-            ButtonSegment(value: PromptStrategy.random, label: Text('Random')),
-            ButtonSegment(value: PromptStrategy.manual, label: Text('Manual')),
-          ],
-          selected: {vm.promptStrategy},
-          onSelectionChanged: (selection) =>
-              vm.setPromptStrategy(selection.first),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          switch (vm.promptStrategy) {
-            PromptStrategy.daily =>
-              'Each day rotates through the list. Multiple prompt blocks on the same day get different prompts.',
-            PromptStrategy.random =>
-              'Each prompt block picks a random prompt independently.',
-            PromptStrategy.manual =>
-              'You pick a prompt for each new entry. Long-press the block to change it.',
-          },
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          value: isRandom,
+          onChanged: (on) => vm.setPromptStrategy(
+            on ? PromptStrategy.random : PromptStrategy.manual,
           ),
         ),
       ],

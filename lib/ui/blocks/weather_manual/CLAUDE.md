@@ -18,8 +18,10 @@ block planned for a later phase — it reuses the same icon mapping.
   Also exposes the top-level `weatherIconFor(conditionId, {required selected})`
   helper so the API weather block can reuse the same icon mapping. The
   body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
-  reading `BlockSettings.weatherTitle` via a `ListenableBuilder` —
-  same shape as the mood block.
+  with the hardcoded label `"Today's weather"` when
+  `BlockSettings.carouselTitlesEnabled` is true, or `null` (no title
+  row) when the global toggle is off. Same shape as the mood block —
+  the title text is fixed per-block-type, not user-editable.
 
 ## Modes
 

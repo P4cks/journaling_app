@@ -3,8 +3,7 @@
 /// - [text] — a single full-width multi-line text region. Renders as a
 ///   plain `TextField` (no `BlockCard`). Backed by exactly one
 ///   `JournalBlockData` of type `BlockType.textBlock` so the existing
-///   `TextBlockContent` JSON and `BlockSettings.textCharLimit` carry
-///   over.
+///   `TextBlockContent` JSON path is reused.
 /// - [blockGrid] — a 2-column staggered grid of 1×1 blocks. The number
 ///   of rows is configurable (1..4 in the editor); slots = 2 * rows.
 /// - [featureBlock] — a single block rendered at 2×2 (full body width,

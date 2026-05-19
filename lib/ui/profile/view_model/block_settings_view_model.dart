@@ -16,45 +16,37 @@ class BlockSettingsViewModel extends ChangeNotifier {
     : _settings = settings {
     _initialPrompts = settings.prompts;
     _initialPromptStrategy = settings.promptStrategy;
-    _initialTextCharLimit = settings.textCharLimit;
-    _initialMoodTitle = settings.moodTitle;
-    _initialWeatherTitle = settings.weatherTitle;
+    _initialCarouselTitlesEnabled = settings.carouselTitlesEnabled;
     _promptStrategy = _initialPromptStrategy;
+    _carouselTitlesEnabled = _initialCarouselTitlesEnabled;
     promptsController = TextEditingController(
       text: _initialPrompts.join('\n'),
     );
-    textCharLimitController = TextEditingController(
-      text: _initialTextCharLimit?.toString() ?? '',
-    );
-    moodTitleController = TextEditingController(text: _initialMoodTitle ?? '');
-    weatherTitleController = TextEditingController(
-      text: _initialWeatherTitle ?? '',
-    );
     promptsController.addListener(_notify);
-    textCharLimitController.addListener(_notify);
-    moodTitleController.addListener(_notify);
-    weatherTitleController.addListener(_notify);
   }
 
   final BlockSettings _settings;
 
   late List<String> _initialPrompts;
   late PromptStrategy _initialPromptStrategy;
-  late int? _initialTextCharLimit;
-  late String? _initialMoodTitle;
-  late String? _initialWeatherTitle;
+  late bool _initialCarouselTitlesEnabled;
 
   late final TextEditingController promptsController;
-  late final TextEditingController textCharLimitController;
-  late final TextEditingController moodTitleController;
-  late final TextEditingController weatherTitleController;
   late PromptStrategy _promptStrategy;
+  late bool _carouselTitlesEnabled;
 
   PromptStrategy get promptStrategy => _promptStrategy;
+  bool get carouselTitlesEnabled => _carouselTitlesEnabled;
 
   void setPromptStrategy(PromptStrategy strategy) {
     if (_promptStrategy == strategy) return;
     _promptStrategy = strategy;
+    notifyListeners();
+  }
+
+  void setCarouselTitlesEnabled(bool value) {
+    if (_carouselTitlesEnabled == value) return;
+    _carouselTitlesEnabled = value;
     notifyListeners();
   }
 
@@ -65,65 +57,28 @@ class BlockSettingsViewModel extends ChangeNotifier {
       if (line.trim().isNotEmpty) line.trim(),
   ];
 
-  int? _parsedTextCharLimit() {
-    final raw = textCharLimitController.text.trim();
-    if (raw.isEmpty) return null;
-    final parsed = int.tryParse(raw);
-    return (parsed != null && parsed > 0) ? parsed : null;
-  }
-
-  /// Non-null when the text-char-limit field has invalid content — i.e.
-  /// non-empty and not a positive whole number. The screen surfaces
-  /// this on the TextField and disables save until it's clear.
-  String? get textCharLimitError {
-    final raw = textCharLimitController.text.trim();
-    if (raw.isEmpty) return null;
-    final parsed = int.tryParse(raw);
-    if (parsed == null || parsed <= 0) {
-      return 'Enter a positive whole number, or leave blank.';
-    }
-    return null;
-  }
-
-  String? _normalizeTitle(String s) {
-    final trimmed = s.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
-
   bool get isDirty {
     if (!listEquals(_parsedPrompts(), _initialPrompts)) return true;
     if (_promptStrategy != _initialPromptStrategy) return true;
-    if (_parsedTextCharLimit() != _initialTextCharLimit) return true;
-    if (_normalizeTitle(moodTitleController.text) != _initialMoodTitle) {
-      return true;
-    }
-    if (_normalizeTitle(weatherTitleController.text) != _initialWeatherTitle) {
-      return true;
-    }
+    if (_carouselTitlesEnabled != _initialCarouselTitlesEnabled) return true;
     return false;
   }
 
-  bool get canSave => textCharLimitError == null;
+  /// Whether the current draft is in a saveable state. Always true for
+  /// the moment — kept as a getter so the screen's save-on-leave dialog
+  /// keeps the same code path if validation comes back later.
+  bool get canSave => true;
 
   /// Writes the current drafts back to [BlockSettings] and re-snapshots
-  /// so `isDirty` reads false post-save. Returns false (without writing)
-  /// when validation fails.
+  /// so `isDirty` reads false post-save.
   Future<bool> save() async {
-    if (!canSave) return false;
     final prompts = _parsedPrompts();
-    final textCharLimit = _parsedTextCharLimit();
-    final moodTitle = _normalizeTitle(moodTitleController.text);
-    final weatherTitle = _normalizeTitle(weatherTitleController.text);
     await _settings.setPrompts(prompts);
     await _settings.setPromptStrategy(_promptStrategy);
-    await _settings.setTextCharLimit(textCharLimit);
-    await _settings.setMoodTitle(moodTitle);
-    await _settings.setWeatherTitle(weatherTitle);
+    await _settings.setCarouselTitlesEnabled(_carouselTitlesEnabled);
     _initialPrompts = prompts;
     _initialPromptStrategy = _promptStrategy;
-    _initialTextCharLimit = textCharLimit;
-    _initialMoodTitle = moodTitle;
-    _initialWeatherTitle = weatherTitle;
+    _initialCarouselTitlesEnabled = _carouselTitlesEnabled;
     debugPrint('[BlockSettingsVM] saved');
     notifyListeners();
     return true;
@@ -132,13 +87,7 @@ class BlockSettingsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     promptsController.removeListener(_notify);
-    textCharLimitController.removeListener(_notify);
-    moodTitleController.removeListener(_notify);
-    weatherTitleController.removeListener(_notify);
     promptsController.dispose();
-    textCharLimitController.dispose();
-    moodTitleController.dispose();
-    weatherTitleController.dispose();
     super.dispose();
   }
 }

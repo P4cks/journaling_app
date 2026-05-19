@@ -25,8 +25,10 @@ class MoodTrackerWidget extends StatelessWidget {
     final settings = AppDependencies.of(context).blockSettings;
     return ListenableBuilder(
       listenable: settings,
-      builder: (context, _) =>
-          BlockWithTitle(title: settings.moodTitle, body: _buildBody(context)),
+      builder: (context, _) => BlockWithTitle(
+        title: settings.carouselTitlesEnabled ? 'How are you feeling?' : null,
+        body: _buildBody(context),
+      ),
     );
   }
 

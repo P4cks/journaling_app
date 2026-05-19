@@ -72,3 +72,11 @@ The maintenance contract itself changes — keep this section accurate so future
 ## Updating BACKLOG.md
 
 When the feature has been finished with the agreement of the user update the BACKLOG.md file to reflect that the feature has been implemented
+
+## Backwards-compatibility policy (pre-1.0)
+
+We are not yet 1.0. **Pre-existing users' Hive data is not load-bearing.** Removing a settings key, dropping a `BlockSettings` field, retiring a `BlockType`, or otherwise narrowing a persisted shape does **not** require a migration step or a read-fallback. Leave abandoned `settings` box keys on disk (they are harmless single strings) and stop reading them in code.
+
+The schema-bump discipline still applies to the model boxes (`journalEntries_v*`, `journalLayouts_v*`) — those use generated Hive adapters and have to round-trip correctly. The relaxation only covers the `settings` box and behavioural defaults.
+
+Document the rationale for any such removal in the commit that drops it, then move on.

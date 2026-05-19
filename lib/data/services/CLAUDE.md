@@ -48,13 +48,17 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     list of `#RRGGBB` hex strings; absent → ships with the
     `kDefaultPostItPalette` muted pastels), `block.prompt.list`
     (JSON-encoded list of strings), `block.prompt.strategy`
-    (`daily` | `random` | `manual`), `block.text.charLimit`
-    (positive int as string), `block.mood.title` (optional plain
-    string), `block.weather.title` (optional plain string),
+    (`random` | `manual`), `block.carousel.titlesEnabled`
+    (`true`/`false`; absent → default `true`),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
     carousels yet). If you add another, give it a namespaced key
-    and add a typed accessor pair.
+    and add a typed accessor pair. Abandoned legacy keys
+    (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
+    are intentionally not read by the service anymore and may still
+    be present on existing users' disks; per the pre-1.0
+    backwards-compatibility policy in the root `CLAUDE.md` we do not
+    migrate them.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
@@ -105,15 +109,19 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   box:
   - `prompts` (`List<String>`) — the curated prompt list shown to
     every prompt block.
-  - `promptStrategy` (`PromptStrategy` enum: `daily` | `random` |
-    `manual`) — how `pickPromptFor` chooses a prompt. `manual` is the
-    "user picks per entry" mode: `pickPromptFor` returns `null` and the
+  - `promptStrategy` (`PromptStrategy` enum: `random` | `manual`) —
+    how `pickPromptFor` chooses a prompt. `manual` is the "user picks
+    per entry" mode: `pickPromptFor` returns `null` and the
     [prompt block widget](../../ui/blocks/prompt_block/CLAUDE.md) opens
     its picker sheet on first build.
-  - `textCharLimit` (`int?`) — optional hard cap on every text block.
-  - `moodTitle` (`String?`) / `weatherTitle` (`String?`) — optional
-    titles rendered above the Mood and Weather carousels respectively.
-    Per-type-global; no per-layout-slot overrides.
+  - `carouselTitlesEnabled` (`bool`, default `true`) — global show /
+    hide for the title row above every carousel block (mood, manual
+    weather, custom). When `false`, the three carousel widgets pass
+    `null` to `BlockWithTitle` and the row collapses. Predefined
+    titles are hardcoded in the widgets (`"How are you feeling?"`
+    for mood, `"Today's weather"` for manual weather); custom
+    carousels still take their title from
+    `CustomCarouselDefinition.title`.
   - `customCarousels` (`List<CustomCarouselDefinition>`) — registry
     of user-defined carousel "types" (title + ordered items, each
     emoji or curated icon). `addCustomCarousel`, `updateCustomCarousel`,
@@ -122,10 +130,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     a JSON list; orphan-tolerant (delete doesn't cascade into layouts
     / entries — the widget renders a "deleted block" placeholder).
   - `pickPromptFor({date, slotIndex})` — used by
-    `JournalRepository.materializeLayout`. In `daily` mode the pick
+    `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
     multiple prompt blocks on the same day get *different* prompts
-    and each prompt rotates through every slot evenly over time.
+    and each prompt rotates through every slot evenly over time
+    ("random" describes the user-perceived rotation, not the
+    determinism). In `manual` mode it returns `null` so the widget
+    can prompt the user.
   - Setters guard against no-op assignment and persist atomically.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
   Mirrors a `ColorScheme` configuration:

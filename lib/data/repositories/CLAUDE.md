@@ -27,8 +27,7 @@ coordination live.
     - `SectionKind.text` — yields an `EntrySection` whose `blocks`
       list is exactly one fresh `JournalBlockData(type: textBlock)`
       with empty `TextBlockContent`. This reuses the text-block JSON
-      path so `BlockSettings.textCharLimit` and the existing
-      emptiness check carry over unchanged.
+      path so the existing emptiness check carries over unchanged.
     - `SectionKind.blockGrid` — materializes one `JournalBlockData`
       per `BlockTemplate` in the section's `blocks` list. Per-type
       seeding (same as before):
@@ -36,13 +35,11 @@ coordination live.
         slotIndex)`. `slotIndex` is **layout-wide** (a single
         counter across every block-grid section), so two prompt
         blocks in different sections on the same day still get
-        different prompts under `daily` strategy.
+        different prompts under `random` strategy.
       - All other types — empty content map. Mood and weather start
         with no selection (`emoji: null` / `conditionId: null`), so an
         untouched entry remains empty per `JournalBlockEmptiness` and
-        gets swept at end of day if the user never interacts. The
-        widget owns its read-time reads (e.g. `TextBlockWidget` reads
-        `BlockSettings.textCharLimit` live).
+        gets swept at end of day if the user never interacts.
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.

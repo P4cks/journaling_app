@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
@@ -7,18 +6,19 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 
 /// How a prompt is chosen when materializing a prompt block.
 ///
-/// - [daily] — deterministic from the entry's date AND the slot's index
+/// - [random] — deterministic from the entry's date AND the slot's index
 ///   among prompt-block slots in the layout. Same date + same slot →
 ///   same prompt. Different slots on the same date → different prompts
 ///   (when the list is at least as long as the slot count). Each
 ///   prompt rotates through every slot evenly over time.
-/// - [random] — independent random pick per prompt block at
-///   materialization time.
 /// - [manual] — no prompt is picked at materialization. The widget
 ///   prompts the user to choose one via a bottom sheet on first open
 ///   of the entry. Long-pressing the block opens the picker again
 ///   (regardless of strategy — long-press is a manual override).
-enum PromptStrategy { daily, random, manual }
+///
+/// Legacy `daily` values stored on existing users' devices read back
+/// as [random] (the toggle's default ON position).
+enum PromptStrategy { random, manual }
 
 /// Block-type-global settings, persisted in the `settings` Hive box.
 ///
@@ -38,24 +38,25 @@ class BlockSettings extends ChangeNotifier {
   }
 
   final SettingsStorageService _storage;
-  final Random _rng = Random();
 
   // Day 0 for the daily deterministic pick. The exact date is
   // unimportant — only the relative day count matters.
   static final DateTime _dailyEpoch = DateTime(2024, 1, 1);
 
   List<String> _prompts = const [];
-  PromptStrategy _promptStrategy = PromptStrategy.daily;
-  int? _textCharLimit;
-  String? _moodTitle;
-  String? _weatherTitle;
+  PromptStrategy _promptStrategy = PromptStrategy.random;
+  bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
-  int? get textCharLimit => _textCharLimit;
-  String? get moodTitle => _moodTitle;
-  String? get weatherTitle => _weatherTitle;
+
+  /// Whether titles render above every carousel block (mood, manual
+  /// weather, custom carousels). When `false`, all three carousel
+  /// widgets pass `null` to [BlockWithTitle] so the row collapses
+  /// entirely. Defaults to `true` on first launch.
+  bool get carouselTitlesEnabled => _carouselTitlesEnabled;
+
   List<CustomCarouselDefinition> get customCarousels =>
       List.unmodifiable(_customCarousels);
 
@@ -82,25 +83,16 @@ class BlockSettings extends ChangeNotifier {
       }
     }
     final strategy = _storage.getBlockPromptStrategy();
-    if (strategy == PromptStrategy.random.name) {
-      _promptStrategy = PromptStrategy.random;
-    } else if (strategy == PromptStrategy.manual.name) {
+    // Any non-'manual' value (including legacy 'daily') falls through
+    // to the auto-rotation strategy.
+    if (strategy == PromptStrategy.manual.name) {
       _promptStrategy = PromptStrategy.manual;
     } else {
-      _promptStrategy = PromptStrategy.daily;
+      _promptStrategy = PromptStrategy.random;
     }
-    final limitRaw = _storage.getBlockTextCharLimit();
-    if (limitRaw != null) {
-      final parsed = int.tryParse(limitRaw);
-      if (parsed != null && parsed > 0) _textCharLimit = parsed;
-    }
-    final moodTitleRaw = _storage.getBlockMoodTitle();
-    if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {
-      _moodTitle = moodTitleRaw;
-    }
-    final weatherTitleRaw = _storage.getBlockWeatherTitle();
-    if (weatherTitleRaw != null && weatherTitleRaw.trim().isNotEmpty) {
-      _weatherTitle = weatherTitleRaw;
+    final titlesEnabledRaw = _storage.getBlockCarouselTitlesEnabled();
+    if (titlesEnabledRaw != null) {
+      _carouselTitlesEnabled = titlesEnabledRaw;
     }
     final customCarouselsRaw =
         _storage.getBlockCustomCarouselDefinitionsJson();
@@ -149,34 +141,11 @@ class BlockSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setTextCharLimit(int? limit) async {
-    final normalized = (limit != null && limit > 0) ? limit : null;
-    if (_textCharLimit == normalized) return;
-    _textCharLimit = normalized;
-    await _storage.setBlockTextCharLimit(normalized);
-    debugPrint('[BlockSettings] setTextCharLimit -> $normalized');
-    notifyListeners();
-  }
-
-  Future<void> setMoodTitle(String? title) async {
-    final normalized = (title == null || title.trim().isEmpty)
-        ? null
-        : title.trim();
-    if (_moodTitle == normalized) return;
-    _moodTitle = normalized;
-    await _storage.setBlockMoodTitle(normalized);
-    debugPrint('[BlockSettings] setMoodTitle -> $normalized');
-    notifyListeners();
-  }
-
-  Future<void> setWeatherTitle(String? title) async {
-    final normalized = (title == null || title.trim().isEmpty)
-        ? null
-        : title.trim();
-    if (_weatherTitle == normalized) return;
-    _weatherTitle = normalized;
-    await _storage.setBlockWeatherTitle(normalized);
-    debugPrint('[BlockSettings] setWeatherTitle -> $normalized');
+  Future<void> setCarouselTitlesEnabled(bool value) async {
+    if (_carouselTitlesEnabled == value) return;
+    _carouselTitlesEnabled = value;
+    await _storage.setBlockCarouselTitlesEnabled(value);
+    debugPrint('[BlockSettings] setCarouselTitlesEnabled -> $value');
     notifyListeners();
   }
 
@@ -229,9 +198,6 @@ class BlockSettings extends ChangeNotifier {
   String? pickPromptFor({required DateTime date, required int slotIndex}) {
     if (_promptStrategy == PromptStrategy.manual) return null;
     if (_prompts.isEmpty) return null;
-    if (_promptStrategy == PromptStrategy.random) {
-      return _prompts[_rng.nextInt(_prompts.length)];
-    }
     final day = DateTime(date.year, date.month, date.day);
     final ordinal = day.difference(_dailyEpoch).inDays;
     final n = _prompts.length;

@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
 
 /// Full-width text section. Backs onto the same `TextBlockContent`
 /// shape as `TextBlockWidget` so it round-trips through the journal
 /// entry's section blocks list, but renders without a `BlockCard`
-/// chrome — grows with its content. Unlike the 1×1 `TextBlockWidget`,
-/// text sections **do not** enforce `BlockSettings.textCharLimit` —
-/// they're meant for longer-form writing.
+/// chrome — grows with its content. No cap on input length.
 class TextSectionWidget extends StatefulWidget {
   const TextSectionWidget({
     super.key,
@@ -25,37 +24,13 @@ class TextSectionWidget extends StatefulWidget {
   State<TextSectionWidget> createState() => _TextSectionWidgetState();
 }
 
-class _TextSectionWidgetState extends State<TextSectionWidget> {
-  late final TextEditingController _controller;
+class _TextSectionWidgetState extends State<TextSectionWidget>
+    with TextContentControllerMixin<TextSectionWidget> {
+  @override
+  JournalBlockData get data => widget.data;
 
   @override
-  void initState() {
-    super.initState();
-    final content = TextBlockContent.fromMap(widget.data.content);
-    _controller = TextEditingController(text: content.text);
-  }
-
-  @override
-  void didUpdateWidget(covariant TextSectionWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.data.id != widget.data.id) {
-      final content = TextBlockContent.fromMap(widget.data.content);
-      _controller.text = content.text;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _emit(String value) {
-    final updated = widget.data.copyWith(
-      content: TextBlockContent(text: value).toMap(),
-    );
-    widget.onChanged?.call(updated);
-  }
+  ValueChanged<JournalBlockData>? get onChanged => widget.onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +53,7 @@ class _TextSectionWidgetState extends State<TextSectionWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: TextField(
-        controller: _controller,
+        controller: controller,
         maxLines: null,
         minLines: 4,
         keyboardType: TextInputType.multiline,
@@ -89,7 +64,7 @@ class _TextSectionWidgetState extends State<TextSectionWidget> {
           isDense: true,
           contentPadding: EdgeInsets.zero,
         ),
-        onChanged: _emit,
+        onChanged: emitText,
       ),
     );
   }

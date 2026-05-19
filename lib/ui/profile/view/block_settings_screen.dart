@@ -9,7 +9,6 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
-import 'package:journaling_app_rewrite/ui/profile/widgets/text_block_settings.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block-type-global configuration screen.
@@ -115,35 +114,28 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         body: ListView(
           children: [
             SettingsSection(
-              label: 'Text Block',
-              children: [TextBlockSettings(vm: vm)],
-            ),
-            SettingsSection(
               label: 'Prompt Block',
               children: [PromptBlockSettings(vm: vm)],
             ),
             SettingsSection(
-              label: 'Mood Tracker',
+              label: 'Carousel Blocks',
               children: [
-                _TitleField(
-                  controller: vm.moodTitleController,
-                  hint: 'e.g. How are you feeling?',
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Show titles above carousels'),
+                  subtitle: const Text(
+                    'Applies to mood, weather, and custom carousels.',
+                  ),
+                  value: vm.carouselTitlesEnabled,
+                  onChanged: vm.setCarouselTitlesEnabled,
+                ),
+                _CustomCarouselList(
+                  settings: AppDependencies.of(context).blockSettings,
+                  layoutRepository:
+                      AppDependencies.of(context).layoutRepository,
+                  maybeSaveOnLeave: _maybeSaveOnLeave,
                 ),
               ],
-            ),
-            SettingsSection(
-              label: 'Manual Weather',
-              children: [
-                _TitleField(
-                  controller: vm.weatherTitleController,
-                  hint: "e.g. Today's weather",
-                ),
-              ],
-            ),
-            _CustomCarouselSections(
-              settings: AppDependencies.of(context).blockSettings,
-              layoutRepository: AppDependencies.of(context).layoutRepository,
-              maybeSaveOnLeave: _maybeSaveOnLeave,
             ),
           ],
         ),
@@ -152,20 +144,24 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
   }
 }
 
-/// Renders one collapsed `SettingsSection` per custom carousel
-/// definition, plus an "Add custom block" entry at the bottom.
+/// Renders the user's custom carousel definitions (Edit / Delete per
+/// row) plus an "Add custom block" button at the bottom.
 ///
 /// Subscribes to [BlockSettings] directly via `ListenableBuilder` so
 /// additions / edits / deletes done in the dedicated editor screen
 /// surface here without re-pushing the Block-Settings route.
+///
+/// Lives inside the parent "Carousel Blocks" `SettingsSection`, so this
+/// widget intentionally emits no `SettingsSection` chrome of its own —
+/// just a stack of per-definition rows.
 ///
 /// The Edit / "+ New" actions push the editor onto the navigation
 /// stack. Before doing so we run the parent's [maybeSaveOnLeave]
 /// because pushing past a dirty Block-Settings draft would otherwise
 /// hide the unsaved fields under another route. Equivalent to the
 /// AppBar back behaviour, kept consistent.
-class _CustomCarouselSections extends StatelessWidget {
-  const _CustomCarouselSections({
+class _CustomCarouselList extends StatelessWidget {
+  const _CustomCarouselList({
     required this.settings,
     required this.layoutRepository,
     required this.maybeSaveOnLeave,
@@ -229,18 +225,13 @@ class _CustomCarouselSections extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final def in defs)
-              SettingsSection(
-                label: def.title.isEmpty ? 'Untitled' : def.title,
-                children: [
-                  _CustomDefinitionRow(
-                    definition: def,
-                    onEdit: () => _navigateToEditor(context, def.id),
-                    onDelete: () => _confirmDelete(context, def),
-                  ),
-                ],
+              _CustomDefinitionRow(
+                definition: def,
+                onEdit: () => _navigateToEditor(context, def.id),
+                onDelete: () => _confirmDelete(context, def),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              padding: const EdgeInsets.only(top: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: OutlinedButton.icon(
@@ -273,79 +264,50 @@ class _CustomDefinitionRow extends StatelessWidget {
     final theme = Theme.of(context);
     final errorColor = theme.colorScheme.error;
     final count = definition.items.length;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$count item${count == 1 ? '' : 's'}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onEdit,
-                icon: const AppIcon(PhosphorIconsDuotone.pencilSimple),
-                label: const Text('Edit'),
-              ),
+    final label = definition.title.isEmpty ? 'Untitled' : definition.title;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onDelete,
-                icon: Icon(PhosphorIconsDuotone.trash, color: errorColor),
-                label: Text('Delete', style: TextStyle(color: errorColor)),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: errorColor),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$count item${count == 1 ? '' : 's'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: const AppIcon(PhosphorIconsDuotone.pencilSimple),
+                  label: const Text('Edit'),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _TitleField extends StatelessWidget {
-  const _TitleField({required this.controller, required this.hint});
-
-  final TextEditingController controller;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Title',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onDelete,
+                  icon: Icon(PhosphorIconsDuotone.trash, color: errorColor),
+                  label: Text('Delete', style: TextStyle(color: errorColor)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: errorColor),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Optional label shown above the carousel. Leave blank to hide.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: controller,
-          textInputAction: TextInputAction.done,
-          maxLength: 40,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

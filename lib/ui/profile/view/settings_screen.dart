@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/settings_nav_tile.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
@@ -34,7 +33,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Post-it style",
-              widget: [
+              children: [
                 ListenableBuilder(
                   listenable: theme,
                   builder: (context, _) => _PostItStyleSection(theme: theme),
@@ -43,25 +42,21 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Journal templates",
-              children: [
-                ListTile(
-                  leading: const AppIcon(PhosphorIconsDuotone.squaresFour),
-                  title: const Text('Manage templates'),
-                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
-                  onTap: () => context.push(Routes.layouts),
+              children: const [
+                SettingsNavTile(
+                  icon: PhosphorIconsDuotone.squaresFour,
+                  title: 'Manage templates',
+                  route: Routes.layouts,
                 ),
               ],
             ),
             SettingsSection(
               label: "Blocks",
-              children: [
-                ListTile(
-                  leading: const AppIcon(
-                    PhosphorIconsDuotone.slidersHorizontal,
-                  ),
-                  title: const Text('Configure blocks'),
-                  trailing: const AppIcon(PhosphorIconsDuotone.caretRight),
-                  onTap: () => context.push(Routes.blockSettings),
+              children: const [
+                SettingsNavTile(
+                  icon: PhosphorIconsDuotone.slidersHorizontal,
+                  title: 'Configure blocks',
+                  route: Routes.blockSettings,
                 ),
               ],
             ),
@@ -87,87 +82,37 @@ class SettingsScreen extends StatelessWidget {
                     value: debug.unlockAllDays,
                     onChanged: debug.setUnlockAllDays,
                   ),
-                  ListenableBuilder(
-                    listenable: theme,
-                    builder: (context, _) {
-                      final scheme = Theme.of(context).colorScheme;
-                      final overrideColor = theme.debugSurfaceOverride;
-                      return ListTile(
-                        leading: const AppIcon(
-                          PhosphorIconsDuotone.paintBucket,
-                        ),
-                        title: const Text('Override surface color'),
-                        subtitle: Text(
-                          overrideColor == null
-                              ? 'Using palette default'
-                              : 'Overridden — clear to restore',
-                        ),
-                        trailing: _ColorChip(
-                          color: overrideColor ?? scheme.surface,
-                          outlined: overrideColor == null,
-                        ),
-                        onTap: () async {
-                          final result = await showSwatchPicker(
-                            context,
-                            title: 'Override surface',
-                            initial: overrideColor ?? scheme.surface,
-                            allowFreePick: true,
-                          );
-                          if (result == null) return;
-                          if (result.isReset) {
-                            await theme.setDebugSurfaceOverride(null);
-                          } else if (result.color != null) {
-                            await theme.setDebugSurfaceOverride(result.color);
-                          }
-                        },
-                      );
-                    },
+                  _DebugColorPickerTile(
+                    theme: theme,
+                    icon: PhosphorIconsDuotone.paintBucket,
+                    title: 'Override surface color',
+                    dialogTitle: 'Override surface',
+                    colorBuilder: (context) =>
+                        theme.debugSurfaceOverride ??
+                        Theme.of(context).colorScheme.surface,
+                    subtitleBuilder: () => theme.debugSurfaceOverride == null
+                        ? 'Using palette default'
+                        : 'Overridden — clear to restore',
+                    outlinedBuilder: () => theme.debugSurfaceOverride == null,
+                    onChange: theme.setDebugSurfaceOverride,
                   ),
-                  ListenableBuilder(
-                    listenable: theme,
-                    builder: (context, _) => ListTile(
-                      leading: const AppIcon(PhosphorIconsDuotone.eyedropper),
-                      title: const Text('Free-pick secondary (HSL)'),
-                      subtitle: const Text('Bypass curated swatches'),
-                      trailing: _ColorChip(color: theme.effectiveSecondary),
-                      onTap: () async {
-                        final result = await showSwatchPicker(
-                          context,
-                          title: 'Free-pick secondary',
-                          initial: theme.effectiveSecondary,
-                          allowFreePick: true,
-                        );
-                        if (result == null) return;
-                        if (result.isReset) {
-                          await theme.setSecondaryOverride(null);
-                        } else if (result.color != null) {
-                          await theme.setSecondaryOverride(result.color);
-                        }
-                      },
-                    ),
+                  _DebugColorPickerTile(
+                    theme: theme,
+                    icon: PhosphorIconsDuotone.eyedropper,
+                    title: 'Free-pick secondary (HSL)',
+                    dialogTitle: 'Free-pick secondary',
+                    colorBuilder: (_) => theme.effectiveSecondary,
+                    subtitleBuilder: () => 'Bypass curated swatches',
+                    onChange: theme.setSecondaryOverride,
                   ),
-                  ListenableBuilder(
-                    listenable: theme,
-                    builder: (context, _) => ListTile(
-                      leading: const AppIcon(PhosphorIconsDuotone.eyedropper),
-                      title: const Text('Free-pick accent (HSL)'),
-                      subtitle: const Text('Bypass curated swatches'),
-                      trailing: _ColorChip(color: theme.effectiveAccent),
-                      onTap: () async {
-                        final result = await showSwatchPicker(
-                          context,
-                          title: 'Free-pick accent',
-                          initial: theme.effectiveAccent,
-                          allowFreePick: true,
-                        );
-                        if (result == null) return;
-                        if (result.isReset) {
-                          await theme.setAccentOverride(null);
-                        } else if (result.color != null) {
-                          await theme.setAccentOverride(result.color);
-                        }
-                      },
-                    ),
+                  _DebugColorPickerTile(
+                    theme: theme,
+                    icon: PhosphorIconsDuotone.eyedropper,
+                    title: 'Free-pick accent (HSL)',
+                    dialogTitle: 'Free-pick accent',
+                    colorBuilder: (_) => theme.effectiveAccent,
+                    subtitleBuilder: () => 'Bypass curated swatches',
+                    onChange: theme.setAccentOverride,
                   ),
                   Builder(
                     builder: (context) {
@@ -536,24 +481,6 @@ class _AddPostItSwatch extends StatelessWidget {
   }
 }
 
-class _ExpansionTitle extends StatelessWidget {
-  const _ExpansionTitle(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: scheme.primary,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
 Future<SurfacePalette?> showThemeEditorSheet(
   BuildContext context, {
   required String title,
@@ -831,6 +758,73 @@ class _ColorChip extends StatelessWidget {
           width: outlined ? 2 : 1,
         ),
       ),
+    );
+  }
+}
+
+/// One row in the Debug section's color-picker stack.
+///
+/// Each tile subscribes to [ThemeSettings] independently (per the
+/// per-section `ListenableBuilder` convention documented in
+/// `profile/CLAUDE.md` — don't try to consolidate into a single
+/// top-level builder), opens [showSwatchPicker] with `allowFreePick:
+/// true` on tap, and routes the result through [onChange] so the
+/// caller decides which override to flip.
+///
+/// [colorBuilder] runs inside the `ListenableBuilder` so it can read
+/// both `theme` and `Theme.of(context)` — the override-surface tile
+/// needs the latter for its palette fallback. [outlinedBuilder] is
+/// optional; only the override-surface tile uses it (to distinguish
+/// "no override set" from "override happens to equal the default").
+class _DebugColorPickerTile extends StatelessWidget {
+  const _DebugColorPickerTile({
+    required this.theme,
+    required this.icon,
+    required this.title,
+    required this.dialogTitle,
+    required this.colorBuilder,
+    required this.subtitleBuilder,
+    required this.onChange,
+    this.outlinedBuilder,
+  });
+
+  final ThemeSettings theme;
+  final IconData icon;
+  final String title;
+  final String dialogTitle;
+  final Color Function(BuildContext) colorBuilder;
+  final String Function() subtitleBuilder;
+  final Future<void> Function(Color?) onChange;
+  final bool Function()? outlinedBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: theme,
+      builder: (context, _) {
+        final color = colorBuilder(context);
+        final outlined = outlinedBuilder?.call() ?? false;
+        return ListTile(
+          leading: AppIcon(icon),
+          title: Text(title),
+          subtitle: Text(subtitleBuilder()),
+          trailing: _ColorChip(color: color, outlined: outlined),
+          onTap: () async {
+            final result = await showSwatchPicker(
+              context,
+              title: dialogTitle,
+              initial: color,
+              allowFreePick: true,
+            );
+            if (result == null) return;
+            if (result.isReset) {
+              await onChange(null);
+            } else if (result.color != null) {
+              await onChange(result.color);
+            }
+          },
+        );
+      },
     );
   }
 }

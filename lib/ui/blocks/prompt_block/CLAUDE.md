@@ -25,20 +25,25 @@ by [JournalRepository.materializeLayout](../../../data/repositories/journal_repo
 which calls [BlockSettings.pickPromptFor](../../../data/services/block_settings.dart).
 That means:
 
-- The prompt list and strategy (`daily` / `random` / `manual`) are
-  configured globally in Profile → Block settings → Prompt block.
-- For `daily` / `random`: the pick happens **once**, the day the entry
-  is created, and lives in the entry's `contentJson` forever —
-  re-opening the entry never re-rolls.
+- The prompt list and strategy (`random` or `manual`) are configured
+  globally in Profile → Block settings → Prompt block. The strategy is
+  surfaced as a "Random Prompts" `SwitchListTile`: ON (default) =
+  `random`, OFF = `manual`. (Legacy `daily` values on existing devices
+  read back as `random`.)
+- For `random`: the pick happens **once**, the day the entry is created,
+  and lives in the entry's `contentJson` forever — re-opening the entry
+  never re-rolls. "Random" here describes the user-perceived behavior
+  (a different prompt each day), not non-determinism — the pick is
+  deterministic from `(daysSinceEpoch + slotIndex) mod N`.
 - For `manual`: `pickPromptFor` returns `null`, the materialized
   prompt is empty, and the widget opens the picker sheet automatically
   on first build of the editable view.
 - Editing the prompt list afterwards only affects entries created
-  *after* the edit (for `daily` / `random`); for `manual`, the next
-  picker open reflects the updated list immediately.
-- Empty prompt list AND non-`manual` strategy → the widget renders a
-  dimmed italic "No prompt set" placeholder. In editable mode the
-  placeholder becomes "Tap to pick a prompt".
+  *after* the edit (for `random`); for `manual`, the next picker open
+  reflects the updated list immediately.
+- Empty prompt list AND `random` strategy → the widget renders a dimmed
+  italic "No prompt set" placeholder. In editable mode the placeholder
+  becomes "Tap to pick a prompt".
 
 The widget reads the prompt from `widget.data.content`. It only reads
 `BlockSettings` to source the picker's list — never to pick on its own.

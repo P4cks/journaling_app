@@ -59,7 +59,7 @@ class WeatherManualWidget extends StatelessWidget {
     return ListenableBuilder(
       listenable: settings,
       builder: (context, _) => BlockWithTitle(
-        title: settings.weatherTitle,
+        title: settings.carouselTitlesEnabled ? "Today's weather" : null,
         body: _buildBody(context),
       ),
     );
