@@ -9,8 +9,11 @@ sheet is a stateless top-level function returning the user's pick or
 - [add_block_sheet.dart](add_block_sheet.dart) —
   `Future<AddBlockResult?> showAddBlockSheet(context, {allowedTypes, title})`
   + sealed `AddBlockResult` (`AddBlockResultBuiltin` / `AddBlockResultCustom`).
-  Half-screen `DraggableScrollableSheet` (initial 0.5, max 0.9). Top:
-  a 2-column `SliverGrid` of scaled-down built-in block previews
+  Half-screen sheet built on
+  [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
+  (the shared scaffold owns the drag handle, the title row, and the
+  `DraggableScrollableSheet` chrome). Body:
+  a 2-column grid of scaled-down built-in block previews
   (`BlockWidget` in `BlockMode.readOnly` with `sampleData`), iterating
   `BlockType.values` minus `_hiddenBlockTypes`. Bottom (when
   `allowedTypes == null`): a **Custom blocks** section listing every
@@ -53,12 +56,13 @@ sheet is a stateless top-level function returning the user's pick or
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
   `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, title})`.
-  Half-screen `DraggableScrollableSheet` (initial 0.5, max 0.9) — same
-  UX as `showAddBlockSheet` — with a drag handle, the title, and a
-  scrollable `SliverList` of `ListTile`s (one per layout). Returns
-  the picked layout or `null`. Subtitle text per row summarises the
-  layout via its `kind` (e.g. "4 blocks + text" for
-  `fixedFourPlusText`).
+  Half-screen sheet built on
+  [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
+  — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
+  of `ListTile`s; the scaffold provides the drag handle, the title
+  row, and the `DraggableScrollableSheet` chrome. Returns the picked
+  layout or `null`. Subtitle text per row summarises the layout via
+  its `kind` (e.g. "4 blocks + text" for `fixedFourPlusText`).
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action

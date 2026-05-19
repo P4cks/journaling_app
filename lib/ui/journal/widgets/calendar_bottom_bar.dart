@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -101,49 +102,25 @@ class _Bar extends StatelessWidget {
 
   Future<void> _openMonthSheet(BuildContext context) async {
     FocusScope.of(context).unfocus();
-    final picked = await showModalBottomSheet<DateTime>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (ctx, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        ctx,
-                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _MonthCalendar(
-                    debug: AppDependencies.of(ctx).debugSettings,
-                    selectedDate: selectedDate,
-                    entriesByDay: entriesByDay,
-                    onDateSelected: (date) {
-                      Navigator.of(ctx).pop(date);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    final picked = await showDraggableSheet<DateTime>(
+      context,
+      initialChildSize: 0.6,
+      minChildSize: 0.5,
+      slivers: (ctx, _) => [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _MonthCalendar(
+              debug: AppDependencies.of(ctx).debugSettings,
+              selectedDate: selectedDate,
+              entriesByDay: entriesByDay,
+              onDateSelected: (date) {
+                Navigator.of(ctx).pop(date);
+              },
+            ),
+          ),
+        ),
+      ],
     );
     if (picked != null) onDateSelected(picked);
   }

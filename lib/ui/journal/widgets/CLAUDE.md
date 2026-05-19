@@ -54,9 +54,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   sheet (no route push, no auto-restoration risk).
 - [calendar_bottom_bar.dart](calendar_bottom_bar.dart) —
   `CalendarBottomBar`. Sticky compact week strip via `TableCalendar`
-  in `CalendarFormat.week`, plus a trailing IconButton that opens a
-  draggable bottom sheet with the full-month view. Collapses to zero
-  height when the keyboard is up (`AnimatedSize` + `viewInsetsOf`).
+  in `CalendarFormat.week`, plus a trailing IconButton that opens
+  the full-month view via
+  [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
+  (initial 0.6, no title). Collapses to zero height when the
+  keyboard is up (`AnimatedSize` + `viewInsetsOf`).
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
   `vm.entries` sorted ascending. Two-way sync with `vm.selectedDate`

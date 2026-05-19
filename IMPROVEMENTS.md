@@ -9,20 +9,19 @@ small behavior-preserving cleanup commits.
   (`layout_editor_screen.dart`, `settings_screen.dart`, `block_grid.dart`,
   `profile_auth_card.dart`). Split them only when touching their feature areas,
   so behavior stays easy to verify commit by commit.
-- **Profile vs Settings auth-card duplication.** Both `/profile` and
-  `/settings` render `ProfileAuthCard`. `lib/ui/profile/CLAUDE.md` already
-  notes this as retirable. Deferred because the call is behavioral
-  (drops a UI surface), not cosmetic. Suggested resolution: keep
-  `/profile` as the canonical sign-in entry point; drop the embedded
-  auth section from `/settings`.
-- **Bottom-sheet scaffolds are inconsistent.** `layout_picker_sheet`,
-  `add_block_sheet`, `add_section_sheet`, `prompt_picker_sheet`,
-  `swatch_grid_picker`, and `showThemeEditorSheet` mix
-  `DraggableScrollableSheet` with plain `showModalBottomSheet` and
-  vary on drag handle / padding / dismissal. A shared
-  `lib/ui/core/widgets/bottom_sheet_scaffold.dart` would standardise
-  the chrome. Deferred — six call sites; each needs a separate
-  verification pass.
+- **Plain menu-style bottom sheets (9 call sites).** The three
+  draggable sheets now share `showDraggableSheet`. The remaining
+  plain sheets are a different visual contract (small list, no drag
+  handle, mostly no title): prompt picker
+  (`lib/ui/blocks/prompt_block/prompt_picker_sheet.dart`), photo
+  source + manage-photo (`lib/ui/blocks/photo_block/`), custom-block
+  icon picker (`lib/ui/profile/view/custom_block_editor_screen.dart`),
+  layout icon picker, layout kind picker, add-section sheet, theme
+  editor (`showThemeEditorSheet` in `settings_screen.dart`), profile
+  auth email sheet. A `showMenuSheet` companion to
+  `showDraggableSheet` could standardise these — defer until the
+  next time one of them is touched. `showSwatchPicker` is a
+  `showDialog`, not a bottom sheet — out of scope.
 - **`profile_auth_card.dart` is ~502 lines.** The `_EmailAuthSheetState.build()`
   alone is ~125 lines. Splitting `_EmailField`, `_PasswordField`, and
   `_ActionButtons` into private widgets would help readability. Purely
@@ -78,3 +77,20 @@ small behavior-preserving cleanup commits.
 - `LayoutRepository.seedDefaultIfEmpty` and `SwatchResult` gained
   why-they-exist docstrings (first-launch invariant; three-valued
   picker sentinel contract).
+- `ProfileAuthCard` was already retired from `/settings`; the
+  remaining false claim in `lib/ui/profile/CLAUDE.md` was fixed.
+  `/profile` is the canonical sign-in surface.
+- The three carousel widgets (mood, manual weather, custom carousel)
+  collapsed onto a shared `CarouselBlockScaffold<T>` in
+  `lib/ui/blocks/widgets/`. Each block now supplies its options
+  list, glyph renderer, and content encoder; the scaffold owns the
+  `BlockWithTitle` wrap, the read-only em-dash placeholder, and the
+  `AnimatedScale + AnimatedOpacity` focus animation around
+  `CollapsibleCarouselBlock<T>`. Custom-carousel orphan handling
+  stays local.
+- The three `DraggableScrollableSheet` call sites
+  (`calendar_bottom_bar`, `layout_picker_sheet`, `add_block_sheet`)
+  collapsed onto `showDraggableSheet<T>` in
+  `lib/ui/core/widgets/bottom_sheet_scaffold.dart`. The shared
+  scaffold owns the drag handle, the optional title row, and the
+  `DraggableScrollableSheet` chrome.
