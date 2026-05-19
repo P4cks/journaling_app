@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Full-width card pinned at the top of the entries `CustomScrollView`.
 /// Shows the user's current and longest streaks side-by-side, or a
@@ -87,10 +87,11 @@ class _StatColumn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              isActive ? PhosphorIconsFill.flame : PhosphorIconsDuotone.flame,
+              HugeIcons.strokeRoundedFire,
               size: 20,
-              color: scheme.primary,
-              secondaryColor: scheme.primary,
+              color: isActive
+                  ? scheme.primary
+                  : scheme.primary.withValues(alpha: 0.55),
             ),
             const SizedBox(width: 6),
             Text(
@@ -130,7 +131,7 @@ class _NudgeRow extends StatelessWidget {
         : 'Make an entry today to start a streak.';
     return Row(
       children: [
-        AppIcon(PhosphorIconsDuotone.flame, size: 28, color: scheme.primary),
+        AppIcon(HugeIcons.strokeRoundedFire, size: 28, color: scheme.primary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

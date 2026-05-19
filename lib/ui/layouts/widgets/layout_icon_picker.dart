@@ -81,7 +81,7 @@ class _IconTile extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: AppIcon(
-            selected ? icon.fill : icon.duotone,
+            icon.icon,
             size: 28,
             color: selected ? scheme.onPrimaryContainer : scheme.onSurface,
           ),

@@ -12,7 +12,8 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
@@ -64,38 +65,21 @@ Future<AddBlockResult?> showAddBlockSheet(
   Set<BlockType>? allowedTypes,
   String title = 'Add block',
 }) {
-  return showModalBottomSheet<AddBlockResult>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (sheetContext) {
-      return DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, scrollController) {
-          return _AddBlockSheetBody(
-            scrollController: scrollController,
-            allowedTypes: allowedTypes,
-            title: title,
-          );
-        },
-      );
-    },
+  return showDraggableSheet<AddBlockResult>(
+    context,
+    title: title,
+    slivers: (ctx, _) => [
+      SliverToBoxAdapter(
+        child: _AddBlockSheetBody(allowedTypes: allowedTypes),
+      ),
+    ],
   );
 }
 
 class _AddBlockSheetBody extends StatelessWidget {
-  const _AddBlockSheetBody({
-    required this.scrollController,
-    required this.allowedTypes,
-    required this.title,
-  });
+  const _AddBlockSheetBody({required this.allowedTypes});
 
-  final ScrollController scrollController;
   final Set<BlockType>? allowedTypes;
-  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -111,36 +95,14 @@ class _AddBlockSheetBody extends StatelessWidget {
       listenable: settings,
       builder: (context, _) {
         final customs = settings.customCarousels;
-        return CustomScrollView(
-          controller: scrollController,
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.4,
-                      ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(title, style: theme.textTheme.titleMedium),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SliverPadding(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              sliver: SliverGrid(
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -148,41 +110,38 @@ class _AddBlockSheetBody extends StatelessWidget {
                   crossAxisSpacing: 12,
                   childAspectRatio: 0.72,
                 ),
-                delegate: SliverChildBuilderDelegate((gridCtx, i) {
-                  final type = visibleTypes[i];
-                  return _BuiltinCell(type: type);
-                }, childCount: visibleTypes.length),
+                itemCount: visibleTypes.length,
+                itemBuilder: (gridCtx, i) =>
+                    _BuiltinCell(type: visibleTypes[i]),
               ),
             ),
             if (showCustomSection) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Custom blocks',
-                      style: theme.textTheme.titleMedium,
-                    ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Custom blocks',
+                    style: theme.textTheme.titleMedium,
                   ),
                 ),
               ),
               if (customs.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Text(
-                      "You haven't defined any custom carousel blocks yet.",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    "You haven't defined any custom carousel blocks yet.",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 )
               else
-                SliverPadding(
+                Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  sliver: SliverGrid(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
@@ -190,25 +149,22 @@ class _AddBlockSheetBody extends StatelessWidget {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.72,
                     ),
-                    delegate: SliverChildBuilderDelegate((gridCtx, i) {
-                      final def = customs[i];
-                      return _CustomCell(definition: def);
-                    }, childCount: customs.length),
+                    itemCount: customs.length,
+                    itemBuilder: (gridCtx, i) =>
+                        _CustomCell(definition: customs[i]),
                   ),
                 ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Pop the sheet first so the editor pushes onto
-                      // the layout-editor screen, not the sheet.
-                      Navigator.of(context).pop();
-                      context.push(Routes.newCustomBlock);
-                    },
-                    icon: const AppIcon(PhosphorIconsDuotone.plus),
-                    label: const Text('Add custom block'),
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // Pop the sheet first so the editor pushes onto
+                    // the layout-editor screen, not the sheet.
+                    Navigator.of(context).pop();
+                    context.push(Routes.newCustomBlock);
+                  },
+                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+                  label: const Text('Add custom block'),
                 ),
               ),
             ],

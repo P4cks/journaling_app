@@ -8,9 +8,9 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/theme_mode_selector.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -42,9 +42,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Journal templates",
-              children: const [
+              children: [
                 SettingsNavTile(
-                  icon: PhosphorIconsDuotone.squaresFour,
+                  icon: HugeIcons.strokeRoundedGrid,
                   title: 'Manage templates',
                   route: Routes.layouts,
                 ),
@@ -52,9 +52,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               label: "Blocks",
-              children: const [
+              children: [
                 SettingsNavTile(
-                  icon: PhosphorIconsDuotone.slidersHorizontal,
+                  icon: HugeIcons.strokeRoundedFilterHorizontal,
                   title: 'Configure blocks',
                   route: Routes.blockSettings,
                 ),
@@ -66,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
                 Padding(
                   padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
                   child: SwitchListTile(
-                    secondary: const AppIcon(PhosphorIconsDuotone.bug),
+                    secondary: AppIcon(HugeIcons.strokeRoundedBug01),
                     title: const Text('Show debug menu'),
                     value: debug.debugMenuVisible,
                     onChanged: debug.setDebugMenuVisible,
@@ -74,7 +74,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 if (debug.debugMenuVisible) ...[
                   SwitchListTile(
-                    secondary: const AppIcon(PhosphorIconsDuotone.lockKeyOpen),
+                    secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
                     title: const Text('Unlock all days'),
                     subtitle: const Text(
                       'Select and edit any past or future day',
@@ -84,7 +84,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _DebugColorPickerTile(
                     theme: theme,
-                    icon: PhosphorIconsDuotone.paintBucket,
+                    icon: HugeIcons.strokeRoundedPaintBucket,
                     title: 'Override surface color',
                     dialogTitle: 'Override surface',
                     colorBuilder: (context) =>
@@ -98,7 +98,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _DebugColorPickerTile(
                     theme: theme,
-                    icon: PhosphorIconsDuotone.eyedropper,
+                    icon: HugeIcons.strokeRoundedColorPicker,
                     title: 'Free-pick secondary (HSL)',
                     dialogTitle: 'Free-pick secondary',
                     colorBuilder: (_) => theme.effectiveSecondary,
@@ -107,7 +107,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _DebugColorPickerTile(
                     theme: theme,
-                    icon: PhosphorIconsDuotone.eyedropper,
+                    icon: HugeIcons.strokeRoundedColorPicker,
                     title: 'Free-pick accent (HSL)',
                     dialogTitle: 'Free-pick accent',
                     colorBuilder: (_) => theme.effectiveAccent,
@@ -120,8 +120,8 @@ class SettingsScreen extends StatelessWidget {
                       return Column(
                         children: [
                           ListTile(
-                            leading: Icon(
-                              PhosphorIconsDuotone.trash,
+                            leading: AppIcon(
+                              HugeIcons.strokeRoundedDelete02,
                               color: errorColor,
                             ),
                             title: Text(
@@ -134,8 +134,8 @@ class SettingsScreen extends StatelessWidget {
                             onTap: () => _confirmAndDeleteAllEntries(context),
                           ),
                           ListTile(
-                            leading: Icon(
-                              PhosphorIconsDuotone.trash,
+                            leading: AppIcon(
+                              HugeIcons.strokeRoundedDelete02,
                               color: errorColor,
                             ),
                             title: Text(
@@ -326,7 +326,7 @@ class _PostItStyleSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile(
-          secondary: const AppIcon(PhosphorIconsDuotone.note),
+          secondary: AppIcon(HugeIcons.strokeRoundedNote),
           title: const Text('Playful post-it style'),
           subtitle: const Text(
             'Slight rotation, offset, and color on each block.',
@@ -439,8 +439,8 @@ class _PostItSwatch extends StatelessWidget {
                   color: scheme.outline.withValues(alpha: 0.4),
                 ),
               ),
-              child: Icon(
-                PhosphorIconsBold.x,
+              child: AppIcon(
+                HugeIcons.strokeRoundedCancel01,
                 size: 12,
                 color: scheme.onSurface,
               ),
@@ -475,7 +475,7 @@ class _AddPostItSwatch extends StatelessWidget {
           ),
         ),
         alignment: Alignment.center,
-        child: Icon(PhosphorIconsBold.plus, size: 18, color: scheme.onSurface),
+        child: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 18, color: scheme.onSurface),
       ),
     );
   }
@@ -581,7 +581,7 @@ class _ThemeEditorSheetState extends State<_ThemeEditorSheet> {
             ),
             const SizedBox(height: 8),
             _ColorTile(
-              icon: PhosphorIconsDuotone.paintBrush,
+              icon: HugeIcons.strokeRoundedPaintBrush01,
               label: 'Surface tint',
               subtitle: 'Base color for app surfaces',
               current: _surface,
@@ -593,7 +593,7 @@ class _ThemeEditorSheetState extends State<_ThemeEditorSheet> {
               ),
             ),
             _ColorTile(
-              icon: PhosphorIconsDuotone.palette,
+              icon: HugeIcons.strokeRoundedColorPicker,
               label: 'Secondary color',
               subtitle: '30% of the theme — surfaces, chips, accents',
               current: _secondary,
@@ -605,7 +605,7 @@ class _ThemeEditorSheetState extends State<_ThemeEditorSheet> {
               ),
             ),
             _ColorTile(
-              icon: PhosphorIconsDuotone.sparkle,
+              icon: HugeIcons.strokeRoundedSparkles,
               label: 'Accent color',
               subtitle: '10% of the theme — highlights and active states',
               current: _accent,
@@ -617,7 +617,7 @@ class _ThemeEditorSheetState extends State<_ThemeEditorSheet> {
               ),
             ),
             _ColorTile(
-              icon: PhosphorIconsDuotone.textAa,
+              icon: HugeIcons.strokeRoundedTextFont,
               label: 'Text color',
               subtitle: 'Primary font color for this theme',
               current: _textColor,
@@ -711,7 +711,7 @@ class _ThemePreview extends StatelessWidget {
 
 class _ColorTile extends StatelessWidget {
   const _ColorTile({
-    this.icon = PhosphorIconsDuotone.palette,
+    required this.icon,
     required this.label,
     required this.subtitle,
     required this.current,
@@ -719,7 +719,7 @@ class _ColorTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String label;
   final String subtitle;
   final Color current;
@@ -789,7 +789,7 @@ class _DebugColorPickerTile extends StatelessWidget {
   });
 
   final ThemeSettings theme;
-  final IconData icon;
+  final HugeIconData icon;
   final String title;
   final String dialogTitle;
   final Color Function(BuildContext) colorBuilder;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Centered call-to-action shown on the main journal screen for days
 /// that don't yet have an entry (today). Tapping fires [onTap] —
@@ -30,7 +30,7 @@ class MakeEntryCta extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              PhosphorIconsDuotone.notePencil,
+              HugeIcons.strokeRoundedNoteEdit,
               size: 56,
               color: scheme.onSurfaceVariant,
             ),
@@ -51,7 +51,7 @@ class MakeEntryCta extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.tonalIcon(
               onPressed: onTap,
-              icon: const AppIcon(PhosphorIconsBold.plus),
+              icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
               label: Text(buttonLabel),
             ),
           ],

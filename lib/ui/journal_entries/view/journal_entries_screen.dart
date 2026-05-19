@@ -7,9 +7,9 @@ import 'package:journaling_app_rewrite/ui/core/widgets/streak_stat_card.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/view_model/journal_entries_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/widgets/entry_list_tile.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class JournalEntriesScreen extends StatefulWidget {
   const JournalEntriesScreen({super.key});
@@ -130,7 +130,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              PhosphorIconsDuotone.bookOpen,
+              HugeIcons.strokeRoundedBookOpen01,
               size: 56,
               color: scheme.onSurfaceVariant,
             ),

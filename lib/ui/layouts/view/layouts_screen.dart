@@ -8,8 +8,8 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_kind_picker_sheet.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 String _layoutSummary(JournalLayout layout) {
   switch (layout.kind) {
@@ -111,7 +111,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: AppIcon(
-                      PhosphorIconsDuotone.trash,
+                      HugeIcons.strokeRoundedDelete02,
                       color: scheme.onErrorContainer,
                     ),
                   ),
@@ -128,9 +128,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                       children: [
                         IconButton(
                           icon: AppIcon(
-                            isDefault
-                                ? PhosphorIconsFill.star
-                                : PhosphorIconsDuotone.star,
+                            HugeIcons.strokeRoundedStar,
                             color: isDefault ? scheme.primary : null,
                           ),
                           tooltip: isDefault
@@ -140,7 +138,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                               ? null
                               : () => vm.setDefault(layout.id),
                         ),
-                        const AppIcon(PhosphorIconsDuotone.caretRight),
+                        AppIcon(HugeIcons.strokeRoundedArrowRight01),
                         const SizedBox(width: 8),
                       ],
                     ),
@@ -152,7 +150,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _openNewLayoutFlow,
         tooltip: 'New layout',
-        child: const AppIcon(PhosphorIconsBold.plus),
+        child: AppIcon(HugeIcons.strokeRoundedPlusSign),
       ),
     );
   }
@@ -187,7 +185,7 @@ class _LayoutIconBadge extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: AppIcon(
-        isDefault ? icon.fill : icon.duotone,
+        icon.icon,
         size: 22,
         color: isDefault ? scheme.onPrimaryContainer : scheme.onSurface,
       ),

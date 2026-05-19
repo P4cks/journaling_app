@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// AppBar title for the layout editor — mirrors the inline tap-to-edit
 /// pattern used by [EditorTitle] on the journal-entry screen. Renders the
@@ -107,7 +107,7 @@ class _LayoutNameTitleState extends State<LayoutNameTitle> {
               ),
               const SizedBox(width: 6),
               AppIcon(
-                PhosphorIconsDuotone.pencilSimple,
+                HugeIcons.strokeRoundedPencil,
                 size: 14,
                 color: theme.colorScheme.onSurfaceVariant.withValues(
                   alpha: 0.55,

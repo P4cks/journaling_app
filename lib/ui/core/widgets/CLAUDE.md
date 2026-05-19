@@ -28,6 +28,17 @@ for how they fit together; this file is per-file notes.
   via `context.push`. Used for navigation rows inside settings
   sections that only route to another screen (e.g. Settings → Manage
   templates / Configure blocks).
+- [bottom_sheet_scaffold.dart](bottom_sheet_scaffold.dart) —
+  `Future<T?> showDraggableSheet<T>(context, {title, initialChildSize,
+  minChildSize, maxChildSize, required slivers})`. Single helper that
+  composes `showModalBottomSheet<T>(isScrollControlled: true,
+  useSafeArea: true)` with a `DraggableScrollableSheet`, a 36×4
+  rounded drag handle, and an optional left-aligned `titleMedium`
+  header. The caller's `slivers` builder receives the inner
+  `ScrollController` (which the helper wires to the wrapping
+  `CustomScrollView`). Used by the three draggable sheets — calendar
+  month sheet, layout picker, add-block sheet. Plain menu-style
+  bottom sheets intentionally don't go through this helper.
 - [streak_stat_card.dart](streak_stat_card.dart) — `StreakStatCard` +
   private nudge widget. Renders a `StreakResult` from
   [services/streak_service.dart](../../../data/services/streak_service.dart).

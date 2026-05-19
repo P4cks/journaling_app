@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
@@ -13,7 +13,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/weather_block_co
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 extension BlockTypeDisplay on BlockType {
   String get label {
@@ -43,30 +43,30 @@ extension BlockTypeDisplay on BlockType {
     }
   }
 
-  IconData get icon {
+  HugeIconData get icon {
     switch (this) {
       case BlockType.textBlock:
-        return PhosphorIconsDuotone.textAa;
+        return HugeIcons.strokeRoundedTextFont;
       case BlockType.moodTracker:
-        return PhosphorIconsDuotone.smiley;
+        return HugeIcons.strokeRoundedSmile;
       case BlockType.weatherManual:
-        return PhosphorIconsDuotone.sun;
+        return HugeIcons.strokeRoundedSun01;
       case BlockType.promptBlock:
-        return PhosphorIconsDuotone.question;
+        return HugeIcons.strokeRoundedQuestion;
       case BlockType.todoBlock:
-        return PhosphorIconsDuotone.listChecks;
+        return HugeIcons.strokeRoundedCheckList;
       case BlockType.quoteBlock:
-        return PhosphorIconsDuotone.quotes;
+        return HugeIcons.strokeRoundedQuotes;
       case BlockType.memoryBlock:
-        return PhosphorIconsDuotone.clockCounterClockwise;
+        return HugeIcons.strokeRoundedTime04;
       case BlockType.weatherApi:
-        return PhosphorIconsDuotone.cloudSun;
+        return HugeIcons.strokeRoundedSunCloud01;
       case BlockType.photoBlock:
-        return PhosphorIconsDuotone.image;
+        return HugeIcons.strokeRoundedImage01;
       case BlockType.locationBlock:
-        return PhosphorIconsDuotone.mapPin;
+        return HugeIcons.strokeRoundedMapPin;
       case BlockType.customCarousel:
-        return PhosphorIconsDuotone.squaresFour;
+        return HugeIcons.strokeRoundedGrid;
     }
   }
 

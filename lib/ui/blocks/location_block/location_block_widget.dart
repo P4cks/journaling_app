@@ -3,9 +3,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Map block backed by flutter_map + OpenStreetMap tiles. In editable
 /// mode the user long-presses on the map to drop (or move) a pin; the
@@ -134,7 +134,7 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
                       height: 32,
                       alignment: Alignment.topCenter,
                       child: AppIcon(
-                        PhosphorIconsFill.mapPin,
+                        HugeIcons.strokeRoundedMapPin,
                         size: 32,
                         color: scheme.primary,
                       ),

@@ -1,38 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
 
-/// Thin wrapper around [PhosphorIcon] that wires the duotone secondary tone
-/// to the current theme's accent (`colorScheme.primary`) and inherits the
-/// primary tone from the surrounding [IconTheme].
+/// Convenience alias for the SVG-JSON data shape that the HugeIcons
+/// constants (e.g. `HugeIcons.strokeRoundedHome01`) expose. Used
+/// throughout the UI to type icon parameters without leaking the raw
+/// `List<List<dynamic>>` everywhere.
+typedef HugeIconData = List<List<dynamic>>;
+
+/// Thin wrapper around [HugeIcon] that inherits `size` and `color` from
+/// the surrounding [IconTheme] when not specified explicitly.
 ///
-/// Pass a [PhosphorIconsDuotone].xxx icon for default detail-rich rendering,
-/// or a [PhosphorIconsFill].xxx icon for active/selected states.
+/// The free HugeIcons package ships only the `strokeRounded` family, so
+/// there is no separate "filled" / "active" variant — selected states
+/// should be expressed via colour (e.g. `colorScheme.primary`) rather
+/// than swapping the icon. Pass any `HugeIcons.strokeRoundedXxx`
+/// constant as the [icon].
 class AppIcon extends StatelessWidget {
-  const AppIcon(
-    this.icon, {
-    super.key,
-    this.size,
-    this.color,
-    this.secondaryColor,
-    this.secondaryOpacity = 1.0,
-  });
+  const AppIcon(this.icon, {super.key, this.size, this.color});
 
-  final IconData icon;
+  final HugeIconData icon;
   final double? size;
   final Color? color;
-  final Color? secondaryColor;
-  final double secondaryOpacity;
 
   @override
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    return PhosphorIcon(
-      icon,
+    return HugeIcon(
+      icon: icon,
       size: size ?? iconTheme.size,
-      color: color ?? iconTheme.color,
-      duotoneSecondaryColor: secondaryColor ?? scheme.primary,
-      duotoneSecondaryOpacity: secondaryOpacity,
+      color: color ?? iconTheme.color ?? const Color(0xFF000000),
     );
   }
 }

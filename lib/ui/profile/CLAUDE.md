@@ -12,11 +12,11 @@ directory hosts the pushed screens:
   provider + verification + sign-out) states. Reachable from the
   dropdown's "Sign in" row when signed out; deep-linking in the
   signed-in state surfaces the same card's signed-in view.
-- **Settings** (`/settings`) — Appearance / Journal templates /
-  Blocks / Debug. Still embeds `ProfileAuthCard` as a section for
-  parity with the dedicated Profile screen — both surface the same
-  signed-in/out widget; if that duplication starts to bite, retire
-  the Settings copy and keep `/profile` as the only entry point.
+- **Settings** (`/settings`) — Appearance / Post-it style / Journal
+  templates / Blocks / Debug. **No auth UI** — `/profile` is the
+  canonical sign-in surface; `/settings` is appearance and
+  configuration only. The profile dropdown's "Sign in" row pushes
+  `/profile` directly.
 - **Block-settings** (`/block-settings`) — block-type-global
   configuration inline on one screen. Two sections: **Prompt Block**
   (the prompt list + the Random Prompts toggle) and **Carousel

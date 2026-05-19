@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/app_user.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ProfileAuthCard extends StatelessWidget {
   const ProfileAuthCard({super.key, required this.authRepository});
@@ -60,7 +60,7 @@ class _SignedOutProfile extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: scheme.primaryContainer,
                 foregroundColor: scheme.onPrimaryContainer,
-                child: const AppIcon(PhosphorIconsDuotone.userCircle),
+                child: AppIcon(HugeIcons.strokeRoundedUserCircle),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -89,7 +89,7 @@ class _SignedOutProfile extends StatelessWidget {
               authRepository.configurationMessage != null) ...[
             const SizedBox(height: 12),
             _MessageBanner(
-              icon: PhosphorIconsDuotone.warningCircle,
+              icon: HugeIcons.strokeRoundedAlertCircle,
               message:
                   authRepository.errorMessage ??
                   authRepository.configurationMessage!,
@@ -98,7 +98,7 @@ class _SignedOutProfile extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           _AuthActionButton(
-            icon: PhosphorIconsDuotone.envelopeSimple,
+            icon: HugeIcons.strokeRoundedMail02,
             label: 'Continue with Email',
             isLoading:
                 authRepository.operation == AuthOperation.email ||
@@ -110,14 +110,14 @@ class _SignedOutProfile extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _AuthActionButton(
-            icon: PhosphorIconsDuotone.googleLogo,
+            icon: HugeIcons.strokeRoundedGoogle,
             label: 'Continue with Google',
             isLoading: authRepository.operation == AuthOperation.google,
             onPressed: disabled ? null : authRepository.signInWithGoogle,
           ),
           const SizedBox(height: 8),
           _AuthActionButton(
-            icon: PhosphorIconsDuotone.appleLogo,
+            icon: HugeIcons.strokeRoundedApple,
             label: 'Continue with Apple',
             isLoading: authRepository.operation == AuthOperation.apple,
             onPressed: disabled ? null : authRepository.signInWithApple,
@@ -171,7 +171,7 @@ class _SignedInProfile extends StatelessWidget {
           if (user.email != null && !user.emailVerified) ...[
             const SizedBox(height: 12),
             _MessageBanner(
-              icon: PhosphorIconsDuotone.envelope,
+              icon: HugeIcons.strokeRoundedMail01,
               message: 'Email address not verified yet.',
               isError: false,
             ),
@@ -179,7 +179,7 @@ class _SignedInProfile extends StatelessWidget {
           if (authRepository.errorMessage != null) ...[
             const SizedBox(height: 12),
             _MessageBanner(
-              icon: PhosphorIconsDuotone.warningCircle,
+              icon: HugeIcons.strokeRoundedAlertCircle,
               message: authRepository.errorMessage!,
               isError: true,
             ),
@@ -192,7 +192,7 @@ class _SignedInProfile extends StatelessWidget {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const AppIcon(PhosphorIconsDuotone.signOut),
+                : AppIcon(HugeIcons.strokeRoundedLogout01),
             label: const Text('Sign out'),
           ),
         ],
@@ -230,7 +230,7 @@ class _AuthActionButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String label;
   final bool isLoading;
   final VoidCallback? onPressed;
@@ -257,7 +257,7 @@ class _MessageBanner extends StatelessWidget {
     required this.isError,
   });
 
-  final IconData icon;
+  final HugeIconData icon;
   final String message;
   final bool isError;
 
@@ -390,7 +390,7 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                       onPressed: busy
                           ? null
                           : () => Navigator.of(context).pop(),
-                      icon: const AppIcon(PhosphorIconsDuotone.x),
+                      icon: AppIcon(HugeIcons.strokeRoundedCancel01),
                     ),
                   ],
                 ),
@@ -414,9 +414,9 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                   enabled: !busy,
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: AppIcon(PhosphorIconsDuotone.envelopeSimple),
+                    prefixIcon: AppIcon(HugeIcons.strokeRoundedMail02),
                   ),
                   validator: (value) {
                     final email = value?.trim() ?? '';
@@ -436,9 +436,9 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                         ? AutofillHints.newPassword
                         : AutofillHints.password,
                   ],
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: AppIcon(PhosphorIconsDuotone.lockKey),
+                    prefixIcon: AppIcon(HugeIcons.strokeRoundedSquareLockPassword),
                   ),
                   validator: (value) {
                     final password = value ?? '';
@@ -451,7 +451,7 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                 if (_auth.errorMessage != null) ...[
                   const SizedBox(height: 12),
                   _MessageBanner(
-                    icon: PhosphorIconsDuotone.warningCircle,
+                    icon: HugeIcons.strokeRoundedAlertCircle,
                     message: _auth.errorMessage!,
                     isError: true,
                   ),
@@ -459,7 +459,7 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                 if (_auth.successMessage != null) ...[
                   const SizedBox(height: 12),
                   _MessageBanner(
-                    icon: PhosphorIconsDuotone.checkCircle,
+                    icon: HugeIcons.strokeRoundedCheckmarkCircle01,
                     message: _auth.successMessage!,
                     isError: false,
                   ),
@@ -472,7 +472,7 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const AppIcon(PhosphorIconsDuotone.arrowRight),
+                      : AppIcon(HugeIcons.strokeRoundedArrowRight01),
                   label: Text(_isRegistering ? 'Create account' : 'Sign in'),
                 ),
                 TextButton(

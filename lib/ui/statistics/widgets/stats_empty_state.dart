@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Page-level (or per-chart) empty state for the statistics page.
 class StatsEmptyState extends StatelessWidget {
@@ -31,7 +31,7 @@ class StatsEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIcon(
-              PhosphorIconsDuotone.chartBar,
+              HugeIcons.strokeRoundedChartBarLine,
               size: iconSize,
               color: scheme.onSurfaceVariant,
             ),

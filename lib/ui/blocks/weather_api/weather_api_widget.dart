@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
@@ -6,11 +7,10 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Fetches current weather via [WeatherService] (Open-Meteo + geolocator)
 /// and bakes the result into the entry's content the first time it
-/// renders. Reuses the manual weather block's Phosphor icon mapping.
+/// renders. Reuses the manual weather block's HugeIcons icon mapping.
 class WeatherApiWidget extends StatefulWidget {
   const WeatherApiWidget({
     super.key,
@@ -140,7 +140,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
             const SizedBox(height: 6),
             TextButton.icon(
               onPressed: _retry,
-              icon: const AppIcon(PhosphorIconsBold.arrowsClockwise, size: 14),
+              icon: AppIcon(HugeIcons.strokeRoundedRefresh, size: 14),
               label: Text(retryLabel),
             ),
           ],

@@ -1,11 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
-/// One curated Phosphor icon offered to the user when building a custom
-/// carousel. Stable [name] is persisted in `CarouselItem.value`; the
-/// duotone / fill `IconData`s are resolved at render time so the
-/// downstream wire shape never depends on Flutter SDK or Phosphor
+/// One curated HugeIcons glyph offered to the user when building a
+/// custom carousel. Stable [name] is persisted in `CarouselItem.value`;
+/// the underlying [icon] data is resolved at render time so the
+/// downstream wire shape never depends on Flutter SDK or icon-library
 /// internals.
+///
+/// (Names originated as Phosphor identifiers — kept as-is after the
+/// HugeIcons migration so existing saved selections still resolve.
+/// Pre-1.0 we don't migrate string keys when the visual mapping
+/// changes.)
 ///
 /// Adding a new icon is always safe. **Removing** one orphans existing
 /// items in saved definitions that referenced it; those decode to no
@@ -14,14 +19,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 class CarouselIcon {
   const CarouselIcon({
     required this.name,
-    required this.duotone,
-    required this.fill,
+    required this.icon,
     required this.label,
   });
 
   final String name;
-  final IconData duotone;
-  final IconData fill;
+  final HugeIconData icon;
   final String label;
 }
 
@@ -29,252 +32,212 @@ class CarouselIcon {
 /// Starts from a small general-purpose selection — heavy on activities,
 /// nature, food, and productivity glyphs. Order is presentation order
 /// in the picker (alphabetical within each rough category).
-const kCarouselIcons = <CarouselIcon>[
+final kCarouselIcons = <CarouselIcon>[
   // Nature / weather
   CarouselIcon(
     name: 'sun',
-    duotone: PhosphorIconsDuotone.sun,
-    fill: PhosphorIconsFill.sun,
+    icon: HugeIcons.strokeRoundedSun01,
     label: 'Sun',
   ),
   CarouselIcon(
     name: 'moon',
-    duotone: PhosphorIconsDuotone.moon,
-    fill: PhosphorIconsFill.moon,
+    icon: HugeIcons.strokeRoundedMoon,
     label: 'Moon',
   ),
   CarouselIcon(
     name: 'cloud',
-    duotone: PhosphorIconsDuotone.cloud,
-    fill: PhosphorIconsFill.cloud,
+    icon: HugeIcons.strokeRoundedCloud,
     label: 'Cloud',
   ),
   CarouselIcon(
     name: 'star',
-    duotone: PhosphorIconsDuotone.star,
-    fill: PhosphorIconsFill.star,
+    icon: HugeIcons.strokeRoundedStar,
     label: 'Star',
   ),
   CarouselIcon(
     name: 'leaf',
-    duotone: PhosphorIconsDuotone.leaf,
-    fill: PhosphorIconsFill.leaf,
+    icon: HugeIcons.strokeRoundedLeaf01,
     label: 'Leaf',
   ),
   CarouselIcon(
     name: 'tree',
-    duotone: PhosphorIconsDuotone.tree,
-    fill: PhosphorIconsFill.tree,
+    icon: HugeIcons.strokeRoundedTree01,
     label: 'Tree',
   ),
   CarouselIcon(
     name: 'flower',
-    duotone: PhosphorIconsDuotone.flower,
-    fill: PhosphorIconsFill.flower,
+    icon: HugeIcons.strokeRoundedFlower,
     label: 'Flower',
   ),
   CarouselIcon(
     name: 'mountains',
-    duotone: PhosphorIconsDuotone.mountains,
-    fill: PhosphorIconsFill.mountains,
+    icon: HugeIcons.strokeRoundedMountain,
     label: 'Mountains',
   ),
   CarouselIcon(
     name: 'waves',
-    duotone: PhosphorIconsDuotone.waves,
-    fill: PhosphorIconsFill.waves,
+    icon: HugeIcons.strokeRoundedWave,
     label: 'Waves',
   ),
   CarouselIcon(
     name: 'fire',
-    duotone: PhosphorIconsDuotone.fire,
-    fill: PhosphorIconsFill.fire,
+    icon: HugeIcons.strokeRoundedFire,
     label: 'Fire',
   ),
   // Activities
   CarouselIcon(
     name: 'barbell',
-    duotone: PhosphorIconsDuotone.barbell,
-    fill: PhosphorIconsFill.barbell,
+    icon: HugeIcons.strokeRoundedDumbbell01,
     label: 'Workout',
   ),
   CarouselIcon(
     name: 'personSimpleRun',
-    duotone: PhosphorIconsDuotone.personSimpleRun,
-    fill: PhosphorIconsFill.personSimpleRun,
+    icon: HugeIcons.strokeRoundedWorkoutRun,
     label: 'Run',
   ),
   CarouselIcon(
     name: 'personSimpleWalk',
-    duotone: PhosphorIconsDuotone.personSimpleWalk,
-    fill: PhosphorIconsFill.personSimpleWalk,
+    icon: HugeIcons.strokeRoundedWalking,
     label: 'Walk',
   ),
   CarouselIcon(
     name: 'personSimpleBike',
-    duotone: PhosphorIconsDuotone.personSimpleBike,
-    fill: PhosphorIconsFill.personSimpleBike,
+    icon: HugeIcons.strokeRoundedBicycle,
     label: 'Bike',
   ),
   CarouselIcon(
     name: 'soccerBall',
-    duotone: PhosphorIconsDuotone.soccerBall,
-    fill: PhosphorIconsFill.soccerBall,
+    icon: HugeIcons.strokeRoundedFootball,
     label: 'Sport',
   ),
   // Food / drink
   CarouselIcon(
     name: 'coffee',
-    duotone: PhosphorIconsDuotone.coffee,
-    fill: PhosphorIconsFill.coffee,
+    icon: HugeIcons.strokeRoundedCoffee01,
     label: 'Coffee',
   ),
   CarouselIcon(
     name: 'hamburger',
-    duotone: PhosphorIconsDuotone.hamburger,
-    fill: PhosphorIconsFill.hamburger,
+    icon: HugeIcons.strokeRoundedHamburger01,
     label: 'Food',
   ),
   CarouselIcon(
     name: 'pizza',
-    duotone: PhosphorIconsDuotone.pizza,
-    fill: PhosphorIconsFill.pizza,
+    icon: HugeIcons.strokeRoundedPizza01,
     label: 'Pizza',
   ),
   CarouselIcon(
     name: 'beerStein',
-    duotone: PhosphorIconsDuotone.beerStein,
-    fill: PhosphorIconsFill.beerStein,
+    icon: HugeIcons.strokeRoundedSoftDrink01,
     label: 'Beer',
   ),
   CarouselIcon(
     name: 'wine',
-    duotone: PhosphorIconsDuotone.wine,
-    fill: PhosphorIconsFill.wine,
+    icon: HugeIcons.strokeRoundedDrink,
     label: 'Wine',
   ),
   CarouselIcon(
     name: 'cake',
-    duotone: PhosphorIconsDuotone.cake,
-    fill: PhosphorIconsFill.cake,
+    icon: HugeIcons.strokeRoundedBirthdayCake,
     label: 'Cake',
   ),
   // Emotion / energy
   CarouselIcon(
     name: 'heart',
-    duotone: PhosphorIconsDuotone.heart,
-    fill: PhosphorIconsFill.heart,
+    icon: HugeIcons.strokeRoundedFavourite,
     label: 'Heart',
   ),
   CarouselIcon(
     name: 'smiley',
-    duotone: PhosphorIconsDuotone.smiley,
-    fill: PhosphorIconsFill.smiley,
+    icon: HugeIcons.strokeRoundedSmile,
     label: 'Smile',
   ),
   CarouselIcon(
     name: 'lightning',
-    duotone: PhosphorIconsDuotone.lightning,
-    fill: PhosphorIconsFill.lightning,
+    icon: HugeIcons.strokeRoundedZap,
     label: 'Energy',
   ),
   CarouselIcon(
     name: 'sparkle',
-    duotone: PhosphorIconsDuotone.sparkle,
-    fill: PhosphorIconsFill.sparkle,
+    icon: HugeIcons.strokeRoundedSparkles,
     label: 'Spark',
   ),
   // Productivity
   CarouselIcon(
     name: 'book',
-    duotone: PhosphorIconsDuotone.book,
-    fill: PhosphorIconsFill.book,
+    icon: HugeIcons.strokeRoundedBook01,
     label: 'Book',
   ),
   CarouselIcon(
     name: 'bookOpen',
-    duotone: PhosphorIconsDuotone.bookOpen,
-    fill: PhosphorIconsFill.bookOpen,
+    icon: HugeIcons.strokeRoundedBookOpen01,
     label: 'Reading',
   ),
   CarouselIcon(
     name: 'pen',
-    duotone: PhosphorIconsDuotone.pen,
-    fill: PhosphorIconsFill.pen,
+    icon: HugeIcons.strokeRoundedPen01,
     label: 'Write',
   ),
   CarouselIcon(
     name: 'briefcase',
-    duotone: PhosphorIconsDuotone.briefcase,
-    fill: PhosphorIconsFill.briefcase,
+    icon: HugeIcons.strokeRoundedBriefcase01,
     label: 'Work',
   ),
   CarouselIcon(
     name: 'lightbulb',
-    duotone: PhosphorIconsDuotone.lightbulb,
-    fill: PhosphorIconsFill.lightbulb,
+    icon: HugeIcons.strokeRoundedBulb,
     label: 'Idea',
   ),
   CarouselIcon(
     name: 'target',
-    duotone: PhosphorIconsDuotone.target,
-    fill: PhosphorIconsFill.target,
+    icon: HugeIcons.strokeRoundedTarget01,
     label: 'Goal',
   ),
   CarouselIcon(
     name: 'check',
-    duotone: PhosphorIconsDuotone.check,
-    fill: PhosphorIconsFill.check,
+    icon: HugeIcons.strokeRoundedTick01,
     label: 'Done',
   ),
   // Home / pets
   CarouselIcon(
     name: 'house',
-    duotone: PhosphorIconsDuotone.house,
-    fill: PhosphorIconsFill.house,
+    icon: HugeIcons.strokeRoundedHome01,
     label: 'Home',
   ),
   CarouselIcon(
     name: 'bed',
-    duotone: PhosphorIconsDuotone.bed,
-    fill: PhosphorIconsFill.bed,
+    icon: HugeIcons.strokeRoundedBed,
     label: 'Sleep',
   ),
   CarouselIcon(
     name: 'pawPrint',
-    duotone: PhosphorIconsDuotone.pawPrint,
-    fill: PhosphorIconsFill.pawPrint,
+    icon: HugeIcons.strokeRoundedBone01,
     label: 'Pet',
   ),
   // Misc
   CarouselIcon(
     name: 'gift',
-    duotone: PhosphorIconsDuotone.gift,
-    fill: PhosphorIconsFill.gift,
+    icon: HugeIcons.strokeRoundedGift,
     label: 'Gift',
   ),
   CarouselIcon(
     name: 'musicNote',
-    duotone: PhosphorIconsDuotone.musicNote,
-    fill: PhosphorIconsFill.musicNote,
+    icon: HugeIcons.strokeRoundedMusicNote01,
     label: 'Music',
   ),
   CarouselIcon(
     name: 'headphones',
-    duotone: PhosphorIconsDuotone.headphones,
-    fill: PhosphorIconsFill.headphones,
+    icon: HugeIcons.strokeRoundedHeadphones,
     label: 'Audio',
   ),
   CarouselIcon(
     name: 'camera',
-    duotone: PhosphorIconsDuotone.camera,
-    fill: PhosphorIconsFill.camera,
+    icon: HugeIcons.strokeRoundedCamera01,
     label: 'Camera',
   ),
   CarouselIcon(
     name: 'paintBrush',
-    duotone: PhosphorIconsDuotone.paintBrush,
-    fill: PhosphorIconsFill.paintBrush,
+    icon: HugeIcons.strokeRoundedPaintBrush01,
     label: 'Art',
   ),
 ];

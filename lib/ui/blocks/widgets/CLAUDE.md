@@ -1,13 +1,27 @@
 # lib/ui/blocks/widgets — Shared block widgets
 
 Reusable widgets and mixins consumed by more than one concrete block
-type — the collapsible-carousel body shared between the mood and
-manual-weather blocks, a small title wrapper used by both, and a
-controller-lifecycle mixin shared between the 1×1 text block and the
-full-width text section.
+type — the collapsible-carousel body shared between every carousel
+block, the carousel scaffold that wraps it, a small title wrapper used
+underneath, and a controller-lifecycle mixin shared between the 1×1
+text block and the full-width text section.
 
 ## Files
 
+- [carousel_block_scaffold.dart](carousel_block_scaffold.dart) —
+  `CarouselBlockScaffold<T>`. The shared outer shell for every
+  carousel block (mood, manual weather, custom carousel). Owns the
+  `BlockWithTitle` wrap (callers pass the resolved title with the
+  `carouselTitlesEnabled` gate already applied — `null` collapses the
+  row), `BlockMode.readOnly` rendering (centred glyph, or a private
+  em-dash placeholder when the selection is null), and `BlockMode.editable`
+  delegation to `CollapsibleCarouselBlock<T>` with the
+  `AnimatedScale + AnimatedOpacity` focus animation wrapped around the
+  caller's raw glyph. Caller responsibilities: compute the title,
+  build the raw glyph (`itemBuilder`), and re-encode the picked option
+  into block content (`onSelected`). Custom-carousel orphan handling
+  stays in `CustomCarouselWidget` — the scaffold only sees a
+  resolved, non-empty options list.
 - [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
   `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
   Owns the `TextEditingController` lifecycle for State classes whose
@@ -98,3 +112,5 @@ full-width text section.
 - A new tunable is exposed on the carousel.
 - The text-content controller mixin grows new lifecycle hooks or its
   abstract surface changes.
+- The carousel scaffold's surface area grows (new prop, new internal
+  rendering rule like a custom empty placeholder).
