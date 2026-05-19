@@ -6,7 +6,7 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 
 /// How a prompt is chosen when materializing a prompt block.
 ///
-/// - [daily] — deterministic from the entry's date AND the slot's index
+/// - [random] — deterministic from the entry's date AND the slot's index
 ///   among prompt-block slots in the layout. Same date + same slot →
 ///   same prompt. Different slots on the same date → different prompts
 ///   (when the list is at least as long as the slot count). Each
@@ -16,9 +16,9 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 ///   of the entry. Long-pressing the block opens the picker again
 ///   (regardless of strategy — long-press is a manual override).
 ///
-/// Legacy `random` values stored on existing users' devices read back
-/// as [daily] (the toggle's default OFF position).
-enum PromptStrategy { daily, manual }
+/// Legacy `daily` values stored on existing users' devices read back
+/// as [random] (the toggle's default ON position).
+enum PromptStrategy { random, manual }
 
 /// Block-type-global settings, persisted in the `settings` Hive box.
 ///
@@ -44,7 +44,7 @@ class BlockSettings extends ChangeNotifier {
   static final DateTime _dailyEpoch = DateTime(2024, 1, 1);
 
   List<String> _prompts = const [];
-  PromptStrategy _promptStrategy = PromptStrategy.daily;
+  PromptStrategy _promptStrategy = PromptStrategy.random;
   String? _moodTitle;
   String? _weatherTitle;
   List<CustomCarouselDefinition> _customCarousels = const [];
@@ -79,12 +79,12 @@ class BlockSettings extends ChangeNotifier {
       }
     }
     final strategy = _storage.getBlockPromptStrategy();
-    // Legacy 'random' values fall through to daily — the toggle no
-    // longer surfaces a random option.
+    // Any non-'manual' value (including legacy 'daily') falls through
+    // to the auto-rotation strategy.
     if (strategy == PromptStrategy.manual.name) {
       _promptStrategy = PromptStrategy.manual;
     } else {
-      _promptStrategy = PromptStrategy.daily;
+      _promptStrategy = PromptStrategy.random;
     }
     final moodTitleRaw = _storage.getBlockMoodTitle();
     if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {

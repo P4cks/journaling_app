@@ -5,11 +5,11 @@ import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view
 /// Prompt-block-global configuration. Two settings:
 ///
 /// 1. A list of prompts entered as free text (one per line).
-/// 2. A `Manual prompts` toggle:
-///    - **off** (default) → `PromptStrategy.daily`: deterministic per
+/// 2. A `Random Prompts` toggle:
+///    - **on** (default) → `PromptStrategy.random`: deterministic per
 ///      date + slot, balanced across days so each prompt rotates
 ///      evenly. The prompt is baked into the entry at materialization.
-///    - **on** → `PromptStrategy.manual`: the widget opens its picker
+///    - **off** → `PromptStrategy.manual`: the widget opens its picker
 ///      sheet on first build of each new entry so the user chooses.
 ///
 /// Controlled by the parent `BlockSettingsViewModel` — this widget
@@ -27,7 +27,7 @@ class PromptBlockSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isManual = vm.promptStrategy == PromptStrategy.manual;
+    final isRandom = vm.promptStrategy == PromptStrategy.random;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -61,15 +61,15 @@ class PromptBlockSettings extends StatelessWidget {
         const SizedBox(height: 20),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Manual prompts'),
+          title: const Text('Random Prompts'),
           subtitle: Text(
-            isManual
-                ? 'You pick a prompt for each new entry. Long-press the block to change it.'
-                : 'Each day rotates through the list automatically.',
+            isRandom
+                ? 'Chooses prompts automatically.'
+                : 'You pick a prompt for each new entry. Long-press the block to change it.',
           ),
-          value: isManual,
+          value: isRandom,
           onChanged: (on) => vm.setPromptStrategy(
-            on ? PromptStrategy.manual : PromptStrategy.daily,
+            on ? PromptStrategy.random : PromptStrategy.manual,
           ),
         ),
       ],

@@ -35,7 +35,7 @@ coordination live.
         slotIndex)`. `slotIndex` is **layout-wide** (a single
         counter across every block-grid section), so two prompt
         blocks in different sections on the same day still get
-        different prompts under `daily` strategy.
+        different prompts under `random` strategy.
       - All other types — empty content map. Mood and weather start
         with no selection (`emoji: null` / `conditionId: null`), so an
         untouched entry remains empty per `JournalBlockEmptiness` and
