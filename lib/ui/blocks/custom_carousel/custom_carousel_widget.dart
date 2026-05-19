@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
-import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/collapsible_carousel_block.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/carousel_block_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Block widget for a `BlockType.customCarousel` instance. Resolves
-/// `definitionId` against the `BlockSettings` registry and renders:
+/// `definitionId` against the `BlockSettings` registry and then either:
 ///
-/// - **Found**: the definition's `title` row (via [BlockWithTitle])
-///   above a [CollapsibleCarouselBlock]`<CarouselItem>` over the
-///   definition's items.
-/// - **Missing** (orphan): a dimmed "Deleted block" placeholder. The
-///   user can't pick anything; the block is treated as empty by the
-///   sweep.
+/// - **Found, with items**: delegates to [CarouselBlockScaffold] over
+///   the definition's items, gated by the global
+///   `BlockSettings.carouselTitlesEnabled` toggle.
+/// - **Missing definition + preserved pick**: renders the verbatim
+///   pick locked (no carousel) so deleting a definition doesn't erase
+///   what the user previously logged.
+/// - **Missing definition or itemless definition without a preserved
+///   pick**: dimmed "Deleted block" placeholder. The block is treated
+///   as empty by the sweep.
 ///
-/// Subscribes to `BlockSettings` so edits to the definition (title /
-/// items) propagate live.
+/// Subscribes to `BlockSettings` so registry edits (title, items,
+/// global title toggle) propagate live.
 class CustomCarouselWidget extends StatelessWidget {
   const CustomCarouselWidget({
     super.key,
@@ -48,6 +49,7 @@ class CustomCarouselWidget extends StatelessWidget {
         final definition = defId == null
             ? null
             : settings.findCustomCarousel(defId);
+
         if (definition == null) {
           // Definition was deleted out from under this block. Keep the
           // user's previously-saved pick visible (locked, no carousel)
@@ -58,83 +60,47 @@ class CustomCarouselWidget extends StatelessWidget {
           if (preserved != null) {
             return Center(child: _renderItem(preserved, true));
           }
-          return _DeletedPlaceholder();
+          return const _DeletedPlaceholder();
         }
-        return BlockWithTitle(
+
+        final items = definition.items;
+        if (items.isEmpty) {
+          // Definition exists but is itemless — same UX as orphan.
+          return const _DeletedPlaceholder();
+        }
+
+        final selected = content.selected;
+        // Find the *current* item in the definition that matches the
+        // verbatim selection (so reorders keep the pick correct).
+        final selectedInDef = selected == null
+            ? null
+            : items.firstWhere(
+                (i) => i == selected,
+                orElse: () => CarouselItem(
+                  kind: selected.kind,
+                  value: selected.value,
+                ),
+              );
+
+        return CarouselBlockScaffold<CarouselItem>(
+          blockId: data.id,
+          mode: mode,
           title: settings.carouselTitlesEnabled ? definition.title : null,
-          body: _buildBody(context, content, definition),
+          options: items,
+          selected: selectedInDef,
+          itemBuilder: (ctx, item, isSelected) => _renderItem(item, isSelected),
+          onSelected: (item) => onChanged?.call(
+            data.copyWith(
+              content: CustomCarouselBlockContent(
+                definitionId: definition.id,
+                selected: item,
+              ).toMap(),
+            ),
+          ),
+          onInteractionLockChanged: onInteractionLockChanged,
         );
       },
     );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    CustomCarouselBlockContent content,
-    CustomCarouselDefinition definition,
-  ) {
-    final items = definition.items;
-    if (items.isEmpty) {
-      // Definition exists but is itemless — same UX as orphan.
-      return const _DeletedPlaceholder();
-    }
-    final selected = content.selected;
-    // Find the *current* item in the definition that matches the
-    // verbatim selection (so reorders keep the pick correct).
-    final selectedInDef = selected == null
-        ? null
-        : items.firstWhere(
-            (i) => i == selected,
-            orElse: () => CarouselItem(
-              kind: selected.kind,
-              value: selected.value,
-            ),
-          );
-
-    if (mode == BlockMode.readOnly) {
-      return _buildCollapsed(context, selectedInDef);
-    }
-
-    return CollapsibleCarouselBlock<CarouselItem>(
-      blockId: data.id,
-      options: items,
-      selected: selectedInDef,
-      collapsedBuilder: _buildCollapsed,
-      itemBuilder: (ctx, item, isSelected) => AnimatedScale(
-        scale: isSelected ? 1.0 : 0.6,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        child: AnimatedOpacity(
-          opacity: isSelected ? 1.0 : 0.45,
-          duration: const Duration(milliseconds: 180),
-          child: _renderItem(item, isSelected),
-        ),
-      ),
-      onSelected: (item) => onChanged?.call(
-        data.copyWith(
-          content: CustomCarouselBlockContent(
-            definitionId: definition.id,
-            selected: item,
-          ).toMap(),
-        ),
-      ),
-      onInteractionLockChanged: onInteractionLockChanged,
-    );
-  }
-
-  Widget _buildCollapsed(BuildContext context, CarouselItem? item) {
-    if (item == null) {
-      return Center(
-        child: Text(
-          '—',
-          style: TextStyle(
-            fontSize: 40,
-            color: Theme.of(context).disabledColor,
-          ),
-        ),
-      );
-    }
-    return Center(child: _renderItem(item, true));
   }
 
   /// One option in the carousel. Emoji items render as a sized [Text];

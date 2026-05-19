@@ -11,17 +11,19 @@ block planned for a later phase — it reuses the same icon mapping.
 ## Files
 
 - [weather_manual_widget.dart](weather_manual_widget.dart) — `WeatherManualWidget`.
-  Stateless. Decodes `WeatherBlockContent`, renders the centred icon in
-  `BlockMode.readOnly`, otherwise delegates to
-  [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
-  which owns the PageController, expand/collapse state, and timer.
+  Stateless. Thin wrapper around
+  [CarouselBlockScaffold](../widgets/carousel_block_scaffold.dart)`<String>`:
+  decodes `WeatherBlockContent.conditionId`, supplies
+  `weatherConditionIds` as the options list, and renders each option
+  as an `AppIcon(weatherIconFor(id, selected: isSelected), size: 64)`.
   Also exposes the top-level `weatherIconFor(conditionId, {required selected})`
-  helper so the API weather block can reuse the same icon mapping. The
-  body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
-  with the hardcoded label `"Today's weather"` when
-  `BlockSettings.carouselTitlesEnabled` is true, or `null` (no title
-  row) when the global toggle is off. Same shape as the mood block —
-  the title text is fixed per-block-type, not user-editable.
+  helper so the API weather block can reuse the same icon mapping.
+  The hardcoded title `"Today's weather"` is gated by
+  `BlockSettings.carouselTitlesEnabled` (read via a `ListenableBuilder`
+  on `BlockSettings`). The scaffold owns the read-only em-dash
+  placeholder, the focus animation, and the `BlockWithTitle` wrap.
+  Same shape as the mood block — the title text is fixed
+  per-block-type, not user-editable.
 
 ## Modes
 
