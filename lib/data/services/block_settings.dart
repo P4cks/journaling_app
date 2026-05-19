@@ -45,14 +45,18 @@ class BlockSettings extends ChangeNotifier {
 
   List<String> _prompts = const [];
   PromptStrategy _promptStrategy = PromptStrategy.random;
-  String? _moodTitle;
-  String? _weatherTitle;
+  bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
-  String? get moodTitle => _moodTitle;
-  String? get weatherTitle => _weatherTitle;
+
+  /// Whether titles render above every carousel block (mood, manual
+  /// weather, custom carousels). When `false`, all three carousel
+  /// widgets pass `null` to [BlockWithTitle] so the row collapses
+  /// entirely. Defaults to `true` on first launch.
+  bool get carouselTitlesEnabled => _carouselTitlesEnabled;
+
   List<CustomCarouselDefinition> get customCarousels =>
       List.unmodifiable(_customCarousels);
 
@@ -86,13 +90,9 @@ class BlockSettings extends ChangeNotifier {
     } else {
       _promptStrategy = PromptStrategy.random;
     }
-    final moodTitleRaw = _storage.getBlockMoodTitle();
-    if (moodTitleRaw != null && moodTitleRaw.trim().isNotEmpty) {
-      _moodTitle = moodTitleRaw;
-    }
-    final weatherTitleRaw = _storage.getBlockWeatherTitle();
-    if (weatherTitleRaw != null && weatherTitleRaw.trim().isNotEmpty) {
-      _weatherTitle = weatherTitleRaw;
+    final titlesEnabledRaw = _storage.getBlockCarouselTitlesEnabled();
+    if (titlesEnabledRaw != null) {
+      _carouselTitlesEnabled = titlesEnabledRaw;
     }
     final customCarouselsRaw =
         _storage.getBlockCustomCarouselDefinitionsJson();
@@ -141,25 +141,11 @@ class BlockSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setMoodTitle(String? title) async {
-    final normalized = (title == null || title.trim().isEmpty)
-        ? null
-        : title.trim();
-    if (_moodTitle == normalized) return;
-    _moodTitle = normalized;
-    await _storage.setBlockMoodTitle(normalized);
-    debugPrint('[BlockSettings] setMoodTitle -> $normalized');
-    notifyListeners();
-  }
-
-  Future<void> setWeatherTitle(String? title) async {
-    final normalized = (title == null || title.trim().isEmpty)
-        ? null
-        : title.trim();
-    if (_weatherTitle == normalized) return;
-    _weatherTitle = normalized;
-    await _storage.setBlockWeatherTitle(normalized);
-    debugPrint('[BlockSettings] setWeatherTitle -> $normalized');
+  Future<void> setCarouselTitlesEnabled(bool value) async {
+    if (_carouselTitlesEnabled == value) return;
+    _carouselTitlesEnabled = value;
+    await _storage.setBlockCarouselTitlesEnabled(value);
+    debugPrint('[BlockSettings] setCarouselTitlesEnabled -> $value');
     notifyListeners();
   }
 

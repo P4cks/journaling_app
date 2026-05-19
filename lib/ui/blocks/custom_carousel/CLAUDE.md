@@ -19,7 +19,12 @@ Typed wrapper:
   `CustomCarouselWidget`. Stateless. Subscribes to `BlockSettings` via
   `ListenableBuilder` so registry edits propagate. Wraps the body in
   [BlockWithTitle](../widgets/block_with_title.dart) using the
-  definition's title. Delegates to
+  definition's title — but only when `BlockSettings.carouselTitlesEnabled`
+  is true. When the global toggle is off, every custom carousel
+  passes `null` to `BlockWithTitle` regardless of the per-definition
+  title. (When the toggle is on, an empty `definition.title` still
+  collapses the row via `BlockWithTitle`'s null/empty-skip.)
+  Delegates to
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)`<CarouselItem>`
   for the carousel mechanic (same UX as mood / weatherManual).
 - [carousel_icon_catalogue.dart](carousel_icon_catalogue.dart) —

@@ -11,10 +11,11 @@ One `BlockType.moodTracker` block. Content shape: `{"emoji": "😄"}`
   [CollapsibleCarouselBlock](../widgets/collapsible_carousel_block.dart)
   which owns the PageController, expand/collapse state, and timer. The
   body is wrapped in [BlockWithTitle](../widgets/block_with_title.dart)
-  reading `BlockSettings.moodTitle` via a `ListenableBuilder` — when
-  the title is non-empty a compact label appears above the carousel
-  and the body takes the remaining tile area. When null the title row
-  collapses entirely (no padding cost).
+  with the hardcoded label `"How are you feeling?"` when
+  `BlockSettings.carouselTitlesEnabled` is true (read via a
+  `ListenableBuilder` on `BlockSettings`), or `null` (no title row)
+  when the global toggle is off. The user does **not** edit this
+  string anywhere — it is per-block-type and intentional.
 
 ## Modes
 

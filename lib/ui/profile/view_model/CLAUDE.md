@@ -36,29 +36,29 @@ because nothing was written.
 
 ### State
 
-- `_initialPrompts`, `_initialPromptStrategy`, `_initialMoodTitle`,
-  `_initialWeatherTitle` — snapshot fields used by `isDirty` to compare
-  against current drafts. Re-set inside `save()` so post-save
-  `isDirty` reads false.
-- `promptsController`, `moodTitleController`, `weatherTitleController` —
-  `TextEditingController`s owned by the VM (disposed in `dispose`).
-  Bound by the section widgets.
-- `_promptStrategy` — non-controller draft (manual-mode toggle).
+- `_initialPrompts`, `_initialPromptStrategy`,
+  `_initialCarouselTitlesEnabled` — snapshot fields used by `isDirty`
+  to compare against current drafts. Re-set inside `save()` so
+  post-save `isDirty` reads false.
+- `promptsController` — `TextEditingController` owned by the VM
+  (disposed in `dispose`). Bound by `PromptBlockSettings`.
+- `_promptStrategy` — non-controller draft (Random Prompts switch).
+- `_carouselTitlesEnabled` — non-controller draft (carousel-title
+  switch).
 
 ### Computed
 
-- `isDirty` — true if any parsed/normalised draft differs from its
-  snapshot. Prompts compare via `listEquals` on the parsed list;
-  titles compare after trim + null-empty normalisation.
+- `isDirty` — true if any parsed draft differs from its snapshot.
+  Prompts compare via `listEquals` on the parsed list; strategy
+  compares enum; carousel-titles-enabled compares bool.
 - `canSave` — currently always `true`. Kept as a getter so the screen's
   save-on-leave dialog keeps the same code path if validation comes
   back later.
 
 ### `save()`
 
-Writes the four BlockSettings setters in order (`setPrompts`,
-`setPromptStrategy`, `setMoodTitle`, `setWeatherTitle`) and
-re-snapshots.
+Writes the three BlockSettings setters in order (`setPrompts`,
+`setPromptStrategy`, `setCarouselTitlesEnabled`) and re-snapshots.
 
 ## Gotchas
 
@@ -69,9 +69,10 @@ re-snapshots.
 - **`isDirty` re-parses on every read.** Cheap because the text
   fields are small, but if Block Settings grows large lists, cache
   the parsed views.
-- **No `nameConflict`-style remote validation** here — the title
-  fields are free-form. The next-phase custom-block sections will
-  add unique-title validation.
+- **No `nameConflict`-style remote validation** here. Title
+  uniqueness lives on the `CustomBlockEditorViewModel`, not on this
+  VM — there are no free-form title fields on `BlockSettingsScreen`
+  anymore.
 
 ## When to update this file
 

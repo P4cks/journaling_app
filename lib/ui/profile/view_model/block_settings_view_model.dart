@@ -16,38 +16,37 @@ class BlockSettingsViewModel extends ChangeNotifier {
     : _settings = settings {
     _initialPrompts = settings.prompts;
     _initialPromptStrategy = settings.promptStrategy;
-    _initialMoodTitle = settings.moodTitle;
-    _initialWeatherTitle = settings.weatherTitle;
+    _initialCarouselTitlesEnabled = settings.carouselTitlesEnabled;
     _promptStrategy = _initialPromptStrategy;
+    _carouselTitlesEnabled = _initialCarouselTitlesEnabled;
     promptsController = TextEditingController(
       text: _initialPrompts.join('\n'),
     );
-    moodTitleController = TextEditingController(text: _initialMoodTitle ?? '');
-    weatherTitleController = TextEditingController(
-      text: _initialWeatherTitle ?? '',
-    );
     promptsController.addListener(_notify);
-    moodTitleController.addListener(_notify);
-    weatherTitleController.addListener(_notify);
   }
 
   final BlockSettings _settings;
 
   late List<String> _initialPrompts;
   late PromptStrategy _initialPromptStrategy;
-  late String? _initialMoodTitle;
-  late String? _initialWeatherTitle;
+  late bool _initialCarouselTitlesEnabled;
 
   late final TextEditingController promptsController;
-  late final TextEditingController moodTitleController;
-  late final TextEditingController weatherTitleController;
   late PromptStrategy _promptStrategy;
+  late bool _carouselTitlesEnabled;
 
   PromptStrategy get promptStrategy => _promptStrategy;
+  bool get carouselTitlesEnabled => _carouselTitlesEnabled;
 
   void setPromptStrategy(PromptStrategy strategy) {
     if (_promptStrategy == strategy) return;
     _promptStrategy = strategy;
+    notifyListeners();
+  }
+
+  void setCarouselTitlesEnabled(bool value) {
+    if (_carouselTitlesEnabled == value) return;
+    _carouselTitlesEnabled = value;
     notifyListeners();
   }
 
@@ -58,20 +57,10 @@ class BlockSettingsViewModel extends ChangeNotifier {
       if (line.trim().isNotEmpty) line.trim(),
   ];
 
-  String? _normalizeTitle(String s) {
-    final trimmed = s.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
-
   bool get isDirty {
     if (!listEquals(_parsedPrompts(), _initialPrompts)) return true;
     if (_promptStrategy != _initialPromptStrategy) return true;
-    if (_normalizeTitle(moodTitleController.text) != _initialMoodTitle) {
-      return true;
-    }
-    if (_normalizeTitle(weatherTitleController.text) != _initialWeatherTitle) {
-      return true;
-    }
+    if (_carouselTitlesEnabled != _initialCarouselTitlesEnabled) return true;
     return false;
   }
 
@@ -84,16 +73,12 @@ class BlockSettingsViewModel extends ChangeNotifier {
   /// so `isDirty` reads false post-save.
   Future<bool> save() async {
     final prompts = _parsedPrompts();
-    final moodTitle = _normalizeTitle(moodTitleController.text);
-    final weatherTitle = _normalizeTitle(weatherTitleController.text);
     await _settings.setPrompts(prompts);
     await _settings.setPromptStrategy(_promptStrategy);
-    await _settings.setMoodTitle(moodTitle);
-    await _settings.setWeatherTitle(weatherTitle);
+    await _settings.setCarouselTitlesEnabled(_carouselTitlesEnabled);
     _initialPrompts = prompts;
     _initialPromptStrategy = _promptStrategy;
-    _initialMoodTitle = moodTitle;
-    _initialWeatherTitle = weatherTitle;
+    _initialCarouselTitlesEnabled = _carouselTitlesEnabled;
     debugPrint('[BlockSettingsVM] saved');
     notifyListeners();
     return true;
@@ -102,11 +87,7 @@ class BlockSettingsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     promptsController.removeListener(_notify);
-    moodTitleController.removeListener(_notify);
-    weatherTitleController.removeListener(_notify);
     promptsController.dispose();
-    moodTitleController.dispose();
-    weatherTitleController.dispose();
     super.dispose();
   }
 }

@@ -12,8 +12,7 @@ class SettingsStorageService {
   static const _themeDebugSurfaceKey = 'theme.debugSurface';
   static const _blockPromptListKey = 'block.prompt.list';
   static const _blockPromptStrategyKey = 'block.prompt.strategy';
-  static const _blockMoodTitleKey = 'block.mood.title';
-  static const _blockWeatherTitleKey = 'block.weather.title';
+  static const _blockCarouselTitlesEnabledKey = 'block.carousel.titlesEnabled';
   static const _blockCustomCarouselDefinitionsKey =
       'block.customCarousel.definitions';
   static const _themePostItModeKey = 'theme.postItMode';
@@ -83,19 +82,15 @@ class SettingsStorageService {
   Future<void> setBlockPromptStrategy(String value) =>
       _box.put(_blockPromptStrategyKey, value);
 
-  String? getBlockMoodTitle() => _box.get(_blockMoodTitleKey);
+  // null = key absent (use the default, currently `true`).
+  bool? getBlockCarouselTitlesEnabled() {
+    final raw = _box.get(_blockCarouselTitlesEnabledKey);
+    if (raw == null) return null;
+    return raw == 'true';
+  }
 
-  Future<void> setBlockMoodTitle(String? value) =>
-      (value == null || value.isEmpty)
-          ? _box.delete(_blockMoodTitleKey)
-          : _box.put(_blockMoodTitleKey, value);
-
-  String? getBlockWeatherTitle() => _box.get(_blockWeatherTitleKey);
-
-  Future<void> setBlockWeatherTitle(String? value) =>
-      (value == null || value.isEmpty)
-          ? _box.delete(_blockWeatherTitleKey)
-          : _box.put(_blockWeatherTitleKey, value);
+  Future<void> setBlockCarouselTitlesEnabled(bool value) =>
+      _box.put(_blockCarouselTitlesEnabledKey, value.toString());
 
   String? getBlockCustomCarouselDefinitionsJson() =>
       _box.get(_blockCustomCarouselDefinitionsKey);

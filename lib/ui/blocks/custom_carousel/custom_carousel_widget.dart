@@ -61,7 +61,7 @@ class CustomCarouselWidget extends StatelessWidget {
           return _DeletedPlaceholder();
         }
         return BlockWithTitle(
-          title: definition.title,
+          title: settings.carouselTitlesEnabled ? definition.title : null,
           body: _buildBody(context, content, definition),
         );
       },

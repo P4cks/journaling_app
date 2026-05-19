@@ -24,8 +24,9 @@ full-width text section.
 - [block_with_title.dart](block_with_title.dart) — `BlockWithTitle`.
   Wraps a block body with an optional title row above. When the title
   is null or empty the body is returned unchanged (no padding cost).
-  Used by mood/weather carousels to render their per-type-global
-  title from `BlockSettings.moodTitle` / `weatherTitle`.
+  Used by every carousel block (mood, manual weather, custom). Callers
+  pass `null` when `BlockSettings.carouselTitlesEnabled` is false so
+  the row collapses entirely.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
   collapsed centred icon until tapped; tapping expands a horizontal

@@ -17,12 +17,17 @@ directory hosts the pushed screens:
   parity with the dedicated Profile screen — both surface the same
   signed-in/out widget; if that duplication starts to bite, retire
   the Settings copy and keep `/profile` as the only entry point.
-- **Block-settings** (`/block-settings`) — every block type's
-  configuration inline on one screen. Edits are kept as drafts in
-  `BlockSettingsViewModel`; a Cancel / Discard / Save dialog runs on
-  leave, mirroring the layout editor. No more per-type push-into-
-  sub-screen routes. **No text-block config** — text blocks have no
-  per-type-global settings; their content is purely per-entry.
+- **Block-settings** (`/block-settings`) — block-type-global
+  configuration inline on one screen. Two sections: **Prompt Block**
+  (the prompt list + the Random Prompts toggle) and **Carousel
+  Blocks** (a single global "Show titles above carousels" switch +
+  the custom-carousel definition list with Edit / Delete / Add).
+  Edits are kept as drafts in `BlockSettingsViewModel`; a Cancel /
+  Discard / Save dialog runs on leave, mirroring the layout editor.
+  No more per-type push-into-sub-screen routes. **No text-block
+  config**, **no per-type mood / weather title fields** — text and
+  predefined carousel titles are not user-editable; the carousel
+  toggle is the only knob.
 
 Settings contains:
 
