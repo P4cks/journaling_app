@@ -29,11 +29,13 @@ Typed wrapper:
   intentionally stays here because the scaffold only sees a resolved
   definition.
 - [carousel_icon_catalogue.dart](carousel_icon_catalogue.dart) —
-  `CarouselIcon` + `kCarouselIcons` curated list (~40 Phosphor
-  duotone/fill pairs covering nature, activities, food, productivity,
-  home, misc). `carouselIconFor(name)` lookup. **Add freely; remove
-  cautiously** — removed names orphan items in saved definitions,
-  which then render the fallback `question` glyph.
+  `CarouselIcon` + `kCarouselIcons` curated list (~40 HugeIcons
+  stroke-rounded glyphs covering nature, activities, food,
+  productivity, home, misc). `carouselIconFor(name)` lookup. **Add
+  freely; remove cautiously** — removed names orphan items in saved
+  definitions, which then render the fallback `question` glyph.
+  Persisted `name` strings carry over from the pre-HugeIcons Phosphor
+  era; only the resolved icon data changed.
 
 ## Modes
 
@@ -65,7 +67,7 @@ Typed wrapper:
 
 - `CarouselItemKind.emoji` → `Text(value, fontSize: 56)`.
 - `CarouselItemKind.icon` → `AppIcon` resolved via `carouselIconFor`.
-  Unknown name → `PhosphorIconsDuotone.question` (fallback, not a
+  Unknown name → `HugeIcons.strokeRoundedQuestion` (fallback, not a
   crash).
 
 ## Gotchas
@@ -79,7 +81,7 @@ Typed wrapper:
   definition's title changes every entry's rendered title. Document
   this in the editor's UI if it surprises users.
 - **The icon picker is a curated subset.** Don't try to wire the
-  full Phosphor library here — the picker becomes unusable.
+  full HugeIcons library here — the picker becomes unusable.
 - **`onInteractionLockChanged` is forwarded to `CollapsibleCarouselBlock`**
   just like mood / weatherManual, so the outer pager freezes its
   horizontal swipe while the carousel is expanded.

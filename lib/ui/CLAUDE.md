@@ -18,9 +18,9 @@ the same three-part shape:
   ([text_block/](blocks/text_block/), [mood_tracker/](blocks/mood_tracker/)).
   Shared by the journal pager (main screen) and the layout editor.
 - [core/CLAUDE.md](core/CLAUDE.md) — non-screen-specific widgets and
-  helpers used everywhere. `AppDependencies` (DI), `AppIcon` (Phosphor
-  wrapper), `date_format` (small intl-free formatters), shared
-  `StreakStatCard` / `SectionHeader` / `SettingsSection`.
+  helpers used everywhere. `AppDependencies` (DI), `AppIcon`
+  (HugeIcons wrapper), `date_format` (small intl-free formatters),
+  shared `StreakStatCard` / `SectionHeader` / `SettingsSection`.
 - [theme/CLAUDE.md](theme/CLAUDE.md) — `buildAppTheme()`, the
   `SurfacePalette` catalogue, color/hex helpers.
 - [journal/CLAUDE.md](journal/CLAUDE.md) — Main journal screen: AppBar
@@ -94,10 +94,13 @@ build tree simple. `ListenableBuilder` is fine for ambient notifiers
 ### Iconography
 
 All icons go through [core/widgets/app_icon.dart](core/widgets/app_icon.dart).
-`PhosphorIconsDuotone.xxx` for default, `PhosphorIconsFill.xxx` for
-selected/active. `AppIcon` wires the duotone secondary tone to
-`colorScheme.primary` automatically, so icons inherit the user's accent.
-Never reintroduce raw `Icons.*`.
+Pass any `HugeIcons.strokeRoundedXxx` constant — the free
+`hugeicons` package ships only the stroke-rounded family, so there is
+no separate "filled" / "active" variant. Express selected / active
+states via colour (typically `colorScheme.primary`) rather than
+swapping the glyph. `AppIcon` inherits `size` and `color` from the
+surrounding `IconTheme` when unset. Never reintroduce raw `Icons.*` or
+the old `PhosphorIconsXxx.*`.
 
 ### Theming
 

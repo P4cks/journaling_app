@@ -5,7 +5,7 @@ screen-specific.
 
 ## Subdirectories
 
-- [widgets/](widgets/) — `AppDependencies` (DI), `AppIcon` (Phosphor wrapper),
+- [widgets/](widgets/) — `AppDependencies` (DI), `AppIcon` (HugeIcons wrapper),
   `SectionHeader`, `SettingsSection`, `StreakStatCard`.
 - [format/](format/) — small date formatters (no `intl` dependency).
 
@@ -25,15 +25,16 @@ screen-specific.
     with `if (_viewModel == null)` so it runs exactly once.
   - **When you add a new repository / settings object**, add it here
     *and* construct it in `main.dart` in the right order.
-- [widgets/app_icon.dart](widgets/app_icon.dart) — `AppIcon`. Thin
-  wrapper around `PhosphorIcon`. Two opinionated defaults:
-  - `duotoneSecondaryColor` defaults to `colorScheme.primary` (the
-    user's accent), so duotone glyphs automatically express the theme.
-  - `color` and `size` inherit from the surrounding `IconTheme` when
-    not specified.
-  Use `PhosphorIconsDuotone.xxx` for default and `PhosphorIconsFill.xxx`
-  for selected/active states. **Never use raw `Icons.*`** — analyzer
-  won't catch it but it'll look out of place.
+- [widgets/app_icon.dart](widgets/app_icon.dart) — `AppIcon` +
+  `HugeIconData` typedef. Wraps the `hugeicons` package's `HugeIcon`
+  widget; inherits `size` and `color` from the surrounding
+  `IconTheme` when unset. The free HugeIcons package ships only the
+  `strokeRounded` family, so there is no secondary / fill variant —
+  express selected / active states via `color`, not by swapping the
+  glyph. `HugeIconData` aliases the SVG-JSON shape
+  (`List<List<dynamic>>`) that `HugeIcons.strokeRoundedXxx` constants
+  expose so call sites type their parameters cleanly. **Never use raw
+  `Icons.*`** — analyzer won't catch it but it'll look out of place.
 - [widgets/settings_section.dart](widgets/settings_section.dart) —
   canonical `SettingsSection` wrapper for settings-style groups. Use
   its `children` parameter for already-built rows or controls.

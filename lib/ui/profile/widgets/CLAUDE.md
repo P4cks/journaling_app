@@ -6,8 +6,8 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 - [theme_mode_selector.dart](theme_mode_selector.dart) —
   `ThemeModeSelector`. `SegmentedButton<ThemeMode>` with three options
-  (System / Light / Dark), each with a Phosphor duotone icon. Pure
-  presentation — driven by `value` and `onChanged`.
+  (System / Light / Dark), each with a HugeIcons stroke-rounded icon.
+  Pure presentation — driven by `value` and `onChanged`.
 - [palette_picker.dart](palette_picker.dart) — `PalettePicker`.
   Horizontal `ListView` of theme tiles plus an Add theme tile at the end.
   Graphite renders as the protected default with no actions. User themes

@@ -39,10 +39,12 @@ sheet is a stateless top-level function returning the user's pick or
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
-  as a 56×56 tile. Returns the chosen `icon.name` (Phosphor identifier
-  string) or `null`.
+  as a 56×56 tile. Returns the chosen `icon.name` (stable identifier
+  string carried over from the pre-HugeIcons Phosphor era) or `null`.
   - Tiles that match `selected` get a `primaryContainer` background
-    and a thicker primary border + the fill variant of the glyph.
+    and a thicker primary border; the glyph itself is the same
+    stroke-rounded HugeIcons icon as the unselected tiles (the free
+    package ships no fill variant).
   - Used by the layout editor's icon AppBar action. Callers may pass
     the returned name (or `null`) straight into `vm.setIconName`.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
