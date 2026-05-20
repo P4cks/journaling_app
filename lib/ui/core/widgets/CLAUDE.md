@@ -11,12 +11,17 @@ for how they fit together; this file is per-file notes.
   loudly in dev rather than NPE-ing at first use. `updateShouldNotify`
   compares every dependency reference — bumping a repository (which
   we don't currently do at runtime) would re-trigger dependants.
-- [app_icon.dart](app_icon.dart) — `AppIcon`. Phosphor wrapper. Pulls
-  `size` and `color` from the surrounding `IconTheme` when unset, and
-  defaults `duotoneSecondaryColor` to `colorScheme.primary` (the user's
-  accent). The reason `secondaryColor` is exposed as a prop: the streak
-  card overrides it to match the primary tone so flame icons read
-  monochrome.
+- [app_icon.dart](app_icon.dart) — `AppIcon` + `HugeIconData` typedef.
+  Wraps the `hugeicons` package's `HugeIcon` widget; pulls `size` and
+  `color` from the surrounding `IconTheme` when unset. The free
+  HugeIcons package ships only the stroke-rounded family, so there is
+  no secondary / fill variant — selected and active states must be
+  communicated via `color`, not by swapping the glyph. `HugeIconData`
+  aliases the SVG-JSON shape (`List<List<dynamic>>`) that
+  `HugeIcons.strokeRoundedXxx` constants expose so call sites type
+  their parameters cleanly. The streak card now drives the flame's
+  active vs. dim state via the `color` prop (dimmed via
+  `withValues(alpha: 0.55)`) instead of swapping a fill glyph.
 - [section_header.dart](section_header.dart) — `SectionHeader`.
   Accent-tinted titleSmall label used by Settings and the entries list.
 - [settings_section.dart](settings_section.dart) — `SettingsSection`.

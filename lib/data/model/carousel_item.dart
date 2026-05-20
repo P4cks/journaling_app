@@ -1,7 +1,9 @@
 /// One slot in a user-defined carousel — either an emoji string or a
-/// curated Phosphor icon name. Discriminated by [kind] so the renderer
-/// knows whether `value` is a unicode emoji ("😀") or an icon
-/// identifier ("sun"). Persisted both in the registry
+/// curated icon name (resolved to a HugeIcons glyph by the carousel
+/// icon catalogue; the stable name ids originated as Phosphor
+/// identifiers and are preserved as-is). Discriminated by [kind] so
+/// the renderer knows whether `value` is a unicode emoji ("😀") or
+/// an icon identifier ("sun"). Persisted both in the registry
 /// ([CustomCarouselDefinition]) and verbatim in a block's content
 /// (when the user has picked one).
 ///
