@@ -78,7 +78,8 @@ that lives in block-grid sections.
   Concrete block widgets render differently per mode.
 
 - [block_type_display.dart](block_type_display.dart) — `extension BlockTypeDisplay on BlockType`
-  with `label`, `icon` (Phosphor duotone), `description`, and `sampleData(id:)`.
+  with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`),
+  `description`, and `sampleData(id:)`.
 
 - [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>`. Generic tap-to-expand / auto-collapse

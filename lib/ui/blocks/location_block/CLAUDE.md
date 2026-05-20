@@ -22,7 +22,7 @@ app per the OSM tile policy.
   - No pin → dimmed em-dash placeholder.
   - Pin set → `FlutterMap` with `InteractiveFlag.none` (no panning),
     centred on the pin at zoom 13, with a single `Marker` rendered as
-    `PhosphorIconsFill.mapPin`.
+    `HugeIcons.strokeRoundedMapPin`.
 - `BlockMode.editable`:
   - No pin → world-level `FlutterMap` (`LatLng(20, 0)`, zoom 1.5) with
     a translucent overlay strip at the bottom reading

@@ -25,7 +25,7 @@ journal_entries/
   Hero would morph cleanly *if* this screen wrapped its preview in
   the Hero — currently it doesn't, the editor still picks up the tag
   from elsewhere (no morph from this screen, just a push).
-- Empty state: phosphor `bookOpen` + nudge text.
+- Empty state: HugeIcons `bookOpen01` + nudge text.
 
 ## Subdirectory CLAUDE.md files
 

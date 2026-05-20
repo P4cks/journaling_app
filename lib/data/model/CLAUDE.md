@@ -76,8 +76,9 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
 - [journal_layout.dart](journal_layout.dart) — `JournalLayout`. Fields:
   `id`, `name`, `kind` (`LayoutKind`), `sections`
   (`List<LayoutSection>` — the structural template; see
-  `LayoutSection` below), `iconName` (`String?` — Phosphor name like
-  `"squaresFour"`, resolved via
+  `LayoutSection` below), `iconName` (`String?` — stable identifier
+  like `"squaresFour"` carried over from the pre-HugeIcons Phosphor
+  era, resolved to a HugeIcons glyph via
   [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
   `copyWith` has `clearIcon: true` for explicit-null on `iconName`.
 - [layout_section.dart](layout_section.dart) — `LayoutSection`. One
@@ -122,9 +123,12 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   the service layer.
 - [carousel_item.dart](carousel_item.dart) — `CarouselItem` + `enum
   CarouselItemKind { emoji, icon }`. Discriminated union of "this is an
-  emoji string" vs "this is a curated Phosphor icon name". Used by
-  custom-carousel definitions AND by the per-block selection content.
-  `fromMap` defaults unknown `kind` to `emoji` for forward compat.
+  emoji string" vs "this is a curated icon name" (resolves to a
+  HugeIcons glyph via the carousel icon catalogue; the stable string
+  ids originated as Phosphor identifiers and are preserved as-is).
+  Used by custom-carousel definitions AND by the per-block selection
+  content. `fromMap` defaults unknown `kind` to `emoji` for forward
+  compat.
 - [custom_carousel_definition.dart](custom_carousel_definition.dart) —
   `CustomCarouselDefinition` (`id`, `title`, `items`). Lives in the
   `BlockSettings` registry; referenced by id from `BlockTemplate.configJson`

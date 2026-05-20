@@ -39,7 +39,7 @@ Typed wrapper: [WeatherApiBlockContent](../../../data/model/block_content/weathe
 ## Modes
 
 The widget renders identically in `readOnly` and `editable` (not
-user-editable). When data is present: large Phosphor icon (via the
+user-editable). When data is present: large HugeIcons stroke glyph (via the
 shared [`weatherIconFor`](../weather_manual/weather_manual_widget.dart)
 helper), temperature in °C, and a city line — the reverse-geocoded
 name when present, otherwise a dimmed italic `—` placeholder so the
