@@ -139,11 +139,15 @@ class PhotoBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback — fires on double-tap.
+  final VoidCallback? onDoubleTap;
 
   @override
   State<PhotoBlockWidget> createState() => _PhotoBlockWidgetState();
@@ -167,15 +171,20 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
           ),
         );
       }
-      // Centered "+ Add photo" affordance — interactive in normal
-      // mode (single-tap fires the picker via `firePhotoBlockAction`).
-      // In setting ON's grid the host wraps the whole tile in
-      // `IgnorePointer` so this tap doesn't fire there.
+      // Centered "+ Add photo" affordance. The outer `GestureDetector`
+      // delays the single-tap by `kDoubleTapTimeout` so a double-tap
+      // can intercept and push the expanded route without the picker
+      // briefly appearing.
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onChanged == null
             ? null
-            : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+            : () => firePhotoBlockAction(
+                context,
+                widget.data,
+                widget.onChanged!,
+              ),
+        onDoubleTap: widget.onDoubleTap,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -221,17 +230,19 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
 
     if (widget.mode == BlockMode.readOnly) return shaped;
 
-    // Long-press on a set photo opens the Replace / Remove sheet.
-    // Single-tap opens the same picker (so the user has a familiar
-    // way to swap an existing photo without remembering long-press).
+    // Single-tap or long-press opens the picker (delayed by the
+    // double-tap timeout). Double-tap pushes the expanded route.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onChanged == null
           ? null
-          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+          : () =>
+                firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      onDoubleTap: widget.onDoubleTap,
       onLongPress: widget.onChanged == null
           ? null
-          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+          : () =>
+                firePhotoBlockAction(context, widget.data, widget.onChanged!),
       child: shaped,
     );
   }

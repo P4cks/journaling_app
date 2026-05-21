@@ -46,6 +46,7 @@ class MemoryBlockWidget extends StatefulWidget {
     required this.mode,
     this.onJumpToDate,
     this.onChanged,
+    this.onDoubleTap,
     this.expanded = false,
   });
 
@@ -54,11 +55,14 @@ class MemoryBlockWidget extends StatefulWidget {
   final ValueChanged<JournalBlockData>? onChanged;
   final ValueChanged<DateTime>? onJumpToDate;
 
-  /// True when rendered inside the expanded route. Renders a dedicated
-  /// "Navigate to that day" button at the bottom of the body — mirrors
-  /// the todo block's "Add task" button pattern. In the grid the
-  /// button is hidden; the user double-taps the tile (which fires
-  /// `fireMemoryBlockAction` directly).
+  /// Host's "push expanded route" callback. Wired onto the body's
+  /// `GestureDetector(onDoubleTap)`. The Navigate button is rendered
+  /// OUTSIDE that detector so its InkWell single-tap navigates
+  /// without being intercepted.
+  final VoidCallback? onDoubleTap;
+
+  /// Legacy prop — currently unused. The Navigate button is always
+  /// visible in editable mode now.
   final bool expanded;
 
   @override
@@ -144,9 +148,11 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final canNavigate =
         widget.onJumpToDate != null && content.sourceEntryDate != null;
 
-    // Body has no tap handler — the dedicated "Navigate to that day"
-    // button below is the only nav affordance, both in the grid and
-    // in the expanded route.
+    // Body wrapped in a `GestureDetector(onDoubleTap)` so the
+    // double-tap-to-expand reaches the host. Single taps fall through
+    // (no `onTap`) — there's nothing to engage on the snapshot
+    // itself. The Navigate button is OUTSIDE this detector so its
+    // InkWell single-tap fires normally.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -159,7 +165,13 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
             ),
           ),
         const SizedBox(height: 4),
-        Expanded(child: body),
+        Expanded(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: widget.onDoubleTap,
+            child: body,
+          ),
+        ),
         if (canNavigate && widget.mode == BlockMode.editable)
           Padding(
             padding: const EdgeInsets.only(top: 8),

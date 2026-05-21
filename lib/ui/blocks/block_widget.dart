@@ -34,6 +34,7 @@ class BlockWidget extends StatelessWidget {
     this.onJumpToDate,
     this.onInteractionLockChanged,
     this.onRequestExitEdit,
+    this.onDoubleTap,
     this.editing = false,
     this.expanded = false,
   });
@@ -52,12 +53,19 @@ class BlockWidget extends StatelessWidget {
   /// the outline disappears in lock-step with the carousel.
   final VoidCallback? onRequestExitEdit;
 
+  /// Push-the-expanded-route callback. Each block widget wires this
+  /// into its own `GestureDetector(onDoubleTap)` so the framework
+  /// handles tap-vs-double-tap disambiguation natively (single tap
+  /// fires the block's engage action after `kDoubleTapTimeout`,
+  /// double tap fires this immediately).
+  final VoidCallback? onDoubleTap;
+
   /// True when this block is the active edit target.
   final bool editing;
 
   /// True when this block is rendered inside the expanded route. Only
   /// a few blocks change behavior between in-place and expanded
-  /// (todo's "Add task" button, carousel's auto-collapse).
+  /// (carousel's auto-collapse).
   final bool expanded;
 
   @override
@@ -68,6 +76,7 @@ class BlockWidget extends StatelessWidget {
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
         );
       case BlockType.moodTracker:
@@ -77,6 +86,7 @@ class BlockWidget extends StatelessWidget {
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
           onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,
         );
@@ -87,6 +97,7 @@ class BlockWidget extends StatelessWidget {
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
           onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,
         );
@@ -95,6 +106,7 @@ class BlockWidget extends StatelessWidget {
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
         );
       case BlockType.todoBlock:
@@ -102,28 +114,46 @@ class BlockWidget extends StatelessWidget {
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,
         );
       case BlockType.quoteBlock:
-        return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return QuoteBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.memoryBlock:
         return MemoryBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
           onJumpToDate: onJumpToDate,
+          onDoubleTap: onDoubleTap,
           expanded: expanded,
         );
       case BlockType.weatherApi:
-        return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
+        return WeatherApiWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.photoBlock:
-        return PhotoBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return PhotoBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.locationBlock:
         return LocationBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
         );
       case BlockType.customCarousel:
         return CustomCarouselWidget(
@@ -132,6 +162,7 @@ class BlockWidget extends StatelessWidget {
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
           onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,
         );

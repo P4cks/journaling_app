@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
 
 class TextBlockWidget extends StatefulWidget {
@@ -10,12 +11,18 @@ class TextBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
     this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback. Wired into the
+  /// `DelayedTapFocus` wrapper so the framework arena resolves
+  /// single vs double tap without flashing the keyboard.
+  final VoidCallback? onDoubleTap;
 
   /// True when this block is the active edit target. The mixin
   /// requests focus on the field when this flips false → true (used
@@ -56,22 +63,26 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
       );
     }
 
-    return SizedBox.expand(
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        keyboardType: TextInputType.multiline,
-        textAlignVertical: TextAlignVertical.top,
-        decoration: const InputDecoration(
-          hintText: 'Write something…',
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+    return DelayedTapFocus(
+      focusNode: focusNode,
+      onDoubleTap: widget.onDoubleTap,
+      child: SizedBox.expand(
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          expands: true,
+          maxLines: null,
+          minLines: null,
+          keyboardType: TextInputType.multiline,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: const InputDecoration(
+            hintText: 'Write something…',
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: emitText,
         ),
-        onChanged: emitText,
       ),
     );
   }

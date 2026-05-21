@@ -7,7 +7,6 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
-import 'package:journaling_app_rewrite/ui/blocks/chrome/double_tap_listener.dart';
 
 // ---------------------------------------------------------------------------
 // BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
@@ -356,6 +355,10 @@ class _BlockGridState extends State<BlockGrid> {
     final isDragging = _draggingIndex == index;
     final usesEditMode = block.type.usesEditMode;
 
+    final canDoubleTap =
+        usesEditMode &&
+        widget.onRequestBlockEdit != null &&
+        widget.mode == BlockMode.editable;
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
       data: block,
@@ -363,6 +366,9 @@ class _BlockGridState extends State<BlockGrid> {
       onChanged: widget.onBlockChanged,
       onJumpToDate: widget.onJumpToDate,
       onInteractionLockChanged: widget.onInteractionLockChanged,
+      onDoubleTap: canDoubleTap
+          ? () => widget.onRequestBlockEdit!(block)
+          : null,
     );
 
     // Hero source. Tag matches the destination wrapped by
@@ -390,19 +396,12 @@ class _BlockGridState extends State<BlockGrid> {
       ),
     );
 
-    // Combined gesture model — single tap reaches the inner widget
-    // naturally (focuses TextField / expands carousel / opens
-    // picker), and a `DoubleTapListener` observes pointer events
-    // alongside (no arena conflict, no single-tap latency) to fire
-    // `onRequestBlockEdit` and push the expanded route.
-    if (usesEditMode &&
-        widget.onRequestBlockEdit != null &&
-        widget.mode == BlockMode.editable) {
-      card = DoubleTapListener(
-        onDoubleTap: () => widget.onRequestBlockEdit!(block),
-        child: card,
-      );
-    }
+    // No outer gesture wrapper. Each block widget owns its own
+    // `GestureDetector(onTap, onDoubleTap)` — single tap fires the
+    // block's engage action after `kDoubleTapTimeout`, double tap
+    // fires the `onDoubleTap` callback we passed via `BlockWidget`.
+    // Uniform behaviour across all block types: no flash on double
+    // tap.
 
     // Mount animation: scale 0.9 → 1.0 + fade. Runs once on mount,
     // keyed by block.id so re-orders don't replay it. Independent of

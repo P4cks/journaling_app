@@ -18,11 +18,20 @@ class LocationBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback. Location is the one
+  /// exception to the GestureDetector-everywhere rule — wrapping the
+  /// FlutterMap in an opaque GestureDetector would steal its pan /
+  /// pinch-zoom / double-tap-zoom gestures. Instead we use a raw
+  /// `Listener` to spot a double-tap pattern without entering the
+  /// arena; the map keeps every native interaction.
+  final VoidCallback? onDoubleTap;
 
   @override
   State<LocationBlockWidget> createState() => _LocationBlockWidgetState();
@@ -32,13 +41,37 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
   static const _fallbackCenter = LatLng(20, 0);
   static const _fallbackZoom = 1.5;
   static const _pinZoom = 13.0;
+  static const _doubleTapWindow = Duration(milliseconds: 300);
+  static const _doubleTapSlop = 20.0;
 
   late final MapController _mapController;
+  DateTime? _lastDownAt;
+  Offset? _lastDownPos;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    final onDoubleTap = widget.onDoubleTap;
+    if (onDoubleTap == null) return;
+    final now = DateTime.now();
+    final pos = event.position;
+    final last = _lastDownAt;
+    final lastPos = _lastDownPos;
+    if (last != null &&
+        lastPos != null &&
+        now.difference(last) <= _doubleTapWindow &&
+        (pos - lastPos).distance <= _doubleTapSlop) {
+      _lastDownAt = null;
+      _lastDownPos = null;
+      onDoubleTap();
+      return;
+    }
+    _lastDownAt = now;
+    _lastDownPos = pos;
   }
 
   @override
@@ -95,12 +128,15 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          FlutterMap(
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _onPointerDown,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: pin ?? _fallbackCenter,
@@ -143,29 +179,30 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
                 ),
             ],
           ),
-          if (isEditable && pin == null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                color: scheme.surface.withValues(alpha: 0.82),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 4,
-                ),
-                child: Text(
-                  'Long-press to drop a pin',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurface,
+            if (isEditable && pin == null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  color: scheme.surface.withValues(alpha: 0.82),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    'Long-press to drop a pin',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

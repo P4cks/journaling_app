@@ -13,6 +13,7 @@ class MoodTrackerWidget extends StatelessWidget {
     this.onChanged,
     this.onInteractionLockChanged,
     this.onRequestExitEdit,
+    this.onDoubleTap,
     this.editing = false,
     this.expanded = false,
   });
@@ -22,6 +23,7 @@ class MoodTrackerWidget extends StatelessWidget {
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
   final VoidCallback? onRequestExitEdit;
+  final VoidCallback? onDoubleTap;
   final bool editing;
   final bool expanded;
 
@@ -43,7 +45,8 @@ class MoodTrackerWidget extends StatelessWidget {
         ),
         onInteractionLockChanged: onInteractionLockChanged,
         onRequestExitEdit: expanded ? null : onRequestExitEdit,
-        editing: editing,
+        onDoubleTap: onDoubleTap,
+        editing: editing || expanded,
         // Auto-collapse only in-place. In the expanded route the
         // picker stays open until the user dismisses.
         autoCollapse: !expanded,

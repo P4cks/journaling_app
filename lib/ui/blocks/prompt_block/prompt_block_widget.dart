@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
@@ -11,12 +12,17 @@ class PromptBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
     this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback. Wired into the answer
+  /// field's `DelayedTapFocus` wrapper.
+  final VoidCallback? onDoubleTap;
 
   /// True when this block is the active edit target. Focuses the answer
   /// field; gates inner pointer events so single taps are inert.
@@ -207,13 +213,13 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
         ],
       );
     } else if (prompt.isEmpty) {
-      // Editable but no prompt yet — show a tap-target so the user can
-      // re-open the picker. Single tap on the body opens the picker
-      // (natural taps reach this widget in normal mode; in setting
-      // ON's grid the host wraps everything in IgnorePointer).
+      // Editable but no prompt yet. Single tap → picker (after
+      // ~300 ms so a double tap can intercept). Double tap → host's
+      // route push.
       body = GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _openPicker(initial: false),
+        onDoubleTap: widget.onDoubleTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -240,22 +246,26 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           promptLabel,
           const SizedBox(height: 6),
           Expanded(
-            child: TextField(
-              controller: _controller,
+            child: DelayedTapFocus(
               focusNode: _focusNode,
-              expands: true,
-              maxLines: null,
-              minLines: null,
-              keyboardType: TextInputType.multiline,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: const InputDecoration(
-                hintText: 'Your answer…',
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
+              onDoubleTap: widget.onDoubleTap,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  hintText: 'Your answer…',
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (value) =>
+                    _emit(prompt: content.prompt, answer: value),
               ),
-              onChanged: (value) =>
-                  _emit(prompt: content.prompt, answer: value),
             ),
           ),
         ],

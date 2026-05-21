@@ -199,20 +199,15 @@ class _CollapsibleCarouselBlockState<T>
             child: widget.collapsedBuilder(context, widget.selected),
           );
 
-    // Internal tap-to-expand. Works in normal mode (single-tap on a
-    // collapsed carousel pops the picker). In setting ON's grid the
-    // host (`BlockGrid`) wraps the whole tile in `IgnorePointer` so
-    // this tap never fires there — double-tap pushes the expanded
-    // route instead.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _expanded ? null : _expand,
-      child: AnimatedSwitcher(
-        duration: widget.switchDuration,
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: child,
-      ),
+    // No internal gesture handling — the host (`CarouselBlockScaffold`)
+    // owns the `GestureDetector(onTap, onDoubleTap)` so single vs
+    // double tap are disambiguated at one level. We just render the
+    // current state and react to external `editing` changes.
+    return AnimatedSwitcher(
+      duration: widget.switchDuration,
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: child,
     );
   }
 

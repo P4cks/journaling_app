@@ -8,7 +8,6 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
-import 'package:journaling_app_rewrite/ui/blocks/chrome/double_tap_listener.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 
@@ -247,8 +246,9 @@ class _SectionsBody extends StatelessWidget {
         final block = section.blocks.first;
         // Hero-wraps the section so the expanded route can morph from
         // here. Material is required for the Hero flight (see
-        // BlockGrid's Hero comment).
-        Widget body = Hero(
+        // BlockGrid's Hero comment). Double-tap is wired by the text
+        // section widget itself via `DelayedTapFocus`.
+        return Hero(
           tag: blockHeroTag(block.id),
           child: Material(
             type: MaterialType.transparency,
@@ -257,16 +257,12 @@ class _SectionsBody extends StatelessWidget {
               data: block,
               mode: mode,
               onChanged: onBlockChanged,
+              onDoubleTap: mode == BlockMode.editable
+                  ? () => onRequestTextSectionEdit?.call(block)
+                  : null,
             ),
           ),
         );
-        if (mode == BlockMode.editable && onRequestTextSectionEdit != null) {
-          body = DoubleTapListener(
-            onDoubleTap: () => onRequestTextSectionEdit!(block),
-            child: body,
-          );
-        }
-        return body;
       case SectionKind.blockGrid:
         // Suppress empty block-grid sections so a layout that materialized
         // with zero blocks (e.g. a kind-B layout saved with no filled
@@ -294,7 +290,11 @@ class _SectionsBody extends StatelessWidget {
         // renders in entries created before the slot was filled.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
         final block = section.blocks.first;
-        Widget feature = AspectRatio(
+        final canDoubleTap =
+            mode == BlockMode.editable &&
+            onRequestBlockEdit != null &&
+            block.type.usesEditMode;
+        final feature = AspectRatio(
           aspectRatio: 1,
           child: Hero(
             tag: blockHeroTag(block.id),
@@ -310,19 +310,14 @@ class _SectionsBody extends StatelessWidget {
                   onChanged: onBlockChanged,
                   onJumpToDate: onJumpToDate,
                   onInteractionLockChanged: onLockChanged,
+                  onDoubleTap: canDoubleTap
+                      ? () => onRequestBlockEdit!(block)
+                      : null,
                 ),
               ),
             ),
           ),
         );
-        if (mode == BlockMode.editable &&
-            onRequestBlockEdit != null &&
-            block.type.usesEditMode) {
-          feature = DoubleTapListener(
-            onDoubleTap: () => onRequestBlockEdit!(block),
-            child: feature,
-          );
-        }
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: feature,

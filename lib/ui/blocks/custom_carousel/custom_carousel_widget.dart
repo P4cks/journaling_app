@@ -32,6 +32,7 @@ class CustomCarouselWidget extends StatelessWidget {
     this.onChanged,
     this.onInteractionLockChanged,
     this.onRequestExitEdit,
+    this.onDoubleTap,
     this.editing = false,
     this.expanded = false,
   });
@@ -41,6 +42,7 @@ class CustomCarouselWidget extends StatelessWidget {
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
   final VoidCallback? onRequestExitEdit;
+  final VoidCallback? onDoubleTap;
   final bool editing;
   final bool expanded;
 
@@ -105,7 +107,8 @@ class CustomCarouselWidget extends StatelessWidget {
           ),
           onInteractionLockChanged: onInteractionLockChanged,
           onRequestExitEdit: expanded ? null : onRequestExitEdit,
-          editing: editing,
+          onDoubleTap: onDoubleTap,
+          editing: editing || expanded,
           autoCollapse: !expanded,
         );
       },

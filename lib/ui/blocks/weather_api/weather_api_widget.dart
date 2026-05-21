@@ -17,11 +17,16 @@ class WeatherApiWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback — fires on double-tap.
+  /// Display-only block; no single-tap engage.
+  final VoidCallback? onDoubleTap;
 
   @override
   State<WeatherApiWidget> createState() => _WeatherApiWidgetState();
@@ -79,7 +84,18 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final content = WeatherApiBlockContent.fromMap(widget.data.content);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onDoubleTap: widget.onDoubleTap,
+      child: _buildBody(context, theme, content),
+    );
+  }
 
+  Widget _buildBody(
+    BuildContext context,
+    ThemeData theme,
+    WeatherApiBlockContent content,
+  ) {
     if (content.isFetched) {
       final temp = content.temperatureC;
       final city = content.cityName;
