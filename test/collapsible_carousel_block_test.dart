@@ -24,19 +24,34 @@ void main() {
     expect(locks, isEmpty);
   });
 
-  testWidgets('selected collapsed carousel locks when opened', (tester) async {
+  testWidgets('selected collapsed carousel locks when edit mode activates', (
+    tester,
+  ) async {
+    // Under the new double-tap-to-edit gesture model the carousel's
+    // internal tap-to-expand no longer fires — expansion is triggered
+    // by the host setting `editing: true`. This test simulates the
+    // grid flipping that flag.
     final locks = <bool>[];
+    final key = GlobalKey<_StatefulHarnessState>();
 
     await tester.pumpWidget(
       _Harness(
-        child: _TestCarousel(
-          selected: 'first',
-          onLockChanged: (_, locked) => locks.add(locked),
+        child: _StatefulHarness(
+          key: key,
+          builder: (editing) => _TestCarousel(
+            selected: 'first',
+            editing: editing,
+            onLockChanged: (_, locked) => locks.add(locked),
+          ),
         ),
       ),
     );
+    await tester.pump();
 
-    await tester.tap(find.text('collapsed:first'));
+    expect(locks, isEmpty);
+
+    key.currentState!.setEditing(true);
+    await tester.pump();
     await tester.pump();
 
     expect(locks, [true]);
@@ -45,6 +60,25 @@ void main() {
 
     expect(locks, [true, false]);
   });
+}
+
+class _StatefulHarness extends StatefulWidget {
+  const _StatefulHarness({super.key, required this.builder});
+  final Widget Function(bool editing) builder;
+
+  @override
+  State<_StatefulHarness> createState() => _StatefulHarnessState();
+}
+
+class _StatefulHarnessState extends State<_StatefulHarness> {
+  bool _editing = false;
+  void setEditing(bool value) {
+    if (!mounted) return;
+    setState(() => _editing = value);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_editing);
 }
 
 class _Harness extends StatelessWidget {
@@ -61,10 +95,15 @@ class _Harness extends StatelessWidget {
 }
 
 class _TestCarousel extends StatelessWidget {
-  const _TestCarousel({required this.selected, required this.onLockChanged});
+  const _TestCarousel({
+    required this.selected,
+    required this.onLockChanged,
+    this.editing = false,
+  });
 
   final String? selected;
   final void Function(String blockId, bool locked) onLockChanged;
+  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +114,7 @@ class _TestCarousel extends StatelessWidget {
         blockId: 'test-carousel',
         options: const ['first', 'second'],
         selected: selected,
+        editing: editing,
         itemBuilder: (_, option, _) => Text(option),
         collapsedBuilder: (_, selected) => Text('collapsed:$selected'),
         onSelected: (_) {},

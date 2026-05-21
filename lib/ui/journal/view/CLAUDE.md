@@ -33,9 +33,10 @@ The screen state holds a `_editing` flag, updated from
 `platformDispatcher.views.first.viewInsets.bottom > 0`). When true:
 
 - **AppBar `actions`** collapses to a single Done `TextButton` that
-  calls `FocusManager.instance.primaryFocus?.unfocus()`. The normal
-  trio (Change-layout / Statistics / ProfileMenu) is hidden so the
-  user can't navigate away mid-edit.
+  calls `FocusManager.instance.primaryFocus?.unfocus()` AND clears
+  `_editingBlockId` if it is set. The normal trio (Change-layout /
+  Statistics / ProfileMenu) is hidden so the user can't navigate away
+  mid-edit.
 - **`JournalPager.externalLock`** is `true`, which puts the pager on
   `NeverScrollableScrollPhysics` (in addition to the existing inner-
   carousel lock). Horizontal swipe to adjacent entries is disabled.
@@ -48,6 +49,30 @@ inside the body** — Scaffold's `resizeToAvoidBottomInset` consumes
 the bottom insets before they reach descendants, so the value is
 zero. Reading via `WidgetsBinding.instance.platformDispatcher` in
 `didChangeMetrics` is the workaround.
+
+## Block edit mode (`_editingBlockId`)
+
+Separate from `_editing` (which only tracks keyboard visibility) is
+`_editingBlockId` — the id of the block currently in **in-place**
+edit mode (active when `DebugSettings.expandBlockOnEdit` is OFF).
+The expanded-route variant of editing leaves this null because the
+route itself owns the edit state.
+
+`_requestBlockEdit(block, {isTextSection})` is called from the journal
+pager when the user double-taps an editable block:
+
+- `expandBlockOnEdit == true` → `Navigator.push(ExpandedBlockRoute(...))`.
+  The route paints a blurred backdrop over the entry and positions
+  the block top-aligned (keyboard blocks) or centered (others).
+- `expandBlockOnEdit == false` → `setState(() => _editingBlockId = block.id)`.
+  The matching tile gets a 1.05 scale + accent-color outline (via
+  `PostItBlock.isEditing`) and its inner widget becomes interactive.
+
+`_exitInPlaceEdit()` is wired into the body's tap-outside
+`GestureDetector` so a tap on empty entry space dismisses in-place
+edit mode along with the existing unfocus. See the "Edit mode
+(double-tap)" section in [../../blocks/CLAUDE.md](../../blocks/CLAUDE.md)
+for the full gesture + propagation contract.
 
 ## Edit-mode formula
 

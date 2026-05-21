@@ -38,6 +38,7 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
     required this.itemBuilder,
     required this.onSelected,
     this.onInteractionLockChanged,
+    this.editing = false,
   });
 
   final String blockId;
@@ -59,6 +60,12 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
 
   final void Function(T option) onSelected;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+
+  /// Forwarded to [CollapsibleCarouselBlock.editing]. When true the
+  /// carousel auto-expands. When false the carousel's internal
+  /// tap-to-expand is suppressed — only the outer grid's double-tap
+  /// detector can promote the block into edit mode.
+  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +93,7 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
       ),
       onSelected: onSelected,
       onInteractionLockChanged: onInteractionLockChanged,
+      editing: editing,
     );
   }
 

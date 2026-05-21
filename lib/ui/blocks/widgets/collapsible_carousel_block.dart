@@ -24,6 +24,7 @@ class CollapsibleCarouselBlock<T> extends StatefulWidget {
     this.viewportFraction = 0.42,
     this.collapseDelay = const Duration(milliseconds: 1500),
     this.switchDuration = const Duration(milliseconds: 180),
+    this.editing = false,
   });
 
   final String blockId;
@@ -53,6 +54,12 @@ class CollapsibleCarouselBlock<T> extends StatefulWidget {
   final double viewportFraction;
   final Duration collapseDelay;
   final Duration switchDuration;
+
+  /// True when the hosting block is in edit mode (set by the new
+  /// double-tap-to-edit flow). When false, tapping the collapsed view
+  /// no longer expands the carousel — the outer grid's double-tap
+  /// detector is the only way in. When true, the carousel auto-expands.
+  final bool editing;
 
   @override
   State<CollapsibleCarouselBlock<T>> createState() =>
@@ -88,11 +95,35 @@ class _CollapsibleCarouselBlockState<T>
     // back to. This initial empty state does not lock the outer date
     // pager, so the user can still move to another entry before
     // choosing an option.
-    _expanded = widget.selected == null;
+    //
+    // When `editing` is true at mount (e.g. mounted inside the
+    // expanded block route), open expanded regardless so the user can
+    // pick immediately without a second gesture.
+    _expanded = widget.selected == null || widget.editing;
     _controller = PageController(
       initialPage: _initialIndex,
       viewportFraction: widget.viewportFraction,
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant CollapsibleCarouselBlock<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.editing != widget.editing) {
+      if (widget.editing) {
+        // Edit-mode just became active — auto-expand. _expand handles
+        // the rebuild + lock callback + collapse scheduling.
+        _expand();
+      } else {
+        // Edit-mode left — collapse so the carousel doesn't keep the
+        // pager locked while no one is interacting with it.
+        if (_expanded && widget.selected != null) {
+          _collapseGen++;
+          setState(() => _expanded = false);
+          widget.onInteractionLockChanged?.call(widget.blockId, false);
+        }
+      }
+    }
   }
 
   @override
@@ -151,9 +182,12 @@ class _CollapsibleCarouselBlockState<T>
             child: widget.collapsedBuilder(context, widget.selected),
           );
 
+    // Internal tap-to-expand only kicks in while edit mode is active.
+    // Outside edit mode the outer grid's double-tap detector requests
+    // editing — single-tap on the collapsed carousel is inert.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _expanded ? null : _expand,
+      onTap: (_expanded || !widget.editing) ? null : _expand,
       child: AnimatedSwitcher(
         duration: widget.switchDuration,
         switchInCurve: Curves.easeOut,

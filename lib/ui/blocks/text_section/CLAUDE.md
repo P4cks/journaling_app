@@ -25,10 +25,21 @@ trick lets the section reuse the existing JSON path and the
   Empty text shows "No text yet" in italic + `disabledColor`.
 - `BlockMode.editable` — `TextField` with `maxLines: null`, `minLines: 4`,
   no `expands`. Grows with content. No cap on input length.
+  - Wrapped in `AbsorbPointer(absorbing: !widget.editing)` so
+    single-taps do not focus the field. The double-tap detector lives
+    in `_SectionsBody` (the section-aware journal pager body) — see
+    the "Edit mode (double-tap)" section in
+    [../CLAUDE.md](../CLAUDE.md).
+  - Renders an `AnimatedContainer` with a 2 px primary-color border
+    when `widget.editing` is true (in-place edit affordance, mirroring
+    `PostItBlock`'s outline). The section has no `PostItBlock` chrome
+    of its own, so the border lives here.
 
-The controller lifecycle and per-keystroke emit come from
+The controller, focus node, and per-keystroke emit come from
 [TextContentControllerMixin](../widgets/text_content_controller_mixin.dart),
-shared with `TextBlockWidget`.
+shared with `TextBlockWidget`. The mixin's `editing` override returns
+`widget.editing`; the mixin requests focus on the node whenever the
+flag flips from false to true.
 
 ## Gotchas
 
