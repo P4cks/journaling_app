@@ -26,12 +26,13 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **Modal editing mode** — while a block (or the title) is being edited, the AppBar collapses to a single Done button and the swipe pager is locked, so editing can't accidentally navigate away. Tapping Done unfocuses the TextField. Driven off `WidgetsBindingObserver.didChangeMetrics` on `MainJournalScreen` (MediaQuery.viewInsetsOf inside the body returns 0 due to Scaffold's `resizeToAvoidBottomInset`). AppBar actions also unfocus before AND after navigation in the non-modal path to defend against Flutter's focus auto-restoration.
 * [x] `M` **Choose-layout sheet — half-screen scrollable** — `showLayoutPickerSheet` reworked to use the same `DraggableScrollableSheet` pattern as `showAddBlockSheet`, so long layout lists scroll inside the sheet instead of pushing the AppBar off-screen.
 * [x] `L` **Double-tap to edit blocks + expanded-block overlay** — disabled the post-it tap-wiggle (kept commented out for later revival), moved block editing behind a uniform double-tap gesture (single-tap is inert; long-press still reorders), added a `block.expandOnEdit` setting (default ON) that pushes an `ExpandedBlockRoute` over a blurred journal entry — keyboard blocks sit top-aligned so the keyboard fits below, others centered; with the setting OFF the active tile gets an in-place 1.05 scale + accent outline via `PostItBlock.isEditing`. Concrete editable widgets wrap their inner content in `AbsorbPointer(absorbing: !editing)` so single-taps are inert; `TextContentControllerMixin` now owns the `FocusNode` and requests focus on the false→true edit flip. Text sections follow the same model. Action blocks (photo/location/memory) keep their existing single-tap behavior. A debug `debug.expandedBlock.showDoneButton` toggle overlays a Done button on the expanded route for development.
+* [x] `M` **Replace Phosphor icons with HugeIcons** — swapped `phosphor_flutter` for the free `hugeicons` package (stroke-rounded family only — selection state now driven by colour). Centralised `AppIcon` rewrapped around `HugeIcon`; `secondaryColor` / `secondaryOpacity` props dropped. Curated `LayoutIcon` / `CarouselIcon` catalogues collapsed to a single `icon` field; persisted `name` ids retained so saved layouts and carousel picks still resolve. Closest-match substitutions documented inline in the catalogues.
 
 ## Theming / typography
 
 * [x] `L` **Revisit the surface palette system** — let users build and save their own palettes end-to-end (surface tint + secondary + accent), persisted alongside the existing curated list. Reduce the number of built-in defaults; lean on user-defined slots. Also let them chose a fontcolor
 * [ ] `S` **Choose a new font** — currently the platform default. Pick something with more character for a journaling app (e.g. Lora, Source Serif, Inter — TBD).
-* [ ] `M` **Toggle between emoji and Phosphor icons for blocks** — let users switch between emojis and Phosphor icons.
+* [ ] `M` **Toggle between emoji and HugeIcons for blocks** — let users switch between emojis and HugeIcons stroke-rounded glyphs.
 * [ ] `L` **Animations** - rework animations for navigation to be smoother and visually appealing but discrete/
 * [ ] `S` **Change shadows on boxes**
 
@@ -92,3 +93,4 @@ READ CLAUDE.md for further implementation details
 * [ ] `S` **Gate: change theme (paid only)** - custom themes only configurable as a paid user. For free users only default theme
 * [ ] `S` **Gate: differently styled layouts** - restrict free users to 4 blocks followed by one text section or something along those lines, paid users can choose to have only blocks or customize sections
 * [ ] `S` **Paywall or grey out locked features (TBD)**
+* [ ] `S` **

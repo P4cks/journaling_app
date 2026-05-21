@@ -78,7 +78,8 @@ that lives in block-grid sections.
   Concrete block widgets render differently per mode.
 
 - [block_type_display.dart](block_type_display.dart) — `extension BlockTypeDisplay on BlockType`
-  with `label`, `icon` (Phosphor duotone), `description`, and `sampleData(id:)`.
+
+  with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`), `description`, and `sampleData(id:)`.
   Also exposes two getters used by the double-tap edit-mode flow:
   - `usesEditMode` — true for blocks that participate in the new
     flow (text, prompt, todo, mood, weather-manual, customCarousel).
@@ -89,6 +90,7 @@ that lives in block-grid sections.
   - `usesKeyboardOnEdit` — true for text / prompt / todo so the
     expanded route can choose a top-aligned placement (keyboard
     fits below) instead of centered.
+
 
 - [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>`. Generic auto-expand / auto-collapse

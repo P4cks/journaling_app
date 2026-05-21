@@ -65,11 +65,13 @@ visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
 ## Files
 
 - [layout_icons.dart](layout_icons.dart) — `LayoutIcon` class +
-  `const kLayoutIcons` catalogue + `layoutIconFor(name)`. Each entry
-  has a stable `name` (the Phosphor identifier string, e.g.
-  `"squaresFour"`), a duotone glyph, a fill glyph, and a human label.
+  `kLayoutIcons` catalogue + `layoutIconFor(name)`. Each entry has a
+  stable `name` (originally the Phosphor identifier string, e.g.
+  `"squaresFour"` — kept as-is after the HugeIcons migration so saved
+  layouts still resolve), a HugeIcons stroke-rounded `icon`, and a
+  human `label`.
   - Names are persisted as plain strings in `JournalLayout.iconName`
-    so we don't need a Hive adapter for `IconData`.
+    so we don't need a Hive adapter for the underlying icon data.
   - `kDefaultLayoutIconName = 'squaresFour'`.
   - `layoutIconFor(null)` and unknown names both fall back to the
     default icon — safe to call with values written by an older app
