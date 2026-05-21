@@ -291,13 +291,23 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
                 ),
               ),
             ),
-            // Expanded block content. Outer GestureDetector uses
-            // `deferToChild` so inner interactive widgets (carousel
-            // PageView, map gestures) win their own taps; we only
-            // catch taps that fall through.
-            Padding(
+            // Expanded block content. `AnimatedAlign` + `AnimatedPadding`
+            // smoothly slide the block from center → topCenter as the
+            // keyboard rises (and back when it falls). The 240 ms
+            // matches Flutter's default keyboard slide so the block
+            // tracks the keyboard's top edge without lagging or
+            // overshooting.
+            //
+            // Outer GestureDetector uses `deferToChild` so inner
+            // interactive widgets (carousel PageView, map gestures)
+            // win their own taps; we only catch taps that fall through.
+            AnimatedPadding(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOut,
               padding: EdgeInsets.only(top: topPad, bottom: 16),
-              child: Align(
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOut,
                 alignment: alignment,
                 child: Opacity(
                   opacity: t,

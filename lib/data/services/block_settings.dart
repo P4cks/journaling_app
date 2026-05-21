@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 
@@ -48,6 +49,20 @@ class BlockSettings extends ChangeNotifier {
   bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
 
+  /// Block types that the memory block is allowed to snapshot from.
+  /// Defaults to the historical hardcoded set — text, mood, and
+  /// photo blocks. The user can narrow or widen this via the
+  /// Block-settings → Memory section. Memory blocks themselves are
+  /// excluded by design (memory-of-a-memory is recursive). Prompt
+  /// blocks are off by default (they're shaped differently and feel
+  /// weird as memories) but can be enabled.
+  static const Set<BlockType> defaultMemoryEligibleTypes = <BlockType>{
+    BlockType.textBlock,
+    BlockType.moodTracker,
+    BlockType.photoBlock,
+  };
+  Set<BlockType> _memoryEligibleTypes = defaultMemoryEligibleTypes;
+
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
 
@@ -59,6 +74,15 @@ class BlockSettings extends ChangeNotifier {
 
   List<CustomCarouselDefinition> get customCarousels =>
       List.unmodifiable(_customCarousels);
+
+  /// Eligible block types for memory snapshots. Returned as an
+  /// unmodifiable set; mutate via [setMemoryEligibleTypes]. Memory
+  /// blocks themselves are filtered out before the set hits storage
+  /// (memory-of-a-memory recursion is never useful), so the UI may
+  /// surface `BlockType.memoryBlock` but the value here will never
+  /// contain it.
+  Set<BlockType> get memoryEligibleTypes =>
+      Set.unmodifiable(_memoryEligibleTypes);
 
   CustomCarouselDefinition? findCustomCarousel(String id) {
     for (final def in _customCarousels) {
@@ -110,6 +134,22 @@ class BlockSettings extends ChangeNotifier {
         // Corrupt JSON — fall back to empty.
       }
     }
+    final memoryRaw = _storage.getBlockMemoryEligibleTypesJson();
+    if (memoryRaw != null && memoryRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(memoryRaw);
+        if (decoded is List) {
+          final byName = {for (final t in BlockType.values) t.name: t};
+          _memoryEligibleTypes = {
+            for (final v in decoded)
+              if (v is String && byName.containsKey(v) && v != BlockType.memoryBlock.name)
+                byName[v]!,
+          };
+        }
+      } catch (_) {
+        // Corrupt JSON — fall back to the default.
+      }
+    }
   }
 
   Future<void> _persistCustomCarousels() async {
@@ -146,6 +186,24 @@ class BlockSettings extends ChangeNotifier {
     _carouselTitlesEnabled = value;
     await _storage.setBlockCarouselTitlesEnabled(value);
     debugPrint('[BlockSettings] setCarouselTitlesEnabled -> $value');
+    notifyListeners();
+  }
+
+  /// Replace the memory-block eligible-types set. The memoryBlock
+  /// type itself is filtered out before persistence (memory-of-a-
+  /// memory recursion). Passing the default set persists `null` so
+  /// future default changes propagate to all users.
+  Future<void> setMemoryEligibleTypes(Set<BlockType> types) async {
+    final cleaned = types.where((t) => t != BlockType.memoryBlock).toSet();
+    if (setEquals(cleaned, _memoryEligibleTypes)) return;
+    _memoryEligibleTypes = cleaned;
+    final isDefault = setEquals(cleaned, defaultMemoryEligibleTypes);
+    await _storage.setBlockMemoryEligibleTypesJson(
+      isDefault ? null : jsonEncode([for (final t in cleaned) t.name]),
+    );
+    debugPrint(
+      '[BlockSettings] setMemoryEligibleTypes -> ${cleaned.length} types',
+    );
     notifyListeners();
   }
 

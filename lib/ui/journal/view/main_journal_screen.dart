@@ -107,17 +107,21 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  /// Called from the journal pager when the user double-taps an
-  /// editable block. Only fires when `debugSettings.expandBlockOnEdit`
-  /// is ON — in normal mode (setting OFF) the BlockGrid doesn't
-  /// attach the double-tap detector at all; single-tap engages the
-  /// inner widget directly.
+  /// Called from the journal pager when the user **double-taps** an
+  /// editable block. Single tap is handled inline by each block
+  /// widget (focuses the TextField, expands the carousel, etc.) — see
+  /// [DoubleTapListener] for why both gestures coexist without arena
+  /// conflicts.
   ///
   /// Pushes [ExpandedBlockRoute]. Edit state lives inside the route.
   /// The text-section variant sets `isTextSection: true` so the route
   /// renders the section text directly on the blur (no card chrome).
   void _requestBlockEdit(JournalBlockData block, {bool isTextSection = false}) {
     final vm = _viewModel;
+    // The single tap that preceded this double tap may have already
+    // focused a field — unfocus so the keyboard isn't dangling when
+    // the route opens (the route's own field is unfocused initially
+    // by design; user taps inside to start editing there).
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _expandedRouteOpen = true);
     Navigator.of(context)

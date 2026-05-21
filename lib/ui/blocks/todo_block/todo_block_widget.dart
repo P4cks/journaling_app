@@ -180,35 +180,34 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
             },
           ),
         ),
-        // "Add item" is an ACTION — only visible in the expanded
-        // route. In normal-mode grid (and in setting ON's grid which
-        // is non-interactive anyway) the affordance stays hidden.
-        if (widget.expanded)
-          InkWell(
-            onTap: () => _add(content),
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppIcon(
-                    HugeIcons.strokeRoundedPlusSign,
-                    size: 14,
+        // "Add item" — always visible in editable mode. The combined
+        // gesture model means single-tap on the row focuses the
+        // TextField; tapping this button appends a fresh empty item.
+        InkWell(
+          onTap: () => _add(content),
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedPlusSign,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Add item',
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Add item',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
       ],
     );
   }

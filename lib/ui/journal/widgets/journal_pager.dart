@@ -8,8 +8,8 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/double_tap_listener.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 
 /// Horizontal pager over the user's entries (sorted ascending). The
@@ -229,25 +229,16 @@ class _SectionsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final expandOnEdit = AppDependencies.of(
-      context,
-    ).debugSettings.expandBlockOnEdit;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final section in sections)
-            _buildSection(section, expandOnEdit: expandOnEdit),
-        ],
+        children: [for (final section in sections) _buildSection(section)],
       ),
     );
   }
 
-  Widget _buildSection(
-    EntrySection section, {
-    required bool expandOnEdit,
-  }) {
+  Widget _buildSection(EntrySection section) {
     switch (section.kind) {
       case SectionKind.text:
         // Text sections are materialized as exactly one textBlock; if
@@ -269,13 +260,10 @@ class _SectionsBody extends StatelessWidget {
             ),
           ),
         );
-        if (expandOnEdit &&
-            mode == BlockMode.editable &&
-            onRequestTextSectionEdit != null) {
-          body = GestureDetector(
-            behavior: HitTestBehavior.opaque,
+        if (mode == BlockMode.editable && onRequestTextSectionEdit != null) {
+          body = DoubleTapListener(
             onDoubleTap: () => onRequestTextSectionEdit!(block),
-            child: IgnorePointer(child: body),
+            child: body,
           );
         }
         return body;
@@ -327,14 +315,12 @@ class _SectionsBody extends StatelessWidget {
             ),
           ),
         );
-        if (expandOnEdit &&
-            mode == BlockMode.editable &&
+        if (mode == BlockMode.editable &&
             onRequestBlockEdit != null &&
             block.type.usesEditMode) {
-          feature = GestureDetector(
-            behavior: HitTestBehavior.opaque,
+          feature = DoubleTapListener(
             onDoubleTap: () => onRequestBlockEdit!(block),
-            child: IgnorePointer(child: feature),
+            child: feature,
           );
         }
         return Padding(

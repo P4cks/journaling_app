@@ -6,6 +6,14 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dar
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 
+/// The natural content size used by every block body in the grid —
+/// roughly a 1×1 cell minus the chrome's 12 px padding. The expanded
+/// chrome lays content out at this size and uses `Transform.scale`
+/// to blow it up to fit the larger box (see the LayoutBuilder block
+/// in [BlockChrome.build]). Layout stays predictable; only the
+/// visual scale changes per Hero flight frame.
+const double kBlockContentReferenceSize = 136.0;
+
 /// The visual chrome wrapping every block — replaces the old
 /// `PostItBlock`.
 ///
@@ -94,6 +102,39 @@ class BlockChrome extends StatelessWidget {
     final showEditOutline =
         isEditing && !isDragging && host == BlockHostKind.grid;
 
+    // In the expanded host the inner content scales proportionally
+    // with the chrome — that's what makes the Hero "feel" like a
+    // zoom (emoji enlarges, text font grows, etc.) instead of a
+    // small grid tile rattling around in a big card. The reference
+    // size matches the typical grid content area (160 px cell minus
+    // the 12 px chrome padding ≈ 136 px). `LayoutBuilder` re-runs on
+    // every Hero flight frame so the scale tracks the chrome's
+    // current width smoothly. We pin the inner layout at
+    // `kBlockContentReferenceSize` and let `Transform.scale` blow it
+    // up visually — that way TextField wrapping / carousel layout
+    // stays predictable instead of reflowing per frame.
+    Widget inner = child;
+    if (host == BlockHostKind.expanded) {
+      inner = LayoutBuilder(
+        builder: (context, constraints) {
+          final available = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : kBlockContentReferenceSize;
+          final scale = (available / kBlockContentReferenceSize)
+              .clamp(1.0, 6.0);
+          return Transform.scale(
+            scale: scale,
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: kBlockContentReferenceSize,
+              height: kBlockContentReferenceSize,
+              child: child,
+            ),
+          );
+        },
+      );
+    }
+
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
@@ -119,7 +160,7 @@ class BlockChrome extends StatelessWidget {
           data: IconThemeData(color: fg),
           child: Stack(
             children: [
-              Padding(padding: const EdgeInsets.all(12), child: child),
+              Padding(padding: const EdgeInsets.all(12), child: inner),
               if (topRight != null)
                 Positioned(top: 4, right: 4, child: topRight!),
             ],

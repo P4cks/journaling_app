@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
@@ -137,9 +139,79 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
                 ),
               ],
             ),
+            SettingsSection(
+              label: 'Memory Block',
+              children: [
+                _MemoryEligibleTypesPicker(
+                  settings: AppDependencies.of(context).blockSettings,
+                ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Multi-select for the block types that a memory block may snapshot
+/// from. Writes directly to [BlockSettings] (not draft state) — the
+/// `_CustomCarouselList` next door uses the same pattern. The list is
+/// limited to block types whose snapshots actually render in
+/// `MemoryBlockWidget._renderSnapshot`; widening it requires adding
+/// matching render cases.
+class _MemoryEligibleTypesPicker extends StatelessWidget {
+  const _MemoryEligibleTypesPicker({required this.settings});
+
+  final BlockSettings settings;
+
+  /// Block types the user can opt into / out of. Mirrors the switch
+  /// cases supported by `MemoryBlockWidget._renderSnapshot`.
+  static const List<BlockType> _supportedTypes = [
+    BlockType.textBlock,
+    BlockType.moodTracker,
+    BlockType.photoBlock,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) {
+        final selected = settings.memoryEligibleTypes;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Which past blocks can a memory snapshot from?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            for (final type in _supportedTypes)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(type.label),
+                value: selected.contains(type),
+                onChanged: (checked) {
+                  final next = {...selected};
+                  if (checked == true) {
+                    next.add(type);
+                  } else {
+                    next.remove(type);
+                  }
+                  settings.setMemoryEligibleTypes(next);
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                secondary: AppIcon(type.icon),
+              ),
+          ],
+        );
+      },
     );
   }
 }

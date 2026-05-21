@@ -69,17 +69,6 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   bool _picking = false;
   bool _noEligible = false;
 
-  // Eligible source block types. Memory blocks themselves are excluded
-  // to avoid memory-of-a-memory recursion. Prompt blocks are excluded
-  // for now (they're shaped differently and feel weird as memories).
-  // Photo blocks are eligible — including 2×2 feature-section photos,
-  // which render as cropped thumbnails inside the (1×1) memory tile.
-  static const _eligibleTypes = {
-    BlockType.textBlock,
-    BlockType.moodTracker,
-    BlockType.photoBlock,
-  };
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -90,10 +79,14 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final content = MemoryBlockContent.fromMap(widget.data.content);
     if (content.isSeeded || _picking || _noEligible) return;
     _picking = true;
-    final repo = AppDependencies.of(context).journalRepository;
+    final deps = AppDependencies.of(context);
+    final repo = deps.journalRepository;
+    // Eligible types are user-configurable via Block Settings → Memory.
+    // memoryBlock itself is filtered by `BlockSettings.setMemoryEligibleTypes`
+    // before persistence so we don't need a defensive filter here.
     final pick = repo.pickRandomEligibleBlock(
       beforeDate: DateTime.now(),
-      eligibleTypes: _eligibleTypes,
+      eligibleTypes: deps.blockSettings.memoryEligibleTypes,
     );
     _picking = false;
     if (pick == null) {
@@ -151,7 +144,10 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final canNavigate =
         widget.onJumpToDate != null && content.sourceEntryDate != null;
 
-    final column = Column(
+    // Body has no tap handler — the dedicated "Navigate to that day"
+    // button below is the only nav affordance, both in the grid and
+    // in the expanded route.
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (caption != null)
@@ -164,9 +160,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
           ),
         const SizedBox(height: 4),
         Expanded(child: body),
-        // "Navigate to that day" — visible only in expanded mode,
-        // mirroring the todo block's "Add task" button.
-        if (widget.expanded && canNavigate)
+        if (canNavigate && widget.mode == BlockMode.editable)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: InkWell(
@@ -202,21 +196,6 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
           ),
       ],
     );
-
-    // In the grid (non-expanded), single-tap the body to jump. In the
-    // expanded route the user typically uses the dedicated button, but
-    // body-tap also jumps for convenience. In setting ON's grid the
-    // host wraps the tile in IgnorePointer so this tap never fires.
-    if (canNavigate && widget.mode == BlockMode.editable) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => widget.onJumpToDate!(
-          DateTime.parse(content.sourceEntryDate!),
-        ),
-        child: column,
-      );
-    }
-    return column;
   }
 
   String? _formatCaption(String? isoDate) {

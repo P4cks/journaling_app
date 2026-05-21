@@ -7,7 +7,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/double_tap_listener.dart';
 
 // ---------------------------------------------------------------------------
 // BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
@@ -356,18 +356,6 @@ class _BlockGridState extends State<BlockGrid> {
     final isDragging = _draggingIndex == index;
     final usesEditMode = block.type.usesEditMode;
 
-    // Whether the host has expanded-on-edit mode on. Drives the
-    // setting-OFF (normal) vs setting-ON (expanded) gesture model:
-    //   - OFF: inner widgets are interactive directly; single tap
-    //     focuses field / expands carousel / opens picker (old
-    //     pre-PR1 behaviour). No outer detector, no IgnorePointer.
-    //   - ON:  inner widgets are wrapped in `IgnorePointer` so taps
-    //     don't reach them; an outer `GestureDetector(onDoubleTap)`
-    //     pushes the expanded route.
-    final expandOnEdit = AppDependencies.of(
-      context,
-    ).debugSettings.expandBlockOnEdit;
-
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
       data: block,
@@ -402,16 +390,17 @@ class _BlockGridState extends State<BlockGrid> {
       ),
     );
 
-    // Setting ON: wrap inner content so single-taps are inert and
-    // the outer double-tap detector reliably wins.
-    if (expandOnEdit &&
-        usesEditMode &&
+    // Combined gesture model — single tap reaches the inner widget
+    // naturally (focuses TextField / expands carousel / opens
+    // picker), and a `DoubleTapListener` observes pointer events
+    // alongside (no arena conflict, no single-tap latency) to fire
+    // `onRequestBlockEdit` and push the expanded route.
+    if (usesEditMode &&
         widget.onRequestBlockEdit != null &&
         widget.mode == BlockMode.editable) {
-      card = GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      card = DoubleTapListener(
         onDoubleTap: () => widget.onRequestBlockEdit!(block),
-        child: IgnorePointer(child: card),
+        child: card,
       );
     }
 
