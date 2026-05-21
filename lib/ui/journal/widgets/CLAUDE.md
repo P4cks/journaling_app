@@ -54,11 +54,29 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   sheet (no route push, no auto-restoration risk).
 - [calendar_bottom_bar.dart](calendar_bottom_bar.dart) —
   `CalendarBottomBar`. Sticky compact week strip via `TableCalendar`
-  in `CalendarFormat.week`, plus a trailing IconButton that opens
-  the full-month view via
+  in `CalendarFormat.week`, plus a conditional "Today" pill (only
+  shown when `selectedDate` is not today — slides in/out via
+  `AnimatedSwitcher` + horizontal `SizeTransition`), and a trailing
+  IconButton that opens the full-month view via
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
-  (initial 0.6, no title). Collapses to zero height when the
-  keyboard is up (`AnimatedSize` + `viewInsetsOf`).
+  (initial 0.6, no title). Collapses to zero height when the keyboard
+  is up (`viewInsetsOf`).
+
+  **Cell styling** is driven by `CalendarBuilders` (not
+  `CalendarStyle` decorations) so each day can get its own colour:
+    - Days with an entry → rounded-rect border in a per-date palette
+      colour.
+    - Today (no entry) → low-opacity (18%) fill of its own colour.
+    - Today + has entry (not selected) → fill + border.
+    - Selected day → full fill of the day's colour; text uses
+      [contrastOn](../../theme/color_hex.dart) for legibility.
+  Colour comes from `themeSettings.postItPalette` via
+  `_dayPaletteColor(day, palette)`, seeded by `y*10000+m*100+d` so a
+  given date always renders the same colour. When
+  `themeSettings.postItModeEnabled` is false, every cell falls back
+  to `scheme.primary` (geometry unchanged). The week strip and month
+  sheet share `_buildDayCell`. Marker dots are gone — the border
+  carries the "has entry" signal.
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
   `vm.entries` sorted ascending. Two-way sync with `vm.selectedDate`
@@ -92,14 +110,6 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `TextBlockContent` is empty (the user might be about to start
   typing).
 
-## Sentinel: TableCalendar `eventLoader`
-
-The week strip and the month sheet both use the same `_kHasEntry` /
-`_kNoEntries` const-list sentinels. `TableCalendar` only cares about
-list length when deciding whether to paint a dot, so the element value
-is irrelevant — `const Object()` keeps allocation flat. Don't replace
-with per-day lists; doing so would walk the entry set per cell.
-
 ## Gotchas
 
 - **`PageController.animateToPage` must run after the build.**
@@ -116,6 +126,19 @@ with per-day lists; doing so would walk the entry set per cell.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
+- **`_buildDayCell` reads `themeSettings` inline (no local
+  ListenableBuilder).** Palette / post-it-mode changes propagate via
+  the root-level `ListenableBuilder(listenable: themeSettings)` in
+  [main.dart](../../../main.dart) which rebuilds the whole
+  MaterialApp. If you ever lift this widget out of that tree, add a
+  local listener — otherwise palette edits won't take effect until
+  the next unrelated rebuild.
+- **Per-date colour is seeded by `y*10000 + m*100 + d`, not
+  `day.hashCode`.** `DateTime.hashCode` mixes the time-of-day
+  fields, so two `DateTime` instances for the same calendar date but
+  different times would map to different colours. The cell always
+  receives a normalised `DateTime` from `TableCalendar`, but be
+  defensive: don't switch the seed to `hashCode`.
 - **`JournalPager`'s lock-set keys are block IDs**, not a bool flag.
   If two carousels are expanded simultaneously (mood + manual weather
   on the same day), collapsing one keeps the other's lock in place.
