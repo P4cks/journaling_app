@@ -12,12 +12,14 @@ class MoodTrackerWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onInteractionLockChanged,
+    this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,7 @@ class MoodTrackerWidget extends StatelessWidget {
           data.copyWith(content: MoodBlockContent(emoji: emoji).toMap()),
         ),
         onInteractionLockChanged: onInteractionLockChanged,
+        editing: editing,
       ),
     );
   }

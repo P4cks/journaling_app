@@ -78,13 +78,34 @@ that lives in block-grid sections.
   Concrete block widgets render differently per mode.
 
 - [block_type_display.dart](block_type_display.dart) — `extension BlockTypeDisplay on BlockType`
-  with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`),
-  `description`, and `sampleData(id:)`.
+
+  with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`), `description`, and `sampleData(id:)`.
+  Also exposes two getters used by the double-tap edit-mode flow:
+  - `usesEditMode` — true for blocks that participate in the new
+    flow (text, prompt, todo, mood, weather-manual, customCarousel).
+    Action blocks (photo, location, memory) and display blocks
+    (quote, weather-api) return false; the grid does NOT attach the
+    double-tap detector for those tiles and they keep their existing
+    single-tap behavior.
+  - `usesKeyboardOnEdit` — true for text / prompt / todo so the
+    expanded route can choose a top-aligned placement (keyboard
+    fits below) instead of centered.
+
 
 - [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —
-  `CollapsibleCarouselBlock<T>`. Generic tap-to-expand / auto-collapse
-  carousel shared between the mood and manual-weather blocks. See
+  `CollapsibleCarouselBlock<T>`. Generic auto-expand / auto-collapse
+  carousel shared between the mood and manual-weather blocks. Now
+  driven by an external `editing` flag (the new double-tap-to-edit
+  flow); internal tap-to-expand is gated on `editing == true`. See
   [widgets/CLAUDE.md](widgets/CLAUDE.md).
+- [expanded/expanded_block_route.dart](expanded/expanded_block_route.dart) —
+  `ExpandedBlockRoute` + private `_ExpandedBlockBody`. Translucent
+  `PageRoute<void>` (`opaque: false`) that paints the previous route
+  blurred under a `BackdropFilter` and renders the block expanded in
+  the foreground. Keyboard-using blocks (text / prompt / todo) sit
+  top-aligned so the keyboard fits below; other editable blocks sit
+  centered. Tapping the backdrop pops the route; a debug toggle adds
+  a "Done" button. See "Edit mode (double-tap)" below.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
@@ -117,14 +138,13 @@ animations affect the grid's RenderBoxes or insertion-index math:
   shadow (blur 14 → 24, alpha ×1.6). The `LongPressDraggable.feedback`
   is also a `PostItBlock` with `isDragging: true` for the same look
   on the floating preview.
-- **Tap wiggle**: `PostItBlock` wraps its card in a `Listener` that
-  fires on `onPointerDown` without consuming the gesture (so inner
-  TextFields, carousels, and the outer `LongPressDraggable` still
-  receive their events). On post-it mode + not-currently-dragging, it
-  drives a damped ±3° `TweenSequence` rotation that adds onto the
-  static `visuals.rotationDeg`. Acts as edit-affordance feedback —
-  the user sees the post-it react before any inner widget responds.
-  Skipped in classic mode (the calm look stays still).
+- **Tap wiggle**: *currently disabled.* The damped ±3° rotation that
+  used to fire on every `onPointerDown` is preserved as commented-out
+  scaffolding inside `_PostItBlockState` (see [post_it_block.dart](post_it_block.dart)).
+  It was acting as edit-affordance feedback that no longer fits the
+  new double-tap-to-edit model (a wiggle on every single tap implied
+  "you tapped but nothing happened"). May be reinstated later — the
+  comment block in `_PostItBlockState` lists the revival steps.
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.
@@ -142,6 +162,110 @@ animations affect the grid's RenderBoxes or insertion-index math:
   both have cross-cutting cost. The drop visual is the insertion
   line + the smooth shadow snap from `isDragging: false`; revisit
   if the result feels too abrupt.
+
+## Edit mode (double-tap)
+
+Editing an editable block (text / prompt / todo / mood / weather /
+customCarousel) takes a **double-tap** on the tile. Single-taps are
+inert. Long-press still triggers reorder via `LongPressDraggable`,
+independent of edit mode.
+
+### State model
+
+- `String? editingBlockId` lives on `_MainJournalScreenState` and is
+  threaded through `JournalPager → _SectionsBody → BlockGrid →
+  BlockWidget → concrete block`. Exactly one block can be in in-place
+  edit mode at a time.
+- The screen's existing `_editing` keyboard-visibility flag is
+  unchanged — it still drives the AppBar's Done collapse and the
+  pager's outer lock. The two flags coexist:
+  - `_editingBlockId != null` means "this tile is the active in-place
+    editor" — affordance is the scale + outline on `PostItBlock`.
+  - `_editing == true` means "the keyboard is up". For text / prompt /
+    todo blocks both are true while typing; for mood / weather only
+    `_editingBlockId` is set.
+
+### Double-tap dispatch
+
+1. `BlockGrid._buildTile` wraps each editable tile in
+   `GestureDetector(onDoubleTap: ...)` with
+   `behavior: HitTestBehavior.translucent`. The detector is only
+   attached for block types where `BlockTypeDisplay.usesEditMode` is
+   true AND only while the tile is NOT the active editor — once
+   editing, single taps inside the TextField should not wait for the
+   double-tap timeout.
+2. Text sections in `_SectionsBody` get an analogous detector wired
+   to `onRequestTextSectionEdit` (separate callback from grid blocks
+   so the screen can set `isTextSection: true` on the route push).
+3. The screen's `_requestBlockEdit(block, {isTextSection})` dispatches
+   based on `DebugSettings.expandBlockOnEdit`:
+   - **ON** (default) → `Navigator.push(ExpandedBlockRoute(...))`.
+     `_editingBlockId` stays null; the route owns the edit state.
+   - **OFF** → `setState(() => _editingBlockId = block.id)`.
+
+### Inert single-tap inside editable blocks
+
+Concrete editable widgets (`TextBlockWidget`, `TextSectionWidget`,
+`PromptBlockWidget`, `TodoBlockWidget`) wrap their interactive
+sub-widgets in `AbsorbPointer(absorbing: !editing)`. While not
+editing, single-taps that reach the inner widget are swallowed —
+the TextField doesn't auto-focus, the carousel doesn't expand.
+`CollapsibleCarouselBlock` similarly gates its internal
+tap-to-expand on `editing == true`.
+
+### Focusing on activation
+
+`TextContentControllerMixin` (shared by `TextBlockWidget` /
+`TextSectionWidget`) owns the `FocusNode`. When subclasses forward
+`widget.editing` via the `editing` override, the mixin requests focus
+in `didUpdateWidget` whenever the flag flips from false to true
+(post-framed to avoid the in-build setState). Same pattern lives
+inline in `PromptBlockWidget`. `TodoBlockWidget` doesn't auto-focus
+a specific row — the AbsorbPointer drop is enough for the user to tap
+the row they want to edit.
+
+### The expanded route
+
+`ExpandedBlockRoute` is a translucent `PageRoute<void>` (`opaque: false`)
+that lets the previous route paint through. The body is a Stack of:
+1. `BackdropFilter(ImageFilter.blur(σ ≈ 12 * t))` over a tinted color
+   layer — t is the route animation value so the blur eases in.
+2. A full-screen `GestureDetector(onTap: maybePop)` for the
+   tap-outside-to-dismiss affordance. Saves are per-keystroke so a
+   dismiss never loses content.
+3. The expanded block: `PostItBlock(isEditing: true)` around a
+   `BlockWidget(editing: true)`. Keyboard-using blocks sit
+   top-aligned with a status-bar inset; others are centered. A no-op
+   GestureDetector wraps the block so backdrop taps don't fire for
+   gestures on it.
+4. Optional "Done" button — only shown when
+   `DebugSettings.showExpandedBlockDoneButton` is true (developer
+   affordance; tap-outside is the user-facing dismissal).
+
+The route is dismissed by tapping the backdrop, pressing the system
+back button, or — in debug mode — the Done button. No Hero animation
+is used; the route fades + scales in via the route animation value
+read inside the body's `AnimatedBuilder`.
+
+### In-place edit affordance (setting OFF)
+
+`PostItBlock.isEditing` triggers:
+- An `AnimatedScale` to 1.05 (composes with drag scale at 1.03 — drag
+  wins via the `widget.isDragging ? 1.03 : (widget.isEditing ? 1.05 : 1.0)`
+  cascade).
+- A 2 px border in `colorScheme.primary` on the card's
+  `AnimatedContainer` decoration. Animates in over 180 ms.
+
+`TextSectionWidget` applies its own 2 px primary-color border via an
+inner `AnimatedContainer` because it has no `PostItBlock` chrome.
+
+### Action blocks (photo / location / memory)
+
+These keep their existing single-tap behavior. They opt out of the new
+flow via `BlockTypeDisplay.usesEditMode == false`. Routing them
+through double-tap is a possible follow-up but adds plumbing for
+"immediately fire action + exit edit mode" semantics that's out of
+scope for this iteration.
 
 ## Drag-and-drop (BlockGrid) — how it works
 

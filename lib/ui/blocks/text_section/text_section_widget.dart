@@ -14,11 +14,19 @@ class TextSectionWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// True when this section is the active edit target. The mixin
+  /// focuses the field; the AbsorbPointer wrapper drops so taps reach
+  /// the TextField (re-cursor, select). When false the field is
+  /// pointer-absorbed so single-taps don't focus it — double-tap on
+  /// the section is the only way in (wired by the journal pager).
+  final bool editing;
 
   @override
   State<TextSectionWidget> createState() => _TextSectionWidgetState();
@@ -31,6 +39,9 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
 
   @override
   ValueChanged<JournalBlockData>? get onChanged => widget.onChanged;
+
+  @override
+  bool get editing => widget.editing;
 
   @override
   Widget build(BuildContext context) {
@@ -50,21 +61,35 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: TextField(
-        controller: controller,
-        maxLines: null,
-        minLines: 4,
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          hintText: 'Write something…',
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+    final scheme = theme.colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: widget.editing
+            ? Border.all(color: scheme.primary, width: 2)
+            : Border.all(color: Colors.transparent, width: 2),
+      ),
+      child: AbsorbPointer(
+        absorbing: !widget.editing,
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          maxLines: null,
+          minLines: 4,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Write something…',
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: emitText,
         ),
-        onChanged: emitText,
       ),
     );
   }

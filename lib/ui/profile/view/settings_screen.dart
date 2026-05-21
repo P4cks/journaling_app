@@ -58,6 +58,15 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Configure blocks',
                   route: Routes.blockSettings,
                 ),
+                SwitchListTile(
+                  secondary: AppIcon(HugeIcons.strokeRoundedMaximize01),
+                  title: const Text('Expand block when editing'),
+                  subtitle: const Text(
+                    'Double-tap a block to open it over a blurred journal entry.',
+                  ),
+                  value: debug.expandBlockOnEdit,
+                  onChanged: debug.setExpandBlockOnEdit,
+                ),
               ],
             ),
             SettingsSection(
@@ -81,6 +90,15 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     value: debug.unlockAllDays,
                     onChanged: debug.setUnlockAllDays,
+                  ),
+                  SwitchListTile(
+                    secondary: AppIcon(HugeIcons.strokeRoundedCheckmarkCircle02),
+                    title: const Text('Show Done on expanded blocks'),
+                    subtitle: const Text(
+                      'Developer affordance — expanded blocks normally dismiss by tapping the backdrop.',
+                    ),
+                    value: debug.showExpandedBlockDoneButton,
+                    onChanged: debug.setShowExpandedBlockDoneButton,
                   ),
                   _DebugColorPickerTile(
                     theme: theme,

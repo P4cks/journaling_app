@@ -10,11 +10,20 @@ class TextBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// True when this block is the active edit target. The mixin focuses
+  /// the field; we also drop the AbsorbPointer wrapper so taps reach
+  /// the TextField (re-cursor, select). When false the field is
+  /// pointer-absorbed so single-taps don't focus it — the new
+  /// double-tap-to-edit gesture, handled at the grid level, is the only
+  /// way in.
+  final bool editing;
 
   @override
   State<TextBlockWidget> createState() => _TextBlockWidgetState();
@@ -27,6 +36,9 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
 
   @override
   ValueChanged<JournalBlockData>? get onChanged => widget.onChanged;
+
+  @override
+  bool get editing => widget.editing;
 
   @override
   Widget build(BuildContext context) {
@@ -42,21 +54,25 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
       );
     }
 
-    return SizedBox.expand(
-      child: TextField(
-        controller: controller,
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        keyboardType: TextInputType.multiline,
-        textAlignVertical: TextAlignVertical.top,
-        decoration: const InputDecoration(
-          hintText: 'Write something…',
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+    return AbsorbPointer(
+      absorbing: !widget.editing,
+      child: SizedBox.expand(
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          expands: true,
+          maxLines: null,
+          minLines: null,
+          keyboardType: TextInputType.multiline,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: const InputDecoration(
+            hintText: 'Write something…',
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: emitText,
         ),
-        onChanged: emitText,
       ),
     );
   }

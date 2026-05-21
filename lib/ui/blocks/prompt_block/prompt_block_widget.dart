@@ -11,11 +11,16 @@ class PromptBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// True when this block is the active edit target. Focuses the answer
+  /// field; gates inner pointer events so single taps are inert.
+  final bool editing;
 
   @override
   State<PromptBlockWidget> createState() => _PromptBlockWidgetState();
@@ -23,13 +28,22 @@ class PromptBlockWidget extends StatefulWidget {
 
 class _PromptBlockWidgetState extends State<PromptBlockWidget> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
   bool _autoPromptShown = false;
+  bool _wasEditing = false;
 
   @override
   void initState() {
     super.initState();
     final content = PromptBlockContent.fromMap(widget.data.content);
     _controller = TextEditingController(text: content.answer);
+    _focusNode = FocusNode();
+    _wasEditing = widget.editing;
+    if (_wasEditing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.editing) _focusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -51,15 +65,38 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
   @override
   void didUpdateWidget(covariant PromptBlockWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final content = PromptBlockContent.fromMap(widget.data.content);
     if (oldWidget.data.id != widget.data.id) {
-      final content = PromptBlockContent.fromMap(widget.data.content);
       _controller.text = content.answer;
+    } else if (_controller.text != content.answer) {
+      // External update (e.g. the expanded-block route mirror) wrote a
+      // new answer for the same block. Per-keystroke edits from this
+      // controller can't reach this branch because the parent rebuild
+      // arrives with `content.answer == _controller.text`. Reposition
+      // the caret at the end so paste/full-replace doesn't strand it
+      // beyond the new length.
+      _controller.value = TextEditingValue(
+        text: content.answer,
+        selection: TextSelection.collapsed(offset: content.answer.length),
+      );
+    }
+    if (widget.editing != _wasEditing) {
+      _wasEditing = widget.editing;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (widget.editing) {
+          _focusNode.requestFocus();
+        } else if (_focusNode.hasFocus) {
+          _focusNode.unfocus();
+        }
+      });
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -173,27 +210,31 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       );
     } else if (prompt.isEmpty) {
       // Editable but no prompt yet — show a tap-target so the user can
-      // re-open the picker if they dismissed the auto-prompt.
-      body = GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _openPicker(initial: false),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            promptLabel,
-            const SizedBox(height: 6),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'Tap to choose',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.disabledColor,
-                    fontStyle: FontStyle.italic,
+      // re-open the picker. Only interactive while in edit mode; the
+      // outer double-tap detector is the only way to flip into it.
+      body = AbsorbPointer(
+        absorbing: !widget.editing,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openPicker(initial: false),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              promptLabel,
+              const SizedBox(height: 6),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Tap to choose',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.disabledColor,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     } else {
@@ -203,21 +244,25 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           promptLabel,
           const SizedBox(height: 6),
           Expanded(
-            child: TextField(
-              controller: _controller,
-              expands: true,
-              maxLines: null,
-              minLines: null,
-              keyboardType: TextInputType.multiline,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: const InputDecoration(
-                hintText: 'Your answer…',
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
+            child: AbsorbPointer(
+              absorbing: !widget.editing,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  hintText: 'Your answer…',
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (value) =>
+                    _emit(prompt: content.prompt, answer: value),
               ),
-              onChanged: (value) =>
-                  _emit(prompt: content.prompt, answer: value),
             ),
           ),
         ],
@@ -226,12 +271,14 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
 
     if (!isEditable) return body;
 
-    // Nest the long-press handler INSIDE BlockGrid's LongPressDraggable
-    // wrapper so the inner GestureDetector wins the gesture — same
-    // pattern the photo block uses.
+    // Long-press is preserved for the prompt-repick affordance but
+    // gated on edit mode so it only fires once the user has activated
+    // the block. Same nesting pattern as the photo block — the inner
+    // GestureDetector wins over the outer LongPressDraggable for drag
+    // reorder when active.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: () => _openPicker(initial: false),
+      onLongPress: widget.editing ? () => _openPicker(initial: false) : null,
       child: body,
     );
   }

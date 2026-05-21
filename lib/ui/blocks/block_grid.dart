@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -42,6 +43,8 @@ class BlockGrid extends StatefulWidget {
     this.onInteractionLockChanged,
     this.scrollable = true,
     this.onBlockTap,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
   });
 
   final List<JournalBlockData> blocks;
@@ -54,6 +57,22 @@ class BlockGrid extends StatefulWidget {
   final EdgeInsets padding;
   final bool scrollable;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+
+  /// Id of the block currently in in-place edit mode, or null when no
+  /// tile is being edited. Drives the `PostItBlock` scale + outline
+  /// affordance and the inner widget's interactive state.
+  final String? editingBlockId;
+
+  /// Fires when the user double-taps a tile whose [BlockType] opts into
+  /// the new edit-mode flow (`BlockTypeDisplay.usesEditMode`). The
+  /// hosting screen decides whether to push an expanded-block route or
+  /// just flip `editingBlockId` for in-place editing.
+  ///
+  /// For block types where `usesEditMode == false` (photo / location /
+  /// memory / quote / weather-api), the grid does NOT attach the
+  /// double-tap detector and those tiles keep their existing
+  /// single-tap behavior.
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
 
   @override
   State<BlockGrid> createState() => _BlockGridState();
@@ -318,6 +337,8 @@ class _BlockGridState extends State<BlockGrid> {
   Widget _buildTile(int index, {required bool postIt}) {
     final block = widget.blocks[index];
     final isDragging = _draggingIndex == index;
+    final isEditingThis = widget.editingBlockId == block.id;
+    final usesEditMode = block.type.usesEditMode;
 
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
@@ -326,19 +347,37 @@ class _BlockGridState extends State<BlockGrid> {
       onChanged: widget.onBlockChanged,
       onJumpToDate: widget.onJumpToDate,
       onInteractionLockChanged: widget.onInteractionLockChanged,
+      editing: isEditingThis,
     );
 
-    final card = GestureDetector(
+    Widget card = GestureDetector(
       onTap: widget.onBlockTap == null
           ? null
           : () => widget.onBlockTap!(block, block.id),
       child: PostItBlock(
         visuals: block.visuals,
         isDragging: isDragging,
+        isEditing: isEditingThis,
         topRight: widget.cardTrailing?.call(block, index),
         child: inner,
       ),
     );
+
+    // Attach the double-tap detector only for editable block types and
+    // only when this tile is NOT already in edit mode. Skipping it
+    // while editing prevents Flutter's gesture arena from delaying
+    // inner single-taps (e.g. positioning the TextField cursor) by the
+    // double-tap timeout.
+    if (usesEditMode &&
+        !isEditingThis &&
+        widget.onRequestBlockEdit != null &&
+        widget.mode == BlockMode.editable) {
+      card = GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onDoubleTap: () => widget.onRequestBlockEdit!(block),
+        child: card,
+      );
+    }
 
     // Add animation: scale 0.9 → 1.0 + fade. Runs once on mount, keyed
     // by block.id so re-orders don't replay it. Skipped when post-it
