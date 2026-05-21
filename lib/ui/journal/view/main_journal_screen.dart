@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
+import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
@@ -117,30 +121,50 @@ class _MainJournalScreenState extends State<MainJournalScreen>
   }
 
   /// Called from the journal pager when the user double-taps an
-  /// editable block. Routes the request based on
+  /// editable block. Three routes based on the block type +
   /// `debugSettings.expandBlockOnEdit`:
   ///
-  /// - ON  → push [ExpandedBlockRoute] which renders the block over a
-  ///         blurred backdrop. Edit state lives inside the route; on
-  ///         pop we don't need to touch `_editingBlockId`.
-  /// - OFF → set `_editingBlockId` so the matching tile shows the
-  ///         in-place scale + outline affordance and the inner widget
-  ///         becomes interactive (TextField focuses, carousel expands).
+  /// 1. **Action block + setting OFF** (photo, memory) — fire the
+  ///    action immediately (image picker, jump-to-date). No
+  ///    in-place edit state to maintain.
+  /// 2. **Setting ON** — push [ExpandedBlockRoute]. Edit state lives
+  ///    inside the route; `_editingBlockId` stays null.
+  /// 3. **Setting OFF** (everything else) — set `_editingBlockId` so
+  ///    the matching tile shows the in-place scale + outline
+  ///    affordance and the inner widget becomes interactive (TextField
+  ///    focuses, carousel expands).
   ///
-  /// The text-section variant of this call sets `isTextSection: true`
-  /// so the route widens its placement.
+  /// The text-section variant sets `isTextSection: true` so the route
+  /// renders the section text directly on the blur (no card chrome).
   void _requestBlockEdit(JournalBlockData block, {bool isTextSection = false}) {
     final debug = AppDependencies.of(context).debugSettings;
+    final vm = _viewModel;
+
+    // Action blocks in setting OFF: fire the action directly.
+    if (!debug.expandBlockOnEdit && block.type.isActionBlock) {
+      switch (block.type) {
+        case BlockType.photoBlock:
+          if (vm != null) {
+            firePhotoBlockAction(context, block, vm.updateBlock);
+          }
+          return;
+        case BlockType.memoryBlock:
+          fireMemoryBlockAction(block, vm?.setSelectedDate);
+          return;
+        default:
+          break;
+      }
+    }
+
     if (debug.expandBlockOnEdit) {
-      // Unfocus any current TextField before pushing the route — the
-      // route will refocus the expanded block's own field.
       FocusManager.instance.primaryFocus?.unfocus();
       setState(() => _expandedRouteOpen = true);
       Navigator.of(context)
           .push(
             ExpandedBlockRoute(
               data: block,
-              onChanged: _viewModel?.updateBlock,
+              onChanged: vm?.updateBlock,
+              onJumpToDate: vm?.setSelectedDate,
               isTextSection: isTextSection,
             ),
           )
@@ -319,6 +343,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                             _requestBlockEdit(block),
                         onRequestTextSectionEdit: (block) =>
                             _requestBlockEdit(block, isTextSection: true),
+                        onRequestExitEdit: _exitInPlaceEdit,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

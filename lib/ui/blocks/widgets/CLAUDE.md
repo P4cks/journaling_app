@@ -52,37 +52,29 @@ text block and the full-width text section.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
   collapsed centred icon and expands a horizontal `PageView` over
-  `options` when promoted into edit mode. Tracks an auto-collapse
-  timer (default 1500 ms). The timer fires on **expand** AND on
-  every `onPageChanged`, so:
-  - Tap-and-don't-swipe still auto-collapses after the delay.
-  - Steady swipes keep the carousel open until 1.5 s after the last
-    interaction.
+  `options` when promoted into edit mode.
 
-  **Edit-mode gated expansion**: the internal tap-to-expand only
-  fires when `widget.editing == true`. Outside edit mode the
-  collapsed view is inert — the outer grid's double-tap detector
-  promotes the hosting block into edit mode, which flips `editing`
-  to true; `didUpdateWidget` then auto-expands via `_expand()`.
-  When `editing` flips back to false the carousel collapses and
-  releases the pager lock.
+  **Edit-mode is the only way in.** The carousel never auto-expands
+  on its own. It opens on the false → true `editing` flip and
+  collapses on the true → false flip. Internal tap-to-expand has been
+  removed — single-taps on the collapsed view are always inert.
 
-  **Initial-expanded when `selected == null`**: if no selection
-  exists at mount time, the widget starts in the expanded state with
-  no outer-pager lock. Every item renders at its unselected style
-  (none focused) so the user sees the full picker at a glance and
-  can swipe to commit, but can still swipe to another journal entry
-  before choosing. Auto-collapse is suppressed while `selected` is
-  still null — the carousel can't fall back to a placeholder if
-  there's nothing to show. Once `onPageChanged` fires (user
-  committed) the parent rebuilds with the new `selected`, the next
-  scheduled collapse proceeds normally, and the block returns to
-  the standard collapsed → tap-to-expand behaviour.
+  **Auto-collapse**: when `autoCollapse: true` (default), a 1.5 s
+  timer ticks while expanded. The timer resets on every page change
+  (steady swipes keep the picker open). When it fires it:
+  1. Collapses the carousel.
+  2. Releases the pager lock via `onInteractionLockChanged(_, false)`.
+  3. Fires `onRequestExitEdit()` so the host clears
+     `_editingBlockId` — the in-place edit-mode outline disappears
+     in lock-step with the carousel collapsing.
+
+  The expanded route passes `autoCollapse: false` so the picker
+  stays open until the user dismisses the route.
 
   Props:
   - `blockId` — opaque string used by `onInteractionLockChanged`.
   - `options` — list of T.
-  - `selected` — current T or null (legacy empty content).
+  - `selected` — current T or null.
   - `itemBuilder(ctx, option, isSelected)` — carousel page.
   - `collapsedBuilder(ctx, selected)` — collapsed view; should render
     a placeholder when `selected == null`.
@@ -90,40 +82,44 @@ text block and the full-width text section.
   - `onInteractionLockChanged(blockId, locked)` — lifted to
     `JournalPager` to disable the outer horizontal date-swipe while
     expanded.
+  - `onRequestExitEdit` — fires in lock-step with the auto-collapse
+    so the host can clear `_editingBlockId`. Pass null in the
+    expanded route since the picker stays open there.
   - `editing` (default `false`) — externally-driven edit-mode flag.
-    Auto-expands on the false → true transition; collapses on the
-    true → false transition. When false, the internal tap-to-expand
-    is suppressed so single-taps on a collapsed carousel are inert.
+  - `autoCollapse` (default `true`) — set to false in the expanded
+    route to keep the picker open.
   - `viewportFraction` (0.42), `collapseDelay` (1500 ms),
     `switchDuration` (180 ms) — tunables with sensible defaults.
 
-  Concrete blocks (mood, manual weather) are now stateless wrappers
-  that decode their content + delegate to this widget.
+  Concrete blocks (mood, manual weather, custom carousel) are
+  stateless wrappers that decode their content + delegate to this
+  widget via `CarouselBlockScaffold<T>`.
 
 ## Gotchas
 
 - **The collapse timer fires on expand AND on `onPageChanged`.** Both
   call sites go through `_scheduleCollapse`, which cancels and
   restarts the timer. Don't try to "optimise" by removing one path —
-  the expand call is what guarantees auto-collapse for tap-without-swipe.
+  the expand call is what guarantees auto-collapse for engage-without-swipe.
 - **`_controller.jumpToPage(_initialIndex)` runs in a post-frame
   callback after `_expand`.** Without the post-frame deferral, the
   controller isn't attached yet (the PageView is built in the same
   frame as `setState(_expanded = true)`). Don't move it into the
-  synchronous tap handler.
+  synchronous handler.
 - **`dispose` unconditionally releases the lock** when `_expanded` is
   true. Without this, navigating away mid-expansion would leave
   `JournalPager` stuck in `NeverScrollableScrollPhysics`.
-- **Initial empty expansion does not acquire the lock.** The block may
-  still send a defensive unlock from `dispose()`, but the pager treats
-  that as a no-op when the block never locked in the first place.
+- **`onRequestExitEdit` is intentionally tied to the auto-collapse
+  path only.** Calls that collapse via the `editing: true → false`
+  transition (host-initiated) do NOT fire it — the host already knows
+  it cleared `_editingBlockId`, so re-firing would loop.
 - **`AnimatedSwitcher` uses two distinct `ValueKey`s** (`'carousel-collapsed'`
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.
 - **`_initialIndex` defaults to 0 when `selected` is null or unknown.**
   Newly-materialized mood/weather blocks have no selection yet, so the
   carousel opens at index 0 (the first option in the list) on first
-  tap.
+  engage.
 
 ## When to update this file
 

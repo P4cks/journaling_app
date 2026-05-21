@@ -15,6 +15,7 @@ class TodoBlockWidget extends StatefulWidget {
     required this.mode,
     this.onChanged,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -27,6 +28,14 @@ class TodoBlockWidget extends StatefulWidget {
   /// Outside of edit mode the whole rendered tree is pointer-absorbed
   /// — single-taps are inert, double-tap activates via the grid.
   final bool editing;
+
+  /// True when the body is rendered inside the expanded route. Only
+  /// matters for the "Add task" affordance — per the new uniform
+  /// architecture, adding items is an "action" and actions live in
+  /// the expanded mode only. In in-place edit mode (`editing == true
+  /// && expanded == false`) the user can still toggle, edit, and
+  /// remove existing items, but cannot add new ones.
+  final bool expanded;
 
   @override
   State<TodoBlockWidget> createState() => _TodoBlockWidgetState();
@@ -173,31 +182,36 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
               },
             ),
           ),
-          InkWell(
-            onTap: () => _add(content),
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppIcon(
-                    HugeIcons.strokeRoundedPlusSign,
-                    size: 14,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Add item',
-                    style: theme.textTheme.bodySmall?.copyWith(
+          // "Add item" is an ACTION — actions live in the expanded
+          // route only per the uniform architecture. In-place edit
+          // mode (editable but not expanded) keeps toggle/edit/remove
+          // working but hides this affordance.
+          if (widget.expanded)
+            InkWell(
+              onTap: () => _add(content),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      HugeIcons.strokeRoundedPlusSign,
+                      size: 14,
                       color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      'Add item',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

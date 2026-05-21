@@ -12,6 +12,25 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
+/// Fires the memory block's primary action — navigates to the source
+/// entry. Called from `MainJournalScreen` when the user double-taps
+/// the memory tile and the "expand on edit" setting is OFF (per the
+/// `BlockTypeDisplay.isActionBlock` contract). No-op when the memory
+/// hasn't been seeded yet (no eligible past entry) or `onJumpToDate`
+/// is null.
+void fireMemoryBlockAction(
+  JournalBlockData data,
+  ValueChanged<DateTime>? onJumpToDate,
+) {
+  if (onJumpToDate == null) return;
+  final content = MemoryBlockContent.fromMap(data.content);
+  final iso = content.sourceEntryDate;
+  if (iso == null) return;
+  final parsed = DateTime.tryParse(iso);
+  if (parsed == null) return;
+  onJumpToDate(parsed);
+}
+
 /// Surfaces a random non-empty block from a past entry. The pick is
 /// **locked once shown** — the first build with empty content asks the
 /// repository for a random eligible block and persists the snapshot
@@ -89,12 +108,6 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     );
   }
 
-  void _openSource(String isoDate) {
-    final parsed = DateTime.tryParse(isoDate);
-    if (parsed == null) return;
-    widget.onJumpToDate?.call(parsed);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -126,26 +139,25 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final caption = _formatCaption(content.sourceEntryDate);
     final body = _renderSnapshot(context, content);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: (widget.onJumpToDate == null || content.sourceEntryDate == null)
-          ? null
-          : () => _openSource(content.sourceEntryDate!),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (caption != null)
-            Text(
-              caption,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
+    // No GestureDetector here — single-taps in the grid are inert per
+    // the uniform double-tap-to-engage model. The host fires
+    // `fireMemoryBlockAction` directly on double-tap (setting OFF) or
+    // wraps this widget in a GestureDetector inside the expanded
+    // route.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (caption != null)
+          Text(
+            caption,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
             ),
-          const SizedBox(height: 4),
-          Expanded(child: body),
-        ],
-      ),
+          ),
+        const SizedBox(height: 4),
+        Expanded(child: body),
+      ],
     );
   }
 

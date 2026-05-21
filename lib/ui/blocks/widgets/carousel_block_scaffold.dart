@@ -38,7 +38,9 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
     required this.itemBuilder,
     required this.onSelected,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
     this.editing = false,
+    this.autoCollapse = true,
   });
 
   final String blockId;
@@ -67,6 +69,16 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
   /// detector can promote the block into edit mode.
   final bool editing;
 
+  /// Fires after the 1.5 s auto-collapse so the host can drop its
+  /// in-place edit-mode marker (the outline disappears with the
+  /// carousel). Pass null in the expanded route since the picker
+  /// stays open until the user dismisses the route.
+  final VoidCallback? onRequestExitEdit;
+
+  /// When false, the carousel won't auto-collapse after 1.5 s — used
+  /// by the expanded route so the picker stays available.
+  final bool autoCollapse;
+
   @override
   Widget build(BuildContext context) {
     return BlockWithTitle(title: title, body: _buildBody(context));
@@ -93,7 +105,9 @@ class CarouselBlockScaffold<T> extends StatelessWidget {
       ),
       onSelected: onSelected,
       onInteractionLockChanged: onInteractionLockChanged,
+      onRequestExitEdit: onRequestExitEdit,
       editing: editing,
+      autoCollapse: autoCollapse,
     );
   }
 

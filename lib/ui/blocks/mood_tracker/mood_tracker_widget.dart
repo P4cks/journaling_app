@@ -12,14 +12,18 @@ class MoodTrackerWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+  final VoidCallback? onRequestExitEdit;
   final bool editing;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +42,11 @@ class MoodTrackerWidget extends StatelessWidget {
           data.copyWith(content: MoodBlockContent(emoji: emoji).toMap()),
         ),
         onInteractionLockChanged: onInteractionLockChanged,
+        onRequestExitEdit: expanded ? null : onRequestExitEdit,
         editing: editing,
+        // Auto-collapse only in-place. In the expanded route the
+        // picker stays open until the user dismisses.
+        autoCollapse: !expanded,
       ),
     );
   }

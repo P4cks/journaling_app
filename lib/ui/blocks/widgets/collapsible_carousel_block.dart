@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Generic collapsible-carousel block body.
 ///
-/// Renders [collapsedBuilder] until the user taps; tapping expands a
-/// horizontal `PageView` of [options] and starts a 1500 ms timer that
-/// auto-collapses back to the centred icon. The timer also fires on
-/// every page change, so a steady stream of swipes keeps the carousel
-/// open until 1.5 s after the last interaction.
+/// **Edit-mode is the only way in.** The carousel never auto-expands
+/// on its own — it opens only when `widget.editing` is true (the
+/// hosting block has been promoted into in-place edit mode via the
+/// outer grid's double-tap detector, OR the block is mounted inside
+/// the expanded route). When `editing` is false the collapsed icon
+/// is inert; the user has to double-tap the tile to engage the
+/// picker.
+///
+/// While expanded a 1.5 s auto-collapse timer ticks. The timer resets
+/// on every page change (steady swipes keep the picker open). When
+/// the timer fires it both collapses the carousel **and** signals
+/// `onRequestExitEdit()` so the host can clear its `_editingBlockId`
+/// in lock-step — the outline disappears with the carousel instead
+/// of lingering.
 ///
 /// Reports its expanded state via [onInteractionLockChanged] so the
 /// outer `JournalPager` can disable horizontal date-swipes while the
@@ -21,18 +30,18 @@ class CollapsibleCarouselBlock<T> extends StatefulWidget {
     required this.collapsedBuilder,
     required this.onSelected,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
     this.viewportFraction = 0.42,
     this.collapseDelay = const Duration(milliseconds: 1500),
     this.switchDuration = const Duration(milliseconds: 180),
     this.editing = false,
+    this.autoCollapse = true,
   });
 
   final String blockId;
   final List<T> options;
 
-  /// Currently-selected option, or null when nothing is set. Legacy
-  /// empty content falls through here; with the new materialize-time
-  /// defaults this is rarely null for editable blocks.
+  /// Currently-selected option, or null when nothing is set.
   final T? selected;
 
   /// Build one option for the carousel page. `isSelected` lets the
@@ -51,15 +60,27 @@ class CollapsibleCarouselBlock<T> extends StatefulWidget {
   /// horizontal swipes for the duration of this block's expansion.
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
+  /// Fired in lock-step with the 1.5 s auto-collapse — lets the host
+  /// drop `_editingBlockId` so the in-place edit-mode outline
+  /// disappears alongside the carousel collapsing. Optional; the
+  /// expanded-route host omits this because it wants the picker to
+  /// stay open until the route is dismissed.
+  final VoidCallback? onRequestExitEdit;
+
   final double viewportFraction;
   final Duration collapseDelay;
   final Duration switchDuration;
 
-  /// True when the hosting block is in edit mode (set by the new
-  /// double-tap-to-edit flow). When false, tapping the collapsed view
-  /// no longer expands the carousel — the outer grid's double-tap
-  /// detector is the only way in. When true, the carousel auto-expands.
+  /// True when the hosting block is in edit mode. The carousel
+  /// auto-expands on the false → true flip and collapses on the
+  /// true → false flip.
   final bool editing;
+
+  /// When true (default), the carousel auto-collapses after
+  /// [collapseDelay] of no swipe. The expanded route passes `false`
+  /// to keep the picker open until the user dismisses the route —
+  /// per the design rule "carousel stays open in expanded view".
+  final bool autoCollapse;
 
   @override
   State<CollapsibleCarouselBlock<T>> createState() =>
@@ -87,23 +108,23 @@ class _CollapsibleCarouselBlockState<T>
   @override
   void initState() {
     super.initState();
-    // When the user hasn't picked anything yet, render the carousel
-    // already expanded so every option is visible (none focused, all
-    // at the unselected itemBuilder style). The user can swipe to
-    // commit; auto-collapse fires after they do, NOT before — so the
-    // empty state stays visible until there's a selection to fall
-    // back to. This initial empty state does not lock the outer date
-    // pager, so the user can still move to another entry before
-    // choosing an option.
-    //
-    // When `editing` is true at mount (e.g. mounted inside the
-    // expanded block route), open expanded regardless so the user can
-    // pick immediately without a second gesture.
-    _expanded = widget.selected == null || widget.editing;
+    // The carousel opens only when the host has promoted the block
+    // into edit mode. Null selection no longer triggers an
+    // auto-expand on its own — the user must double-tap to engage.
+    _expanded = widget.editing;
     _controller = PageController(
       initialPage: _initialIndex,
       viewportFraction: widget.viewportFraction,
     );
+    if (_expanded) {
+      // Mounted directly in edit mode (e.g. inside the expanded
+      // route). Acquire the pager lock + schedule the auto-collapse.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onInteractionLockChanged?.call(widget.blockId, true);
+        if (widget.autoCollapse) _scheduleCollapse();
+      });
+    }
   }
 
   @override
@@ -111,13 +132,12 @@ class _CollapsibleCarouselBlockState<T>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.editing != widget.editing) {
       if (widget.editing) {
-        // Edit-mode just became active — auto-expand. _expand handles
-        // the rebuild + lock callback + collapse scheduling.
+        // Edit-mode just became active — auto-expand.
         _expand();
       } else {
         // Edit-mode left — collapse so the carousel doesn't keep the
         // pager locked while no one is interacting with it.
-        if (_expanded && widget.selected != null) {
+        if (_expanded) {
           _collapseGen++;
           setState(() => _expanded = false);
           widget.onInteractionLockChanged?.call(widget.blockId, false);
@@ -150,7 +170,7 @@ class _CollapsibleCarouselBlockState<T>
       if (_controller.hasClients) {
         _controller.jumpToPage(_initialIndex);
       }
-      _scheduleCollapse();
+      if (widget.autoCollapse) _scheduleCollapse();
     });
   }
 
@@ -159,14 +179,11 @@ class _CollapsibleCarouselBlockState<T>
     final gen = _collapseGen;
     Future.delayed(widget.collapseDelay, () {
       if (!mounted || gen != _collapseGen || !_expanded) return;
-      // Don't collapse to the placeholder while there's still no
-      // pick — the carousel needs to stay visible so the user can
-      // make one. Once `widget.selected` is non-null (the parent
-      // rebuilt after onPageChanged), the next scheduled collapse
-      // proceeds normally.
-      if (widget.selected == null) return;
       setState(() => _expanded = false);
       widget.onInteractionLockChanged?.call(widget.blockId, false);
+      // Signal the host so in-place edit mode exits in lock-step —
+      // the outline shouldn't linger after the carousel collapses.
+      widget.onRequestExitEdit?.call();
     });
   }
 
@@ -182,18 +199,14 @@ class _CollapsibleCarouselBlockState<T>
             child: widget.collapsedBuilder(context, widget.selected),
           );
 
-    // Internal tap-to-expand only kicks in while edit mode is active.
-    // Outside edit mode the outer grid's double-tap detector requests
-    // editing — single-tap on the collapsed carousel is inert.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: (_expanded || !widget.editing) ? null : _expand,
-      child: AnimatedSwitcher(
-        duration: widget.switchDuration,
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: child,
-      ),
+    // No internal tap handler — the picker is only reachable when the
+    // host flips `editing` to true, which is itself driven by the
+    // outer grid's double-tap detector.
+    return AnimatedSwitcher(
+      duration: widget.switchDuration,
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: child,
     );
   }
 
@@ -204,7 +217,7 @@ class _CollapsibleCarouselBlockState<T>
       onPageChanged: (index) {
         FocusScope.of(context).unfocus();
         widget.onSelected(widget.options[index]);
-        _scheduleCollapse();
+        if (widget.autoCollapse) _scheduleCollapse();
       },
       itemBuilder: (context, index) {
         final option = widget.options[index];

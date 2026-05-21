@@ -205,11 +205,13 @@ extension BlockTypeDisplay on BlockType {
     }
   }
 
-  /// Whether this block participates in the double-tap edit + optional
-  /// expansion overlay. When false (action blocks like photo / location /
-  /// memory and pure-display blocks like quote / weather-api), the block
-  /// keeps its existing single-tap behavior and is not driven by
-  /// `editingBlockId`.
+  /// Whether this block participates in the double-tap engage flow.
+  /// **Everything that has an interactive surface returns true** —
+  /// text/prompt/todo, the three carousel types, and the action blocks
+  /// (photo / location / memory). Only pure-display blocks (quote,
+  /// weather-api) return false. Display blocks have no editing or
+  /// action affordance, so the grid still skips the double-tap
+  /// detector for them.
   bool get usesEditMode {
     switch (this) {
       case BlockType.textBlock:
@@ -218,10 +220,41 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.moodTracker:
       case BlockType.weatherManual:
       case BlockType.customCarousel:
-        return true;
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.memoryBlock:
+        return true;
+      case BlockType.quoteBlock:
+      case BlockType.weatherApi:
+        return false;
+    }
+  }
+
+  /// True for blocks that fire a single one-shot action when engaged
+  /// rather than hosting a sustained interactive UI. With the "expand
+  /// on edit" setting **OFF**, the host fires the action immediately
+  /// on double-tap and skips setting `_editingBlockId` — there's no
+  /// in-place edit mode to maintain. With the setting **ON**, the
+  /// expanded route is pushed and the user taps the inner widget to
+  /// fire the action inside the route.
+  ///
+  /// Location is intentionally NOT in this set: its "interaction" is
+  /// long-press on the map, which is already always available in
+  /// editable entries. Double-tap on a location block falls through
+  /// to the standard in-place edit flow (outline + map remains
+  /// interactive — i.e., a no-op in practice for setting OFF).
+  bool get isActionBlock {
+    switch (this) {
+      case BlockType.photoBlock:
+      case BlockType.memoryBlock:
+        return true;
+      case BlockType.textBlock:
+      case BlockType.promptBlock:
+      case BlockType.todoBlock:
+      case BlockType.moodTracker:
+      case BlockType.weatherManual:
+      case BlockType.customCarousel:
+      case BlockType.locationBlock:
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
         return false;

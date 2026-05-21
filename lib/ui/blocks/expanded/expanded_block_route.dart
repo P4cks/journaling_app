@@ -1,35 +1,68 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dart';
+import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
-/// Overlay route that shows one block expanded over a blurred backdrop
-/// of the underlying journal entry.
+/// Translucent overlay route that morphs an in-grid block into a
+/// full-screen 1:1 expanded view via [Hero]. The Hero tag matches the
+/// in-grid source via [blockHeroTag].
 ///
-/// `opaque: false` keeps the previous route painted, so a
-/// [BackdropFilter] blurs it. The route dismisses by tapping the
-/// blurred backdrop (saves are per-keystroke — content is already
-/// current) or by pressing the system back. A developer-only "Done"
-/// button can be enabled via [DebugSettings.showExpandedBlockDoneButton].
+/// **Layout** — always square, max ~92 % of screen width. Top-aligned
+/// when the keyboard is up (so the block stays visible above the
+/// keyboard), centered otherwise.
+///
+/// **Initial state — [BlockEditState.display].** The block opens
+/// read-only-ish:
+/// - Text / prompt / todo: rendered as text (no focus, no keyboard).
+/// - Carousels (mood / weather / customCarousel): the picker is
+///   immediately interactive — that's the only thing the route exists
+///   to do for them.
+/// - Photo, memory: tap-to-fire-action — the inner widget shows the
+///   image / snapshot; tapping it opens the action sheet / jumps.
+/// - Location: long-press inside the bigger map drops a pin.
+///
+/// **Engaging text blocks**: tapping the body inside the route
+/// promotes the inner state to [BlockEditState.editing] — the field
+/// focuses and the keyboard rises.
+///
+/// **Two-step dismiss** (keyboard blocks only):
+///   `display` ──tap backdrop──> `Navigator.pop`
+///   `editing` ──tap backdrop──> `display` (unfocus + re-center)
+///   `display` ──tap backdrop──> `Navigator.pop`
+///
+/// Other blocks dismiss with a single backdrop tap. A developer-only
+/// "Done" button shows when `DebugSettings.showExpandedBlockDoneButton`
+/// is true.
 class ExpandedBlockRoute extends PageRoute<void> {
   ExpandedBlockRoute({
     required this.data,
     required this.onChanged,
+    this.onJumpToDate,
     this.isTextSection = false,
   });
 
   final JournalBlockData data;
   final ValueChanged<JournalBlockData>? onChanged;
 
-  /// True when the source is a full-width [SectionKind.text] section
-  /// rather than a 1×1 grid block. Renders [TextSectionWidget] at full
-  /// width instead of the [PostItBlock] card.
+  /// For memory blocks: jump to the source entry. Wired so the
+  /// expanded memory tap inside the route can navigate.
+  final ValueChanged<DateTime>? onJumpToDate;
+
+  /// True when the source is a full-width `SectionKind.text` section.
+  /// Renders the text directly on the blur — no card chrome — per the
+  /// design rule "text section in expanded mode has no rectangular
+  /// background".
   final bool isTextSection;
 
   @override
@@ -48,7 +81,7 @@ class ExpandedBlockRoute extends PageRoute<void> {
   bool get opaque => false;
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 220);
+  Duration get transitionDuration => const Duration(milliseconds: 260);
 
   @override
   Widget buildPage(
@@ -59,9 +92,9 @@ class ExpandedBlockRoute extends PageRoute<void> {
     return _ExpandedBlockBody(
       data: data,
       onChanged: onChanged,
+      onJumpToDate: onJumpToDate,
       animation: animation,
       isTextSection: isTextSection,
-      isKeyboardBlock: data.type.usesKeyboardOnEdit,
     );
   }
 
@@ -72,8 +105,9 @@ class ExpandedBlockRoute extends PageRoute<void> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    // The body reads `animation.value` directly to drive its blur
-    // strength + inner scale/opacity, so no outer transition wrapper.
+    // The body reads `animation.value` directly to drive backdrop
+    // blur strength. Hero handles the source → destination flight on
+    // its own.
     return child;
   }
 }
@@ -82,35 +116,53 @@ class _ExpandedBlockBody extends StatefulWidget {
   const _ExpandedBlockBody({
     required this.data,
     required this.onChanged,
+    required this.onJumpToDate,
     required this.animation,
     required this.isTextSection,
-    required this.isKeyboardBlock,
   });
 
   final JournalBlockData data;
   final ValueChanged<JournalBlockData>? onChanged;
+  final ValueChanged<DateTime>? onJumpToDate;
   final Animation<double> animation;
   final bool isTextSection;
-  final bool isKeyboardBlock;
 
   @override
   State<_ExpandedBlockBody> createState() => _ExpandedBlockBodyState();
 }
 
 class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
+  /// Local copy of the block data — updated on every emit from the
+  /// inner body so carousel picks / typed text show in the route's
+  /// own widgets without waiting for the host VM's rebuild to flow
+  /// back. Also forwarded to `widget.onChanged` so the VM persists.
   late JournalBlockData _data;
+
+  /// Whether the inner content is in editing state.
+  /// - Text blocks: false initially, flips to true on first content
+  ///   tap (display → editing per the two-step model).
+  /// - Carousels: true from mount (picker is the whole point).
+  /// - Action blocks: stays false; tap fires the action via
+  ///   [_fireActionBlock].
+  /// - Location: false (the map is its own interactive surface).
+  bool _innerEditing = false;
+
+  bool get _isKeyboardBlock => _data.type.usesKeyboardOnEdit;
+  bool get _isCarousel =>
+      _data.type == BlockType.moodTracker ||
+      _data.type == BlockType.weatherManual ||
+      _data.type == BlockType.customCarousel;
+  bool get _isActionBlock => _data.type.isActionBlock;
 
   @override
   void initState() {
     super.initState();
     _data = widget.data;
+    if (_isCarousel) {
+      _innerEditing = true;
+    }
   }
 
-  /// Forwarding `onChanged`. Keeps `_data` in sync with whatever the
-  /// inner block emits (carousel pick, text edit, etc.) so the rebuild
-  /// shows the new selection (e.g. the centered carousel page scales
-  /// up because `selected == option` now holds). Also forwards to the
-  /// host's `onChanged` so the VM / Hive write happens as before.
   void _onInnerChanged(JournalBlockData updated) {
     if (mounted && updated != _data) {
       setState(() => _data = updated);
@@ -118,79 +170,118 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
     widget.onChanged?.call(updated);
   }
 
+  Future<void> _onContentTap() async {
+    if (_isActionBlock) {
+      await _fireActionBlock();
+      return;
+    }
+    if (_isKeyboardBlock || widget.isTextSection) {
+      if (!_innerEditing) {
+        setState(() => _innerEditing = true);
+      }
+    }
+  }
+
+  Future<void> _fireActionBlock() async {
+    switch (_data.type) {
+      case BlockType.photoBlock:
+        await firePhotoBlockAction(context, _data, _onInnerChanged);
+        break;
+      case BlockType.memoryBlock:
+        // Pop the route first so the jump lands on the destination
+        // entry's expanded UI rather than this overlay still being
+        // present.
+        final jump = widget.onJumpToDate;
+        Navigator.of(context).maybePop();
+        fireMemoryBlockAction(_data, jump);
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _onBackdropTap() {
+    if ((_isKeyboardBlock || widget.isTextSection) && _innerEditing) {
+      // Step 1 of 2: unfocus → keyboard slides out → re-center.
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _innerEditing = false);
+      return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final mediaSize = MediaQuery.sizeOf(context);
     final debug = AppDependencies.of(context).debugSettings;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    final keyboardLike = widget.isKeyboardBlock || widget.isTextSection;
-    final alignment = keyboardLike ? Alignment.topCenter : Alignment.center;
-    final topPad = keyboardLike
+    // Square block size. We constrain by the smaller of:
+    //   - 92 % of screen width
+    //   - 70 % of available height (50 % when the keyboard is up so
+    //     the block stays visible above)
+    final availableHeight = mediaSize.height -
+        MediaQuery.paddingOf(context).vertical -
+        MediaQuery.viewInsetsOf(context).bottom;
+    final maxByHeight = availableHeight * (keyboardUp ? 0.5 : 0.7);
+    final maxByWidth = mediaSize.width * 0.92;
+    final maxSide = maxByHeight < maxByWidth ? maxByHeight : maxByWidth;
+
+    // Top-align when the keyboard is up so the block sits above it;
+    // center otherwise.
+    final alignment =
+        keyboardUp ? Alignment.topCenter : Alignment.center;
+    final topPad = keyboardUp
         ? MediaQuery.paddingOf(context).top + 24.0
         : 0.0;
-    final maxWidth = widget.isTextSection
-        ? mediaSize.width - 16.0
-        : mediaSize.width * 0.92;
-    final maxHeight = keyboardLike
-        ? mediaSize.height * 0.45
-        : mediaSize.height * 0.6;
 
-    // PostItBlock supplies a Container, not a Material — descendants
-    // like TextField / InkWell / ListTile need a Material ancestor to
-    // render correctly (otherwise: yellow-underlined unstyled text,
-    // and "No Material widget found" exceptions for InkWell ripples).
-    // The grid path gets this from MainJournalScreen's body Material;
-    // the route doesn't, so we provide it here.
-    final Widget expandedContent = widget.isTextSection
-        ? Material(
-            color: scheme.surface,
-            elevation: 6,
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-              child: TextSectionWidget(
-                data: _data,
-                mode: BlockMode.editable,
-                onChanged: _onInnerChanged,
-                editing: true,
-              ),
-            ),
+    final Widget heroChild = widget.isTextSection
+        ? _ExpandedTextSection(
+            data: _data,
+            onChanged: _onInnerChanged,
+            editing: _innerEditing,
           )
-        : AspectRatio(
-            aspectRatio: widget.isKeyboardBlock ? 1.2 : 1.0,
-            child: Material(
-              type: MaterialType.transparency,
-              child: PostItBlock(
-                visuals: _data.visuals,
-                isEditing: true,
-                child: BlockWidget(
-                  data: _data,
-                  mode: BlockMode.editable,
-                  onChanged: _onInnerChanged,
-                  editing: true,
-                ),
-              ),
-            ),
+        : _ExpandedBlockCard(
+            data: _data,
+            innerEditing: _innerEditing,
+            onChanged: _onInnerChanged,
           );
+
+    final centered = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: widget.isTextSection ? mediaSize.width - 16 : maxSide,
+        maxHeight: maxSide,
+      ),
+      child: AspectRatio(
+        aspectRatio: 1.0,
+        child: Hero(
+          tag: blockHeroTag(_data.id),
+          child: Material(
+            // Transparent Material so TextField / InkWell descendants
+            // find a Material ancestor — PostItBlock / BlockChrome
+            // uses a plain Container, not Material.
+            type: MaterialType.transparency,
+            child: heroChild,
+          ),
+        ),
+      ),
+    );
 
     return AnimatedBuilder(
       animation: widget.animation,
       builder: (context, _) {
         final t = widget.animation.value.clamp(0.0, 1.0);
-        final sigma = 12.0 * t;
+        final sigma = 14.0 * t;
         return Stack(
           children: [
-            // Blurred backdrop — tapping anywhere outside the centered
-            // block dismisses the route.
+            // Blurred backdrop. Tap handler runs the two-step dismiss
+            // state machine for keyboard blocks; single-tap dismiss
+            // for everything else.
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context).maybePop(),
+                onTap: _onBackdropTap,
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
                   child: ColoredBox(
@@ -199,35 +290,20 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
                 ),
               ),
             ),
-            // Expanded block. Wrapped in a no-op GestureDetector so
-            // taps on the block don't bubble up to the backdrop's
-            // dismiss handler.
-            SafeArea(
-              top: !keyboardLike,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: topPad,
-                  left: 16,
-                  right: 16,
-                ),
-                child: Align(
-                  alignment: alignment,
-                  child: Opacity(
-                    opacity: t,
-                    child: Transform.scale(
-                      scale: 0.92 + (0.08 * t),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: maxWidth,
-                          maxHeight: maxHeight,
-                        ),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {},
-                          child: expandedContent,
-                        ),
-                      ),
-                    ),
+            // Expanded block content. Outer GestureDetector uses
+            // `deferToChild` so inner interactive widgets (carousel
+            // PageView, map gestures) win their own taps; we only
+            // catch taps that fall through.
+            Padding(
+              padding: EdgeInsets.only(top: topPad, bottom: 16),
+              child: Align(
+                alignment: alignment,
+                child: Opacity(
+                  opacity: t,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.deferToChild,
+                    onTap: _onContentTap,
+                    child: centered,
                   ),
                 ),
               ),
@@ -266,6 +342,65 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Standard expanded card — `BlockChrome` wrapping the block widget,
+/// scaled inside a 1:1 box. Reads `host: expanded` so the chrome
+/// suppresses the outline (the Hero + blurred backdrop are the
+/// affordance).
+class _ExpandedBlockCard extends StatelessWidget {
+  const _ExpandedBlockCard({
+    required this.data,
+    required this.innerEditing,
+    required this.onChanged,
+  });
+
+  final JournalBlockData data;
+  final bool innerEditing;
+  final ValueChanged<JournalBlockData> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlockChrome(
+      visuals: data.visuals,
+      host: BlockHostKind.expanded,
+      isEditing: innerEditing,
+      child: BlockWidget(
+        data: data,
+        mode: BlockMode.editable,
+        onChanged: onChanged,
+        editing: innerEditing,
+        expanded: true,
+      ),
+    );
+  }
+}
+
+/// Expanded text section — text directly on the blurred backdrop, no
+/// rectangular card chrome.
+class _ExpandedTextSection extends StatelessWidget {
+  const _ExpandedTextSection({
+    required this.data,
+    required this.onChanged,
+    required this.editing,
+  });
+
+  final JournalBlockData data;
+  final ValueChanged<JournalBlockData> onChanged;
+  final bool editing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: TextSectionWidget(
+        data: data,
+        mode: BlockMode.editable,
+        onChanged: onChanged,
+        editing: editing,
+      ),
     );
   }
 }
