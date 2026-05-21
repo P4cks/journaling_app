@@ -84,7 +84,17 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `vm.setSelectedDate`. Pass `externalLock: true` to forcibly disable
   the horizontal swipe (used by `MainJournalScreen` while a TextField
   is focused — the screen also collapses the AppBar to a single Done
-  action in that state). Each page is a `_SectionsBody` that iterates
+  action in that state). Also accepts the double-tap edit-mode
+  plumbing: `editingBlockId` (propagated down into every `BlockGrid`
+  and `TextSectionWidget`), `onRequestBlockEdit(JournalBlockData)`
+  for grid + feature blocks, and `onRequestTextSectionEdit(JournalBlockData)`
+  for full-width text sections (separate callback so the screen can
+  set `isTextSection: true` on the route push). `_SectionsBody`
+  wires its own `GestureDetector(onDoubleTap)` around `TextSectionWidget`
+  and `featureBlock` tiles; `BlockGrid` does the same for each grid
+  tile. Both detectors are skipped while the tile is already in edit
+  mode so single-taps reach the inner field without doubleTapTimeout
+  latency. Each page is a `_SectionsBody` that iterates
   the entry's `sections` and renders them vertically in a single
   outer `SingleChildScrollView`:
     - `SectionKind.text` → `TextSectionWidget` (full-width, no card).

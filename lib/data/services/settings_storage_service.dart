@@ -17,6 +17,9 @@ class SettingsStorageService {
       'block.customCarousel.definitions';
   static const _themePostItModeKey = 'theme.postItMode';
   static const _themePostItPaletteKey = 'theme.postItPalette';
+  static const _blockExpandOnEditKey = 'block.expandOnEdit';
+  static const _debugExpandedDoneButtonKey =
+      'debug.expandedBlock.showDoneButton';
 
   final Box<String> _box;
 
@@ -116,4 +119,16 @@ class SettingsStorageService {
       (json == null || json.isEmpty)
           ? _box.delete(_themePostItPaletteKey)
           : _box.put(_themePostItPaletteKey, json);
+
+  // Defaults to true: absent key or any non-"false" value reads true.
+  bool getBlockExpandOnEdit() => _box.get(_blockExpandOnEditKey) != 'false';
+
+  Future<void> setBlockExpandOnEdit(bool value) =>
+      _box.put(_blockExpandOnEditKey, value.toString());
+
+  bool getDebugExpandedDoneButton() =>
+      _box.get(_debugExpandedDoneButtonKey) == 'true';
+
+  Future<void> setDebugExpandedDoneButton(bool value) =>
+      _box.put(_debugExpandedDoneButtonKey, value.toString());
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
@@ -40,6 +42,22 @@ class _MainJournalScreenState extends State<MainJournalScreen>
   /// reach descendants.
   bool _editing = false;
 
+  /// Id of the block currently in in-place edit mode, or null when no
+  /// tile is being edited. Set by [_requestBlockEdit] when the "expand
+  /// on edit" setting is OFF; the expanded-route path leaves this null
+  /// since the route itself owns the edit state.
+  String? _editingBlockId;
+
+  /// True while the expanded-block route is on the navigator stack. The
+  /// route's inner TextField raises the keyboard, but we don't want
+  /// `_editing` to flip and collapse the (hidden) AppBar to Done —
+  /// because as the route closes, the keyboard takes ~250 ms to slide
+  /// down while the route fades out in 220 ms, leaving the AppBar's
+  /// Done button briefly visible during the gap. Suppressing
+  /// [didChangeMetrics]'s keyboard tracking for the route's lifetime
+  /// avoids the flash.
+  bool _expandedRouteOpen = false;
+
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -75,6 +93,10 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
   @override
   void didChangeMetrics() {
+    // The expanded route owns the keyboard while it's up — don't let
+    // its TextField focus flip our AppBar to Done (which would then
+    // briefly flash as the route closes; see [_expandedRouteOpen]).
+    if (_expandedRouteOpen) return;
     final bottomInsets =
         WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
     final keyboardUp = bottomInsets > 0;
@@ -88,6 +110,67 @@ class _MainJournalScreenState extends State<MainJournalScreen>
   }
 
   void _onDone() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_editingBlockId != null) {
+      setState(() => _editingBlockId = null);
+    }
+  }
+
+  /// Called from the journal pager when the user double-taps an
+  /// editable block. Routes the request based on
+  /// `debugSettings.expandBlockOnEdit`:
+  ///
+  /// - ON  → push [ExpandedBlockRoute] which renders the block over a
+  ///         blurred backdrop. Edit state lives inside the route; on
+  ///         pop we don't need to touch `_editingBlockId`.
+  /// - OFF → set `_editingBlockId` so the matching tile shows the
+  ///         in-place scale + outline affordance and the inner widget
+  ///         becomes interactive (TextField focuses, carousel expands).
+  ///
+  /// The text-section variant of this call sets `isTextSection: true`
+  /// so the route widens its placement.
+  void _requestBlockEdit(JournalBlockData block, {bool isTextSection = false}) {
+    final debug = AppDependencies.of(context).debugSettings;
+    if (debug.expandBlockOnEdit) {
+      // Unfocus any current TextField before pushing the route — the
+      // route will refocus the expanded block's own field.
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _expandedRouteOpen = true);
+      Navigator.of(context)
+          .push(
+            ExpandedBlockRoute(
+              data: block,
+              onChanged: _viewModel?.updateBlock,
+              isTextSection: isTextSection,
+            ),
+          )
+          .whenComplete(() {
+            if (!mounted) return;
+            // Drop the lock and re-sync `_editing` to the actual
+            // keyboard state (it stayed frozen while the route was up).
+            final bottomInsets = WidgetsBinding
+                .instance
+                .platformDispatcher
+                .views
+                .first
+                .viewInsets
+                .bottom;
+            setState(() {
+              _expandedRouteOpen = false;
+              _editing = bottomInsets > 0;
+            });
+          });
+    } else {
+      setState(() => _editingBlockId = block.id);
+    }
+  }
+
+  /// Clears in-place edit mode. Called from the body's tap-outside
+  /// handler. Safe to call when nothing is being edited.
+  void _exitInPlaceEdit() {
+    if (_editingBlockId != null) {
+      setState(() => _editingBlockId = null);
+    }
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
@@ -221,7 +304,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
             behavior: HitTestBehavior.opaque,
             onTap: _editing
                 ? null
-                : () => FocusManager.instance.primaryFocus?.unfocus(),
+                : _exitInPlaceEdit,
             child: Material(
               color: scheme.surfaceContainerLow,
               child: SizedBox.expand(
@@ -231,6 +314,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                         modeFor: (e) =>
                             _modeFor(e, unlockAllDays: debug.unlockAllDays),
                         externalLock: _editing,
+                        editingBlockId: _editingBlockId,
+                        onRequestBlockEdit: (block) =>
+                            _requestBlockEdit(block),
+                        onRequestTextSectionEdit: (block) =>
+                            _requestBlockEdit(block, isTextSection: true),
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

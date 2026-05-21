@@ -204,4 +204,48 @@ extension BlockTypeDisplay on BlockType {
         );
     }
   }
+
+  /// Whether this block participates in the double-tap edit + optional
+  /// expansion overlay. When false (action blocks like photo / location /
+  /// memory and pure-display blocks like quote / weather-api), the block
+  /// keeps its existing single-tap behavior and is not driven by
+  /// `editingBlockId`.
+  bool get usesEditMode {
+    switch (this) {
+      case BlockType.textBlock:
+      case BlockType.promptBlock:
+      case BlockType.todoBlock:
+      case BlockType.moodTracker:
+      case BlockType.weatherManual:
+      case BlockType.customCarousel:
+        return true;
+      case BlockType.photoBlock:
+      case BlockType.locationBlock:
+      case BlockType.memoryBlock:
+      case BlockType.quoteBlock:
+      case BlockType.weatherApi:
+        return false;
+    }
+  }
+
+  /// Whether editing this block raises the keyboard. Drives the
+  /// expanded-overlay layout: keyboard-using blocks sit in the top half
+  /// (keyboard fits below); other blocks sit centered.
+  bool get usesKeyboardOnEdit {
+    switch (this) {
+      case BlockType.textBlock:
+      case BlockType.promptBlock:
+      case BlockType.todoBlock:
+        return true;
+      case BlockType.moodTracker:
+      case BlockType.weatherManual:
+      case BlockType.customCarousel:
+      case BlockType.photoBlock:
+      case BlockType.locationBlock:
+      case BlockType.memoryBlock:
+      case BlockType.quoteBlock:
+      case BlockType.weatherApi:
+        return false;
+    }
+  }
 }

@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
@@ -34,6 +35,9 @@ class JournalPager extends StatefulWidget {
     required this.viewModel,
     required this.modeFor,
     this.externalLock = false,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
+    this.onRequestTextSectionEdit,
   });
 
   final MainJournalViewModel viewModel;
@@ -45,6 +49,22 @@ class JournalPager extends StatefulWidget {
   /// AppBar collapses to a Done button in the same state, so the only
   /// way out of edit mode is the Done tap.
   final bool externalLock;
+
+  /// Id of the block currently in in-place edit mode (when the
+  /// "expand on edit" setting is OFF). Forwarded to every `BlockGrid`
+  /// + `TextSectionWidget` so the matching widget can render the
+  /// edit-mode affordance and become interactive.
+  final String? editingBlockId;
+
+  /// Fired when the user double-taps an editable grid (or feature)
+  /// block. The hosting screen routes it to push the expanded route or
+  /// set `editingBlockId` for in-place editing.
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+
+  /// Fired when the user double-taps a full-width text section. Same
+  /// dispatch contract as [onRequestBlockEdit] but the screen sets
+  /// `isTextSection: true` on the route push so it lays out wider.
+  final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
 
   @override
   State<JournalPager> createState() => _JournalPagerState();
@@ -161,6 +181,13 @@ class _JournalPagerState extends State<JournalPager> {
               : null,
           onJumpToDate: (date) => widget.viewModel.setSelectedDate(date),
           onLockChanged: mode == BlockMode.editable ? _onLockChanged : null,
+          editingBlockId: widget.editingBlockId,
+          onRequestBlockEdit: mode == BlockMode.editable
+              ? widget.onRequestBlockEdit
+              : null,
+          onRequestTextSectionEdit: mode == BlockMode.editable
+              ? widget.onRequestTextSectionEdit
+              : null,
         );
       },
     );
@@ -174,6 +201,9 @@ class _SectionsBody extends StatelessWidget {
     required this.onJumpToDate,
     this.onBlockChanged,
     this.onLockChanged,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
+    this.onRequestTextSectionEdit,
   });
 
   final List<EntrySection> sections;
@@ -181,6 +211,9 @@ class _SectionsBody extends StatelessWidget {
   final ValueChanged<DateTime> onJumpToDate;
   final ValueChanged<JournalBlockData>? onBlockChanged;
   final void Function(String, bool)? onLockChanged;
+  final String? editingBlockId;
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+  final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -199,12 +232,28 @@ class _SectionsBody extends StatelessWidget {
         // Text sections are materialized as exactly one textBlock; if
         // somehow malformed, fall back to a placeholder.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
-        return TextSectionWidget(
+        final block = section.blocks.first;
+        final isEditing = editingBlockId == block.id;
+        Widget body = TextSectionWidget(
           key: ValueKey(section.id),
-          data: section.blocks.first,
+          data: block,
           mode: mode,
           onChanged: onBlockChanged,
+          editing: isEditing,
         );
+        // Attach the double-tap-to-edit detector only outside edit mode
+        // — once editing, the inner TextField should receive single
+        // taps without the doubleTapTimeout delay.
+        if (mode == BlockMode.editable &&
+            !isEditing &&
+            onRequestTextSectionEdit != null) {
+          body = GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onDoubleTap: () => onRequestTextSectionEdit!(block),
+            child: body,
+          );
+        }
+        return body;
       case SectionKind.blockGrid:
         // Suppress empty block-grid sections so a layout that materialized
         // with zero blocks (e.g. a kind-B layout saved with no filled
@@ -221,6 +270,8 @@ class _SectionsBody extends StatelessWidget {
             onBlockChanged: onBlockChanged,
             onJumpToDate: onJumpToDate,
             onInteractionLockChanged: onLockChanged,
+            editingBlockId: editingBlockId,
+            onRequestBlockEdit: onRequestBlockEdit,
           ),
         );
       case SectionKind.featureBlock:
@@ -228,22 +279,37 @@ class _SectionsBody extends StatelessWidget {
         // Suppress empty feature sections (no template) so nothing
         // renders in entries created before the slot was filled.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: PostItBlock(
-              visuals: section.blocks.first.visuals,
-              child: BlockWidget(
-                key: ValueKey(section.id),
-                data: section.blocks.first,
-                mode: mode,
-                onChanged: onBlockChanged,
-                onJumpToDate: onJumpToDate,
-                onInteractionLockChanged: onLockChanged,
-              ),
+        final block = section.blocks.first;
+        final isEditing = editingBlockId == block.id;
+        Widget feature = AspectRatio(
+          aspectRatio: 1,
+          child: PostItBlock(
+            visuals: block.visuals,
+            isEditing: isEditing,
+            child: BlockWidget(
+              key: ValueKey(section.id),
+              data: block,
+              mode: mode,
+              onChanged: onBlockChanged,
+              onJumpToDate: onJumpToDate,
+              onInteractionLockChanged: onLockChanged,
+              editing: isEditing,
             ),
           ),
+        );
+        if (mode == BlockMode.editable &&
+            !isEditing &&
+            onRequestBlockEdit != null &&
+            block.type.usesEditMode) {
+          feature = GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onDoubleTap: () => onRequestBlockEdit!(block),
+            child: feature,
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: feature,
         );
     }
   }

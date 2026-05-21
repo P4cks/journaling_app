@@ -52,8 +52,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     (`true`/`false`; absent → default `true`),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
-    carousels yet). If you add another, give it a namespaced key
-    and add a typed accessor pair. Abandoned legacy keys
+    carousels yet), `block.expandOnEdit` (`true`/`false`; absent →
+    default `true`; gates the expanded-block overlay vs in-place
+    edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
+    absent → default `false`; developer affordance that adds a Done
+    button to the expanded block route). If you add another, give it
+    a namespaced key and add a typed accessor pair. Abandoned legacy keys
     (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
     are intentionally not read by the service anymore and may still
     be present on existing users' disks; per the pre-1.0
@@ -65,6 +69,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Debug `ExpansionTile`.
   - `unlockAllDays` bypasses both the calendar's future-day disable
     and the editor's read-only-for-past guard.
+  - `expandBlockOnEdit` (default `true`) — gates the new
+    double-tap-to-edit dispatch: ON pushes `ExpandedBlockRoute` over a
+    blurred entry; OFF flips the in-place `_editingBlockId` and shows
+    the scale + outline affordance on the active tile. Despite the
+    "Debug" file location this is a user-facing toggle shown in
+    Settings → Blocks.
+  - `showExpandedBlockDoneButton` (default `false`) — developer-only
+    affordance that overlays a Done button on the expanded route.
+    Lives in the Settings → Debug section.
 - [photo_storage_service.dart](photo_storage_service.dart) — `PhotoStorageService`.
   Copies `image_picker` results into `<app-docs>/photos/<uuid>.<ext>`
   and exposes:

@@ -22,6 +22,7 @@ class BlockWidget extends StatelessWidget {
     this.onChanged,
     this.onJumpToDate,
     this.onInteractionLockChanged,
+    this.editing = false,
   });
 
   final JournalBlockData data;
@@ -34,17 +35,30 @@ class BlockWidget extends StatelessWidget {
   /// outer `JournalPager` to stop responding to horizontal swipes.
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
+  /// True when this block is the active edit target. Forwarded to the
+  /// concrete block widgets that participate in the double-tap edit
+  /// mode (text / prompt / todo / carousel-style). Ignored by action
+  /// blocks (photo / location / memory) and display blocks (quote /
+  /// weather-api), which keep their existing single-tap behavior.
+  final bool editing;
+
   @override
   Widget build(BuildContext context) {
     switch (data.type) {
       case BlockType.textBlock:
-        return TextBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return TextBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          editing: editing,
+        );
       case BlockType.moodTracker:
         return MoodTrackerWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          editing: editing,
         );
       case BlockType.weatherManual:
         return WeatherManualWidget(
@@ -52,15 +66,31 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          editing: editing,
         );
       case BlockType.promptBlock:
-        return PromptBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return PromptBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          editing: editing,
+        );
       case BlockType.todoBlock:
-        return TodoBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return TodoBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          editing: editing,
+        );
       case BlockType.quoteBlock:
         return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.memoryBlock:
-        return MemoryBlockWidget(data: data, mode: mode, onChanged: onChanged, onJumpToDate: onJumpToDate);
+        return MemoryBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onJumpToDate: onJumpToDate,
+        );
       case BlockType.weatherApi:
         return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
       case BlockType.photoBlock:
@@ -77,6 +107,7 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          editing: editing,
         );
     }
   }

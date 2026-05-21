@@ -24,17 +24,25 @@ text block and the full-width text section.
   resolved, non-empty options list.
 - [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
   `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
-  Owns the `TextEditingController` lifecycle for State classes whose
-  widget renders a single `TextBlockContent`-backed block. Subclasses
-  expose `data` (the `JournalBlockData`) and `onChanged` (typically
-  delegating to `widget.data` / `widget.onChanged`); the mixin owns
-  `initState` (build the controller from the current text),
-  `didUpdateWidget` (swap text only when `data.id` changes — never
-  on per-keystroke re-renders), `dispose`, and `emitText(String)`
-  which wraps a new string into a fresh `JournalBlockData` and forwards
-  it through `onChanged`. Used by both `TextBlockWidget` and
-  `TextSectionWidget` so they share one source of truth for the
-  controller dance.
+  Owns the `TextEditingController` + `FocusNode` lifecycle for State
+  classes whose widget renders a single `TextBlockContent`-backed
+  block. Subclasses expose `data`, `onChanged`, and (optionally)
+  `editing` (defaults to `false` if the subclass doesn't override).
+  The mixin owns:
+  - `initState` — build the controller from the current text, build
+    a fresh `FocusNode`, and request focus post-frame if `editing`
+    is already true at mount (e.g. mounted inside the expanded
+    block route).
+  - `didUpdateWidget` — swap text only when `data.id` changes
+    (never on per-keystroke re-renders); honour `editing` flips by
+    requesting / releasing focus on the node post-frame.
+  - `dispose` — dispose controller + node.
+  - `emitText(String)` — wrap a new string into a fresh
+    `JournalBlockData` and forward through `onChanged`.
+
+  Used by both `TextBlockWidget` and `TextSectionWidget` so they
+  share one source of truth for the controller dance and the
+  double-tap edit-mode focus handoff.
 - [block_with_title.dart](block_with_title.dart) — `BlockWithTitle`.
   Wraps a block body with an optional title row above. When the title
   is null or empty the body is returned unchanged (no padding cost).
@@ -43,13 +51,21 @@ text block and the full-width text section.
   the row collapses entirely.
 - [collapsible_carousel_block.dart](collapsible_carousel_block.dart) —
   `CollapsibleCarouselBlock<T>` generic StatefulWidget. Renders a
-  collapsed centred icon until tapped; tapping expands a horizontal
-  `PageView` over `options` and starts an auto-collapse timer
-  (default 1500 ms). The timer fires on **expand** AND on every
-  `onPageChanged`, so:
+  collapsed centred icon and expands a horizontal `PageView` over
+  `options` when promoted into edit mode. Tracks an auto-collapse
+  timer (default 1500 ms). The timer fires on **expand** AND on
+  every `onPageChanged`, so:
   - Tap-and-don't-swipe still auto-collapses after the delay.
   - Steady swipes keep the carousel open until 1.5 s after the last
     interaction.
+
+  **Edit-mode gated expansion**: the internal tap-to-expand only
+  fires when `widget.editing == true`. Outside edit mode the
+  collapsed view is inert — the outer grid's double-tap detector
+  promotes the hosting block into edit mode, which flips `editing`
+  to true; `didUpdateWidget` then auto-expands via `_expand()`.
+  When `editing` flips back to false the carousel collapses and
+  releases the pager lock.
 
   **Initial-expanded when `selected == null`**: if no selection
   exists at mount time, the widget starts in the expanded state with
@@ -74,6 +90,10 @@ text block and the full-width text section.
   - `onInteractionLockChanged(blockId, locked)` — lifted to
     `JournalPager` to disable the outer horizontal date-swipe while
     expanded.
+  - `editing` (default `false`) — externally-driven edit-mode flag.
+    Auto-expands on the false → true transition; collapses on the
+    true → false transition. When false, the internal tap-to-expand
+    is suppressed so single-taps on a collapsed carousel are inert.
   - `viewportFraction` (0.42), `collapseDelay` (1500 ms),
     `switchDuration` (180 ms) — tunables with sensible defaults.
 
