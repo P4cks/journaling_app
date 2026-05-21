@@ -25,12 +25,13 @@ class LocationBlockWidget extends StatefulWidget {
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
 
-  /// Host's "push expanded route" callback. Location is the one
-  /// exception to the GestureDetector-everywhere rule — wrapping the
-  /// FlutterMap in an opaque GestureDetector would steal its pan /
-  /// pinch-zoom / double-tap-zoom gestures. Instead we use a raw
-  /// `Listener` to spot a double-tap pattern without entering the
-  /// arena; the map keeps every native interaction.
+  /// Host's "push expanded route" callback. Wired into a
+  /// `GestureDetector(onDoubleTap, deferToChild)` over the map. The
+  /// map's `InteractiveFlag.doubleTapZoom` is intentionally omitted
+  /// so the double-tap gesture is free for us to claim — pinch + drag
+  /// + scroll-wheel still work for zoom, and long-press still drops
+  /// pins natively (deferToChild lets inner-widget recognizers win
+  /// the gestures they want).
   final VoidCallback? onDoubleTap;
 
   @override
@@ -41,37 +42,13 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
   static const _fallbackCenter = LatLng(20, 0);
   static const _fallbackZoom = 1.5;
   static const _pinZoom = 13.0;
-  static const _doubleTapWindow = Duration(milliseconds: 300);
-  static const _doubleTapSlop = 20.0;
 
   late final MapController _mapController;
-  DateTime? _lastDownAt;
-  Offset? _lastDownPos;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-  }
-
-  void _onPointerDown(PointerDownEvent event) {
-    final onDoubleTap = widget.onDoubleTap;
-    if (onDoubleTap == null) return;
-    final now = DateTime.now();
-    final pos = event.position;
-    final last = _lastDownAt;
-    final lastPos = _lastDownPos;
-    if (last != null &&
-        lastPos != null &&
-        now.difference(last) <= _doubleTapWindow &&
-        (pos - lastPos).distance <= _doubleTapSlop) {
-      _lastDownAt = null;
-      _lastDownPos = null;
-      onDoubleTap();
-      return;
-    }
-    _lastDownAt = now;
-    _lastDownPos = pos;
   }
 
   @override
@@ -128,9 +105,15 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: _onPointerDown,
+    return GestureDetector(
+      // `deferToChild` lets the map's own recognizers win the gestures
+      // they care about (drag, pinch-zoom, long-press). We only catch
+      // double-tap, which the map intentionally doesn't claim (its
+      // `InteractiveFlag.doubleTapZoom` is omitted below) so the
+      // arena resolves to our handler. Single tap on the map falls
+      // through to a no-op — the user pans or long-presses instead.
+      behavior: HitTestBehavior.deferToChild,
+      onDoubleTap: widget.onDoubleTap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Stack(
@@ -145,10 +128,13 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
               maxZoom: 18,
               onLongPress: isEditable ? _onLongPress : null,
               interactionOptions: InteractionOptions(
+                // `doubleTapZoom` is intentionally OFF — the
+                // double-tap gesture is reserved for the host's
+                // "push expanded route" callback. Users can still
+                // zoom via pinch / scroll-wheel.
                 flags: isEditable
                     ? (InteractiveFlag.drag |
                           InteractiveFlag.pinchZoom |
-                          InteractiveFlag.doubleTapZoom |
                           InteractiveFlag.scrollWheelZoom)
                     : InteractiveFlag.none,
               ),
