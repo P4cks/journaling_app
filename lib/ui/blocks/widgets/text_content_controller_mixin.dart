@@ -43,14 +43,12 @@ mixin TextContentControllerMixin<T extends StatefulWidget> on State<T> {
     focusNode = FocusNode();
     _lastDataId = data.id;
     _wasEditing = editing;
-    if (_wasEditing) {
-      // Honour an initial editing=true (e.g. the widget is mounted
-      // inside the expanded block route, which always opens in edit
-      // mode). Defer until after first build so the field is attached.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && editing) focusNode.requestFocus();
-      });
-    }
+    // Don't auto-focus on initial mount. In normal mode (single-tap
+    // engage) the user is the one who taps the field — no
+    // programmatic focus required. In the expanded route the body
+    // mounts with `editing: false` (display state) and the user taps
+    // inside the route to flip to true; auto-focus is handled by the
+    // false → true transition in [didUpdateWidget].
   }
 
   @override

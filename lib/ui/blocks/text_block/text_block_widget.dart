@@ -17,12 +17,14 @@ class TextBlockWidget extends StatefulWidget {
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
 
-  /// True when this block is the active edit target. The mixin focuses
-  /// the field; we also drop the AbsorbPointer wrapper so taps reach
-  /// the TextField (re-cursor, select). When false the field is
-  /// pointer-absorbed so single-taps don't focus it — the new
-  /// double-tap-to-edit gesture, handled at the grid level, is the only
-  /// way in.
+  /// True when this block is the active edit target. The mixin
+  /// requests focus on the field when this flips false → true (used
+  /// by the expanded route when the user taps inside to start
+  /// editing). In normal mode (setting OFF) the field is always
+  /// interactive via natural tap-to-focus; no AbsorbPointer wrapping.
+  /// In setting ON grid mode the host (`BlockGrid`) wraps the whole
+  /// tile in `IgnorePointer` so single-taps never reach this field —
+  /// see [BlockGrid].
   final bool editing;
 
   @override
@@ -54,25 +56,22 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
       );
     }
 
-    return AbsorbPointer(
-      absorbing: !widget.editing,
-      child: SizedBox.expand(
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          expands: true,
-          maxLines: null,
-          minLines: null,
-          keyboardType: TextInputType.multiline,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: const InputDecoration(
-            hintText: 'Write something…',
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          onChanged: emitText,
+    return SizedBox.expand(
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        expands: true,
+        maxLines: null,
+        minLines: null,
+        keyboardType: TextInputType.multiline,
+        textAlignVertical: TextAlignVertical.top,
+        decoration: const InputDecoration(
+          hintText: 'Write something…',
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
         ),
+        onChanged: emitText,
       ),
     );
   }

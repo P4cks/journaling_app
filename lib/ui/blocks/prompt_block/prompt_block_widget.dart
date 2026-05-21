@@ -39,11 +39,9 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     _controller = TextEditingController(text: content.answer);
     _focusNode = FocusNode();
     _wasEditing = widget.editing;
-    if (_wasEditing) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && widget.editing) _focusNode.requestFocus();
-      });
-    }
+    // No initial-mount auto-focus — see TextContentControllerMixin's
+    // comment. Auto-focus only fires on the false → true `editing`
+    // transition handled in didUpdateWidget.
   }
 
   @override
@@ -210,31 +208,29 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       );
     } else if (prompt.isEmpty) {
       // Editable but no prompt yet — show a tap-target so the user can
-      // re-open the picker. Only interactive while in edit mode; the
-      // outer double-tap detector is the only way to flip into it.
-      body = AbsorbPointer(
-        absorbing: !widget.editing,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _openPicker(initial: false),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              promptLabel,
-              const SizedBox(height: 6),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Tap to choose',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.disabledColor,
-                      fontStyle: FontStyle.italic,
-                    ),
+      // re-open the picker. Single tap on the body opens the picker
+      // (natural taps reach this widget in normal mode; in setting
+      // ON's grid the host wraps everything in IgnorePointer).
+      body = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _openPicker(initial: false),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            promptLabel,
+            const SizedBox(height: 6),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Tap to choose',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     } else {
@@ -244,25 +240,22 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           promptLabel,
           const SizedBox(height: 6),
           Expanded(
-            child: AbsorbPointer(
-              absorbing: !widget.editing,
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                expands: true,
-                maxLines: null,
-                minLines: null,
-                keyboardType: TextInputType.multiline,
-                textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(
-                  hintText: 'Your answer…',
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onChanged: (value) =>
-                    _emit(prompt: content.prompt, answer: value),
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              expands: true,
+              maxLines: null,
+              minLines: null,
+              keyboardType: TextInputType.multiline,
+              textAlignVertical: TextAlignVertical.top,
+              decoration: const InputDecoration(
+                hintText: 'Your answer…',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
+              onChanged: (value) =>
+                  _emit(prompt: content.prompt, answer: value),
             ),
           ),
         ],
@@ -271,14 +264,11 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
 
     if (!isEditable) return body;
 
-    // Long-press is preserved for the prompt-repick affordance but
-    // gated on edit mode so it only fires once the user has activated
-    // the block. Same nesting pattern as the photo block — the inner
-    // GestureDetector wins over the outer LongPressDraggable for drag
-    // reorder when active.
+    // Long-press to re-pick. Always-on in editable mode — single-tap
+    // semantics handle focus / picker-open naturally.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: widget.editing ? () => _openPicker(initial: false) : null,
+      onLongPress: () => _openPicker(initial: false),
       child: body,
     );
   }

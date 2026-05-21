@@ -113,6 +113,7 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onJumpToDate: onJumpToDate,
+          expanded: expanded,
         );
       case BlockType.weatherApi:
         return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);

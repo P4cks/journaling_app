@@ -167,29 +167,34 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
           ),
         );
       }
-      // Centered "+ Add photo" affordance. Single-tap is suppressed
-      // by the grid's gesture model — the host fires
-      // `firePhotoBlockAction` directly when the user double-taps the
-      // tile (setting OFF) or when the user taps inside the expanded
-      // route (setting ON).
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(
-              HugeIcons.strokeRoundedPlusSign,
-              size: 32,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Add photo',
-              style: theme.textTheme.bodySmall?.copyWith(
+      // Centered "+ Add photo" affordance — interactive in normal
+      // mode (single-tap fires the picker via `firePhotoBlockAction`).
+      // In setting ON's grid the host wraps the whole tile in
+      // `IgnorePointer` so this tap doesn't fire there.
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onChanged == null
+            ? null
+            : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(
+                HugeIcons.strokeRoundedPlusSign,
+                size: 32,
                 color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Add photo',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -209,9 +214,25 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       ),
     );
 
-    return ClipRRect(
+    final shaped = ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox.expand(child: image),
+    );
+
+    if (widget.mode == BlockMode.readOnly) return shaped;
+
+    // Long-press on a set photo opens the Replace / Remove sheet.
+    // Single-tap opens the same picker (so the user has a familiar
+    // way to swap an existing photo without remembering long-press).
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onChanged == null
+          ? null
+          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      onLongPress: widget.onChanged == null
+          ? null
+          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      child: shaped,
     );
   }
 }

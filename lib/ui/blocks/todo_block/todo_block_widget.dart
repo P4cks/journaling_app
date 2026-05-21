@@ -159,61 +159,57 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
       );
     }
 
-    return AbsorbPointer(
-      absorbing: !widget.editing,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: content.items.length,
-              itemBuilder: (context, i) {
-                final item = content.items[i];
-                return _TodoRow(
-                  key: ValueKey(item.id),
-                  item: item,
-                  controller: _controllerFor(item),
-                  onToggle: () => _toggle(content, item.id),
-                  onTextChanged: (value) =>
-                      _updateText(content, item.id, value),
-                  onRemove: () => _remove(content, item.id),
-                );
-              },
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: content.items.length,
+            itemBuilder: (context, i) {
+              final item = content.items[i];
+              return _TodoRow(
+                key: ValueKey(item.id),
+                item: item,
+                controller: _controllerFor(item),
+                onToggle: () => _toggle(content, item.id),
+                onTextChanged: (value) =>
+                    _updateText(content, item.id, value),
+                onRemove: () => _remove(content, item.id),
+              );
+            },
           ),
-          // "Add item" is an ACTION — actions live in the expanded
-          // route only per the uniform architecture. In-place edit
-          // mode (editable but not expanded) keeps toggle/edit/remove
-          // working but hides this affordance.
-          if (widget.expanded)
-            InkWell(
-              onTap: () => _add(content),
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppIcon(
-                      HugeIcons.strokeRoundedPlusSign,
-                      size: 14,
+        ),
+        // "Add item" is an ACTION — only visible in the expanded
+        // route. In normal-mode grid (and in setting ON's grid which
+        // is non-interactive anyway) the affordance stays hidden.
+        if (widget.expanded)
+          InkWell(
+            onTap: () => _add(content),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(
+                    HugeIcons.strokeRoundedPlusSign,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Add item',
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Add item',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

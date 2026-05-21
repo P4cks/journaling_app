@@ -9,7 +9,6 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dart';
-import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -187,14 +186,9 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
       case BlockType.photoBlock:
         await firePhotoBlockAction(context, _data, _onInnerChanged);
         break;
-      case BlockType.memoryBlock:
-        // Pop the route first so the jump lands on the destination
-        // entry's expanded UI rather than this overlay still being
-        // present.
-        final jump = widget.onJumpToDate;
-        Navigator.of(context).maybePop();
-        fireMemoryBlockAction(_data, jump);
-        break;
+      // Memory navigation lives behind its own "Navigate to that day"
+      // button inside the body (see MemoryBlockWidget). The body
+      // itself doesn't fire on tap.
       default:
         break;
     }
@@ -217,14 +211,20 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
     final debug = AppDependencies.of(context).debugSettings;
     final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    // Square block size. We constrain by the smaller of:
-    //   - 92 % of screen width
-    //   - 70 % of available height (50 % when the keyboard is up so
-    //     the block stays visible above)
-    final availableHeight = mediaSize.height -
-        MediaQuery.paddingOf(context).vertical -
-        MediaQuery.viewInsetsOf(context).bottom;
-    final maxByHeight = availableHeight * (keyboardUp ? 0.5 : 0.7);
+    // Square block size — held constant across keyboard up/down so
+    // the block doesn't rescale when the user taps to edit. When the
+    // keyboard rises we just shift the alignment to top so the block
+    // stays visible above the keyboard; the side length doesn't
+    // change.
+    //
+    // The height budget uses the FULL safe-area height (ignoring
+    // viewInsets) — that way `maxSide` is the same value before and
+    // after the keyboard appears. With `Align(topCenter)` the box
+    // sits at the top; the keyboard overlays the now-empty space
+    // below it.
+    final fullHeight =
+        mediaSize.height - MediaQuery.paddingOf(context).vertical;
+    final maxByHeight = fullHeight * 0.55;
     final maxByWidth = mediaSize.width * 0.92;
     final maxSide = maxByHeight < maxByWidth ? maxByHeight : maxByWidth;
 
@@ -246,6 +246,7 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
             data: _data,
             innerEditing: _innerEditing,
             onChanged: _onInnerChanged,
+            onJumpToDate: widget.onJumpToDate,
           );
 
     final centered = ConstrainedBox(
@@ -355,11 +356,13 @@ class _ExpandedBlockCard extends StatelessWidget {
     required this.data,
     required this.innerEditing,
     required this.onChanged,
+    required this.onJumpToDate,
   });
 
   final JournalBlockData data;
   final bool innerEditing;
   final ValueChanged<JournalBlockData> onChanged;
+  final ValueChanged<DateTime>? onJumpToDate;
 
   @override
   Widget build(BuildContext context) {
@@ -371,6 +374,7 @@ class _ExpandedBlockCard extends StatelessWidget {
         data: data,
         mode: BlockMode.editable,
         onChanged: onChanged,
+        onJumpToDate: onJumpToDate,
         editing: innerEditing,
         expanded: true,
       ),
@@ -379,7 +383,9 @@ class _ExpandedBlockCard extends StatelessWidget {
 }
 
 /// Expanded text section — text directly on the blurred backdrop, no
-/// rectangular card chrome.
+/// rectangular card chrome. Passes `expanded: true` so the section
+/// renders with `expands: true` (fills the constraints), top-left
+/// alignment, and no outline.
 class _ExpandedTextSection extends StatelessWidget {
   const _ExpandedTextSection({
     required this.data,
@@ -400,6 +406,7 @@ class _ExpandedTextSection extends StatelessWidget {
         mode: BlockMode.editable,
         onChanged: onChanged,
         editing: editing,
+        expanded: true,
       ),
     );
   }

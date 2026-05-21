@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
@@ -11,6 +12,7 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 /// Fires the memory block's primary action — navigates to the source
 /// entry. Called from `MainJournalScreen` when the user double-taps
@@ -44,12 +46,20 @@ class MemoryBlockWidget extends StatefulWidget {
     required this.mode,
     this.onJumpToDate,
     this.onChanged,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final ValueChanged<DateTime>? onJumpToDate;
+
+  /// True when rendered inside the expanded route. Renders a dedicated
+  /// "Navigate to that day" button at the bottom of the body — mirrors
+  /// the todo block's "Add task" button pattern. In the grid the
+  /// button is hidden; the user double-taps the tile (which fires
+  /// `fireMemoryBlockAction` directly).
+  final bool expanded;
 
   @override
   State<MemoryBlockWidget> createState() => _MemoryBlockWidgetState();
@@ -138,13 +148,10 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
 
     final caption = _formatCaption(content.sourceEntryDate);
     final body = _renderSnapshot(context, content);
+    final canNavigate =
+        widget.onJumpToDate != null && content.sourceEntryDate != null;
 
-    // No GestureDetector here — single-taps in the grid are inert per
-    // the uniform double-tap-to-engage model. The host fires
-    // `fireMemoryBlockAction` directly on double-tap (setting OFF) or
-    // wraps this widget in a GestureDetector inside the expanded
-    // route.
-    return Column(
+    final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (caption != null)
@@ -157,8 +164,59 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
           ),
         const SizedBox(height: 4),
         Expanded(child: body),
+        // "Navigate to that day" — visible only in expanded mode,
+        // mirroring the todo block's "Add task" button.
+        if (widget.expanded && canNavigate)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: InkWell(
+              onTap: () => widget.onJumpToDate!(
+                DateTime.parse(content.sourceEntryDate!),
+              ),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 4,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      HugeIcons.strokeRoundedArrowRight01,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Navigate to that day',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
+
+    // In the grid (non-expanded), single-tap the body to jump. In the
+    // expanded route the user typically uses the dedicated button, but
+    // body-tap also jumps for convenience. In setting ON's grid the
+    // host wraps the tile in IgnorePointer so this tap never fires.
+    if (canNavigate && widget.mode == BlockMode.editable) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => widget.onJumpToDate!(
+          DateTime.parse(content.sourceEntryDate!),
+        ),
+        child: column,
+      );
+    }
+    return column;
   }
 
   String? _formatCaption(String? isoDate) {

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
-import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
-import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
@@ -45,12 +41,6 @@ class _MainJournalScreenState extends State<MainJournalScreen>
   /// `resizeToAvoidBottomInset` consumes the bottom insets before they
   /// reach descendants.
   bool _editing = false;
-
-  /// Id of the block currently in in-place edit mode, or null when no
-  /// tile is being edited. Set by [_requestBlockEdit] when the "expand
-  /// on edit" setting is OFF; the expanded-route path leaves this null
-  /// since the route itself owns the edit state.
-  String? _editingBlockId;
 
   /// True while the expanded-block route is on the navigator stack. The
   /// route's inner TextField raises the keyboard, but we don't want
@@ -115,87 +105,46 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
   void _onDone() {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (_editingBlockId != null) {
-      setState(() => _editingBlockId = null);
-    }
   }
 
   /// Called from the journal pager when the user double-taps an
-  /// editable block. Three routes based on the block type +
-  /// `debugSettings.expandBlockOnEdit`:
+  /// editable block. Only fires when `debugSettings.expandBlockOnEdit`
+  /// is ON — in normal mode (setting OFF) the BlockGrid doesn't
+  /// attach the double-tap detector at all; single-tap engages the
+  /// inner widget directly.
   ///
-  /// 1. **Action block + setting OFF** (photo, memory) — fire the
-  ///    action immediately (image picker, jump-to-date). No
-  ///    in-place edit state to maintain.
-  /// 2. **Setting ON** — push [ExpandedBlockRoute]. Edit state lives
-  ///    inside the route; `_editingBlockId` stays null.
-  /// 3. **Setting OFF** (everything else) — set `_editingBlockId` so
-  ///    the matching tile shows the in-place scale + outline
-  ///    affordance and the inner widget becomes interactive (TextField
-  ///    focuses, carousel expands).
-  ///
+  /// Pushes [ExpandedBlockRoute]. Edit state lives inside the route.
   /// The text-section variant sets `isTextSection: true` so the route
   /// renders the section text directly on the blur (no card chrome).
   void _requestBlockEdit(JournalBlockData block, {bool isTextSection = false}) {
-    final debug = AppDependencies.of(context).debugSettings;
     final vm = _viewModel;
-
-    // Action blocks in setting OFF: fire the action directly.
-    if (!debug.expandBlockOnEdit && block.type.isActionBlock) {
-      switch (block.type) {
-        case BlockType.photoBlock:
-          if (vm != null) {
-            firePhotoBlockAction(context, block, vm.updateBlock);
-          }
-          return;
-        case BlockType.memoryBlock:
-          fireMemoryBlockAction(block, vm?.setSelectedDate);
-          return;
-        default:
-          break;
-      }
-    }
-
-    if (debug.expandBlockOnEdit) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      setState(() => _expandedRouteOpen = true);
-      Navigator.of(context)
-          .push(
-            ExpandedBlockRoute(
-              data: block,
-              onChanged: vm?.updateBlock,
-              onJumpToDate: vm?.setSelectedDate,
-              isTextSection: isTextSection,
-            ),
-          )
-          .whenComplete(() {
-            if (!mounted) return;
-            // Drop the lock and re-sync `_editing` to the actual
-            // keyboard state (it stayed frozen while the route was up).
-            final bottomInsets = WidgetsBinding
-                .instance
-                .platformDispatcher
-                .views
-                .first
-                .viewInsets
-                .bottom;
-            setState(() {
-              _expandedRouteOpen = false;
-              _editing = bottomInsets > 0;
-            });
-          });
-    } else {
-      setState(() => _editingBlockId = block.id);
-    }
-  }
-
-  /// Clears in-place edit mode. Called from the body's tap-outside
-  /// handler. Safe to call when nothing is being edited.
-  void _exitInPlaceEdit() {
-    if (_editingBlockId != null) {
-      setState(() => _editingBlockId = null);
-    }
     FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _expandedRouteOpen = true);
+    Navigator.of(context)
+        .push(
+          ExpandedBlockRoute(
+            data: block,
+            onChanged: vm?.updateBlock,
+            onJumpToDate: vm?.setSelectedDate,
+            isTextSection: isTextSection,
+          ),
+        )
+        .whenComplete(() {
+          if (!mounted) return;
+          // Drop the lock and re-sync `_editing` to the actual
+          // keyboard state (it stayed frozen while the route was up).
+          final bottomInsets = WidgetsBinding
+              .instance
+              .platformDispatcher
+              .views
+              .first
+              .viewInsets
+              .bottom;
+          setState(() {
+            _expandedRouteOpen = false;
+            _editing = bottomInsets > 0;
+          });
+        });
   }
 
   Future<void> _onMakeEntry() async {
@@ -328,7 +277,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
             behavior: HitTestBehavior.opaque,
             onTap: _editing
                 ? null
-                : _exitInPlaceEdit,
+                : () => FocusManager.instance.primaryFocus?.unfocus(),
             child: Material(
               color: scheme.surfaceContainerLow,
               child: SizedBox.expand(
@@ -338,12 +287,10 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                         modeFor: (e) =>
                             _modeFor(e, unlockAllDays: debug.unlockAllDays),
                         externalLock: _editing,
-                        editingBlockId: _editingBlockId,
                         onRequestBlockEdit: (block) =>
                             _requestBlockEdit(block),
                         onRequestTextSectionEdit: (block) =>
                             _requestBlockEdit(block, isTextSection: true),
-                        onRequestExitEdit: _exitInPlaceEdit,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

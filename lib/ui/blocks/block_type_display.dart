@@ -206,12 +206,11 @@ extension BlockTypeDisplay on BlockType {
   }
 
   /// Whether this block participates in the double-tap engage flow.
-  /// **Everything that has an interactive surface returns true** —
-  /// text/prompt/todo, the three carousel types, and the action blocks
-  /// (photo / location / memory). Only pure-display blocks (quote,
-  /// weather-api) return false. Display blocks have no editing or
-  /// action affordance, so the grid still skips the double-tap
-  /// detector for them.
+  /// **Every block type returns true** — even pure-display blocks
+  /// (quote, weather-api) are expandable so the user can read them
+  /// in larger form inside the route. The expanded view for
+  /// display-only blocks is just the body rendered bigger; no
+  /// editing affordance, no inner taps wired up.
   bool get usesEditMode {
     switch (this) {
       case BlockType.textBlock:
@@ -223,10 +222,9 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.memoryBlock:
-        return true;
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
-        return false;
+        return true;
     }
   }
 

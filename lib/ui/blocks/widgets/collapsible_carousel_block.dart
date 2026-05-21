@@ -199,14 +199,20 @@ class _CollapsibleCarouselBlockState<T>
             child: widget.collapsedBuilder(context, widget.selected),
           );
 
-    // No internal tap handler — the picker is only reachable when the
-    // host flips `editing` to true, which is itself driven by the
-    // outer grid's double-tap detector.
-    return AnimatedSwitcher(
-      duration: widget.switchDuration,
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      child: child,
+    // Internal tap-to-expand. Works in normal mode (single-tap on a
+    // collapsed carousel pops the picker). In setting ON's grid the
+    // host (`BlockGrid`) wraps the whole tile in `IgnorePointer` so
+    // this tap never fires there — double-tap pushes the expanded
+    // route instead.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _expanded ? null : _expand,
+      child: AnimatedSwitcher(
+        duration: widget.switchDuration,
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: child,
+      ),
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 // ---------------------------------------------------------------------------
 // BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
@@ -353,8 +354,19 @@ class _BlockGridState extends State<BlockGrid> {
   Widget _buildTile(int index) {
     final block = widget.blocks[index];
     final isDragging = _draggingIndex == index;
-    final isEditingThis = widget.editingBlockId == block.id;
     final usesEditMode = block.type.usesEditMode;
+
+    // Whether the host has expanded-on-edit mode on. Drives the
+    // setting-OFF (normal) vs setting-ON (expanded) gesture model:
+    //   - OFF: inner widgets are interactive directly; single tap
+    //     focuses field / expands carousel / opens picker (old
+    //     pre-PR1 behaviour). No outer detector, no IgnorePointer.
+    //   - ON:  inner widgets are wrapped in `IgnorePointer` so taps
+    //     don't reach them; an outer `GestureDetector(onDoubleTap)`
+    //     pushes the expanded route.
+    final expandOnEdit = AppDependencies.of(
+      context,
+    ).debugSettings.expandBlockOnEdit;
 
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
@@ -363,44 +375,43 @@ class _BlockGridState extends State<BlockGrid> {
       onChanged: widget.onBlockChanged,
       onJumpToDate: widget.onJumpToDate,
       onInteractionLockChanged: widget.onInteractionLockChanged,
-      onRequestExitEdit: isEditingThis ? widget.onRequestExitEdit : null,
-      editing: isEditingThis,
     );
 
     // Hero source. Tag matches the destination wrapped by
-    // `ExpandedBlockRoute`. While the tile is being dragged the
-    // `LongPressDraggable` swaps to `childWhenDragging`, so the Hero
-    // here is briefly hidden by opacity 0.35 — that's fine, no Hero
-    // tag collision because the drag feedback is unwrapped.
+    // `ExpandedBlockRoute`. Material wrapper is REQUIRED — during a
+    // Hero flight the widget is rendered in the root Overlay,
+    // OUTSIDE the journal screen's Material(surfaceContainerLow).
+    // Without a Material ancestor inside the Hero, TextField /
+    // InkWell descendants throw "No Material widget found"
+    // mid-flight (and show the yellow-underline debug render).
     Widget card = Hero(
       tag: blockHeroTag(block.id),
-      child: GestureDetector(
-        onTap: widget.onBlockTap == null
-            ? null
-            : () => widget.onBlockTap!(block, block.id),
-        child: BlockChrome(
-          visuals: block.visuals,
-          isDragging: isDragging,
-          isEditing: isEditingThis,
-          topRight: widget.cardTrailing?.call(block, index),
-          child: inner,
+      child: Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          onTap: widget.onBlockTap == null
+              ? null
+              : () => widget.onBlockTap!(block, block.id),
+          child: BlockChrome(
+            visuals: block.visuals,
+            isDragging: isDragging,
+            topRight: widget.cardTrailing?.call(block, index),
+            child: inner,
+          ),
         ),
       ),
     );
 
-    // Attach the double-tap detector only for editable block types and
-    // only when this tile is NOT already in edit mode. Skipping it
-    // while editing prevents Flutter's gesture arena from delaying
-    // inner single-taps (e.g. positioning the TextField cursor) by the
-    // double-tap timeout.
-    if (usesEditMode &&
-        !isEditingThis &&
+    // Setting ON: wrap inner content so single-taps are inert and
+    // the outer double-tap detector reliably wins.
+    if (expandOnEdit &&
+        usesEditMode &&
         widget.onRequestBlockEdit != null &&
         widget.mode == BlockMode.editable) {
       card = GestureDetector(
-        behavior: HitTestBehavior.translucent,
+        behavior: HitTestBehavior.opaque,
         onDoubleTap: () => widget.onRequestBlockEdit!(block),
-        child: card,
+        child: IgnorePointer(child: card),
       );
     }
 
