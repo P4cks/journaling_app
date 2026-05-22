@@ -272,14 +272,24 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       );
     }
 
-    if (!isEditable) return body;
+    if (!isEditable) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: body,
+      );
+    }
 
     // Long-press to re-pick. Always-on in editable mode — single-tap
-    // semantics handle focus / picker-open naturally.
+    // semantics handle focus / picker-open naturally. Padding sits
+    // INSIDE the gesture detector so taps in the 12 px chrome inset
+    // still reach the long-press / focus handlers.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: () => _openPicker(initial: false),
-      child: body,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: body,
+      ),
     );
   }
 }

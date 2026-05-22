@@ -86,10 +86,15 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
     final body = _buildBody(context, theme, content);
     // Wrap the body so double-tap reaches the host. No `onTap` —
     // quote is display-only; single taps are unconsumed (no flash).
+    // The 12 px chrome inset lives inside the detector so taps in the
+    // inset are claimed here (not bubbled up to the body's unfocus).
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      child: body,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: body,
+      ),
     );
   }
 

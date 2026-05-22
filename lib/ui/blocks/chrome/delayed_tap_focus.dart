@@ -14,10 +14,17 @@ import 'package:flutter/material.dart';
 /// if no second tap arrived. On double tap, [onDoubleTap] fires
 /// instead — usually the host's "push the expanded route" callback.
 ///
-/// After the field is focused the wrapper drops out so the inner
-/// TextField receives taps natively (cursor positioning, selection
-/// drag, etc. all work as expected). Listening to the `FocusNode`
-/// triggers the rebuild.
+/// After the field is focused the gesture handlers fall back to
+/// `null` and the inner `AbsorbPointer` flips to `absorbing: false`,
+/// so the TextField receives taps natively (cursor positioning,
+/// selection drag, etc. all work as expected). Critically the widget
+/// **structure** stays identical across the focused / unfocused flip
+/// — only the props change — so Flutter's element reconciliation
+/// preserves the inner TextField across the rebuild. Earlier
+/// iterations returned `widget.child` directly when focused, which
+/// changed the parent chain and unmounted the TextField → dismissed
+/// the keyboard the moment focus was acquired. The structural-stability
+/// invariant is what fixed that.
 class DelayedTapFocus extends StatefulWidget {
   const DelayedTapFocus({
     super.key,
@@ -66,19 +73,25 @@ class _DelayedTapFocusState extends State<DelayedTapFocus> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.focusNode.hasFocus) {
-      // Already focused — let taps reach the field natively so the
-      // user can position the cursor / drag a selection.
-      return widget.child;
-    }
-    // Pre-focus: outer GestureDetector with both callbacks creates
-    // the ~300 ms arena disambiguation. Single tap → programmatic
-    // focus. Double tap → host's onDoubleTap (route push).
+    final hasFocus = widget.focusNode.hasFocus;
+    // Keep the widget structure identical across the focused/unfocused
+    // flip — only the gesture callbacks and the AbsorbPointer flag
+    // change. If the structure changed (e.g. returning `widget.child`
+    // directly when focused), Flutter's element reconciliation would
+    // unmount and remount the inner TextField, dismissing the
+    // keyboard the moment focus is acquired.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.focusNode.requestFocus,
-      onDoubleTap: widget.onDoubleTap,
-      child: AbsorbPointer(child: widget.child),
+      onTap: hasFocus ? null : widget.focusNode.requestFocus,
+      onDoubleTap: hasFocus ? null : widget.onDoubleTap,
+      child: AbsorbPointer(
+        // When focused, let taps pass through so the TextField can
+        // position the caret / drag a selection natively. When
+        // unfocused, swallow them so the outer GestureDetector's
+        // arena resolution decides single vs double tap.
+        absorbing: !hasFocus,
+        child: widget.child,
+      ),
     );
   }
 }

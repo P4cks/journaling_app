@@ -91,12 +91,15 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
     final isEditable = widget.mode == BlockMode.editable;
 
     if (!isEditable && pin == null) {
-      return Center(
-        child: Text(
-          '—',
-          style: TextStyle(
-            fontSize: 40,
-            color: Theme.of(context).disabledColor,
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Center(
+          child: Text(
+            '—',
+            style: TextStyle(
+              fontSize: 40,
+              color: Theme.of(context).disabledColor,
+            ),
           ),
         ),
       );
@@ -106,15 +109,19 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
     final scheme = theme.colorScheme;
 
     return GestureDetector(
-      // `deferToChild` lets the map's own recognizers win the gestures
-      // they care about (drag, pinch-zoom, long-press). We only catch
-      // double-tap, which the map intentionally doesn't claim (its
-      // `InteractiveFlag.doubleTapZoom` is omitted below) so the
-      // arena resolves to our handler. Single tap on the map falls
+      // `opaque` so taps in the 12 px chrome inset are claimed here
+      // (and don't fall through to the body's tap-to-unfocus). The
+      // map's own recognizers still win the gestures they care about
+      // (drag, pinch-zoom, long-press) because they're more specific
+      // than our single `onDoubleTap`. The map's
+      // `InteractiveFlag.doubleTapZoom` is omitted below so our
+      // handler wins double-taps. Single tap on the map area falls
       // through to a no-op — the user pans or long-presses instead.
-      behavior: HitTestBehavior.deferToChild,
+      behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      child: ClipRRect(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Stack(
           fit: StackFit.expand,
@@ -189,6 +196,7 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

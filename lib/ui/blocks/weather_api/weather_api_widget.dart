@@ -87,7 +87,10 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      child: _buildBody(context, theme, content),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: _buildBody(context, theme, content),
+      ),
     );
   }
 

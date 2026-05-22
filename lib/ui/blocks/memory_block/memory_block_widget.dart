@@ -121,24 +121,30 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final content = MemoryBlockContent.fromMap(widget.data.content);
 
     if (_noEligible && !content.isSeeded) {
-      return Center(
-        child: Text(
-          'No memories yet',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontStyle: FontStyle.italic,
-            color: theme.disabledColor,
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Center(
+          child: Text(
+            'No memories yet',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: theme.disabledColor,
+            ),
           ),
         ),
       );
     }
 
     if (!content.isSeeded) {
-      return const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       );
     }
@@ -152,8 +158,11 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     // double-tap-to-expand reaches the host. Single taps fall through
     // (no `onTap`) — there's nothing to engage on the snapshot
     // itself. The Navigate button is OUTSIDE this detector so its
-    // InkWell single-tap fires normally.
-    return Column(
+    // InkWell single-tap fires normally. 12 px padding wraps the whole
+    // column so the chrome's visual inset is preserved.
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (caption != null)
@@ -207,6 +216,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
             ),
           ),
       ],
+      ),
     );
   }
 

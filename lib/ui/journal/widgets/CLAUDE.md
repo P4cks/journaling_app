@@ -136,6 +136,17 @@ with per-day lists; doing so would walk the entry set per cell.
   Flutter has the widget tree locked. `JournalPager._onLockChanged`
   mutates the lock set immediately but defers its `setState` with a
   post-frame callback; don't switch it back to synchronous `setState`.
+- **Don't add `unfocus()` to `onPageChanged`.** It was tried once to
+  fix "single tap doesn't raise keyboard after entry switch" but
+  introduced a worse bug: if the user taps a new entry's field during
+  / right after the page settles, the `unfocus()` races the user's
+  `DelayedTapFocus.requestFocus` and the keyboard flashes up + back
+  down. The real underlying cause was the dead-zone bug in the chrome
+  (the FittedBox sized to 160 px, leaving most of the expanded card
+  un-interactive). With each block widget now owning its 12 px
+  padding inside its own gesture wrapper (see `blocks/CLAUDE.md`),
+  taps across the full chrome reach the block's gesture — no
+  page-change unfocus needed.
 
 ## When to update this file
 

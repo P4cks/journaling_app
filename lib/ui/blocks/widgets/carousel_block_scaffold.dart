@@ -121,14 +121,40 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return BlockWithTitle(title: widget.title, body: _buildBody(context));
+    final titledBody = BlockWithTitle(
+      title: widget.title,
+      body: _buildBody(context),
+    );
+    if (widget.mode == BlockMode.readOnly) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: titledBody,
+      );
+    }
+    // `GestureDetector(onTap, onDoubleTap)` wraps the WHOLE inset
+    // (title + body + 12 px chrome padding) so taps anywhere inside
+    // the chrome — including the visual padding — engage the carousel
+    // or push the expanded route. Flutter's arena waits ~300 ms before
+    // resolving: single tap flips `_editing` (carousel expands), double
+    // tap pushes the route. Inside the PageView swipe drags still work
+    // because they're pan gestures, not tap gestures, and don't compete
+    // with us in the arena.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _onSingleTap,
+      onDoubleTap: widget.onDoubleTap,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: titledBody,
+      ),
+    );
   }
 
   Widget _buildBody(BuildContext context) {
     if (widget.mode == BlockMode.readOnly) {
       return _buildCollapsed(context, widget.selected);
     }
-    final carousel = CollapsibleCarouselBlock<T>(
+    return CollapsibleCarouselBlock<T>(
       blockId: widget.blockId,
       options: widget.options,
       selected: widget.selected,
@@ -148,18 +174,6 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
       onRequestExitEdit: _onCarouselExitEdit,
       editing: _editing,
       autoCollapse: widget.autoCollapse,
-    );
-    // `GestureDetector(onTap, onDoubleTap)` sits over the carousel.
-    // Flutter's arena waits ~300 ms before resolving — single tap then
-    // flips `_editing` (carousel expands), double tap pushes the
-    // route without ever expanding the in-grid picker. Inside the
-    // PageView, swipe drags continue to work because they're pan
-    // gestures, not tap gestures, and don't compete in our arena.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _onSingleTap,
-      onDoubleTap: widget.onDoubleTap,
-      child: carousel,
     );
   }
 

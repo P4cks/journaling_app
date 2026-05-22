@@ -161,12 +161,15 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
 
     if (!content.hasPhoto) {
       if (widget.mode == BlockMode.readOnly) {
-        return Center(
-          child: Text(
-            'No photo',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: theme.disabledColor,
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Text(
+              'No photo',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: theme.disabledColor,
+              ),
             ),
           ),
         );
@@ -174,7 +177,8 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       // Centered "+ Add photo" affordance. The outer `GestureDetector`
       // delays the single-tap by `kDoubleTapTimeout` so a double-tap
       // can intercept and push the expanded route without the picker
-      // briefly appearing.
+      // briefly appearing. Padding lives INSIDE the detector so taps
+      // in the chrome's visual inset still engage.
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onChanged == null
@@ -185,24 +189,27 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
                 widget.onChanged!,
               ),
         onDoubleTap: widget.onDoubleTap,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(
-                HugeIcons.strokeRoundedPlusSign,
-                size: 32,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Add photo',
-                style: theme.textTheme.bodySmall?.copyWith(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedPlusSign,
+                  size: 32,
                   color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'Add photo',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -228,10 +235,17 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       child: SizedBox.expand(child: image),
     );
 
-    if (widget.mode == BlockMode.readOnly) return shaped;
+    if (widget.mode == BlockMode.readOnly) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: shaped,
+      );
+    }
 
     // Single-tap or long-press opens the picker (delayed by the
-    // double-tap timeout). Double-tap pushes the expanded route.
+    // double-tap timeout). Double-tap pushes the expanded route. The
+    // 12 px padding sits inside the detector so taps on the chrome
+    // inset still engage.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onChanged == null
@@ -243,7 +257,10 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
           ? null
           : () =>
                 firePhotoBlockAction(context, widget.data, widget.onChanged!),
-      child: shaped,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: shaped,
+      ),
     );
   }
 }

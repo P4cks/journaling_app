@@ -23,6 +23,34 @@ that lives in block-grid sections.
   `host == BlockHostKind.grid && isEditing`; the expanded route reads
   `host: expanded` so the outline is suppressed (the blurred backdrop
   + Hero are the affordance there).
+
+  **Layout scaling: FittedBox + `SizedBox.expand`, applied
+  unconditionally.** The block's content is laid out at the natural
+  reference size (`kBlockChromeReferenceSize = 160` px) inside a
+  `SizedBox` and scaled to fit the chrome's actual constraints via
+  `FittedBox(fit: BoxFit.fill, alignment: topLeft)`. The FittedBox is
+  itself wrapped in a `SizedBox.expand` so it fills the chrome's full
+  constraint rect — without that, the Stack's default `StackFit.loose`
+  gives the FittedBox loose constraints and it collapses to its 160 px
+  child, leaving the chrome's bottom-right empty in expanded mode.
+  In the grid host the constraints already match (~160 px), so the
+  FittedBox is a visual no-op. In the expanded host (~330 px) it
+  scales up uniformly. During Hero flight every intermediate size
+  renders through the same FittedBox path — content never reflows
+  mid-morph. `FittedBox` advertises its full constrained size to the
+  parent, so pointer hit-tests reach the entire visual area.
+
+  **Padding lives in each block widget, NOT in the chrome.** The 12 px
+  inset that separates the rounded-card edge from the block's content
+  is added by each block widget INSIDE its own outermost gesture
+  wrapper (e.g. `DelayedTapFocus`, the carousel scaffold's
+  `GestureDetector`). Putting padding in the chrome made the inset a
+  gesture dead-zone — taps in the 12 px ring fell up to the body's
+  tap-to-unfocus handler, causing "tapping inconsistent on some parts
+  of the block" + keyboard-flash regressions. With padding inside the
+  block widget's gesture wrapper, taps anywhere in the 160 px logical
+  chrome (incl. the visual inset) reach the block's primary action
+  (focus the text, expand the carousel, fire the photo picker, etc.).
 - [chrome/block_render_context.dart](chrome/block_render_context.dart) —
   `BlockHostKind` + `BlockEditState` enums and the immutable
   `BlockRenderContext` bundle. Used by `BlockChrome` and the

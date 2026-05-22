@@ -54,34 +54,44 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
     if (widget.mode == BlockMode.readOnly) {
       final content = TextBlockContent.fromMap(widget.data.content);
       final isEmpty = content.text.trim().isEmpty;
-      return Text(
-        isEmpty ? 'No text yet' : content.text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
-          color: isEmpty ? Theme.of(context).disabledColor : null,
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          isEmpty ? 'No text yet' : content.text,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+            color: isEmpty ? Theme.of(context).disabledColor : null,
+          ),
         ),
       );
     }
 
+    // Padding sits INSIDE the `DelayedTapFocus` GestureDetector so taps
+    // anywhere in the 160 px chrome area (including the 12 px inset)
+    // reach the focus handler — see the chrome's "padding lives inside
+    // each block widget" comment in `block_chrome.dart`.
     return DelayedTapFocus(
       focusNode: focusNode,
       onDoubleTap: widget.onDoubleTap,
-      child: SizedBox.expand(
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          expands: true,
-          maxLines: null,
-          minLines: null,
-          keyboardType: TextInputType.multiline,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: const InputDecoration(
-            hintText: 'Write something…',
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SizedBox.expand(
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            expands: true,
+            maxLines: null,
+            minLines: null,
+            keyboardType: TextInputType.multiline,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: const InputDecoration(
+              hintText: 'Write something…',
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onChanged: emitText,
           ),
-          onChanged: emitText,
         ),
       ),
     );

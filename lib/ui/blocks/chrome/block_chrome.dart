@@ -6,13 +6,19 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dar
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 
-/// The natural content size used by every block body in the grid —
-/// roughly a 1×1 cell minus the chrome's 12 px padding. The expanded
-/// chrome lays content out at this size and uses `Transform.scale`
-/// to blow it up to fit the larger box (see the LayoutBuilder block
-/// in [BlockChrome.build]). Layout stays predictable; only the
-/// visual scale changes per Hero flight frame.
+/// The natural content size used by every block body — roughly a 1×1
+/// grid cell minus the chrome's 12 px padding. The chrome lays content
+/// out at this size and uses a `FittedBox` to blow it up to fit
+/// whatever box it ends up in (a ~160 px grid tile, a ~330 px expanded
+/// card, or an intermediate size during a Hero flight). Layout stays
+/// predictable — TextField wrap, carousel item positions etc. never
+/// reflow as the box morphs.
 const double kBlockContentReferenceSize = 136.0;
+
+/// The natural chrome size — content reference + 12 px padding on each
+/// side. This is the "logical" size the FittedBox lays out at before
+/// scaling to fit the available constraints.
+const double kBlockChromeReferenceSize = kBlockContentReferenceSize + 24.0;
 
 /// The visual chrome wrapping every block — replaces the old
 /// `PostItBlock`.
@@ -39,6 +45,17 @@ const double kBlockContentReferenceSize = 136.0;
 /// **Layout invariant.** All transforms are visual only — the
 /// underlying `RenderBox` stays axis-aligned, so the drag/insertion
 /// math in `BlockGrid` is unaffected.
+///
+/// **Padding is owned by each block widget, not by the chrome.** The
+/// 12 px inset between the rounded-card edge and the block's content
+/// is added by each block widget INSIDE its own outermost gesture
+/// wrapper (e.g. `DelayedTapFocus`, the carousel scaffold's
+/// `GestureDetector`). Putting the padding in the chrome made the
+/// inset a gesture dead-zone — taps in the 12 px ring fell up to the
+/// body's tap-to-unfocus handler, causing a "tapping inconsistent"
+/// regression and (when combined with a previous `unfocus()` on page
+/// change) a keyboard-flash after entry switch. Block widgets now own
+/// their padding; the chrome stays pure-theming.
 ///
 /// Wiggle scaffolding from the previous PR was removed in this
 /// rewrite. If we want it back later, it's preserved in PR #25's
@@ -102,38 +119,31 @@ class BlockChrome extends StatelessWidget {
     final showEditOutline =
         isEditing && !isDragging && host == BlockHostKind.grid;
 
-    // In the expanded host the inner content scales proportionally
-    // with the chrome — that's what makes the Hero "feel" like a
-    // zoom (emoji enlarges, text font grows, etc.) instead of a
-    // small grid tile rattling around in a big card. The reference
-    // size matches the typical grid content area (160 px cell minus
-    // the 12 px chrome padding ≈ 136 px). `LayoutBuilder` re-runs on
-    // every Hero flight frame so the scale tracks the chrome's
-    // current width smoothly. We pin the inner layout at
-    // `kBlockContentReferenceSize` and let `Transform.scale` blow it
-    // up visually — that way TextField wrapping / carousel layout
-    // stays predictable instead of reflowing per frame.
-    Widget inner = child;
-    if (host == BlockHostKind.expanded) {
-      inner = LayoutBuilder(
-        builder: (context, constraints) {
-          final available = constraints.maxWidth.isFinite
-              ? constraints.maxWidth
-              : kBlockContentReferenceSize;
-          final scale = (available / kBlockContentReferenceSize)
-              .clamp(1.0, 6.0);
-          return Transform.scale(
-            scale: scale,
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: kBlockContentReferenceSize,
-              height: kBlockContentReferenceSize,
-              child: child,
-            ),
-          );
-        },
-      );
-    }
+    // The body is always laid out at the natural reference size and
+    // scaled to fit the available constraints via `FittedBox` wrapped
+    // in `SizedBox.expand`. The `SizedBox.expand` is the key — without
+    // it the Stack's default `StackFit.loose` gives the FittedBox
+    // loose constraints, so the FittedBox sizes to its child's
+    // intrinsic 160 px and refuses to grow. With it, the FittedBox
+    // fills the chrome's full constraints, then scales its 160 px
+    // child to match: visually a no-op in the grid (~160 px tile),
+    // a uniform ~2× scale in the expanded host (~330 px), and a
+    // smooth interpolation at every intermediate Hero flight rect.
+    //
+    // Padding lives **inside** each block widget now (not in the
+    // chrome) so taps in the visual 12 px inset still reach the
+    // block's own gesture wrapper. The chrome stays pure-theming.
+    final inner = SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.fill,
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: kBlockChromeReferenceSize,
+          height: kBlockChromeReferenceSize,
+          child: child,
+        ),
+      ),
+    );
 
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -160,7 +170,7 @@ class BlockChrome extends StatelessWidget {
           data: IconThemeData(color: fg),
           child: Stack(
             children: [
-              Padding(padding: const EdgeInsets.all(12), child: inner),
+              inner,
               if (topRight != null)
                 Positioned(top: 4, right: 4, child: topRight!),
             ],

@@ -130,47 +130,56 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
 
     if (widget.mode == BlockMode.readOnly) {
       if (content.items.isEmpty) {
-        return Text(
-          'No todos',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontStyle: FontStyle.italic,
-            color: theme.disabledColor,
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            'No todos',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: theme.disabledColor,
+            ),
           ),
         );
       }
-      return ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: content.items.length,
-        itemBuilder: (context, i) {
-          final item = content.items[i];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CheckBubble(done: item.done, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    item.text.isEmpty ? '—' : item.text,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      decoration: item.done
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      color: item.done
-                          ? theme.colorScheme.onSurfaceVariant
-                          : null,
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: content.items.length,
+          itemBuilder: (context, i) {
+            final item = content.items[i];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CheckBubble(done: item.done, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.text.isEmpty ? '—' : item.text,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        decoration: item.done
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        color: item.done
+                            ? theme.colorScheme.onSurfaceVariant
+                            : null,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       );
     }
 
-    return Column(
+    // Padding lives in the block widget now (see chrome's comment).
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
@@ -222,6 +231,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
           ),
         ),
       ],
+      ),
     );
   }
 }
