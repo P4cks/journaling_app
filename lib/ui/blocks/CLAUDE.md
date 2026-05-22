@@ -13,9 +13,56 @@ that lives in block-grid sections.
 
 ## Files
 
+- [chrome/block_chrome.dart](chrome/block_chrome.dart) — `BlockChrome`,
+  replaces the old `post_it_block.dart` and the `PostItBlock` class.
+  Pure-theming chrome — wraps any block content in the rounded card
+  with rotation / offset / palette colour driven by
+  `themeSettings.postItModeEnabled`. **No animation, gesture, or
+  interaction logic is gated on the post-it flag** — that's the
+  central rewrite invariant. Renders a 2 px accent outline ONLY when
+  `host == BlockHostKind.grid && isEditing`; the expanded route reads
+  `host: expanded` so the outline is suppressed (the blurred backdrop
+  + Hero are the affordance there).
+
+  **Layout scaling: FittedBox + `SizedBox.expand`, applied
+  unconditionally.** The block's content is laid out at the natural
+  reference size (`kBlockChromeReferenceSize = 160` px) inside a
+  `SizedBox` and scaled to fit the chrome's actual constraints via
+  `FittedBox(fit: BoxFit.fill, alignment: topLeft)`. The FittedBox is
+  itself wrapped in a `SizedBox.expand` so it fills the chrome's full
+  constraint rect — without that, the Stack's default `StackFit.loose`
+  gives the FittedBox loose constraints and it collapses to its 160 px
+  child, leaving the chrome's bottom-right empty in expanded mode.
+  In the grid host the constraints already match (~160 px), so the
+  FittedBox is a visual no-op. In the expanded host (~330 px) it
+  scales up uniformly. During Hero flight every intermediate size
+  renders through the same FittedBox path — content never reflows
+  mid-morph. `FittedBox` advertises its full constrained size to the
+  parent, so pointer hit-tests reach the entire visual area.
+
+  **Padding lives in each block widget, NOT in the chrome.** The 12 px
+  inset that separates the rounded-card edge from the block's content
+  is added by each block widget INSIDE its own outermost gesture
+  wrapper (e.g. `DelayedTapFocus`, the carousel scaffold's
+  `GestureDetector`). Putting padding in the chrome made the inset a
+  gesture dead-zone — taps in the 12 px ring fell up to the body's
+  tap-to-unfocus handler, causing "tapping inconsistent on some parts
+  of the block" + keyboard-flash regressions. With padding inside the
+  block widget's gesture wrapper, taps anywhere in the 160 px logical
+  chrome (incl. the visual inset) reach the block's primary action
+  (focus the text, expand the carousel, fire the photo picker, etc.).
+- [chrome/block_render_context.dart](chrome/block_render_context.dart) —
+  `BlockHostKind` + `BlockEditState` enums and the immutable
+  `BlockRenderContext` bundle. Used by `BlockChrome` and the
+  expanded route to render the same body widgets in either surface.
 - [block_grid.dart](block_grid.dart) — `BlockGrid`. 2-column
   `StaggeredGrid.count` of square 1×1 tiles inside a
-  `SingleChildScrollView`.
+  `SingleChildScrollView`. Each tile wraps the block content in a
+  `Hero(tag: blockHeroTag(block.id), ...)` so the
+  `ExpandedBlockRoute` can morph between the in-grid and expanded
+  positions. Drag feedback and delete ghosts are unwrapped from Hero
+  (transient same-route widgets — no tag collision). Mount/delete
+  animations always run regardless of post-it theming.
 
   **Drag & drop has been fully refactored to a Notion-style system:**
   - The grid layout is **never mutated during drag** (no ghost tiles, no reflow).
@@ -45,34 +92,10 @@ that lives in block-grid sections.
     sections). Cross-grid drag is NOT supported — each grid's
     `DragTarget` is isolated.
 
-- [post_it_block.dart](post_it_block.dart) — `PostItBlock`. The square
-  chrome for one block. Replaces the old `BlockCard` and adds the
-  playful post-it look layered on top of it:
-  - **Outer transforms** (visual only — RenderBox stays axis-aligned,
-    so insertion-index math in `BlockGrid` is unaffected):
-    `Transform.translate(visuals.offset)` →
-    `Transform.rotate(visuals.rotationDeg * π/180)` →
-    `AnimatedScale(isDragging ? 1.03 : 1.0)`.
-  - **Decoration**: rounded `Container` (radius 16, 14 in classic
-    mode) with `color = colorFromHex(visuals.colorHex) ?? scheme.surfaceContainerHigh`
-    and an `AnimatedContainer`-tweened `BoxShadow` that grows in
-    blur + alpha when `isDragging`. **Plain `Container`, not
-    `Material(elevation: N)`** — Material elevation in M3 dark themes
-    is mostly tint and doesn't read against dimmed surfaces. Don't
-    "simplify" back to elevation.
-  - **Foreground propagation**: `DefaultTextStyle.merge` +
-    `IconTheme.merge` wrap children with `contrastOn(bg)` so emoji /
-    icons / text stay legible on whatever palette color the block
-    drew.
-  - **Classic mode**: reads `themeSettings.postItModeEnabled` (via
-    `AppDependencies.of(context)`). When `false`, all transforms
-    short-circuit to identity, color falls back to
-    `surfaceContainerHigh`, and the corner radius reverts to 14 —
-    visually identical to the pre-post-it `BlockCard`.
-
 - [block_widget.dart](block_widget.dart) — `BlockWidget`. Dispatches on
-  `data.type` and constructs the per-type widget. Adding a new
-  `BlockType` requires adding a `case` here.
+  `data.type` and constructs the per-type widget. Forwards `editing`
+  + `expanded` + `onRequestExitEdit` plumbing where applicable.
+  Adding a new `BlockType` requires adding a `case` here.
 
 - [block_mode.dart](block_mode.dart) — `enum BlockMode { readOnly, editable }`.
   Concrete block widgets render differently per mode.
@@ -80,32 +103,45 @@ that lives in block-grid sections.
 - [block_type_display.dart](block_type_display.dart) — `extension BlockTypeDisplay on BlockType`
 
   with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`), `description`, and `sampleData(id:)`.
-  Also exposes two getters used by the double-tap edit-mode flow:
-  - `usesEditMode` — true for blocks that participate in the new
-    flow (text, prompt, todo, mood, weather-manual, customCarousel).
-    Action blocks (photo, location, memory) and display blocks
-    (quote, weather-api) return false; the grid does NOT attach the
-    double-tap detector for those tiles and they keep their existing
-    single-tap behavior.
-  - `usesKeyboardOnEdit` — true for text / prompt / todo so the
-    expanded route can choose a top-aligned placement (keyboard
-    fits below) instead of centered.
+  Also exposes three getters used by the double-tap engage flow:
+  - `usesEditMode` — true for every block that has an interactive
+    surface: text / prompt / todo, the three carousel types, photo /
+    location / memory. False only for pure-display blocks (quote,
+    weather-api), which the grid still skips the double-tap detector
+    for.
+  - `isActionBlock` — true for photo + memory. When the "expand on
+    edit" setting is OFF, `MainJournalScreen._requestBlockEdit` fires
+    `firePhotoBlockAction` / `fireMemoryBlockAction` immediately on
+    double-tap instead of setting `_editingBlockId` (there's no
+    in-place edit-mode UI for one-shot actions). Location is
+    intentionally NOT in this set — its "interaction" is long-press
+    on the map, which is always available.
+  - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
+    expanded route's two-step dismiss state machine (only keyboard
+    blocks need the unfocus-before-pop dance).
 
 
 - [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —
-  `CollapsibleCarouselBlock<T>`. Generic auto-expand / auto-collapse
-  carousel shared between the mood and manual-weather blocks. Now
-  driven by an external `editing` flag (the new double-tap-to-edit
-  flow); internal tap-to-expand is gated on `editing == true`. See
+  `CollapsibleCarouselBlock<T>`. Generic carousel shared between the
+  mood / weather / customCarousel blocks. **Never auto-expands on
+  null selection** — the user must engage the host block (via
+  double-tap) to flip `editing: true`. Auto-collapses after 1.5 s
+  unless `autoCollapse: false` is passed (the expanded route does
+  this so the picker stays open). On the auto-collapse, fires
+  `onRequestExitEdit` so the host clears `_editingBlockId` in
+  lock-step with the carousel collapsing. See
   [widgets/CLAUDE.md](widgets/CLAUDE.md).
 - [expanded/expanded_block_route.dart](expanded/expanded_block_route.dart) —
   `ExpandedBlockRoute` + private `_ExpandedBlockBody`. Translucent
   `PageRoute<void>` (`opaque: false`) that paints the previous route
-  blurred under a `BackdropFilter` and renders the block expanded in
-  the foreground. Keyboard-using blocks (text / prompt / todo) sit
-  top-aligned so the keyboard fits below; other editable blocks sit
-  centered. Tapping the backdrop pops the route; a debug toggle adds
-  a "Done" button. See "Edit mode (double-tap)" below.
+  blurred under a `BackdropFilter` and morphs the source tile into a
+  square (1:1 aspect) expanded view via `Hero` (tag = `blockHeroTag`).
+  Carousels open with the picker already interactive; text / prompt /
+  todo open in display state and promote to editing on a tap inside
+  the block. Two-step dismiss for keyboard blocks (tap-1 unfocus +
+  re-center, tap-2 pop). Action blocks (photo / memory) fire their
+  action on a tap inside the route. Text sections render the text
+  directly on the blur — no card chrome.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
@@ -138,13 +174,12 @@ animations affect the grid's RenderBoxes or insertion-index math:
   shadow (blur 14 → 24, alpha ×1.6). The `LongPressDraggable.feedback`
   is also a `PostItBlock` with `isDragging: true` for the same look
   on the floating preview.
-- **Tap wiggle**: *currently disabled.* The damped ±3° rotation that
-  used to fire on every `onPointerDown` is preserved as commented-out
-  scaffolding inside `_PostItBlockState` (see [post_it_block.dart](post_it_block.dart)).
-  It was acting as edit-affordance feedback that no longer fits the
-  new double-tap-to-edit model (a wiggle on every single tap implied
-  "you tapped but nothing happened"). May be reinstated later — the
-  comment block in `_PostItBlockState` lists the revival steps.
+- **Tap wiggle**: *removed entirely* in the rewrite. The damped ±3°
+  rotation that used to fire on every `onPointerDown` no longer fits
+  the double-tap-to-engage model — a wiggle on every single tap
+  implied "you tapped but nothing happened". If you want it back,
+  PR #25's `post_it_block.dart` history has the controller +
+  TweenSequence wiring.
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.

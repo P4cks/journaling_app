@@ -3,7 +3,7 @@ import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
@@ -38,6 +38,7 @@ class JournalPager extends StatefulWidget {
     this.editingBlockId,
     this.onRequestBlockEdit,
     this.onRequestTextSectionEdit,
+    this.onRequestExitEdit,
   });
 
   final MainJournalViewModel viewModel;
@@ -65,6 +66,11 @@ class JournalPager extends StatefulWidget {
   /// dispatch contract as [onRequestBlockEdit] but the screen sets
   /// `isTextSection: true` on the route push so it lays out wider.
   final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
+
+  /// Fired when a carousel auto-collapses after 1.5 s of inactivity
+  /// in in-place edit mode. The host clears `_editingBlockId` so the
+  /// outline disappears in lock-step.
+  final VoidCallback? onRequestExitEdit;
 
   @override
   State<JournalPager> createState() => _JournalPagerState();
@@ -188,6 +194,9 @@ class _JournalPagerState extends State<JournalPager> {
           onRequestTextSectionEdit: mode == BlockMode.editable
               ? widget.onRequestTextSectionEdit
               : null,
+          onRequestExitEdit: mode == BlockMode.editable
+              ? widget.onRequestExitEdit
+              : null,
         );
       },
     );
@@ -204,6 +213,7 @@ class _SectionsBody extends StatelessWidget {
     this.editingBlockId,
     this.onRequestBlockEdit,
     this.onRequestTextSectionEdit,
+    this.onRequestExitEdit,
   });
 
   final List<EntrySection> sections;
@@ -214,6 +224,7 @@ class _SectionsBody extends StatelessWidget {
   final String? editingBlockId;
   final ValueChanged<JournalBlockData>? onRequestBlockEdit;
   final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
+  final VoidCallback? onRequestExitEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -233,27 +244,25 @@ class _SectionsBody extends StatelessWidget {
         // somehow malformed, fall back to a placeholder.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
         final block = section.blocks.first;
-        final isEditing = editingBlockId == block.id;
-        Widget body = TextSectionWidget(
-          key: ValueKey(section.id),
-          data: block,
-          mode: mode,
-          onChanged: onBlockChanged,
-          editing: isEditing,
+        // Hero-wraps the section so the expanded route can morph from
+        // here. Material is required for the Hero flight (see
+        // BlockGrid's Hero comment). Double-tap is wired by the text
+        // section widget itself via `DelayedTapFocus`.
+        return Hero(
+          tag: blockHeroTag(block.id),
+          child: Material(
+            type: MaterialType.transparency,
+            child: TextSectionWidget(
+              key: ValueKey(section.id),
+              data: block,
+              mode: mode,
+              onChanged: onBlockChanged,
+              onDoubleTap: mode == BlockMode.editable
+                  ? () => onRequestTextSectionEdit?.call(block)
+                  : null,
+            ),
+          ),
         );
-        // Attach the double-tap-to-edit detector only outside edit mode
-        // — once editing, the inner TextField should receive single
-        // taps without the doubleTapTimeout delay.
-        if (mode == BlockMode.editable &&
-            !isEditing &&
-            onRequestTextSectionEdit != null) {
-          body = GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onDoubleTap: () => onRequestTextSectionEdit!(block),
-            child: body,
-          );
-        }
-        return body;
       case SectionKind.blockGrid:
         // Suppress empty block-grid sections so a layout that materialized
         // with zero blocks (e.g. a kind-B layout saved with no filled
@@ -272,6 +281,7 @@ class _SectionsBody extends StatelessWidget {
             onInteractionLockChanged: onLockChanged,
             editingBlockId: editingBlockId,
             onRequestBlockEdit: onRequestBlockEdit,
+            onRequestExitEdit: onRequestExitEdit,
           ),
         );
       case SectionKind.featureBlock:
@@ -280,33 +290,34 @@ class _SectionsBody extends StatelessWidget {
         // renders in entries created before the slot was filled.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
         final block = section.blocks.first;
-        final isEditing = editingBlockId == block.id;
-        Widget feature = AspectRatio(
+        final canDoubleTap =
+            mode == BlockMode.editable &&
+            onRequestBlockEdit != null &&
+            block.type.usesEditMode;
+        final feature = AspectRatio(
           aspectRatio: 1,
-          child: PostItBlock(
-            visuals: block.visuals,
-            isEditing: isEditing,
-            child: BlockWidget(
-              key: ValueKey(section.id),
-              data: block,
-              mode: mode,
-              onChanged: onBlockChanged,
-              onJumpToDate: onJumpToDate,
-              onInteractionLockChanged: onLockChanged,
-              editing: isEditing,
+          child: Hero(
+            tag: blockHeroTag(block.id),
+            child: Material(
+              // Hero-flight Material ancestor (see block_grid.dart).
+              type: MaterialType.transparency,
+              child: BlockChrome(
+                visuals: block.visuals,
+                child: BlockWidget(
+                  key: ValueKey(section.id),
+                  data: block,
+                  mode: mode,
+                  onChanged: onBlockChanged,
+                  onJumpToDate: onJumpToDate,
+                  onInteractionLockChanged: onLockChanged,
+                  onDoubleTap: canDoubleTap
+                      ? () => onRequestBlockEdit!(block)
+                      : null,
+                ),
+              ),
             ),
           ),
         );
-        if (mode == BlockMode.editable &&
-            !isEditing &&
-            onRequestBlockEdit != null &&
-            block.type.usesEditMode) {
-          feature = GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onDoubleTap: () => onRequestBlockEdit!(block),
-            child: feature,
-          );
-        }
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: feature,

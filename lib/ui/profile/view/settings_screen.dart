@@ -58,15 +58,6 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Configure blocks',
                   route: Routes.blockSettings,
                 ),
-                SwitchListTile(
-                  secondary: AppIcon(HugeIcons.strokeRoundedMaximize01),
-                  title: const Text('Expand block when editing'),
-                  subtitle: const Text(
-                    'Double-tap a block to open it over a blurred journal entry.',
-                  ),
-                  value: debug.expandBlockOnEdit,
-                  onChanged: debug.setExpandBlockOnEdit,
-                ),
               ],
             ),
             SettingsSection(

@@ -6,7 +6,7 @@ import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
@@ -192,7 +192,7 @@ class _BuiltinCell extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: AbsorbPointer(
-              child: PostItBlock(
+              child: BlockChrome(
                 child: BlockWidget(
                   data: type.sampleData(id: 'preview-${type.name}'),
                   mode: BlockMode.readOnly,
@@ -257,7 +257,7 @@ class _CustomCell extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: AbsorbPointer(
-              child: PostItBlock(
+              child: BlockChrome(
                 child: BlockWidget(data: data, mode: BlockMode.readOnly),
               ),
             ),

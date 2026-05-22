@@ -5,10 +5,130 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
-import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+
+/// Fires the photo block's primary action — opens the Add / Manage
+/// sheet without mounting any widget. Called from `MainJournalScreen`
+/// when the user double-taps a photo tile and the "expand on edit"
+/// setting is OFF (action blocks fire immediately, per the
+/// `BlockTypeDisplay.isActionBlock` contract). Reused by the in-grid
+/// widget's own taps to keep the picker logic single-sourced.
+Future<void> firePhotoBlockAction(
+  BuildContext context,
+  JournalBlockData data,
+  ValueChanged<JournalBlockData> onChanged,
+) async {
+  final content = PhotoBlockContent.fromMap(data.content);
+  final storage = AppDependencies.of(context).photoStorage;
+  final picker = ImagePicker();
+
+  Future<void> emit(String? newPath, {String? previousPath}) async {
+    if (previousPath != null && previousPath != newPath) {
+      storage.deleteAtPath(previousPath);
+    }
+    onChanged(
+      data.copyWith(
+        content: PhotoBlockContent(photoPath: newPath).toMap(),
+      ),
+    );
+  }
+
+  Future<void> pick(ImageSource source, {String? previousPath}) async {
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 88,
+    );
+    if (picked == null || !context.mounted) return;
+    final stored = await storage.savePickedFile(picked);
+    if (!context.mounted) return;
+    await emit(stored, previousPath: previousPath);
+  }
+
+  if (!content.hasPhoto) {
+    final source = await _showPhotoSourceSheet(context);
+    if (source != null && context.mounted) {
+      await pick(source);
+    }
+    return;
+  }
+
+  final manage = await _showPhotoManageSheet(context);
+  if (!context.mounted) return;
+  final currentPath = content.photoPath!;
+  switch (manage) {
+    case 'replace':
+      final source = await _showPhotoSourceSheet(context);
+      if (source != null && context.mounted) {
+        await pick(source, previousPath: currentPath);
+      }
+      break;
+    case 'remove':
+      await emit(null, previousPath: currentPath);
+      break;
+  }
+}
+
+Future<ImageSource?> _showPhotoSourceSheet(BuildContext context) {
+  return showModalBottomSheet<ImageSource>(
+    context: context,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: AppIcon(HugeIcons.strokeRoundedCamera01),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: AppIcon(HugeIcons.strokeRoundedImage01),
+              title: const Text('Choose from library'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Future<String?> _showPhotoManageSheet(BuildContext context) {
+  return showModalBottomSheet<String>(
+    context: context,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: AppIcon(HugeIcons.strokeRoundedExchange01),
+              title: const Text('Replace'),
+              onTap: () => Navigator.of(sheetContext).pop('replace'),
+            ),
+            ListTile(
+              leading: AppIcon(
+                HugeIcons.strokeRoundedDelete02,
+                color: Theme.of(sheetContext).colorScheme.error,
+              ),
+              title: Text(
+                'Remove',
+                style: TextStyle(
+                  color: Theme.of(sheetContext).colorScheme.error,
+                ),
+              ),
+              onTap: () => Navigator.of(sheetContext).pop('remove'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
 /// One image filling the 1×1 cell. Empty state shows a centred "+ Add
 /// photo" affordance that opens a Camera / Gallery action sheet. Once
@@ -19,124 +139,21 @@ class PhotoBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
 
+  /// Host's "push expanded route" callback — fires on double-tap.
+  final VoidCallback? onDoubleTap;
+
   @override
   State<PhotoBlockWidget> createState() => _PhotoBlockWidgetState();
 }
 
 class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
-  final ImagePicker _picker = ImagePicker();
-  bool _picking = false;
-
-  PhotoStorageService get _storage => AppDependencies.of(context).photoStorage;
-
-  void _emit(String? newPath, {String? previousPath}) {
-    if (previousPath != null && previousPath != newPath) {
-      // Best-effort cleanup of the file we're replacing/removing.
-      _storage.deleteAtPath(previousPath);
-    }
-    widget.onChanged?.call(
-      widget.data.copyWith(
-        content: PhotoBlockContent(photoPath: newPath).toMap(),
-      ),
-    );
-  }
-
-  Future<void> _pick(ImageSource source, {String? previousPath}) async {
-    if (_picking) return;
-    _picking = true;
-    try {
-      final picked = await _picker.pickImage(
-        source: source,
-        maxWidth: 2048,
-        maxHeight: 2048,
-        imageQuality: 88,
-      );
-      if (picked == null || !mounted) return;
-      final stored = await _storage.savePickedFile(picked);
-      if (!mounted) return;
-      _emit(stored, previousPath: previousPath);
-    } finally {
-      _picking = false;
-    }
-  }
-
-  Future<void> _showAddSheet({String? previousPath}) async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: AppIcon(HugeIcons.strokeRoundedCamera01),
-                title: const Text('Take photo'),
-                onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading: AppIcon(HugeIcons.strokeRoundedImage01),
-                title: const Text('Choose from library'),
-                onTap: () =>
-                    Navigator.of(sheetContext).pop(ImageSource.gallery),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (source != null) {
-      await _pick(source, previousPath: previousPath);
-    }
-  }
-
-  Future<void> _showManageSheet(String currentPath) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: AppIcon(HugeIcons.strokeRoundedExchange01),
-                title: const Text('Replace'),
-                onTap: () => Navigator.of(sheetContext).pop('replace'),
-              ),
-              ListTile(
-                leading: AppIcon(
-                  HugeIcons.strokeRoundedDelete02,
-                  color: Theme.of(sheetContext).colorScheme.error,
-                ),
-                title: Text(
-                  'Remove',
-                  style: TextStyle(
-                    color: Theme.of(sheetContext).colorScheme.error,
-                  ),
-                ),
-                onTap: () => Navigator.of(sheetContext).pop('remove'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (!mounted) return;
-    switch (action) {
-      case 'replace':
-        await _showAddSheet(previousPath: currentPath);
-        break;
-      case 'remove':
-        _emit(null, previousPath: currentPath);
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -144,37 +161,55 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
 
     if (!content.hasPhoto) {
       if (widget.mode == BlockMode.readOnly) {
-        return Center(
-          child: Text(
-            'No photo',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: theme.disabledColor,
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Text(
+              'No photo',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: theme.disabledColor,
+              ),
             ),
           ),
         );
       }
+      // Centered "+ Add photo" affordance. The outer `GestureDetector`
+      // delays the single-tap by `kDoubleTapTimeout` so a double-tap
+      // can intercept and push the expanded route without the picker
+      // briefly appearing. Padding lives INSIDE the detector so taps
+      // in the chrome's visual inset still engage.
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => _showAddSheet(),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(
-                HugeIcons.strokeRoundedPlusSign,
-                size: 32,
-                color: theme.colorScheme.primary,
+        onTap: widget.onChanged == null
+            ? null
+            : () => firePhotoBlockAction(
+                context,
+                widget.data,
+                widget.onChanged!,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Add photo',
-                style: theme.textTheme.bodySmall?.copyWith(
+        onDoubleTap: widget.onDoubleTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedPlusSign,
+                  size: 32,
                   color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'Add photo',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -200,12 +235,32 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       child: SizedBox.expand(child: image),
     );
 
-    if (widget.mode == BlockMode.readOnly) return shaped;
+    if (widget.mode == BlockMode.readOnly) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: shaped,
+      );
+    }
 
+    // Single-tap or long-press opens the picker (delayed by the
+    // double-tap timeout). Double-tap pushes the expanded route. The
+    // 12 px padding sits inside the detector so taps on the chrome
+    // inset still engage.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: () => _showManageSheet(content.photoPath!),
-      child: shaped,
+      onTap: widget.onChanged == null
+          ? null
+          : () =>
+                firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      onDoubleTap: widget.onDoubleTap,
+      onLongPress: widget.onChanged == null
+          ? null
+          : () =>
+                firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: shaped,
+      ),
     );
   }
 }

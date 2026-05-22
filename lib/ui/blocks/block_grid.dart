@@ -6,29 +6,40 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 
 // ---------------------------------------------------------------------------
-// BlockGrid — Notion-style drag-to-reorder with post-it motion.
+// BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
 //
-// Layout invariants (unchanged from the pre-post-it design):
+// Layout invariants:
 //  • Grid is never mutated during drag (no ghost tiles, no reflow).
 //  • A single DragTarget wraps the area; an insertion-line overlay shows
 //    the drop point.
 //  • Tile RenderBoxes stay axis-aligned — the rotation/offset in
-//    `PostItBlock` are visual only, so the insertion-index math is safe.
+//    `BlockChrome` are visual only, so the insertion-index math is safe.
 //
 // Motion layered on top:
-//  • Dragging tile scales to 1.03 with stronger shadow (via `PostItBlock`).
+//  • Dragging tile scales to 1.03 with stronger shadow (via `BlockChrome`).
 //  • Newly-added tiles fade + scale in (flutter_animate, keyed by block id).
 //  • Deleted tiles animate out via an overlay "ghost" rendered above the
 //    grid using the tile's last known bounds; ghosts are cleaned up after
 //    their animation finishes.
-//  • All motion respects `themeSettings.postItModeEnabled` — when off,
-//    flutter_animate effects are disabled so the grid behaves like the
-//    pre-post-it build.
+//  • Motion is INDEPENDENT of the `themeSettings.postItModeEnabled`
+//    theming flag — post-it is pure visuals only (see
+//    [chrome/block_chrome.dart](chrome/block_chrome.dart) docstring).
+//
+// Hero:
+//  • Each tile's content is wrapped in `Hero(tag: 'block-${data.id}')`
+//    so the `ExpandedBlockRoute` can morph between this in-grid tile
+//    and the full-screen view. Drag feedback and delete ghosts do NOT
+//    wrap in Hero (they're transient same-route widgets and would
+//    collide on tag uniqueness).
 // ---------------------------------------------------------------------------
+
+/// Hero tag used by both the in-grid tile (source) and the
+/// `ExpandedBlockRoute` (destination). Centralised so both call sites
+/// stay in lock-step.
+String blockHeroTag(String blockId) => 'block-$blockId';
 
 class BlockGrid extends StatefulWidget {
   const BlockGrid({
@@ -45,6 +56,7 @@ class BlockGrid extends StatefulWidget {
     this.onBlockTap,
     this.editingBlockId,
     this.onRequestBlockEdit,
+    this.onRequestExitEdit,
   });
 
   final List<JournalBlockData> blocks;
@@ -73,6 +85,11 @@ class BlockGrid extends StatefulWidget {
   /// double-tap detector and those tiles keep their existing
   /// single-tap behavior.
   final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+
+  /// Fires when an in-place carousel auto-collapses after 1.5 s. The
+  /// host clears `_editingBlockId` so the outline disappears in
+  /// lock-step.
+  final VoidCallback? onRequestExitEdit;
 
   @override
   State<BlockGrid> createState() => _BlockGridState();
@@ -268,7 +285,6 @@ class _BlockGridState extends State<BlockGrid> {
   @override
   Widget build(BuildContext context) {
     final lineInfo = _reorderable ? _insertionLineInfo() : null;
-    final postIt = AppDependencies.of(context).themeSettings.postItModeEnabled;
 
     final staggered = Padding(
       padding: widget.padding,
@@ -276,7 +292,7 @@ class _BlockGridState extends State<BlockGrid> {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: _crossAxisSpacing,
-        children: _buildTiles(postIt: postIt),
+        children: _buildTiles(),
       ),
     );
     final Widget gridContent = widget.scrollable
@@ -312,7 +328,7 @@ class _BlockGridState extends State<BlockGrid> {
                 ),
               ),
             ),
-          ..._buildGhosts(postIt: postIt),
+          ..._buildGhosts(),
         ],
       );
     } else {
@@ -320,7 +336,7 @@ class _BlockGridState extends State<BlockGrid> {
         key: _gridKey,
         children: [
           gridContent,
-          ..._buildGhosts(postIt: postIt),
+          ..._buildGhosts(),
         ],
       );
     }
@@ -328,18 +344,21 @@ class _BlockGridState extends State<BlockGrid> {
     return body;
   }
 
-  List<Widget> _buildTiles({required bool postIt}) {
+  List<Widget> _buildTiles() {
     return [
-      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i, postIt: postIt),
+      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i),
     ];
   }
 
-  Widget _buildTile(int index, {required bool postIt}) {
+  Widget _buildTile(int index) {
     final block = widget.blocks[index];
     final isDragging = _draggingIndex == index;
-    final isEditingThis = widget.editingBlockId == block.id;
     final usesEditMode = block.type.usesEditMode;
 
+    final canDoubleTap =
+        usesEditMode &&
+        widget.onRequestBlockEdit != null &&
+        widget.mode == BlockMode.editable;
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
       data: block,
@@ -347,66 +366,70 @@ class _BlockGridState extends State<BlockGrid> {
       onChanged: widget.onBlockChanged,
       onJumpToDate: widget.onJumpToDate,
       onInteractionLockChanged: widget.onInteractionLockChanged,
-      editing: isEditingThis,
+      onDoubleTap: canDoubleTap
+          ? () => widget.onRequestBlockEdit!(block)
+          : null,
     );
 
-    Widget card = GestureDetector(
-      onTap: widget.onBlockTap == null
-          ? null
-          : () => widget.onBlockTap!(block, block.id),
-      child: PostItBlock(
-        visuals: block.visuals,
-        isDragging: isDragging,
-        isEditing: isEditingThis,
-        topRight: widget.cardTrailing?.call(block, index),
-        child: inner,
+    // Hero source. Tag matches the destination wrapped by
+    // `ExpandedBlockRoute`. Material wrapper is REQUIRED — during a
+    // Hero flight the widget is rendered in the root Overlay,
+    // OUTSIDE the journal screen's Material(surfaceContainerLow).
+    // Without a Material ancestor inside the Hero, TextField /
+    // InkWell descendants throw "No Material widget found"
+    // mid-flight (and show the yellow-underline debug render).
+    Widget card = Hero(
+      tag: blockHeroTag(block.id),
+      child: Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          onTap: widget.onBlockTap == null
+              ? null
+              : () => widget.onBlockTap!(block, block.id),
+          child: BlockChrome(
+            visuals: block.visuals,
+            isDragging: isDragging,
+            topRight: widget.cardTrailing?.call(block, index),
+            child: inner,
+          ),
+        ),
       ),
     );
 
-    // Attach the double-tap detector only for editable block types and
-    // only when this tile is NOT already in edit mode. Skipping it
-    // while editing prevents Flutter's gesture arena from delaying
-    // inner single-taps (e.g. positioning the TextField cursor) by the
-    // double-tap timeout.
-    if (usesEditMode &&
-        !isEditingThis &&
-        widget.onRequestBlockEdit != null &&
-        widget.mode == BlockMode.editable) {
-      card = GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onDoubleTap: () => widget.onRequestBlockEdit!(block),
-        child: card,
-      );
-    }
+    // No outer gesture wrapper. Each block widget owns its own
+    // `GestureDetector(onTap, onDoubleTap)` — single tap fires the
+    // block's engage action after `kDoubleTapTimeout`, double tap
+    // fires the `onDoubleTap` callback we passed via `BlockWidget`.
+    // Uniform behaviour across all block types: no flash on double
+    // tap.
 
-    // Add animation: scale 0.9 → 1.0 + fade. Runs once on mount, keyed
-    // by block.id so re-orders don't replay it. Skipped when post-it
-    // mode is off so the classic look stays still.
-    final tileWidget = postIt
-        ? Animate(
-            key: ValueKey('animate-${block.id}'),
-            effects: [
-              const FadeEffect(
-                duration: Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-              ),
-              const ScaleEffect(
-                begin: Offset(0.9, 0.9),
-                end: Offset(1.0, 1.0),
-                duration: Duration(milliseconds: 280),
-                curve: Curves.easeOutBack,
-              ),
-            ],
-            child: card,
-          )
-        : card;
+    // Mount animation: scale 0.9 → 1.0 + fade. Runs once on mount,
+    // keyed by block.id so re-orders don't replay it. Independent of
+    // post-it theming — the animation is a structural affordance, not
+    // a theme decoration.
+    final tileWidget = Animate(
+      key: ValueKey('animate-${block.id}'),
+      effects: const [
+        FadeEffect(
+          duration: Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        ),
+        ScaleEffect(
+          begin: Offset(0.9, 0.9),
+          end: Offset(1.0, 1.0),
+          duration: Duration(milliseconds: 280),
+          curve: Curves.easeOutBack,
+        ),
+      ],
+      child: card,
+    );
 
     Widget content = tileWidget;
 
     if (_reorderable) {
       final feedback = _DraggableFeedback(
         tileKey: _tileKeys[index],
-        child: PostItBlock(
+        child: BlockChrome(
           visuals: block.visuals,
           isDragging: true,
           child: BlockWidget(data: block, mode: BlockMode.readOnly),
@@ -438,7 +461,7 @@ class _BlockGridState extends State<BlockGrid> {
   // the source list has dropped them.
   // ---------------------------------------------------------------------
 
-  List<Widget> _buildGhosts({required bool postIt}) {
+  List<Widget> _buildGhosts() {
     if (_pendingDeletes.isEmpty) return const [];
     return [
       for (final pending in List<_PendingDelete>.from(_pendingDeletes))
@@ -456,34 +479,33 @@ class _BlockGridState extends State<BlockGrid> {
                   _pendingDeletes.removeWhere((p) => p == pending);
                 });
               },
-              effects: [
-                const FadeEffect(
+              effects: const [
+                FadeEffect(
                   begin: 1,
                   end: 0,
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
-                const ScaleEffect(
+                ScaleEffect(
                   begin: Offset(1.0, 1.0),
                   end: Offset(0.7, 0.7),
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
-                if (postIt)
-                  const RotateEffect(
-                    begin: 0,
-                    end: 0.04,
-                    duration: Duration(milliseconds: 320),
-                    curve: Curves.easeIn,
-                  ),
-                const MoveEffect(
+                RotateEffect(
+                  begin: 0,
+                  end: 0.04,
+                  duration: Duration(milliseconds: 320),
+                  curve: Curves.easeIn,
+                ),
+                MoveEffect(
                   begin: Offset.zero,
                   end: Offset(0, 16),
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
               ],
-              child: PostItBlock(
+              child: BlockChrome(
                 visuals: pending.block.visuals,
                 child: BlockWidget(
                   data: pending.block,

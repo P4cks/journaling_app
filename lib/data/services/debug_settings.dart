@@ -5,18 +5,15 @@ class DebugSettings extends ChangeNotifier {
   DebugSettings(this._settings)
     : _debugMenuVisible = _settings.getDebugMenuVisible(),
       _unlockAllDays = _settings.getUnlockAllDays(),
-      _expandBlockOnEdit = _settings.getBlockExpandOnEdit(),
       _showExpandedBlockDoneButton = _settings.getDebugExpandedDoneButton();
 
   final SettingsStorageService _settings;
   bool _debugMenuVisible;
   bool _unlockAllDays;
-  bool _expandBlockOnEdit;
   bool _showExpandedBlockDoneButton;
 
   bool get debugMenuVisible => _debugMenuVisible;
   bool get unlockAllDays => _unlockAllDays;
-  bool get expandBlockOnEdit => _expandBlockOnEdit;
   bool get showExpandedBlockDoneButton => _showExpandedBlockDoneButton;
 
   Future<void> setDebugMenuVisible(bool value) async {
@@ -32,14 +29,6 @@ class DebugSettings extends ChangeNotifier {
     _unlockAllDays = value;
     debugPrint('[DebugSettings] unlockAllDays -> $value');
     await _settings.setUnlockAllDays(value);
-    notifyListeners();
-  }
-
-  Future<void> setExpandBlockOnEdit(bool value) async {
-    if (_expandBlockOnEdit == value) return;
-    _expandBlockOnEdit = value;
-    debugPrint('[DebugSettings] expandBlockOnEdit -> $value');
-    await _settings.setBlockExpandOnEdit(value);
     notifyListeners();
   }
 

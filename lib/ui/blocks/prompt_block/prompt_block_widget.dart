@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
@@ -11,12 +12,17 @@ class PromptBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
     this.editing = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback. Wired into the answer
+  /// field's `DelayedTapFocus` wrapper.
+  final VoidCallback? onDoubleTap;
 
   /// True when this block is the active edit target. Focuses the answer
   /// field; gates inner pointer events so single taps are inert.
@@ -39,11 +45,9 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     _controller = TextEditingController(text: content.answer);
     _focusNode = FocusNode();
     _wasEditing = widget.editing;
-    if (_wasEditing) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && widget.editing) _focusNode.requestFocus();
-      });
-    }
+    // No initial-mount auto-focus — see TextContentControllerMixin's
+    // comment. Auto-focus only fires on the false → true `editing`
+    // transition handled in didUpdateWidget.
   }
 
   @override
@@ -209,32 +213,30 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
         ],
       );
     } else if (prompt.isEmpty) {
-      // Editable but no prompt yet — show a tap-target so the user can
-      // re-open the picker. Only interactive while in edit mode; the
-      // outer double-tap detector is the only way to flip into it.
-      body = AbsorbPointer(
-        absorbing: !widget.editing,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _openPicker(initial: false),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              promptLabel,
-              const SizedBox(height: 6),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Tap to choose',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.disabledColor,
-                      fontStyle: FontStyle.italic,
-                    ),
+      // Editable but no prompt yet. Single tap → picker (after
+      // ~300 ms so a double tap can intercept). Double tap → host's
+      // route push.
+      body = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _openPicker(initial: false),
+        onDoubleTap: widget.onDoubleTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            promptLabel,
+            const SizedBox(height: 6),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Tap to choose',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     } else {
@@ -244,8 +246,9 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           promptLabel,
           const SizedBox(height: 6),
           Expanded(
-            child: AbsorbPointer(
-              absorbing: !widget.editing,
+            child: DelayedTapFocus(
+              focusNode: _focusNode,
+              onDoubleTap: widget.onDoubleTap,
               child: TextField(
                 controller: _controller,
                 focusNode: _focusNode,
@@ -269,17 +272,24 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       );
     }
 
-    if (!isEditable) return body;
+    if (!isEditable) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: body,
+      );
+    }
 
-    // Long-press is preserved for the prompt-repick affordance but
-    // gated on edit mode so it only fires once the user has activated
-    // the block. Same nesting pattern as the photo block — the inner
-    // GestureDetector wins over the outer LongPressDraggable for drag
-    // reorder when active.
+    // Long-press to re-pick. Always-on in editable mode — single-tap
+    // semantics handle focus / picker-open naturally. Padding sits
+    // INSIDE the gesture detector so taps in the 12 px chrome inset
+    // still reach the long-press / focus handlers.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: widget.editing ? () => _openPicker(initial: false) : null,
-      child: body,
+      onLongPress: () => _openPicker(initial: false),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: body,
+      ),
     );
   }
 }

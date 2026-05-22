@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
@@ -11,6 +12,26 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+
+/// Fires the memory block's primary action — navigates to the source
+/// entry. Called from `MainJournalScreen` when the user double-taps
+/// the memory tile and the "expand on edit" setting is OFF (per the
+/// `BlockTypeDisplay.isActionBlock` contract). No-op when the memory
+/// hasn't been seeded yet (no eligible past entry) or `onJumpToDate`
+/// is null.
+void fireMemoryBlockAction(
+  JournalBlockData data,
+  ValueChanged<DateTime>? onJumpToDate,
+) {
+  if (onJumpToDate == null) return;
+  final content = MemoryBlockContent.fromMap(data.content);
+  final iso = content.sourceEntryDate;
+  if (iso == null) return;
+  final parsed = DateTime.tryParse(iso);
+  if (parsed == null) return;
+  onJumpToDate(parsed);
+}
 
 /// Surfaces a random non-empty block from a past entry. The pick is
 /// **locked once shown** — the first build with empty content asks the
@@ -25,12 +46,24 @@ class MemoryBlockWidget extends StatefulWidget {
     required this.mode,
     this.onJumpToDate,
     this.onChanged,
+    this.onDoubleTap,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final ValueChanged<DateTime>? onJumpToDate;
+
+  /// Host's "push expanded route" callback. Wired onto the body's
+  /// `GestureDetector(onDoubleTap)`. The Navigate button is rendered
+  /// OUTSIDE that detector so its InkWell single-tap navigates
+  /// without being intercepted.
+  final VoidCallback? onDoubleTap;
+
+  /// Legacy prop — currently unused. The Navigate button is always
+  /// visible in editable mode now.
+  final bool expanded;
 
   @override
   State<MemoryBlockWidget> createState() => _MemoryBlockWidgetState();
@@ -39,17 +72,6 @@ class MemoryBlockWidget extends StatefulWidget {
 class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
   bool _picking = false;
   bool _noEligible = false;
-
-  // Eligible source block types. Memory blocks themselves are excluded
-  // to avoid memory-of-a-memory recursion. Prompt blocks are excluded
-  // for now (they're shaped differently and feel weird as memories).
-  // Photo blocks are eligible — including 2×2 feature-section photos,
-  // which render as cropped thumbnails inside the (1×1) memory tile.
-  static const _eligibleTypes = {
-    BlockType.textBlock,
-    BlockType.moodTracker,
-    BlockType.photoBlock,
-  };
 
   @override
   void didChangeDependencies() {
@@ -61,10 +83,14 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     final content = MemoryBlockContent.fromMap(widget.data.content);
     if (content.isSeeded || _picking || _noEligible) return;
     _picking = true;
-    final repo = AppDependencies.of(context).journalRepository;
+    final deps = AppDependencies.of(context);
+    final repo = deps.journalRepository;
+    // Eligible types are user-configurable via Block Settings → Memory.
+    // memoryBlock itself is filtered by `BlockSettings.setMemoryEligibleTypes`
+    // before persistence so we don't need a defensive filter here.
     final pick = repo.pickRandomEligibleBlock(
       beforeDate: DateTime.now(),
-      eligibleTypes: _eligibleTypes,
+      eligibleTypes: deps.blockSettings.memoryEligibleTypes,
     );
     _picking = false;
     if (pick == null) {
@@ -89,62 +115,107 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     );
   }
 
-  void _openSource(String isoDate) {
-    final parsed = DateTime.tryParse(isoDate);
-    if (parsed == null) return;
-    widget.onJumpToDate?.call(parsed);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final content = MemoryBlockContent.fromMap(widget.data.content);
 
     if (_noEligible && !content.isSeeded) {
-      return Center(
-        child: Text(
-          'No memories yet',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontStyle: FontStyle.italic,
-            color: theme.disabledColor,
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Center(
+          child: Text(
+            'No memories yet',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: theme.disabledColor,
+            ),
           ),
         ),
       );
     }
 
     if (!content.isSeeded) {
-      return const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       );
     }
 
     final caption = _formatCaption(content.sourceEntryDate);
     final body = _renderSnapshot(context, content);
+    final canNavigate =
+        widget.onJumpToDate != null && content.sourceEntryDate != null;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: (widget.onJumpToDate == null || content.sourceEntryDate == null)
-          ? null
-          : () => _openSource(content.sourceEntryDate!),
+    // Body wrapped in a `GestureDetector(onDoubleTap)` so the
+    // double-tap-to-expand reaches the host. Single taps fall through
+    // (no `onTap`) — there's nothing to engage on the snapshot
+    // itself. The Navigate button is OUTSIDE this detector so its
+    // InkWell single-tap fires normally. 12 px padding wraps the whole
+    // column so the chrome's visual inset is preserved.
+    return Padding(
+      padding: const EdgeInsets.all(12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (caption != null)
-            Text(
-              caption,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (caption != null)
+          Text(
+            caption,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: widget.onDoubleTap,
+            child: body,
+          ),
+        ),
+        if (canNavigate && widget.mode == BlockMode.editable)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: InkWell(
+              onTap: () => widget.onJumpToDate!(
+                DateTime.parse(content.sourceEntryDate!),
+              ),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: 4,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      HugeIcons.strokeRoundedArrowRight01,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Navigate to that day',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          const SizedBox(height: 4),
-          Expanded(child: body),
-        ],
+          ),
+      ],
       ),
     );
   }

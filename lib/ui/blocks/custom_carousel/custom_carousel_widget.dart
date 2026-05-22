@@ -31,14 +31,20 @@ class CustomCarouselWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
+    this.onDoubleTap,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+  final VoidCallback? onRequestExitEdit;
+  final VoidCallback? onDoubleTap;
   final bool editing;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +106,10 @@ class CustomCarouselWidget extends StatelessWidget {
             ),
           ),
           onInteractionLockChanged: onInteractionLockChanged,
-          editing: editing,
+          onRequestExitEdit: expanded ? null : onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
+          editing: editing || expanded,
+          autoCollapse: !expanded,
         );
       },
     );

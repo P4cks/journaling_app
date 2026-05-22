@@ -14,6 +14,17 @@ import 'package:journaling_app_rewrite/ui/blocks/todo_block/todo_block_widget.da
 import 'package:journaling_app_rewrite/ui/blocks/weather_api/weather_api_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 
+/// Dispatcher that constructs the concrete block widget for a given
+/// `BlockType`. Forwards every parameter the concrete widgets need —
+/// including the new `expanded` flag (whether the body is rendered
+/// inside the expanded route) and `onRequestExitEdit` (which carousels
+/// fire after the 1.5 s auto-collapse to clear in-place edit mode).
+///
+/// The set of props on this widget mirrors `BlockRenderContext` at
+/// [chrome/block_render_context.dart](chrome/block_render_context.dart);
+/// the context bundle is consumed directly by the expanded route, and
+/// `BlockWidget` keeps the legacy parameter shape for the grid + the
+/// layout editor.
 class BlockWidget extends StatelessWidget {
   const BlockWidget({
     super.key,
@@ -22,7 +33,10 @@ class BlockWidget extends StatelessWidget {
     this.onChanged,
     this.onJumpToDate,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
+    this.onDoubleTap,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -30,17 +44,29 @@ class BlockWidget extends StatelessWidget {
   final ValueChanged<JournalBlockData>? onChanged;
   final ValueChanged<DateTime>? onJumpToDate;
 
-  /// Forwarded to blocks that have an interactive horizontal carousel
-  /// (mood, manual weather). When `locked: true` the block wants the
-  /// outer `JournalPager` to stop responding to horizontal swipes.
+  /// Forwarded to carousel blocks. When `locked: true` the block wants
+  /// the outer `JournalPager` to stop responding to horizontal swipes.
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
-  /// True when this block is the active edit target. Forwarded to the
-  /// concrete block widgets that participate in the double-tap edit
-  /// mode (text / prompt / todo / carousel-style). Ignored by action
-  /// blocks (photo / location / memory) and display blocks (quote /
-  /// weather-api), which keep their existing single-tap behavior.
+  /// Fires when a carousel auto-collapses after 1.5 s of inactivity.
+  /// In-place edit-mode hosts use this to clear `_editingBlockId` so
+  /// the outline disappears in lock-step with the carousel.
+  final VoidCallback? onRequestExitEdit;
+
+  /// Push-the-expanded-route callback. Each block widget wires this
+  /// into its own `GestureDetector(onDoubleTap)` so the framework
+  /// handles tap-vs-double-tap disambiguation natively (single tap
+  /// fires the block's engage action after `kDoubleTapTimeout`,
+  /// double tap fires this immediately).
+  final VoidCallback? onDoubleTap;
+
+  /// True when this block is the active edit target.
   final bool editing;
+
+  /// True when this block is rendered inside the expanded route. Only
+  /// a few blocks change behavior between in-place and expanded
+  /// (carousel's auto-collapse).
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +76,7 @@ class BlockWidget extends StatelessWidget {
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
         );
       case BlockType.moodTracker:
@@ -58,7 +85,10 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
+          expanded: expanded,
         );
       case BlockType.weatherManual:
         return WeatherManualWidget(
@@ -66,13 +96,17 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
+          expanded: expanded,
         );
       case BlockType.promptBlock:
         return PromptBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
         );
       case BlockType.todoBlock:
@@ -80,26 +114,46 @@ class BlockWidget extends StatelessWidget {
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
           editing: editing,
+          expanded: expanded,
         );
       case BlockType.quoteBlock:
-        return QuoteBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return QuoteBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.memoryBlock:
         return MemoryBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
           onJumpToDate: onJumpToDate,
+          onDoubleTap: onDoubleTap,
+          expanded: expanded,
         );
       case BlockType.weatherApi:
-        return WeatherApiWidget(data: data, mode: mode, onChanged: onChanged);
+        return WeatherApiWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.photoBlock:
-        return PhotoBlockWidget(data: data, mode: mode, onChanged: onChanged);
+        return PhotoBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
       case BlockType.locationBlock:
         return LocationBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
         );
       case BlockType.customCarousel:
         return CustomCarouselWidget(
@@ -107,7 +161,10 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
+          onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
           editing: editing,
+          expanded: expanded,
         );
     }
   }
