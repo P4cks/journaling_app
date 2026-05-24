@@ -122,6 +122,46 @@ class MainJournalViewModel extends ChangeNotifier {
     debugPrint('[MainJournalVM] updateTitle -> "${normalized ?? '<null>'}"');
   }
 
+  /// Reorders a block within the section identified by [sectionId] in
+  /// the current entry, moving the block at [from] to [to]. Uses
+  /// insertion-after-removal semantics (the caller — `BlockGrid` —
+  /// already adjusts the target index for the post-remove list).
+  /// Mirrors `LayoutEditorViewModel.moveSlotInSection` so the journal
+  /// pager's drag-and-drop behaves identically to the layout editor's.
+  void reorderBlockInSection(String sectionId, int from, int to) {
+    final current = entryForDate(_selectedDate);
+    if (current == null) {
+      debugPrint('[MainJournalVM] reorderBlockInSection ignored — no entry');
+      return;
+    }
+    final newSections = [
+      for (final section in current.sections)
+        if (section.id != sectionId)
+          section
+        else
+          () {
+            final blocks = [...section.blocks];
+            if (from < 0 ||
+                from >= blocks.length ||
+                to < 0 ||
+                to >= blocks.length) {
+              return section;
+            }
+            final block = blocks.removeAt(from);
+            blocks.insert(to, block);
+            return section.copyWith(blocks: blocks);
+          }(),
+    ];
+    final next = current.copyWith(
+      sections: newSections,
+      lastModified: DateTime.now(),
+    );
+    _repository.saveJournalEntry(next);
+    debugPrint(
+      '[MainJournalVM] reorderBlockInSection $sectionId $from -> $to',
+    );
+  }
+
   /// Destructive — replaces the current entry's blocks with the
   /// materialized layout. Caller should confirm before invoking.
   void applyLayout(JournalLayout layout) {

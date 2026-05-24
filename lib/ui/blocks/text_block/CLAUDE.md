@@ -17,13 +17,19 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
 - `BlockMode.readOnly` — renders a `Text`. Empty text shows "No text yet"
   in italic + `disabledColor`.
 - `BlockMode.editable` — renders a multi-line `TextField` filling the
-  square cell. **Required field config** for in-cell scrolling:
+  square cell. **Required field config**:
   - `expands: true`
   - `maxLines: null`
   - `minLines: null`
+  - `scrollPhysics: NeverScrollableScrollPhysics()`
   - inside a `SizedBox.expand`
-  Without all four, the field tries to grow with content and blows out
-  the 1×1 cell. The hint is "Write something…".
+  Without `expands` / `maxLines: null` the field tries to grow with
+  content and blows out the 1×1 cell. The `NeverScrollableScrollPhysics`
+  disables the TextField's internal scroll so the block doesn't
+  scroll within its cell — overflow content is clipped by the
+  chrome's `clipBehavior: Clip.antiAlias`. Data is preserved (the
+  controller's full text persists); only the visual presentation is
+  bounded. The hint is "Write something…".
   `onChanged` fires per keystroke and emits a new `JournalBlockData`
   via the parent's `onBlockChanged` callback — `JournalEntryEditorViewModel.updateBlock`
   saves every keystroke.

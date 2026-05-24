@@ -141,65 +141,78 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
           ),
         );
       }
+      // Column + ClipRect — no internal scroll. Items that don't fit
+      // the 1×1 cell are clipped (chrome already antialiases the
+      // rounded card, but ClipRect ensures the Column doesn't paint
+      // outside the padded content area either).
       return Padding(
         padding: const EdgeInsets.all(12),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: content.items.length,
-          itemBuilder: (context, i) {
-            final item = content.items[i];
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _CheckBubble(done: item.done, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      item.text.isEmpty ? '—' : item.text,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        decoration: item.done
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        color: item.done
-                            ? theme.colorScheme.onSurfaceVariant
-                            : null,
+        child: ClipRect(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final item in content.items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CheckBubble(done: item.done, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.text.isEmpty ? '—' : item.text,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            decoration: item.done
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                            color: item.done
+                                ? theme.colorScheme.onSurfaceVariant
+                                : null,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+            ],
+          ),
         ),
       );
     }
 
     // Padding lives in the block widget now (see chrome's comment).
+    // Items + "Add item" render in a Column without scroll. Items
+    // exceeding the cell height are clipped by the ClipRect around
+    // the rows. The "Add item" InkWell sits OUTSIDE the ClipRect so
+    // it stays visible at the natural bottom of the outer Column,
+    // even when items overflow.
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            itemCount: content.items.length,
-            itemBuilder: (context, i) {
-              final item = content.items[i];
-              return _TodoRow(
-                key: ValueKey(item.id),
-                item: item,
-                controller: _controllerFor(item),
-                focusNode: _focusNodeFor(item.id),
-                onDoubleTap: widget.onDoubleTap,
-                onToggle: () => _toggle(content, item.id),
-                onTextChanged: (value) =>
-                    _updateText(content, item.id, value),
-                onRemove: () => _remove(content, item.id),
-              );
-            },
+          child: ClipRect(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final item in content.items)
+                  _TodoRow(
+                    key: ValueKey(item.id),
+                    item: item,
+                    controller: _controllerFor(item),
+                    focusNode: _focusNodeFor(item.id),
+                    onDoubleTap: widget.onDoubleTap,
+                    onToggle: () => _toggle(content, item.id),
+                    onTextChanged: (value) =>
+                        _updateText(content, item.id, value),
+                    onRemove: () => _remove(content, item.id),
+                  ),
+              ],
+            ),
           ),
         ),
         // "Add item" — always visible in editable mode. The combined

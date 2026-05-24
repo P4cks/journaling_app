@@ -95,8 +95,15 @@ class BlockGrid extends StatefulWidget {
   State<BlockGrid> createState() => _BlockGridState();
 }
 
+/// Whether the insertion line should be drawn between/at-side of
+/// tiles (regular), as a horizontal stripe above row 0
+/// (aboveTop), or as a horizontal stripe below the last row
+/// (belowBottom).
+enum _InsertionEdge { none, aboveTop, belowBottom }
+
 class _BlockGridState extends State<BlockGrid> {
   int? _insertionIndex;
+  _InsertionEdge _insertionEdge = _InsertionEdge.none;
   int? _draggingIndex;
   List<GlobalKey> _tileKeys = const [];
   final GlobalKey _gridKey = GlobalKey();
@@ -153,18 +160,59 @@ class _BlockGridState extends State<BlockGrid> {
     return topLeft & tileBox.size;
   }
 
-  int _computeInsertionIndex(Offset globalPos) {
+  /// Computes the insertion index and the edge (regular / above-top /
+  /// below-bottom) for the current pointer position. The dragged tile
+  /// is excluded from the row-Y / nearest-X heuristics so the
+  /// algorithm doesn't anchor on the source's old slot — that was the
+  /// "first-row drag bug" (most visible when re-arranging within
+  /// row 0, where the source tile was always one of the row's only
+  /// two candidates and skewed `nearest`). Explicit above-/below-grid
+  /// branches short-circuit the "closest in Y picks an arbitrary
+  /// edge tile" case, replacing it with a clear "insert at front /
+  /// back" intent visualised by a horizontal insertion line.
+  ({int index, _InsertionEdge edge}) _computeInsertion(Offset globalPos) {
     final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
-    if (gridBox == null) return widget.blocks.length;
+    if (gridBox == null) {
+      return (index: widget.blocks.length, edge: _InsertionEdge.none);
+    }
 
     final local = gridBox.globalToLocal(globalPos);
     final n = widget.blocks.length;
-    if (n == 0) return 0;
+    if (n == 0) return (index: 0, edge: _InsertionEdge.none);
 
     final centres = List<Offset?>.generate(n, (i) => _tileRect(i)?.center);
 
+    // Exclude the dragged tile from the candidate set. It's still
+    // painted (at low opacity) but its old slot shouldn't pull the
+    // insertion line toward itself.
+    final dragging = _draggingIndex;
+    if (dragging != null && dragging >= 0 && dragging < n) {
+      centres[dragging] = null;
+    }
+
+    // Detect above-grid and below-grid pointer positions. Walking
+    // _tileRect (not centres) because we want the actual rect bounds
+    // including the dragged tile, so the "above" threshold is the
+    // visual top of row 0 even when the user is dragging a row-0
+    // tile around.
+    double? minTop;
+    double? maxBottom;
+    for (var i = 0; i < n; i++) {
+      final rect = _tileRect(i);
+      if (rect == null) continue;
+      if (i == dragging) continue;
+      if (minTop == null || rect.top < minTop) minTop = rect.top;
+      if (maxBottom == null || rect.bottom > maxBottom) maxBottom = rect.bottom;
+    }
+    if (minTop != null && local.dy < minTop) {
+      return (index: 0, edge: _InsertionEdge.aboveTop);
+    }
+    if (maxBottom != null && local.dy > maxBottom) {
+      return (index: n, edge: _InsertionEdge.belowBottom);
+    }
+
     double bestDy = double.infinity;
-    int closestIdx = 0;
+    int closestIdx = -1;
     for (var i = 0; i < n; i++) {
       final c = centres[i];
       if (c == null) continue;
@@ -174,8 +222,14 @@ class _BlockGridState extends State<BlockGrid> {
         closestIdx = i;
       }
     }
+    if (closestIdx < 0) {
+      // Every tile filtered out (e.g. only the dragged tile remains
+      // and we already short-circuited above/below). Fall back to
+      // append-end so we never return an invalid index.
+      return (index: n, edge: _InsertionEdge.none);
+    }
 
-    final rowY = centres[closestIdx]?.dy ?? 0;
+    final rowY = centres[closestIdx]!.dy;
     const rowEpsilon = 4.0;
     final rowIndices = <int>[
       for (var i = 0; i < n; i++)
@@ -193,23 +247,32 @@ class _BlockGridState extends State<BlockGrid> {
     }
 
     final cx = centres[nearest]?.dx ?? local.dx;
-    return local.dx < cx ? nearest : nearest + 1;
+    return (
+      index: local.dx < cx ? nearest : nearest + 1,
+      edge: _InsertionEdge.none,
+    );
   }
 
   void _onDragStarted(int index) {
     setState(() {
       _draggingIndex = index;
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
     });
   }
 
   void _onDragUpdate(DragTargetDetails<int> details) {
-    final idx = _computeInsertionIndex(details.offset);
-    if (idx == _insertionIndex) return;
+    final result = _computeInsertion(details.offset);
+    if (result.index == _insertionIndex && result.edge == _insertionEdge) {
+      return;
+    }
 
     void apply() {
       if (!mounted) return;
-      setState(() => _insertionIndex = idx);
+      setState(() {
+        _insertionIndex = result.index;
+        _insertionEdge = result.edge;
+      });
     }
 
     if (WidgetsBinding.instance.schedulerPhase ==
@@ -224,6 +287,7 @@ class _BlockGridState extends State<BlockGrid> {
     if (!mounted) return;
     setState(() {
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
       _draggingIndex = null;
     });
   }
@@ -232,6 +296,7 @@ class _BlockGridState extends State<BlockGrid> {
     final insertAt = _insertionIndex ?? widget.blocks.length;
     setState(() {
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
       _draggingIndex = null;
     });
     final to = insertAt > from ? insertAt - 1 : insertAt;
@@ -243,6 +308,50 @@ class _BlockGridState extends State<BlockGrid> {
     if (idx == null) return null;
     final n = widget.blocks.length;
     if (n == 0) return null;
+
+    // Above row 0 — horizontal line spanning the full row width.
+    if (_insertionEdge == _InsertionEdge.aboveTop) {
+      final firstRect = _tileRect(0);
+      if (firstRect == null) return null;
+      final rowY = firstRect.center.dy;
+      var left = firstRect.left;
+      var right = firstRect.right;
+      for (var i = 1; i < n; i++) {
+        final r = _tileRect(i);
+        if (r == null) continue;
+        if ((r.center.dy - rowY).abs() < 4) {
+          if (r.left < left) left = r.left;
+          if (r.right > right) right = r.right;
+        }
+      }
+      final y = firstRect.top - 5;
+      return _InsertionLineInfo(
+        start: Offset(left, y),
+        end: Offset(right, y),
+      );
+    }
+
+    // Below last row — horizontal line spanning the full row width.
+    if (_insertionEdge == _InsertionEdge.belowBottom) {
+      final lastRect = _tileRect(n - 1);
+      if (lastRect == null) return null;
+      final rowY = lastRect.center.dy;
+      var left = lastRect.left;
+      var right = lastRect.right;
+      for (var i = 0; i < n - 1; i++) {
+        final r = _tileRect(i);
+        if (r == null) continue;
+        if ((r.center.dy - rowY).abs() < 4) {
+          if (r.left < left) left = r.left;
+          if (r.right > right) right = r.right;
+        }
+      }
+      final y = lastRect.bottom + 5;
+      return _InsertionLineInfo(
+        start: Offset(left, y),
+        end: Offset(right, y),
+      );
+    }
 
     if (idx >= n) {
       final r = _tileRect(n - 1);

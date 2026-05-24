@@ -109,7 +109,9 @@ class CustomCarouselWidget extends StatelessWidget {
           onRequestExitEdit: expanded ? null : onRequestExitEdit,
           onDoubleTap: onDoubleTap,
           editing: editing || expanded,
-          autoCollapse: !expanded,
+          // Auto-collapse in both hosts. See
+          // mood_tracker_widget.dart for the rationale.
+          autoCollapse: true,
         );
       },
     );

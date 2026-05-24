@@ -86,10 +86,16 @@ coordination live.
     an orphan id and silently fall through to "no default" → empty
     entry. This invariant matters; don't refactor it away.
   - `seedDefaultIfEmpty()` — first-launch bootstrap. If the box is
-    empty, creates a single "Default" layout with one `textBlock` and
-    marks it as default. If the box is non-empty but no default is
-    set (e.g. the user deleted the previously-default), adopts the
-    first layout.
+    empty, creates a "Default" layout of kind `LayoutKind.custom`
+    with two sections: a 4-slot `blockGrid` (`rows: 2`, four
+    `textBlock` templates) followed by a full-width `text` section.
+    Marks it as default. **`custom` is deliberate** — it's the only
+    reorderable kind, so users can drag-rearrange the four blocks in
+    their journal entries. `LayoutKind.fixedFourPlusText` looks
+    superficially similar but is structurally locked and would block
+    in-entry drag-drop. If the box is non-empty but no default is set
+    (e.g. the user deleted the previously-default), adopts the first
+    layout.
   - `deleteAllLayouts()` — destructive bulk delete used by the
     debug menu. Deletes every layout, clears the default-id setting,
     then calls `seedDefaultIfEmpty()` so the user is never stranded

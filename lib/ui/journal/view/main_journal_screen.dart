@@ -295,6 +295,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                             _requestBlockEdit(block),
                         onRequestTextSectionEdit: (block) =>
                             _requestBlockEdit(block, isTextSection: true),
+                        onReorderBlockInSection: vm.reorderBlockInSection,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

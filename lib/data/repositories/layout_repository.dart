@@ -125,18 +125,30 @@ class LayoutRepository {
       );
       return existing;
     }
+    // Default layout: a 4-slot block grid (2 cols × 2 rows) followed
+    // by a full-width text section, using `LayoutKind.custom` (the
+    // "normal" reorderable kind — NOT `fixedFourPlusText`, which is
+    // structurally locked). `custom` lets users drag-reorder the four
+    // blocks in their journal entries.
     final seed = JournalLayout(
       id: _uuid.v4(),
       name: 'Default',
-      kind: LayoutKind.blockOnly,
+      kind: LayoutKind.custom,
       sections: [
         LayoutSection(
           id: _uuid.v4(),
           kind: SectionKind.blockGrid,
-          rows: 1,
+          rows: 2,
           blocks: [
-            BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock),
+            for (var i = 0; i < 4; i++)
+              BlockTemplate.create(id: _uuid.v4(), type: BlockType.textBlock),
           ],
+        ),
+        LayoutSection(
+          id: _uuid.v4(),
+          kind: SectionKind.text,
+          rows: null,
+          blocks: const [],
         ),
       ],
     );
