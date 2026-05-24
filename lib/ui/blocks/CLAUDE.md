@@ -346,9 +346,16 @@ This is now a **stable-layout, overlay-driven reorder system** (similar to Notio
 ### Insertion index algorithm
 
 1. Convert pointer to grid-local coordinates.
-2. Find row closest in Y.
-3. Within that row, find nearest tile in X.
-4. Insert:
+2. Compute tile centres, excluding the dragged tile's slot.
+3. If the pointer is above every tile's top → insert at 0
+   (`_InsertionEdge.aboveTop`); if below every tile's bottom →
+   insert at `n` (`_InsertionEdge.belowBottom`). These short-circuits
+   replace the old "closest-in-Y picks an arbitrary edge tile"
+   behaviour, which made the insertion line jump unpredictably when
+   the user dragged above/below the grid.
+4. Otherwise, find row closest in Y from the non-dragged centres.
+5. Within that row, find nearest tile in X.
+6. Insert:
    - Left half → before
    - Right half → after
 
@@ -359,10 +366,25 @@ This is now a **stable-layout, overlay-driven reorder system** (similar to Notio
 - Computed via `_insertionLineInfo()`
 - Drawn using `_InsertionLinePainter`
 - Rules:
-  - Between tiles → vertical line
-  - Start of row → left edge
-  - End → right of last tile
+  - Between tiles in the same row → vertical line halfway between
+  - Start of row → vertical line 5 px left of the leftmost tile
+  - End of row → vertical line 5 px right of the rightmost tile
+  - Above row 0 (`_insertionEdge == aboveTop`) → horizontal line 5 px
+    above row 0, spanning the row's full width
+  - Below the last row (`_insertionEdge == belowBottom`) → horizontal
+    line 5 px below the last row
 - Includes circular end caps
+
+### Dragged-tile exclusion
+
+`_computeInsertion` excludes the dragged tile from the `centres`
+array (sets `centres[_draggingIndex] = null`). Without this, when the
+user drags a row-0 tile around row 0, the algorithm sees its own old
+slot as one of the candidate "nearest" tiles and anchors the
+insertion line on it — most visible when the row has only two tiles
+(the source is half the candidates). The dragged tile is still
+*painted* at 0.35 opacity, but it doesn't influence the row-Y /
+nearest-X heuristics.
 
 ---
 

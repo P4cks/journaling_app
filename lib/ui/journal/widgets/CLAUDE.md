@@ -147,6 +147,13 @@ with per-day lists; doing so would walk the entry set per cell.
   padding inside its own gesture wrapper (see `blocks/CLAUDE.md`),
   taps across the full chrome reach the block's gesture — no
   page-change unfocus needed.
+- **`onReorderBlockInSection` is forwarded from `MainJournalScreen`
+  to `BlockGrid` for editable entries only.** The pager plumbs a
+  `(sectionId, from, to)` callback that closes over the section id
+  so a single `BlockGrid` can dispatch its reorder back to
+  `MainJournalViewModel.reorderBlockInSection`. Past (read-only)
+  entries pass `null` — long-press in `BlockGrid` is conditional on
+  the callback being non-null, so past entries stay locked.
 
 ## When to update this file
 

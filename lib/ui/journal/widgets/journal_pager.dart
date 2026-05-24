@@ -39,6 +39,7 @@ class JournalPager extends StatefulWidget {
     this.onRequestBlockEdit,
     this.onRequestTextSectionEdit,
     this.onRequestExitEdit,
+    this.onReorderBlockInSection,
   });
 
   final MainJournalViewModel viewModel;
@@ -71,6 +72,13 @@ class JournalPager extends StatefulWidget {
   /// in in-place edit mode. The host clears `_editingBlockId` so the
   /// outline disappears in lock-step.
   final VoidCallback? onRequestExitEdit;
+
+  /// Fired when the user long-press drags a block inside a
+  /// `SectionKind.blockGrid` section to a new position. The host
+  /// routes it to `MainJournalViewModel.reorderBlockInSection`. Only
+  /// attached for editable entries.
+  final void Function(String sectionId, int from, int to)?
+  onReorderBlockInSection;
 
   @override
   State<JournalPager> createState() => _JournalPagerState();
@@ -197,6 +205,9 @@ class _JournalPagerState extends State<JournalPager> {
           onRequestExitEdit: mode == BlockMode.editable
               ? widget.onRequestExitEdit
               : null,
+          onReorderBlockInSection: mode == BlockMode.editable
+              ? widget.onReorderBlockInSection
+              : null,
         );
       },
     );
@@ -214,6 +225,7 @@ class _SectionsBody extends StatelessWidget {
     this.onRequestBlockEdit,
     this.onRequestTextSectionEdit,
     this.onRequestExitEdit,
+    this.onReorderBlockInSection,
   });
 
   final List<EntrySection> sections;
@@ -225,6 +237,8 @@ class _SectionsBody extends StatelessWidget {
   final ValueChanged<JournalBlockData>? onRequestBlockEdit;
   final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
   final VoidCallback? onRequestExitEdit;
+  final void Function(String sectionId, int from, int to)?
+  onReorderBlockInSection;
 
   @override
   Widget build(BuildContext context) {
@@ -268,6 +282,9 @@ class _SectionsBody extends StatelessWidget {
         // with zero blocks (e.g. a kind-B layout saved with no filled
         // slots) doesn't leave awkward padding in the entry.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
+        // Wire onReorder only in editable mode — past entries stay
+        // read-only with no drag-to-reorder affordance.
+        final reorder = onReorderBlockInSection;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: BlockGrid(
@@ -282,6 +299,9 @@ class _SectionsBody extends StatelessWidget {
             editingBlockId: editingBlockId,
             onRequestBlockEdit: onRequestBlockEdit,
             onRequestExitEdit: onRequestExitEdit,
+            onReorder: reorder == null
+                ? null
+                : (from, to) => reorder(section.id, from, to),
           ),
         );
       case SectionKind.featureBlock:
