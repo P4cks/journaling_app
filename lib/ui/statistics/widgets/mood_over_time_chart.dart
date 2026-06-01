@@ -34,17 +34,17 @@ class MoodOverTimeChart extends StatelessWidget {
                 child: LineChart(
                   LineChartData(
                     minX: 0,
-                    maxX: (points.length - 1).clamp(1, double.maxFinite).toDouble(),
+                    maxX: (points.length - 1)
+                        .clamp(1, double.maxFinite)
+                        .toDouble(),
                     minY: 0,
                     maxY: 5,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
                       horizontalInterval: 1,
-                      getDrawingHorizontalLine: (_) => FlLine(
-                        color: scheme.outlineVariant,
-                        strokeWidth: 1,
-                      ),
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: scheme.outlineVariant, strokeWidth: 1),
                     ),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(

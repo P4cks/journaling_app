@@ -24,10 +24,7 @@ enum BlockHostKind {
 /// the inner widgets are wired up and reachable: `TextField`s with
 /// controllers, carousels with `PageView`, photo "+ Add photo"
 /// tappable, etc.
-enum BlockEditState {
-  display,
-  editing,
-}
+enum BlockEditState { display, editing }
 
 /// Immutable bundle of everything a block body needs to render.
 ///

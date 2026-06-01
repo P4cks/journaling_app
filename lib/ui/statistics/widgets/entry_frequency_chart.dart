@@ -39,10 +39,8 @@ class EntryFrequencyChart extends StatelessWidget {
                       show: true,
                       drawVerticalLine: false,
                       horizontalInterval: _gridInterval(),
-                      getDrawingHorizontalLine: (_) => FlLine(
-                        color: scheme.outlineVariant,
-                        strokeWidth: 1,
-                      ),
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: scheme.outlineVariant, strokeWidth: 1),
                     ),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(

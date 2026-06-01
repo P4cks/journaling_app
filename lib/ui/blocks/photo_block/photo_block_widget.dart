@@ -29,9 +29,7 @@ Future<void> firePhotoBlockAction(
       storage.deleteAtPath(previousPath);
     }
     onChanged(
-      data.copyWith(
-        content: PhotoBlockContent(photoPath: newPath).toMap(),
-      ),
+      data.copyWith(content: PhotoBlockContent(photoPath: newPath).toMap()),
     );
   }
 
@@ -183,11 +181,8 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onChanged == null
             ? null
-            : () => firePhotoBlockAction(
-                context,
-                widget.data,
-                widget.onChanged!,
-              ),
+            : () =>
+                  firePhotoBlockAction(context, widget.data, widget.onChanged!),
         onDoubleTap: widget.onDoubleTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -236,10 +231,7 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
     );
 
     if (widget.mode == BlockMode.readOnly) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: shaped,
-      );
+      return Padding(padding: const EdgeInsets.all(12), child: shaped);
     }
 
     // Single-tap or long-press opens the picker (delayed by the
@@ -250,17 +242,12 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       behavior: HitTestBehavior.opaque,
       onTap: widget.onChanged == null
           ? null
-          : () =>
-                firePhotoBlockAction(context, widget.data, widget.onChanged!),
+          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
       onDoubleTap: widget.onDoubleTap,
       onLongPress: widget.onChanged == null
           ? null
-          : () =>
-                firePhotoBlockAction(context, widget.data, widget.onChanged!),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: shaped,
-      ),
+          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
+      child: Padding(padding: const EdgeInsets.all(12), child: shaped),
     );
   }
 }

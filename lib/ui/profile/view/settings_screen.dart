@@ -83,7 +83,9 @@ class SettingsScreen extends StatelessWidget {
                     onChanged: debug.setUnlockAllDays,
                   ),
                   SwitchListTile(
-                    secondary: AppIcon(HugeIcons.strokeRoundedCheckmarkCircle02),
+                    secondary: AppIcon(
+                      HugeIcons.strokeRoundedCheckmarkCircle02,
+                    ),
                     title: const Text('Show Done on expanded blocks'),
                     subtitle: const Text(
                       'Developer affordance — expanded blocks normally dismiss by tapping the backdrop.',
@@ -484,7 +486,11 @@ class _AddPostItSwatch extends StatelessWidget {
           ),
         ),
         alignment: Alignment.center,
-        child: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 18, color: scheme.onSurface),
+        child: AppIcon(
+          HugeIcons.strokeRoundedPlusSign,
+          size: 18,
+          color: scheme.onSurface,
+        ),
       ),
     );
   }

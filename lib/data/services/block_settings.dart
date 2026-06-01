@@ -118,8 +118,7 @@ class BlockSettings extends ChangeNotifier {
     if (titlesEnabledRaw != null) {
       _carouselTitlesEnabled = titlesEnabledRaw;
     }
-    final customCarouselsRaw =
-        _storage.getBlockCustomCarouselDefinitionsJson();
+    final customCarouselsRaw = _storage.getBlockCustomCarouselDefinitionsJson();
     if (customCarouselsRaw != null && customCarouselsRaw.isNotEmpty) {
       try {
         final decoded = jsonDecode(customCarouselsRaw);
@@ -142,7 +141,9 @@ class BlockSettings extends ChangeNotifier {
           final byName = {for (final t in BlockType.values) t.name: t};
           _memoryEligibleTypes = {
             for (final v in decoded)
-              if (v is String && byName.containsKey(v) && v != BlockType.memoryBlock.name)
+              if (v is String &&
+                  byName.containsKey(v) &&
+                  v != BlockType.memoryBlock.name)
                 byName[v]!,
           };
         }

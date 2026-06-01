@@ -133,8 +133,9 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
                 ),
                 _CustomCarouselList(
                   settings: AppDependencies.of(context).blockSettings,
-                  layoutRepository:
-                      AppDependencies.of(context).layoutRepository,
+                  layoutRepository: AppDependencies.of(
+                    context,
+                  ).layoutRepository,
                   maybeSaveOnLeave: _maybeSaveOnLeave,
                 ),
               ],
@@ -369,7 +370,10 @@ class _CustomDefinitionRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onDelete,
-                  icon: AppIcon(HugeIcons.strokeRoundedDelete02, color: errorColor),
+                  icon: AppIcon(
+                    HugeIcons.strokeRoundedDelete02,
+                    color: errorColor,
+                  ),
                   label: Text('Delete', style: TextStyle(color: errorColor)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: errorColor),

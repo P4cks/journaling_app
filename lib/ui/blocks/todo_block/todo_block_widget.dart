@@ -86,9 +86,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
 
   void _emit(List<TodoItem> items) {
     widget.onChanged?.call(
-      widget.data.copyWith(
-        content: TodoBlockContent(items: items).toMap(),
-      ),
+      widget.data.copyWith(content: TodoBlockContent(items: items).toMap()),
     );
   }
 
@@ -191,59 +189,59 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: ClipRect(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final item in content.items)
-                  _TodoRow(
-                    key: ValueKey(item.id),
-                    item: item,
-                    controller: _controllerFor(item),
-                    focusNode: _focusNodeFor(item.id),
-                    onDoubleTap: widget.onDoubleTap,
-                    onToggle: () => _toggle(content, item.id),
-                    onTextChanged: (value) =>
-                        _updateText(content, item.id, value),
-                    onRemove: () => _remove(content, item.id),
-                  ),
-              ],
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRect(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in content.items)
+                    _TodoRow(
+                      key: ValueKey(item.id),
+                      item: item,
+                      controller: _controllerFor(item),
+                      focusNode: _focusNodeFor(item.id),
+                      onDoubleTap: widget.onDoubleTap,
+                      onToggle: () => _toggle(content, item.id),
+                      onTextChanged: (value) =>
+                          _updateText(content, item.id, value),
+                      onRemove: () => _remove(content, item.id),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        // "Add item" — always visible in editable mode. The combined
-        // gesture model means single-tap on the row focuses the
-        // TextField; tapping this button appends a fresh empty item.
-        InkWell(
-          onTap: () => _add(content),
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIcon(
-                  HugeIcons.strokeRoundedPlusSign,
-                  size: 14,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Add item',
-                  style: theme.textTheme.bodySmall?.copyWith(
+          // "Add item" — always visible in editable mode. The combined
+          // gesture model means single-tap on the row focuses the
+          // TextField; tapping this button appends a fresh empty item.
+          InkWell(
+            onTap: () => _add(content),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(
+                    HugeIcons.strokeRoundedPlusSign,
+                    size: 14,
                     color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Add item',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -299,8 +297,7 @@ class _TodoRow extends StatelessWidget {
                   decoration: item.done
                       ? TextDecoration.lineThrough
                       : TextDecoration.none,
-                  color:
-                      item.done ? theme.colorScheme.onSurfaceVariant : null,
+                  color: item.done ? theme.colorScheme.onSurfaceVariant : null,
                 ),
                 decoration: const InputDecoration(
                   hintText: 'Task',

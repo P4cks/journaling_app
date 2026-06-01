@@ -89,10 +89,12 @@ class MainJournalViewModel extends ChangeNotifier {
     }
     final newSections = [
       for (final section in current.sections)
-        section.copyWith(blocks: [
-          for (final b in section.blocks)
-            if (b.id == updated.id) updated else b,
-        ]),
+        section.copyWith(
+          blocks: [
+            for (final b in section.blocks)
+              if (b.id == updated.id) updated else b,
+          ],
+        ),
     ];
     final next = current.copyWith(
       sections: newSections,
@@ -157,9 +159,7 @@ class MainJournalViewModel extends ChangeNotifier {
       lastModified: DateTime.now(),
     );
     _repository.saveJournalEntry(next);
-    debugPrint(
-      '[MainJournalVM] reorderBlockInSection $sectionId $from -> $to',
-    );
+    debugPrint('[MainJournalVM] reorderBlockInSection $sectionId $from -> $to');
   }
 
   /// Destructive — replaces the current entry's blocks with the

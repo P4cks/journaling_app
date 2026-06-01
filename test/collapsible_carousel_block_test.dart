@@ -66,91 +66,89 @@ void main() {
     expect(locks, [true, false]);
   });
 
-  testWidgets(
-    'carousel fires onRequestExitEdit after 1.5s auto-collapse',
-    (tester) async {
-      // The auto-collapse timer should also signal the host so it can
-      // drop `_editingBlockId` — in-place edit outline disappears in
-      // lock-step with the carousel collapsing.
-      var exitCount = 0;
-      final key = GlobalKey<_StatefulHarnessState>();
+  testWidgets('carousel fires onRequestExitEdit after 1.5s auto-collapse', (
+    tester,
+  ) async {
+    // The auto-collapse timer should also signal the host so it can
+    // drop `_editingBlockId` — in-place edit outline disappears in
+    // lock-step with the carousel collapsing.
+    var exitCount = 0;
+    final key = GlobalKey<_StatefulHarnessState>();
 
-      await tester.pumpWidget(
-        _Harness(
-          child: _StatefulHarness(
-            key: key,
-            builder: (editing) => SizedBox(
-              width: 240,
-              height: 120,
-              child: CollapsibleCarouselBlock<String>(
-                blockId: 'test-carousel',
-                options: const ['first', 'second'],
-                selected: 'first',
-                editing: editing,
-                itemBuilder: (_, option, _) => Text(option),
-                collapsedBuilder: (_, selected) => Text('collapsed:$selected'),
-                onSelected: (_) {},
-                onRequestExitEdit: () => exitCount++,
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      expect(exitCount, 0);
-
-      key.currentState!.setEditing(true);
-      await tester.pump();
-      await tester.pump();
-      expect(exitCount, 0);
-
-      // After the 1.5 s timer fires the host should be signalled.
-      await tester.pump(const Duration(milliseconds: 1500));
-      expect(exitCount, 1);
-    },
-  );
-
-  testWidgets(
-    'autoCollapse=false keeps the carousel open past 1.5s',
-    (tester) async {
-      // The expanded route passes autoCollapse=false so the picker
-      // stays open until the user dismisses the route.
-      final locks = <bool>[];
-      var exitCount = 0;
-
-      await tester.pumpWidget(
-        _Harness(
-          child: SizedBox(
+    await tester.pumpWidget(
+      _Harness(
+        child: _StatefulHarness(
+          key: key,
+          builder: (editing) => SizedBox(
             width: 240,
             height: 120,
             child: CollapsibleCarouselBlock<String>(
               blockId: 'test-carousel',
               options: const ['first', 'second'],
               selected: 'first',
-              editing: true,
-              autoCollapse: false,
+              editing: editing,
               itemBuilder: (_, option, _) => Text(option),
               collapsedBuilder: (_, selected) => Text('collapsed:$selected'),
               onSelected: (_) {},
-              onInteractionLockChanged: (_, locked) => locks.add(locked),
               onRequestExitEdit: () => exitCount++,
             ),
           ),
         ),
-      );
-      // Initial pump + post-frame for the lock acquisition.
-      await tester.pump();
-      await tester.pump();
+      ),
+    );
+    await tester.pump();
+    expect(exitCount, 0);
 
-      expect(locks, [true]);
+    key.currentState!.setEditing(true);
+    await tester.pump();
+    await tester.pump();
+    expect(exitCount, 0);
 
-      await tester.pump(const Duration(milliseconds: 1500));
+    // After the 1.5 s timer fires the host should be signalled.
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(exitCount, 1);
+  });
 
-      // No collapse, no exit signal — picker stays interactive.
-      expect(locks, [true]);
-      expect(exitCount, 0);
-    },
-  );
+  testWidgets('autoCollapse=false keeps the carousel open past 1.5s', (
+    tester,
+  ) async {
+    // The expanded route passes autoCollapse=false so the picker
+    // stays open until the user dismisses the route.
+    final locks = <bool>[];
+    var exitCount = 0;
+
+    await tester.pumpWidget(
+      _Harness(
+        child: SizedBox(
+          width: 240,
+          height: 120,
+          child: CollapsibleCarouselBlock<String>(
+            blockId: 'test-carousel',
+            options: const ['first', 'second'],
+            selected: 'first',
+            editing: true,
+            autoCollapse: false,
+            itemBuilder: (_, option, _) => Text(option),
+            collapsedBuilder: (_, selected) => Text('collapsed:$selected'),
+            onSelected: (_) {},
+            onInteractionLockChanged: (_, locked) => locks.add(locked),
+            onRequestExitEdit: () => exitCount++,
+          ),
+        ),
+      ),
+    );
+    // Initial pump + post-frame for the lock acquisition.
+    await tester.pump();
+    await tester.pump();
+
+    expect(locks, [true]);
+
+    await tester.pump(const Duration(milliseconds: 1500));
+
+    // No collapse, no exit signal — picker stays interactive.
+    expect(locks, [true]);
+    expect(exitCount, 0);
+  });
 }
 
 class _StatefulHarness extends StatefulWidget {

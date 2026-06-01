@@ -146,10 +146,7 @@ class JournalRepository extends ChangeNotifier {
   ///
   /// Exposed publicly so the editor's `applyLayout` / change-layout
   /// flow stays in sync with `createEntryForDate`.
-  List<EntrySection> materializeLayout(
-    JournalLayout? layout,
-    DateTime date,
-  ) {
+  List<EntrySection> materializeLayout(JournalLayout? layout, DateTime date) {
     if (layout == null) return const [];
     var promptSlotIndex = 0;
     int nextPromptSlot() => promptSlotIndex++;
@@ -181,13 +178,7 @@ class JournalRepository extends ChangeNotifier {
             kind: SectionKind.featureBlock,
             blocks: section.blocks.isEmpty
                 ? const []
-                : [
-                    _materializeOne(
-                      section.blocks.first,
-                      date,
-                      nextPromptSlot,
-                    ),
-                  ],
+                : [_materializeOne(section.blocks.first, date, nextPromptSlot)],
           ),
         },
     ];

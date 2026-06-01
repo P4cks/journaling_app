@@ -126,10 +126,7 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
       body: _buildBody(context),
     );
     if (widget.mode == BlockMode.readOnly) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: titledBody,
-      );
+      return Padding(padding: const EdgeInsets.all(12), child: titledBody);
     }
     // `GestureDetector(onTap, onDoubleTap)` wraps the WHOLE inset
     // (title + body + 12 px chrome padding) so taps anywhere inside
@@ -143,10 +140,7 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
       behavior: HitTestBehavior.opaque,
       onTap: _onSingleTap,
       onDoubleTap: widget.onDoubleTap,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: titledBody,
-      ),
+      child: Padding(padding: const EdgeInsets.all(12), child: titledBody),
     );
   }
 

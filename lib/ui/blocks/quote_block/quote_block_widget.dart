@@ -91,10 +91,7 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: body,
-      ),
+      child: Padding(padding: const EdgeInsets.all(12), child: body),
     );
   }
 

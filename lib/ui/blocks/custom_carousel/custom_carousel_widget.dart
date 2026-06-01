@@ -84,10 +84,8 @@ class CustomCarouselWidget extends StatelessWidget {
             ? null
             : items.firstWhere(
                 (i) => i == selected,
-                orElse: () => CarouselItem(
-                  kind: selected.kind,
-                  value: selected.value,
-                ),
+                orElse: () =>
+                    CarouselItem(kind: selected.kind, value: selected.value),
               );
 
         return CarouselBlockScaffold<CarouselItem>(

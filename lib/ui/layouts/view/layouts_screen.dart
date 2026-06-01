@@ -14,10 +14,7 @@ import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_kind_picker_she
 String _layoutSummary(JournalLayout layout) {
   switch (layout.kind) {
     case LayoutKind.blockOnly:
-      final n = layout.sections.fold<int>(
-        0,
-        (acc, s) => acc + s.blocks.length,
-      );
+      final n = layout.sections.fold<int>(0, (acc, s) => acc + s.blocks.length);
       return '$n block${n == 1 ? '' : 's'}';
     case LayoutKind.fixedFourPlusText:
       return '4 blocks + text';

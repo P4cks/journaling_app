@@ -91,8 +91,13 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     // its TextField focus flip our AppBar to Done (which would then
     // briefly flash as the route closes; see [_expandedRouteOpen]).
     if (_expandedRouteOpen) return;
-    final bottomInsets =
-        WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
+    final bottomInsets = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .views
+        .first
+        .viewInsets
+        .bottom;
     final keyboardUp = bottomInsets > 0;
     if (keyboardUp != _editing) {
       setState(() => _editing = keyboardUp);
@@ -291,8 +296,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                         modeFor: (e) =>
                             _modeFor(e, unlockAllDays: debug.unlockAllDays),
                         externalLock: _editing,
-                        onRequestBlockEdit: (block) =>
-                            _requestBlockEdit(block),
+                        onRequestBlockEdit: (block) => _requestBlockEdit(block),
                         onRequestTextSectionEdit: (block) =>
                             _requestBlockEdit(block, isTextSection: true),
                         onReorderBlockInSection: vm.reorderBlockInSection,

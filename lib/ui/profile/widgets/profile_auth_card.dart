@@ -438,7 +438,9 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                   ],
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: AppIcon(HugeIcons.strokeRoundedSquareLockPassword),
+                    prefixIcon: AppIcon(
+                      HugeIcons.strokeRoundedSquareLockPassword,
+                    ),
                   ),
                   validator: (value) {
                     final password = value ?? '';

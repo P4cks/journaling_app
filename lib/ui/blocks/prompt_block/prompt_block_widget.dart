@@ -316,9 +316,6 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     // above). Single-tap on the answer field focuses via
     // `DelayedTapFocus`; long-press passes through to `BlockGrid`'s
     // drag-to-reorder.
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: body,
-    );
+    return Padding(padding: const EdgeInsets.all(12), child: body);
   }
 }

@@ -179,9 +179,7 @@ class BlockChrome extends StatelessWidget {
       ),
     );
 
-    final scale = isDragging
-        ? 1.03
-        : (showEditOutline ? 1.05 : 1.0);
+    final scale = isDragging ? 1.03 : (showEditOutline ? 1.05 : 1.0);
 
     // Classic mode: only the scale + card. No rotation, no offset.
     if (!postIt) {
@@ -195,10 +193,7 @@ class BlockChrome extends StatelessWidget {
 
     // Post-it mode: rotation + offset wrap the scaled card.
     return Transform.translate(
-      offset: Offset(
-        visuals.offsetX.toDouble(),
-        visuals.offsetY.toDouble(),
-      ),
+      offset: Offset(visuals.offsetX.toDouble(), visuals.offsetY.toDouble()),
       child: Transform.rotate(
         angle: visuals.rotationDeg * pi / 180,
         child: AnimatedScale(

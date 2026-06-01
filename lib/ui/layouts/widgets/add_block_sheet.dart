@@ -69,9 +69,7 @@ Future<AddBlockResult?> showAddBlockSheet(
     context,
     title: title,
     slivers: (ctx, _) => [
-      SliverToBoxAdapter(
-        child: _AddBlockSheetBody(allowedTypes: allowedTypes),
-      ),
+      SliverToBoxAdapter(child: _AddBlockSheetBody(allowedTypes: allowedTypes)),
     ],
   );
 }
@@ -103,8 +101,7 @@ class _AddBlockSheetBody extends StatelessWidget {
               child: GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -144,11 +141,11 @@ class _AddBlockSheetBody extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.72,
-                    ),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.72,
+                        ),
                     itemCount: customs.length,
                     itemBuilder: (gridCtx, i) =>
                         _CustomCell(definition: customs[i]),
@@ -248,9 +245,8 @@ class _CustomCell extends StatelessWidget {
     );
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => Navigator.of(
-        context,
-      ).pop(AddBlockResultCustom(definition.id)),
+      onTap: () =>
+          Navigator.of(context).pop(AddBlockResultCustom(definition.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

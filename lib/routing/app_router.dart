@@ -66,7 +66,8 @@ final GoRouter appRouter = GoRouter(
           path: 'new',
           name: RouteNames.newLayout,
           builder: (context, state) {
-            final raw = state.uri.queryParameters[Routes.newLayoutKindQueryParam];
+            final raw =
+                state.uri.queryParameters[Routes.newLayoutKindQueryParam];
             final kind = LayoutKind.values.firstWhere(
               (k) => k.name == raw,
               orElse: () => LayoutKind.blockOnly,
@@ -95,9 +96,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: Routes.editCustomBlock,
       name: RouteNames.editCustomBlock,
-      builder: (context, state) => CustomBlockEditorScreen(
-        definitionId: state.pathParameters['id'],
-      ),
+      builder: (context, state) =>
+          CustomBlockEditorScreen(definitionId: state.pathParameters['id']),
     ),
   ],
 );

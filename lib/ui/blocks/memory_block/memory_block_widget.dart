@@ -163,59 +163,59 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (caption != null)
-          Text(
-            caption,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w600,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (caption != null)
+            Text(
+              caption,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onDoubleTap: widget.onDoubleTap,
+              child: body,
             ),
           ),
-        const SizedBox(height: 4),
-        Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onDoubleTap: widget.onDoubleTap,
-            child: body,
-          ),
-        ),
-        if (canNavigate && widget.mode == BlockMode.editable)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: InkWell(
-              onTap: () => widget.onJumpToDate!(
-                DateTime.parse(content.sourceEntryDate!),
-              ),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: 4,
+          if (canNavigate && widget.mode == BlockMode.editable)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: InkWell(
+                onTap: () => widget.onJumpToDate!(
+                  DateTime.parse(content.sourceEntryDate!),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppIcon(
-                      HugeIcons.strokeRoundedArrowRight01,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Navigate to that day',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppIcon(
+                        HugeIcons.strokeRoundedArrowRight01,
+                        size: 16,
                         color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'Navigate to that day',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
       ),
     );
   }

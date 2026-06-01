@@ -21,11 +21,7 @@ class BlockSlot {
   /// entries can resolve the same definition.
   final String? definitionId;
 
-  const BlockSlot({
-    required this.id,
-    required this.type,
-    this.definitionId,
-  });
+  const BlockSlot({required this.id, required this.type, this.definitionId});
 
   BlockSlot copyWith({
     String? id,
@@ -35,14 +31,14 @@ class BlockSlot {
   }) => BlockSlot(
     id: id ?? this.id,
     type: type ?? this.type,
-    definitionId:
-        clearDefinitionId ? null : (definitionId ?? this.definitionId),
+    definitionId: clearDefinitionId
+        ? null
+        : (definitionId ?? this.definitionId),
   );
 }
 
 BlockSlot _slotFromResult(AddBlockResult result) => switch (result) {
-  AddBlockResultBuiltin(:final type) =>
-    BlockSlot(id: _uuid.v4(), type: type),
+  AddBlockResultBuiltin(:final type) => BlockSlot(id: _uuid.v4(), type: type),
   AddBlockResultCustom(:final definitionId) => BlockSlot(
     id: _uuid.v4(),
     type: BlockType.customCarousel,
@@ -96,8 +92,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
                 BlockSlot(
                   id: template.id,
                   type: template.type,
-                  definitionId:
-                      template.config['definitionId'] as String?,
+                  definitionId: template.config['definitionId'] as String?,
                 ),
             ],
           ),
@@ -143,9 +138,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
           kind: s.kind,
           rows: s.rows,
           slotTypes: [for (final slot in s.slots) slot.type],
-          slotDefinitionIds: [
-            for (final slot in s.slots) slot.definitionId,
-          ],
+          slotDefinitionIds: [for (final slot in s.slots) slot.definitionId],
         ),
     ];
   }
@@ -212,9 +205,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
   void addBlock(AddBlockResult result) {
     final s = _blockOnlySection;
     s.slots = [...s.slots, _slotFromResult(result)];
-    debugPrint(
-      '[LayoutEditorVM] addBlock $result (total=${s.slots.length})',
-    );
+    debugPrint('[LayoutEditorVM] addBlock $result (total=${s.slots.length})');
     notifyListeners();
   }
 
@@ -223,9 +214,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
     final next = [...s.slots]..removeWhere((slot) => slot.id == slotId);
     if (next.length == s.slots.length) return;
     s.slots = next;
-    debugPrint(
-      '[LayoutEditorVM] removeSlot $slotId (total=${s.slots.length})',
-    );
+    debugPrint('[LayoutEditorVM] removeSlot $slotId (total=${s.slots.length})');
     notifyListeners();
   }
 
@@ -288,9 +277,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             clearDefinitionId: next.definitionId == null,
           );
           section.slots = updated;
-          debugPrint(
-            '[LayoutEditorVM] replaceSlotType $slotId -> $result',
-          );
+          debugPrint('[LayoutEditorVM] replaceSlotType $slotId -> $result');
           notifyListeners();
           return;
         }
@@ -342,9 +329,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
     if (!featureBlockAllowedTypes.contains(type)) return;
     if (section.slots.length == 1 && section.slots.first.type == type) return;
     section.slots = [BlockSlot(id: _uuid.v4(), type: type)];
-    debugPrint(
-      '[LayoutEditorVM] setFeatureBlock $sectionId -> $type',
-    );
+    debugPrint('[LayoutEditorVM] setFeatureBlock $sectionId -> $type');
     notifyListeners();
   }
 
@@ -411,9 +396,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
     final item = list.removeAt(from);
     list.insert(to, item);
     section.slots = list;
-    debugPrint(
-      '[LayoutEditorVM] moveSlotInSection $sectionId $from -> $to',
-    );
+    debugPrint('[LayoutEditorVM] moveSlotInSection $sectionId $from -> $to');
     notifyListeners();
   }
 
@@ -494,11 +477,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             rows: 2, // renderer hint only; the editor always shows a 2x2 frame
             slots: const [],
           ),
-          SectionDraft(
-            id: _uuid.v4(),
-            kind: SectionKind.text,
-            slots: const [],
-          ),
+          SectionDraft(id: _uuid.v4(), kind: SectionKind.text, slots: const []),
         ];
       case LayoutKind.custom:
         return [];

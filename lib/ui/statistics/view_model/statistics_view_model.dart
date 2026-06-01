@@ -113,9 +113,7 @@ class StatisticsViewModel extends ChangeNotifier {
 
     _totalEntries = inRange.length;
     _totalWords = inRange.fold(0, (sum, e) => sum + _wordCountFor(e));
-    _totalMoodEntries = inRange
-        .where((e) => _firstMoodEmoji(e) != null)
-        .length;
+    _totalMoodEntries = inRange.where((e) => _firstMoodEmoji(e) != null).length;
 
     _moodDistribution = _computeMoodDistribution(inRange);
     _moodOverTime = window == null
@@ -128,27 +126,14 @@ class StatisticsViewModel extends ChangeNotifier {
 
   /// Returns the inclusive [start, end] window for [r], or `null` for
   /// `StatRange.all` (caller treats null as "no filter").
-  _DateWindow? _windowFor(
-    StatRange r,
-    DateTime today,
-    List<JournalEntry> all,
-  ) {
+  _DateWindow? _windowFor(StatRange r, DateTime today, List<JournalEntry> all) {
     switch (r) {
       case StatRange.week:
-        return _DateWindow(
-          start: _addDays(today, -6),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -6), end: today);
       case StatRange.month:
-        return _DateWindow(
-          start: _addDays(today, -29),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -29), end: today);
       case StatRange.year:
-        return _DateWindow(
-          start: _addDays(today, -364),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -364), end: today);
       case StatRange.all:
         return null;
     }
@@ -179,10 +164,7 @@ class StatisticsViewModel extends ChangeNotifier {
     while (!cursor.isAfter(window.end)) {
       final emoji = byDay[cursor];
       points.add(
-        MoodPoint(
-          day: cursor,
-          score: emoji == null ? null : _moodScore(emoji),
-        ),
+        MoodPoint(day: cursor, score: emoji == null ? null : _moodScore(emoji)),
       );
       cursor = _addDays(cursor, 1);
     }
@@ -207,10 +189,7 @@ class StatisticsViewModel extends ChangeNotifier {
     while (!cursor.isAfter(latest)) {
       final emoji = byDay[cursor];
       points.add(
-        MoodPoint(
-          day: cursor,
-          score: emoji == null ? null : _moodScore(emoji),
-        ),
+        MoodPoint(day: cursor, score: emoji == null ? null : _moodScore(emoji)),
       );
       cursor = _addDays(cursor, 1);
     }
@@ -241,9 +220,7 @@ class StatisticsViewModel extends ChangeNotifier {
     ];
   }
 
-  List<WeekBucket> _computeEntryFrequencyUnbounded(
-    List<JournalEntry> entries,
-  ) {
+  List<WeekBucket> _computeEntryFrequencyUnbounded(List<JournalEntry> entries) {
     if (entries.isEmpty) return const [];
     final counts = <DateTime, int>{};
     DateTime? earliest;

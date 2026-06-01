@@ -117,7 +117,9 @@ Widget _buildDayCell({
   } else {
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
-    textStyle = isWeekend ? base.copyWith(color: scheme.onSurfaceVariant) : base;
+    textStyle = isWeekend
+        ? base.copyWith(color: scheme.onSurfaceVariant)
+        : base;
   }
 
   return Container(
@@ -398,8 +400,9 @@ class _MonthCalendar extends StatefulWidget {
 }
 
 class _MonthCalendarState extends State<_MonthCalendar> {
-  late DateTime _focusedDay =
-      _WeekStripState._toUtcMidnight(widget.selectedDate);
+  late DateTime _focusedDay = _WeekStripState._toUtcMidnight(
+    widget.selectedDate,
+  );
 
   bool _hasEntry(DateTime day) =>
       widget.entriesByDay.contains(CalendarBottomBar._normalize(day));

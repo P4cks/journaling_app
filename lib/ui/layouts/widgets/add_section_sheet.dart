@@ -41,9 +41,7 @@ Future<SectionKind?> showAddSectionSheet(BuildContext context) {
           ListTile(
             leading: AppIcon(HugeIcons.strokeRoundedKeyframe),
             title: const Text('Feature block'),
-            subtitle: const Text(
-              'A large 2×2 single block — photo or memory.',
-            ),
+            subtitle: const Text('A large 2×2 single block — photo or memory.'),
             onTap: () =>
                 Navigator.of(sheetContext).pop(SectionKind.featureBlock),
           ),

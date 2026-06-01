@@ -104,8 +104,8 @@ class SettingsStorageService {
 
   Future<void> setBlockCustomCarouselDefinitionsJson(String? json) =>
       (json == null || json.isEmpty)
-          ? _box.delete(_blockCustomCarouselDefinitionsKey)
-          : _box.put(_blockCustomCarouselDefinitionsKey, json);
+      ? _box.delete(_blockCustomCarouselDefinitionsKey)
+      : _box.put(_blockCustomCarouselDefinitionsKey, json);
 
   // null = key absent (use the default, currently `true`).
   bool? getThemePostItMode() {
@@ -121,8 +121,8 @@ class SettingsStorageService {
 
   Future<void> setThemePostItPalette(String? json) =>
       (json == null || json.isEmpty)
-          ? _box.delete(_themePostItPaletteKey)
-          : _box.put(_themePostItPaletteKey, json);
+      ? _box.delete(_themePostItPaletteKey)
+      : _box.put(_themePostItPaletteKey, json);
 
   bool getDebugExpandedDoneButton() =>
       _box.get(_debugExpandedDoneButtonKey) == 'true';
@@ -139,6 +139,6 @@ class SettingsStorageService {
 
   Future<void> setBlockMemoryEligibleTypesJson(String? json) =>
       (json == null || json.isEmpty)
-          ? _box.delete(_blockMemoryEligibleTypesKey)
-          : _box.put(_blockMemoryEligibleTypesKey, json);
+      ? _box.delete(_blockMemoryEligibleTypesKey)
+      : _box.put(_blockMemoryEligibleTypesKey, json);
 }

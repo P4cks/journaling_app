@@ -143,9 +143,9 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         return true;
       case 'save':
         if (vm.nameController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add a name to save')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
           return false;
         }
         if (vm.nameConflict) {
@@ -380,7 +380,11 @@ class _FilledCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final deps = AppDependencies.of(context);
-    final preview = _slotPreviewData(slot, deps.blockSettings, deps.themeSettings);
+    final preview = _slotPreviewData(
+      slot,
+      deps.blockSettings,
+      deps.themeSettings,
+    );
     return GestureDetector(
       onTap: onSwapType,
       child: BlockChrome(
@@ -426,10 +430,7 @@ class _EmptyAddBlockCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withValues(alpha: 0.5),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
         ),
         alignment: Alignment.center,
         child: Column(
@@ -573,14 +574,18 @@ class _SectionCard extends StatelessWidget {
                   tooltip: 'Move up',
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
-                  onPressed: isFirst ? null : () => vm.moveSection(index, index - 1),
+                  onPressed: isFirst
+                      ? null
+                      : () => vm.moveSection(index, index - 1),
                   icon: AppIcon(HugeIcons.strokeRoundedArrowUp01),
                 ),
                 IconButton(
                   tooltip: 'Move down',
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
-                  onPressed: isLast ? null : () => vm.moveSection(index, index + 1),
+                  onPressed: isLast
+                      ? null
+                      : () => vm.moveSection(index, index + 1),
                   icon: AppIcon(HugeIcons.strokeRoundedArrowDown01),
                 ),
                 IconButton(
@@ -601,14 +606,18 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           switch (section.kind) {
-            SectionKind.blockGrid =>
-              _BlockGridSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.blockGrid => _BlockGridSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
             SectionKind.text => const Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
               child: _TextSectionPreview(),
             ),
-            SectionKind.featureBlock =>
-              _FeatureBlockSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.featureBlock => _FeatureBlockSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
           },
         ],
       ),
@@ -649,8 +658,7 @@ class _BlockGridSectionBody extends StatelessWidget {
         scrollable: false,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         onAddBlock: () => _addBlock(context),
-        onReorder: (from, to) =>
-            vm.moveSlotInSection(sectionId, from, to),
+        onReorder: (from, to) => vm.moveSlotInSection(sectionId, from, to),
         onBlockTap: (block, _) async {
           final picked = await showAddBlockSheet(context);
           if (picked != null) {
@@ -673,7 +681,10 @@ class _BlockGridSectionBody extends StatelessWidget {
 }
 
 class _FeatureBlockSectionBody extends StatelessWidget {
-  const _FeatureBlockSectionBody({required this.vm, required this.sectionIndex});
+  const _FeatureBlockSectionBody({
+    required this.vm,
+    required this.sectionIndex,
+  });
 
   final LayoutEditorViewModel vm;
   final int sectionIndex;
@@ -757,7 +768,10 @@ class _AddSectionTapZone extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppIcon(HugeIcons.strokeRoundedPlusSign, color: theme.colorScheme.primary),
+              AppIcon(
+                HugeIcons.strokeRoundedPlusSign,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Add section',
@@ -773,4 +787,3 @@ class _AddSectionTapZone extends StatelessWidget {
     );
   }
 }
-

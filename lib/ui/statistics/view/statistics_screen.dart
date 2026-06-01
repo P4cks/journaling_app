@@ -51,10 +51,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: StatRangeSelector(
-              value: vm.range,
-              onChanged: vm.setRange,
-            ),
+            child: StatRangeSelector(value: vm.range, onChanged: vm.setRange),
           ),
           if (vm.isEmpty)
             const SliverFillRemaining(
@@ -74,16 +71,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             SliverToBoxAdapter(child: StreakStatCard(streak: vm.streak)),
             const SliverToBoxAdapter(child: SectionHeader(label: 'Mood')),
             SliverToBoxAdapter(
-              child: MoodDistributionChart(
-                distribution: vm.moodDistribution,
-              ),
+              child: MoodDistributionChart(distribution: vm.moodDistribution),
             ),
             SliverToBoxAdapter(
               child: MoodOverTimeChart(points: vm.moodOverTime),
             ),
-            const SliverToBoxAdapter(
-              child: SectionHeader(label: 'Frequency'),
-            ),
+            const SliverToBoxAdapter(child: SectionHeader(label: 'Frequency')),
             SliverToBoxAdapter(
               child: EntryFrequencyChart(buckets: vm.entryFrequency),
             ),

@@ -40,11 +40,7 @@ final kLayoutIcons = <LayoutIcon>[
     icon: HugeIcons.strokeRoundedNotebook02,
     label: 'Notepad',
   ),
-  LayoutIcon(
-    name: 'book',
-    icon: HugeIcons.strokeRoundedBook01,
-    label: 'Book',
-  ),
+  LayoutIcon(name: 'book', icon: HugeIcons.strokeRoundedBook01, label: 'Book'),
   LayoutIcon(
     name: 'bookOpen',
     icon: HugeIcons.strokeRoundedBookOpen01,
@@ -61,36 +57,20 @@ final kLayoutIcons = <LayoutIcon>[
     label: 'Feather',
   ),
   // Mood / mind
-  LayoutIcon(
-    name: 'smiley',
-    icon: HugeIcons.strokeRoundedSmile,
-    label: 'Mood',
-  ),
+  LayoutIcon(name: 'smiley', icon: HugeIcons.strokeRoundedSmile, label: 'Mood'),
   LayoutIcon(
     name: 'heart',
     icon: HugeIcons.strokeRoundedFavourite,
     label: 'Heart',
   ),
-  LayoutIcon(
-    name: 'brain',
-    icon: HugeIcons.strokeRoundedBrain,
-    label: 'Brain',
-  ),
+  LayoutIcon(name: 'brain', icon: HugeIcons.strokeRoundedBrain, label: 'Brain'),
   LayoutIcon(
     name: 'lightbulb',
     icon: HugeIcons.strokeRoundedBulb,
     label: 'Idea',
   ),
-  LayoutIcon(
-    name: 'star',
-    icon: HugeIcons.strokeRoundedStar,
-    label: 'Star',
-  ),
-  LayoutIcon(
-    name: 'flame',
-    icon: HugeIcons.strokeRoundedFire,
-    label: 'Flame',
-  ),
+  LayoutIcon(name: 'star', icon: HugeIcons.strokeRoundedStar, label: 'Star'),
+  LayoutIcon(name: 'flame', icon: HugeIcons.strokeRoundedFire, label: 'Flame'),
   // Lists / planning
   LayoutIcon(
     name: 'listChecks',
@@ -107,42 +87,14 @@ final kLayoutIcons = <LayoutIcon>[
     icon: HugeIcons.strokeRoundedTarget01,
     label: 'Target',
   ),
-  LayoutIcon(
-    name: 'flag',
-    icon: HugeIcons.strokeRoundedFlag01,
-    label: 'Flag',
-  ),
+  LayoutIcon(name: 'flag', icon: HugeIcons.strokeRoundedFlag01, label: 'Flag'),
   // Weather / nature
-  LayoutIcon(
-    name: 'sun',
-    icon: HugeIcons.strokeRoundedSun01,
-    label: 'Sun',
-  ),
-  LayoutIcon(
-    name: 'moon',
-    icon: HugeIcons.strokeRoundedMoon,
-    label: 'Moon',
-  ),
-  LayoutIcon(
-    name: 'cloud',
-    icon: HugeIcons.strokeRoundedCloud,
-    label: 'Cloud',
-  ),
-  LayoutIcon(
-    name: 'drop',
-    icon: HugeIcons.strokeRoundedDroplet,
-    label: 'Drop',
-  ),
-  LayoutIcon(
-    name: 'leaf',
-    icon: HugeIcons.strokeRoundedLeaf01,
-    label: 'Leaf',
-  ),
-  LayoutIcon(
-    name: 'tree',
-    icon: HugeIcons.strokeRoundedTree01,
-    label: 'Tree',
-  ),
+  LayoutIcon(name: 'sun', icon: HugeIcons.strokeRoundedSun01, label: 'Sun'),
+  LayoutIcon(name: 'moon', icon: HugeIcons.strokeRoundedMoon, label: 'Moon'),
+  LayoutIcon(name: 'cloud', icon: HugeIcons.strokeRoundedCloud, label: 'Cloud'),
+  LayoutIcon(name: 'drop', icon: HugeIcons.strokeRoundedDroplet, label: 'Drop'),
+  LayoutIcon(name: 'leaf', icon: HugeIcons.strokeRoundedLeaf01, label: 'Leaf'),
+  LayoutIcon(name: 'tree', icon: HugeIcons.strokeRoundedTree01, label: 'Tree'),
   LayoutIcon(
     name: 'mountains',
     icon: HugeIcons.strokeRoundedMountain,
@@ -179,11 +131,7 @@ final kLayoutIcons = <LayoutIcon>[
     icon: HugeIcons.strokeRoundedAirplane01,
     label: 'Travel',
   ),
-  LayoutIcon(
-    name: 'gift',
-    icon: HugeIcons.strokeRoundedGift,
-    label: 'Gift',
-  ),
+  LayoutIcon(name: 'gift', icon: HugeIcons.strokeRoundedGift, label: 'Gift'),
   LayoutIcon(
     name: 'briefcase',
     icon: HugeIcons.strokeRoundedBriefcase01,

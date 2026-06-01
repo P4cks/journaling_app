@@ -122,81 +122,80 @@ class _LocationBlockWidgetState extends State<LocationBlockWidget> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: pin ?? _fallbackCenter,
-              initialZoom: pin != null ? _pinZoom : _fallbackZoom,
-              minZoom: 1,
-              maxZoom: 18,
-              onLongPress: isEditable ? _onLongPress : null,
-              interactionOptions: InteractionOptions(
-                // `doubleTapZoom` is intentionally OFF — the
-                // double-tap gesture is reserved for the host's
-                // "push expanded route" callback. Users can still
-                // zoom via pinch / scroll-wheel.
-                flags: isEditable
-                    ? (InteractiveFlag.drag |
-                          InteractiveFlag.pinchZoom |
-                          InteractiveFlag.scrollWheelZoom)
-                    : InteractiveFlag.none,
-              ),
-            ),
+          borderRadius: BorderRadius.circular(6),
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName:
-                    'com.example.journaling_app_rewrite',
-                maxNativeZoom: 19,
-              ),
-              if (pin != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: pin,
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.topCenter,
-                      child: AppIcon(
-                        HugeIcons.strokeRoundedMapPin,
-                        size: 32,
-                        color: scheme.primary,
-                      ),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: pin ?? _fallbackCenter,
+                  initialZoom: pin != null ? _pinZoom : _fallbackZoom,
+                  minZoom: 1,
+                  maxZoom: 18,
+                  onLongPress: isEditable ? _onLongPress : null,
+                  interactionOptions: InteractionOptions(
+                    // `doubleTapZoom` is intentionally OFF — the
+                    // double-tap gesture is reserved for the host's
+                    // "push expanded route" callback. Users can still
+                    // zoom via pinch / scroll-wheel.
+                    flags: isEditable
+                        ? (InteractiveFlag.drag |
+                              InteractiveFlag.pinchZoom |
+                              InteractiveFlag.scrollWheelZoom)
+                        : InteractiveFlag.none,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.journaling_app_rewrite',
+                    maxNativeZoom: 19,
+                  ),
+                  if (pin != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: pin,
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.topCenter,
+                          child: AppIcon(
+                            HugeIcons.strokeRoundedMapPin,
+                            size: 32,
+                            color: scheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                ],
+              ),
+              if (isEditable && pin == null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    color: scheme.surface.withValues(alpha: 0.82),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      'Long-press to drop a pin',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
             ],
           ),
-            if (isEditable && pin == null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  color: scheme.surface.withValues(alpha: 0.82),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    'Long-press to drop a pin',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-          ],
         ),
-      ),
       ),
     );
   }

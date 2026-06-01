@@ -230,11 +230,8 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
 
     // Top-align when the keyboard is up so the block sits above it;
     // center otherwise.
-    final alignment =
-        keyboardUp ? Alignment.topCenter : Alignment.center;
-    final topPad = keyboardUp
-        ? MediaQuery.paddingOf(context).top + 24.0
-        : 0.0;
+    final alignment = keyboardUp ? Alignment.topCenter : Alignment.center;
+    final topPad = keyboardUp ? MediaQuery.paddingOf(context).top + 24.0 : 0.0;
 
     final Widget heroChild = widget.isTextSection
         ? _ExpandedTextSection(

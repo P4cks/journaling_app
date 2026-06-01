@@ -9,10 +9,7 @@ import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 String _summarize(JournalLayout layout) {
   switch (layout.kind) {
     case LayoutKind.blockOnly:
-      final n = layout.sections.fold<int>(
-        0,
-        (acc, s) => acc + s.blocks.length,
-      );
+      final n = layout.sections.fold<int>(0, (acc, s) => acc + s.blocks.length);
       return '$n block${n == 1 ? '' : 's'}';
     case LayoutKind.fixedFourPlusText:
       return '4 blocks + text';

@@ -344,10 +344,7 @@ class _BlockGridState extends State<BlockGrid> {
         }
       }
       final y = firstRect.top - 5;
-      return _InsertionLineInfo(
-        start: Offset(left, y),
-        end: Offset(right, y),
-      );
+      return _InsertionLineInfo(start: Offset(left, y), end: Offset(right, y));
     }
 
     // Below last row — horizontal line spanning the full row width.
@@ -366,10 +363,7 @@ class _BlockGridState extends State<BlockGrid> {
         }
       }
       final y = lastRect.bottom + 5;
-      return _InsertionLineInfo(
-        start: Offset(left, y),
-        end: Offset(right, y),
-      );
+      return _InsertionLineInfo(start: Offset(left, y), end: Offset(right, y));
     }
 
     if (idx >= n) {
@@ -461,13 +455,7 @@ class _BlockGridState extends State<BlockGrid> {
         ],
       );
     } else {
-      grid = Stack(
-        key: _gridKey,
-        children: [
-          staggered,
-          ..._buildGhosts(),
-        ],
-      );
+      grid = Stack(key: _gridKey, children: [staggered, ..._buildGhosts()]);
     }
 
     Widget composed = grid;
@@ -506,9 +494,7 @@ class _BlockGridState extends State<BlockGrid> {
   }
 
   List<Widget> _buildTiles() {
-    return [
-      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i),
-    ];
+    return [for (var i = 0; i < widget.blocks.length; i++) _buildTile(i)];
   }
 
   Widget _buildTile(int index) {
@@ -705,11 +691,7 @@ class _DraggableFeedback extends StatelessWidget {
 
     return Material(
       type: MaterialType.transparency,
-      child: SizedBox(
-        width: size.width,
-        height: size.height,
-        child: child,
-      ),
+      child: SizedBox(width: size.width, height: size.height, child: child),
     );
   }
 }

@@ -251,16 +251,14 @@ class _ItemRow extends StatelessWidget {
         item.value,
         style: const TextStyle(fontSize: 28),
       ),
-      CarouselItemKind.icon =>
-        AppIcon(
-          carouselIconFor(item.value)?.icon ?? HugeIcons.strokeRoundedQuestion,
-          size: 28,
-        ),
+      CarouselItemKind.icon => AppIcon(
+        carouselIconFor(item.value)?.icon ?? HugeIcons.strokeRoundedQuestion,
+        size: 28,
+      ),
     };
     final label = switch (item.kind) {
       CarouselItemKind.emoji => item.value,
-      CarouselItemKind.icon =>
-        carouselIconFor(item.value)?.label ?? item.value,
+      CarouselItemKind.icon => carouselIconFor(item.value)?.label ?? item.value,
     };
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -385,8 +383,7 @@ Future<String?> _showIconPicker(BuildContext context) {
                   for (final icon in kCarouselIcons)
                     _PickerTile(
                       icon: icon,
-                      onTap: () =>
-                          Navigator.of(sheetContext).pop(icon.name),
+                      onTap: () => Navigator.of(sheetContext).pop(icon.name),
                     ),
                 ],
               ),

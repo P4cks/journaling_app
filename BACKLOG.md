@@ -36,6 +36,7 @@ READ CLAUDE.md for further implementation details
 * [ ] `M` **Toggle between emoji and HugeIcons for blocks** — let users switch between emojis and HugeIcons stroke-rounded glyphs.
 * [ ] `L` **Animations** - rework animations for navigation to be smoother and visually appealing but discrete/
 * [ ] `S` **Change shadows on boxes**
+* [ ] `S` **Easter-egg** tapping block x amount of times makes it float down like a leaf
 
 ## Section ideas
 

@@ -38,10 +38,11 @@ class StatsEmptyState extends StatelessWidget {
             SizedBox(height: compact ? 8 : 16),
             Text(
               message,
-              style: (compact
-                      ? theme.textTheme.bodyMedium
-                      : theme.textTheme.titleMedium)
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style:
+                  (compact
+                          ? theme.textTheme.bodyMedium
+                          : theme.textTheme.titleMedium)
+                      ?.copyWith(color: scheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
           ],
