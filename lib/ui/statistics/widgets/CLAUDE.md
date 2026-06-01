@@ -5,9 +5,15 @@ See [../CLAUDE.md](../CLAUDE.md) for how these compose into the screen.
 ## Files
 
 - [stat_range_selector.dart](stat_range_selector.dart) —
-  `StatRangeSelector`. Wraps `SegmentedButton<StatRange>` with the
-  four labels from `StatRangeDisplay.label`. `showSelectedIcon: false`
-  keeps each segment label-only.
+  `StatRangeSelector`. A bordered, left-aligned `DropdownButton<StatRange>`
+  (inside `DropdownButtonHideUnderline`) over the four
+  `StatRangeDisplay.label`s. Takes a `SubscriptionRepository`. `Year`
+  and `All` (`isProOnly`) render a trailing `ProLockBadge` in their menu
+  items for free users; `_onSelected` runs `requirePro` for a locked
+  pick and only calls `onChanged` for an already-Pro user or a
+  successful purchase. `selectedItemBuilder` shows the bare label on the
+  button face (no badge), since a free user can never have a locked
+  range selected. (Replaced the former `SegmentedButton` switcher.)
 - [summary_numbers_card.dart](summary_numbers_card.dart) —
   `SummaryNumbersCard`. Four cells (Entries / Words / Moods / Streak)
   separated by 1px vertical dividers in a single row. Large numbers

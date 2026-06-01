@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:hugeicons/hugeicons.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
@@ -12,17 +13,69 @@ const int kFreeMaxBlocksPerLayout = 6;
 
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;
-/// `false` when they cancel or the paywall errors.
+/// `false` when they cancel, are offline, or the paywall errors.
 ///
 /// The customer-info listener in [SubscriptionRepository] flips `isPro`
 /// before the paywall returns `purchased`, so callers can proceed
 /// straight away on a `true` result. This is the single gate primitive —
-/// every feature gate (layout creation, block count, …) routes through
-/// it so the paywall-on-tap behaviour stays consistent.
-Future<bool> requirePro(SubscriptionRepository subscriptions) async {
+/// every feature gate (layout creation, block count, statistics range, …)
+/// routes through it so the paywall-on-tap behaviour stays consistent.
+///
+/// **Offline handling.** Presenting the RevenueCat paywall needs the
+/// current offering, which requires (or has cached) a network fetch. When
+/// a free user taps a gated action while offline we can't sell them Pro,
+/// so instead of showing a broken/empty paywall we surface a SnackBar
+/// (when a [context] is supplied) explaining they need to be online, and
+/// return `false`. Pass `context` from every call site so the user gets
+/// that feedback; without it the gate still fails closed, just silently.
+Future<bool> requirePro(
+  SubscriptionRepository subscriptions, {
+  BuildContext? context,
+}) async {
   if (subscriptions.isPro) return true;
-  final result = await RevenueCatUI.presentPaywallIfNeeded(kProEntitlementId);
-  return result == PaywallResult.purchased;
+
+  // Can't present a paywall without an offering — typically means offline.
+  final canPresent = await subscriptions.ensureOfferings();
+  if (!canPresent) {
+    if (context != null && context.mounted) {
+      _showProUnavailable(
+        context,
+        "You're offline — connect to the internet to upgrade to Pro.",
+      );
+    }
+    return false;
+  }
+
+  try {
+    final result = await RevenueCatUI.presentPaywallIfNeeded(kProEntitlementId);
+    if (result == PaywallResult.error) {
+      if (context != null && context.mounted) {
+        _showProUnavailable(
+          context,
+          "Couldn't open the upgrade screen. Please try again.",
+        );
+      }
+      return false;
+    }
+    // On purchase/restore the customer-info listener has already flipped
+    // `isPro`, so reading it back is the source of truth.
+    return subscriptions.isPro;
+  } on PlatformException catch (e) {
+    debugPrint('[requirePro] paywall error: ${e.message}');
+    if (context != null && context.mounted) {
+      _showProUnavailable(
+        context,
+        "Couldn't complete that right now. Please try again.",
+      );
+    }
+    return false;
+  }
+}
+
+void _showProUnavailable(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+  );
 }
 
 /// Crown badge marking a Pro-locked affordance. Pair it with a greyed

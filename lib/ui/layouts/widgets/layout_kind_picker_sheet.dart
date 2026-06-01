@@ -60,7 +60,10 @@ Future<LayoutKind?> showLayoutKindPickerSheet(
                 Navigator.of(sheetContext).pop(LayoutKind.custom);
                 return;
               }
-              final ok = await requirePro(subscriptions);
+              final ok = await requirePro(
+                subscriptions,
+                context: sheetContext,
+              );
               if (ok && sheetContext.mounted) {
                 Navigator.of(sheetContext).pop(LayoutKind.custom);
               }

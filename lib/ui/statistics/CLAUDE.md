@@ -16,7 +16,15 @@ statistics/
 
 ## Behaviour
 
-- Top of page: `SegmentedButton<StatRange>` with `Week | Month | Year | All`.
+- Top of page: a left-aligned **dropdown** (`StatRangeSelector`) with
+  `Week | Month | Year | All`. **`Year` and `All` are Pro-locked**
+  (`StatRangeDisplay.isProOnly`) — those menu items carry a
+  `ProLockBadge` and selecting one as a free user presents the
+  RevenueCat paywall via `requirePro`; the range only changes for an
+  already-Pro user or on a successful purchase. The selector takes a
+  `SubscriptionRepository`, and the screen wraps it in a
+  `ListenableBuilder` so the badges clear live when `isPro` flips.
+  (Replaced the former `SegmentedButton` switcher.)
   Window definitions (relative to today):
   - `week` — last 7 days inclusive
   - `month` — last 30 days inclusive

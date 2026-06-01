@@ -62,7 +62,10 @@ void main() async {
 
   // RevenueCat must be configured before any other Purchases call.
   await SubscriptionService.configure();
-  final subscriptionRepository = SubscriptionRepository(SubscriptionService());
+  final subscriptionRepository = SubscriptionRepository(
+    SubscriptionService(),
+    settingsStorage,
+  );
   await subscriptionRepository.init();
 
   await layoutRepository.seedDefaultIfEmpty();

@@ -51,7 +51,11 @@ Settings contains:
    (free) and "Manage subscription" (Pro). See
    [../subscription/CLAUDE.md](../subscription/CLAUDE.md).
 6. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
-   surface override, and HSL free-pick for secondary/accent.
+   `Simulate free account` (a `SwitchListTile` bound to
+   `subscriptionRepository.debugForceFree` / `setDebugForceFree`; masks
+   `isPro` to false locally to test the free experience — it does NOT
+   cancel or touch the real RevenueCat subscription, which has no client
+   cancel API), surface override, and HSL free-pick for secondary/accent.
 
 Block-settings is rendered inline by `BlockSettingsScreen` —
 sections for Text block (char limit), Prompt block (list + strategy),

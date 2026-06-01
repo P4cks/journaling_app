@@ -30,7 +30,12 @@ Read order if you're new: `model/` → `services/` → `repositories/`.
   RevenueCat customer-info update listener and exposes a single `isPro`
   flag (the `pro` entitlement). UI should gate features on
   `subscriptionRepository.isPro`, never on `Purchases` / `CustomerInfo`
-  directly. State is SDK-cached and listener-driven — not persisted.
+  directly. The live entitlement is SDK-cached + listener-driven; on top
+  of that the repo persists two booleans in the settings box — a
+  last-known-Pro **offline failsafe** (so an offline cold start still
+  honours an existing subscription) and a debug `forceFree` override
+  (Settings → Debug "Simulate free account"). See
+  [repositories/CLAUDE.md](repositories/CLAUDE.md).
 - `DebugSettings` and `ThemeSettings` are `ChangeNotifier`s — they
   notify on every setter. The root `MaterialApp` and several screens
   rebuild via `ListenableBuilder` against them.

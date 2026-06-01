@@ -79,7 +79,10 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
     // Free users keep their one (seeded) layout; creating a second requires
     // the `pro` entitlement (BACKLOG #90). `requirePro` short-circuits when
     // already Pro and otherwise presents the paywall.
-    if (vm.layouts.isNotEmpty && !await requirePro(subs)) return;
+    if (vm.layouts.isNotEmpty &&
+        !await requirePro(subs, context: context)) {
+      return;
+    }
     if (!mounted) return;
     final kind = await showLayoutKindPickerSheet(context, subscriptions: subs);
     if (!mounted || kind == null) return;
