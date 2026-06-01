@@ -56,7 +56,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     default `true`; gates the expanded-block overlay vs in-place
     edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
     absent → default `false`; developer affordance that adds a Done
-    button to the expanded block route). If you add another, give it
+    button to the expanded block route),
+    `subscription.lastKnownPro` (`true`/`false`; absent → `false`;
+    persisted snapshot of the **real** `pro` entitlement so an offline
+    cold start can still honour an existing subscription — written by
+    `SubscriptionRepository` on every customer-info update),
+    `subscription.debugForceFree` (`true`/`false`; absent → `false`;
+    debug "simulate free account" override). If you add another, give it
     a namespaced key and add a typed accessor pair. Abandoned legacy keys
     (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
     are intentionally not read by the service anymore and may still

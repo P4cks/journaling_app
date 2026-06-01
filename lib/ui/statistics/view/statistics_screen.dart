@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/streak_stat_card.dart';
@@ -19,12 +20,14 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   StatisticsViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_viewModel == null) {
       final deps = AppDependencies.of(context);
+      _subscriptions = deps.subscriptionRepository;
       _viewModel = StatisticsViewModel(repository: deps.journalRepository);
       _viewModel!.addListener(_onChanged);
     }
@@ -51,7 +54,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: StatRangeSelector(value: vm.range, onChanged: vm.setRange),
+            child: ListenableBuilder(
+              listenable: _subscriptions!,
+              builder: (context, _) => StatRangeSelector(
+                value: vm.range,
+                onChanged: vm.setRange,
+                subscriptions: _subscriptions!,
+              ),
+            ),
           ),
           if (vm.isEmpty)
             const SliverFillRemaining(

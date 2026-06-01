@@ -183,7 +183,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     // blocks; the (N+1)th add presents the paywall (BACKLOG #92).
     if (!subs.isPro &&
         vm.sections.first.slots.length >= kFreeMaxBlocksPerLayout) {
-      if (!await requirePro(subs)) return;
+      if (!await requirePro(subs, context: context)) return;
       if (!mounted) return;
     }
     final selected = await showAddBlockSheet(context);

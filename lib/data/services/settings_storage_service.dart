@@ -20,6 +20,8 @@ class SettingsStorageService {
   static const _debugExpandedDoneButtonKey =
       'debug.expandedBlock.showDoneButton';
   static const _blockMemoryEligibleTypesKey = 'block.memory.eligibleTypes';
+  static const _subscriptionLastKnownProKey = 'subscription.lastKnownPro';
+  static const _subscriptionDebugForceFreeKey = 'subscription.debugForceFree';
   // Legacy key `block.expandOnEdit` is intentionally not read anymore
   // — both single-tap (in-place edit) and double-tap (expanded route)
   // are always active. Old values on disk are harmless under the
@@ -141,4 +143,22 @@ class SettingsStorageService {
       (json == null || json.isEmpty)
       ? _box.delete(_blockMemoryEligibleTypesKey)
       : _box.put(_blockMemoryEligibleTypesKey, json);
+
+  /// Last-known Pro entitlement state, persisted so a cold start while
+  /// offline (where the RevenueCat cache may be unavailable) can still
+  /// honour an existing subscription. Absent → never seen Pro → `false`.
+  bool getSubscriptionLastKnownPro() =>
+      _box.get(_subscriptionLastKnownProKey) == 'true';
+
+  Future<void> setSubscriptionLastKnownPro(bool value) =>
+      _box.put(_subscriptionLastKnownProKey, value.toString());
+
+  /// Debug-only override that makes the app behave as a free account
+  /// regardless of the real entitlement (lets developers test the free
+  /// experience). Absent → `false`.
+  bool getSubscriptionDebugForceFree() =>
+      _box.get(_subscriptionDebugForceFreeKey) == 'true';
+
+  Future<void> setSubscriptionDebugForceFree(bool value) =>
+      _box.put(_subscriptionDebugForceFreeKey, value.toString());
 }

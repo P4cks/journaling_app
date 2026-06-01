@@ -32,11 +32,21 @@ for how they fit together; this file is per-file notes.
   `SectionHeader`, and `children` are padded rows/controls followed by
   a divider. Import this file directly for settings-style groups.
 - [pro_gate.dart](pro_gate.dart) — shared Pro-gating primitives.
-  `Future<bool> requirePro(SubscriptionRepository)` — returns `true`
-  immediately when already Pro, else presents
-  `RevenueCatUI.presentPaywallIfNeeded('pro')` and returns `true` only
-  on `PaywallResult.purchased`. The single gate primitive every feature
-  gate routes through, so paywall-on-tap behaviour stays consistent.
+  `Future<bool> requirePro(SubscriptionRepository, {BuildContext? context})`
+  — returns `true` immediately when already Pro, else presents
+  `RevenueCatUI.presentPaywallIfNeeded('pro')` and returns the
+  post-paywall `subscriptions.isPro` (the customer-info listener has
+  already flipped it on purchase/restore, so reading it back is the
+  source of truth). The single gate primitive every feature gate routes
+  through, so paywall-on-tap behaviour stays consistent. **Offline
+  handling**: before presenting it calls `subscriptions.ensureOfferings()`;
+  if no offering can be loaded (typically offline, so we can't sell Pro)
+  it surfaces a "you're offline" SnackBar (when a `context` is passed)
+  and returns `false` instead of showing a broken/empty paywall.
+  `PlatformException` and `PaywallResult.error` are likewise caught and
+  reported via SnackBar. **Pass `context` from every call site** so the
+  user gets that feedback; without it the gate still fails closed,
+  just silently.
   `ProLockBadge({compact})` — crown badge marking a locked affordance:
   `compact: true` → small filled crown dot for overlaying on an icon
   button (e.g. the editor's Add-block `+` at the block cap);

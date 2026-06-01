@@ -113,6 +113,23 @@ class SettingsScreen extends StatelessWidget {
                     value: debug.showExpandedBlockDoneButton,
                     onChanged: debug.setShowExpandedBlockDoneButton,
                   ),
+                  ListenableBuilder(
+                    listenable: deps.subscriptionRepository,
+                    builder: (context, _) {
+                      final subs = deps.subscriptionRepository;
+                      return SwitchListTile(
+                        secondary: AppIcon(HugeIcons.strokeRoundedCrown),
+                        title: const Text('Simulate free account'),
+                        subtitle: const Text(
+                          'Ignore your Pro entitlement to test the free '
+                          'experience. Does not cancel or affect your real '
+                          'subscription.',
+                        ),
+                        value: subs.debugForceFree,
+                        onChanged: subs.setDebugForceFree,
+                      );
+                    },
+                  ),
                   _DebugColorPickerTile(
                     theme: theme,
                     icon: HugeIcons.strokeRoundedPaintBucket,

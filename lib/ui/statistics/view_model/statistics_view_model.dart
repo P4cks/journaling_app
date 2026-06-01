@@ -16,6 +16,15 @@ extension StatRangeDisplay on StatRange {
     StatRange.year => 'Year',
     StatRange.all => 'All',
   };
+
+  /// Whether this range is gated behind the `pro` entitlement. Free
+  /// users get `week` / `month`; `year` and `all` (the longer / full
+  /// history views) are Pro-only. The gate is enforced in the UI
+  /// ([StatRangeSelector]); the view-model itself is tier-agnostic.
+  bool get isProOnly => switch (this) {
+    StatRange.week || StatRange.month => false,
+    StatRange.year || StatRange.all => true,
+  };
 }
 
 /// One day's mood point on the time-series chart. `score` is null on

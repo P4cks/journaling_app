@@ -83,6 +83,7 @@ pushes these screens.
 | `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
+| `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |

@@ -14,19 +14,42 @@ coordination live.
   repository instead of importing Firebase SDK classes.
 - [subscription_repository.dart](subscription_repository.dart) —
   `SubscriptionRepository extends ChangeNotifier`. Wraps
-  [SubscriptionService](../services/subscription_service.dart) and
-  exposes a single `isPro` getter (true when the `pro` entitlement —
-  `kProEntitlementId` — is active in `CustomerInfo`). Subscribes to the
-  RevenueCat customer-info update listener in its constructor (mirrors
-  `AuthRepository`'s stream subscription) and removes it in `dispose`.
-  `init()` (called once from `main.dart` after
+  [SubscriptionService](../services/subscription_service.dart) **and**
+  [SettingsStorageService](../services/settings_storage_service.dart)
+  (constructor: `SubscriptionRepository(service, settings)`). Exposes a
+  single `isPro` getter resolved in three tiers:
+  1. **Debug override** — when `debugForceFree` is on, `isPro` is always
+     `false` (lets developers test the free experience; toggled from
+     Settings → Debug "Simulate free account" via `setDebugForceFree`).
+     This does **not** touch the real RevenueCat subscription — the
+     client SDK has no cancel API, so this is a local mask only.
+  2. **Live entitlement** — `CustomerInfo.entitlements.active` contains
+     `kProEntitlementId` (SDK-cached, so it works offline once the SDK
+     has cached at least once).
+  3. **Offline failsafe** — when we have *no* `CustomerInfo` at all
+     (e.g. a cold start that threw offline), falls back to the persisted
+     `subscription.lastKnownPro` flag. That flag snapshots the **real**
+     entitlement on every customer-info update (`_applyCustomerInfo`),
+     never the debug override, so toggling the override can't corrupt
+     the failsafe.
+  Subscribes to the RevenueCat customer-info update listener in its
+  constructor (mirrors `AuthRepository`'s stream subscription) and
+  removes it in `dispose`. `init()` (called once from `main.dart` after
   `SubscriptionService.configure`) fetches initial `CustomerInfo` +
-  `Offerings`; `restore()` re-applies prior purchases. **Entitlement
-  state is never persisted to Hive** — the SDK caches it and the
-  listener keeps this notifier live, so a purchase made on the
-  `RevenueCatUI` paywall flips `isPro` automatically (no manual
-  `purchasePackage`). UI reads `isPro` for gates (e.g.
-  [LayoutsScreen](../../ui/layouts/view/layouts_screen.dart)) and the
+  `Offerings`, **swallowing failures** so an offline launch falls
+  through to the persisted flag; `restore()` re-applies prior purchases.
+  `ensureOfferings()` (re)loads the current offering and returns whether
+  a paywall can be presented — the Pro gate
+  ([pro_gate.dart](../../ui/core/widgets/pro_gate.dart)) calls it to
+  detect "offline / can't buy" before presenting RevenueCat's paywall.
+  `hasOfferings` exposes the same state synchronously. The live
+  entitlement is SDK-cached (not in Hive); only the `lastKnownPro` /
+  `debugForceFree` booleans are persisted (settings box). A purchase
+  made on the `RevenueCatUI` paywall flips `isPro` automatically (no
+  manual `purchasePackage`). UI reads `isPro` for gates (e.g.
+  [LayoutsScreen](../../ui/layouts/view/layouts_screen.dart),
+  [StatRangeSelector](../../ui/statistics/widgets/stat_range_selector.dart))
+  and the
   [SubscriptionScreen](../../ui/subscription/view/subscription_screen.dart).
 - [journal_repository.dart](journal_repository.dart) — `JournalRepository extends ChangeNotifier`.
   - **Date keying**: `_normalize(d)` strips time-of-day → `DateTime(y, m, d)`;

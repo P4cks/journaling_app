@@ -6,7 +6,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 - [statistics_screen.dart](statistics_screen.dart) — `StatisticsScreen`
   (StatefulWidget). Standard VM-binding pattern (see
-  [ui/CLAUDE.md](../../CLAUDE.md)).
+  [ui/CLAUDE.md](../../CLAUDE.md)). Also stashes
+  `deps.subscriptionRepository` in `didChangeDependencies` so the
+  range-selector's Pro gate can read live `isPro`.
 
 ## Composition
 
@@ -14,7 +16,8 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 Scaffold
 ├── AppBar("Statistics")
 └── body: CustomScrollView
-          ├── SliverToBoxAdapter: StatRangeSelector(vm.range, vm.setRange)
+          ├── SliverToBoxAdapter: ListenableBuilder(_subscriptions)
+          │     → StatRangeSelector(vm.range, vm.setRange, subscriptions)
           ├── if (vm.isEmpty) SliverFillRemaining: StatsEmptyState
           └── else: SummaryNumbersCard
                     + SectionHeader("Streak") + StreakStatCard
