@@ -40,6 +40,9 @@ the same three-part shape:
 - [profile/CLAUDE.md](profile/CLAUDE.md) — Settings and Block-settings
   screens, plus the widgets the profile dropdown's header reuses
   (`ProfileAuthCard`). No standalone profile screen.
+- [subscription/CLAUDE.md](subscription/CLAUDE.md) — `SubscriptionScreen`:
+  plan status + RevenueCat paywall / Customer Center / restore. Pushed
+  from the Settings "Subscription" tile.
 
 ## Conventions used across the UI
 

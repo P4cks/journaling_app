@@ -62,6 +62,7 @@ class ProfileMenuButton extends StatelessWidget {
         final user = authRepository.currentUser;
         final isSignedIn = user != null;
         final isConfigured = authRepository.isConfigured;
+        final isPro = deps.subscriptionRepository.isPro;
 
         return PopupMenuButton<String>(
           tooltip: 'Profile',
@@ -149,6 +150,14 @@ class ProfileMenuButton extends StatelessWidget {
                 label: 'Block settings',
               ),
             ),
+            if (isPro) ...[
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                enabled: false,
+                padding: EdgeInsets.zero,
+                child: _ProBanner(),
+              ),
+            ],
           ],
         );
       },
@@ -170,6 +179,52 @@ class _MenuRow extends StatelessWidget {
         const SizedBox(width: 12),
         Text(label),
       ],
+    );
+  }
+}
+
+class _ProBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          AppIcon(
+            HugeIcons.strokeRoundedCrown,
+            size: 20,
+            color: scheme.onPrimaryContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pro active',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: scheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Journaling App Pro',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
@@ -19,6 +20,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
@@ -87,6 +89,7 @@ class LayoutEditorScreen extends StatefulWidget {
 
 class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   LayoutEditorViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
@@ -99,6 +102,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         initialKind: widget.initialKind,
       );
       _viewModel!.addListener(_onChanged);
+      _subscriptions = deps.subscriptionRepository;
     }
   }
 
@@ -171,7 +175,17 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   }
 
   Future<void> _addBlockBlockOnly() async {
+    final vm = _viewModel;
+    final subs = _subscriptions;
+    if (vm == null || subs == null) return;
     FocusScope.of(context).unfocus();
+    // Free users cap a blockOnly layout at `kFreeMaxBlocksPerLayout`
+    // blocks; the (N+1)th add presents the paywall (BACKLOG #92).
+    if (!subs.isPro &&
+        vm.sections.first.slots.length >= kFreeMaxBlocksPerLayout) {
+      if (!await requirePro(subs)) return;
+      if (!mounted) return;
+    }
     final selected = await showAddBlockSheet(context);
     if (selected != null) {
       _viewModel?.addBlock(selected);
@@ -191,6 +205,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   Widget build(BuildContext context) {
     final vm = _viewModel;
     if (vm == null) return const Scaffold();
+    final blockOnlyLocked =
+        vm.kind == LayoutKind.blockOnly &&
+        !(_subscriptions?.isPro ?? false) &&
+        vm.sections.first.slots.length >= kFreeMaxBlocksPerLayout;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: _handlePop,
@@ -201,9 +219,26 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           actions: [
             if (vm.kind == LayoutKind.blockOnly)
               IconButton(
-                tooltip: 'Add block',
+                tooltip: blockOnlyLocked
+                    ? 'Pro — unlimited blocks'
+                    : 'Add block',
                 onPressed: _addBlockBlockOnly,
-                icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+                icon: blockOnlyLocked
+                    ? Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          AppIcon(
+                            HugeIcons.strokeRoundedPlusSign,
+                            color: Theme.of(context).disabledColor,
+                          ),
+                          const Positioned(
+                            top: -4,
+                            right: -4,
+                            child: ProLockBadge(compact: true),
+                          ),
+                        ],
+                      )
+                    : AppIcon(HugeIcons.strokeRoundedPlusSign),
               ),
             IconButton(
               tooltip: 'Change icon',

@@ -64,7 +64,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       hosts the `+ (Add block)` action because the body renders no
       affordance when empty (and we want the user to discover the
       action from the chrome). The grid is `scrollable: true` and
-      fills the screen.
+      fills the screen. **Free users are capped at
+      `kFreeMaxBlocksPerLayout` (6) blocks (BACKLOG #92):**
+      `_addBlockBlockOnly` calls `requirePro` before opening the
+      add-block sheet once at the cap, and the AppBar `+` renders
+      greyed with a `ProLockBadge(compact: true)` overlay when
+      `blockOnlyLocked` (non-Pro && slot count ≥ 6).
     - `LayoutKind.fixedFourPlusText` → `_FixedFourPlusTextBody`.
       A `BlockGrid(scrollable: false, maxBlocks: 4, onAddBlock: …)`
       followed by `_TextSectionPreview`. The 2×2 placeholder grid

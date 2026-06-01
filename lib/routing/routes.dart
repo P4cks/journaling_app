@@ -16,6 +16,7 @@ class Routes {
   static const blockSettings = '/block-settings';
   static const newCustomBlock = '/custom-block/new';
   static const editCustomBlock = '/custom-block/edit/:id';
+  static const subscription = '/subscription';
 
   /// Query-parameter name on `/layouts/new` carrying the chosen
   /// [LayoutKind]'s `name`. Reads as `null` when absent; the editor
@@ -52,4 +53,5 @@ class RouteNames {
   static const blockSettings = 'blockSettings';
   static const newCustomBlock = 'newCustomBlock';
   static const editCustomBlock = 'editCustomBlock';
+  static const subscription = 'subscription';
 }

@@ -45,7 +45,12 @@ Settings contains:
    while previewing classic mode.
 3. **Journal templates** — `Manage templates` row that pushes `/layouts`.
 4. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
-5. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
+5. **Subscription** — a `SettingsNavTile` (crown icon) that pushes
+   `/subscription`. Wrapped in a `ListenableBuilder` on
+   `subscriptionRepository` so the title flips between "Upgrade to Pro"
+   (free) and "Manage subscription" (Pro). See
+   [../subscription/CLAUDE.md](../subscription/CLAUDE.md).
+6. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
    surface override, and HSL free-pick for secondary/accent.
 
 Block-settings is rendered inline by `BlockSettingsScreen` —

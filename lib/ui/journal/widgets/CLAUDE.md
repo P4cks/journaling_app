@@ -42,6 +42,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
      local-journaling-only with no dead end.
   5. **Settings**, **Layouts**, **Block settings** — push the
      corresponding routes.
+  6. **Pro banner** (only when `subscriptionRepository.isPro`;
+     non-clickable) — a `primaryContainer`-tinted `_ProBanner` row
+     (crown icon + "Pro active" / "Journaling App Pro") pinned at the
+     bottom after a divider. `isPro` is read fresh from
+     `AppDependencies` each time the menu opens, so a purchase made
+     elsewhere shows up on next open. Absent entirely for free users.
   Both `onOpened` and `onSelected` call
   `FocusManager.instance.primaryFocus?.unfocus()` so navigating to
   one of the items (which pushes a new route) doesn't leave focus

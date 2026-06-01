@@ -11,6 +11,9 @@ for how they fit together; this file is per-file notes.
   loudly in dev rather than NPE-ing at first use. `updateShouldNotify`
   compares every dependency reference — bumping a repository (which
   we don't currently do at runtime) would re-trigger dependants.
+  Exposes the repositories + settings objects listed in
+  [../CLAUDE.md](../CLAUDE.md), including `SubscriptionRepository`
+  (read by the Settings tile and the Layouts Pro gate).
 - [app_icon.dart](app_icon.dart) — `AppIcon` + `HugeIconData` typedef.
   Wraps the `hugeicons` package's `HugeIcon` widget; pulls `size` and
   `color` from the surrounding `IconTheme` when unset. The free
@@ -28,6 +31,19 @@ for how they fit together; this file is per-file notes.
   Canonical grouped-settings wrapper: `label` renders through
   `SectionHeader`, and `children` are padded rows/controls followed by
   a divider. Import this file directly for settings-style groups.
+- [pro_gate.dart](pro_gate.dart) — shared Pro-gating primitives.
+  `Future<bool> requirePro(SubscriptionRepository)` — returns `true`
+  immediately when already Pro, else presents
+  `RevenueCatUI.presentPaywallIfNeeded('pro')` and returns `true` only
+  on `PaywallResult.purchased`. The single gate primitive every feature
+  gate routes through, so paywall-on-tap behaviour stays consistent.
+  `ProLockBadge({compact})` — crown badge marking a locked affordance:
+  `compact: true` → small filled crown dot for overlaying on an icon
+  button (e.g. the editor's Add-block `+` at the block cap);
+  `compact: false` → a `primaryContainer` "Pro" chip for trailing a
+  list tile (e.g. the locked layout-kind picker tile). `const int
+  kFreeMaxBlocksPerLayout = 6` — free-tier block cap for `blockOnly`
+  layouts (BACKLOG #92).
 - [settings_nav_tile.dart](settings_nav_tile.dart) — `SettingsNavTile`.
   Icon + title + caret-right `ListTile` that pushes a named `route`
   via `context.push`. Used for navigation rows inside settings

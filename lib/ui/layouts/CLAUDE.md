@@ -132,6 +132,35 @@ how layouts materialize).
 
 ## Gotchas
 
+- **Three Pro gates live in this area; all route through
+  `requirePro` / `ProLockBadge` from
+  [../core/widgets/pro_gate.dart](../core/widgets/pro_gate.dart).** Each
+  reads `subscriptionRepository.isPro` (grabbed from `AppDependencies`
+  in `didChangeDependencies`). The customer-info listener flips `isPro`
+  before the paywall returns `purchased`, so callers fall through on a
+  `true` result. `LayoutRepository` is untouched — every gate lives in
+  the UI layer.
+  - **#90 — free users limited to 1 layout.**
+    `LayoutsScreen._openNewLayoutFlow`: a non-Pro user with ≥1 existing
+    layout hits `requirePro` (paywall) before the kind picker; the flow
+    continues only on success. The first-launch seeded "Default" layout
+    counts as the one free layout, so the gate fires exactly on the 2nd
+    attempt.
+  - **#96 — `custom` kind is Pro-only.**
+    `showLayoutKindPickerSheet(subscriptions:)` greys + badges the
+    "Fully customizable" tile for free users and presents the paywall
+    on tap, popping `LayoutKind.custom` only on purchase. `blockOnly`
+    and `fixedFourPlusText` stay free. (Editing the seeded *Default*
+    custom layout is NOT gated — only *creating* a new custom layout.)
+  - **#92 — free `blockOnly` layouts capped at
+    `kFreeMaxBlocksPerLayout` (6).**
+    `LayoutEditorScreen._addBlockBlockOnly` calls `requirePro` once at
+    the cap; the AppBar `+` renders greyed with a
+    `ProLockBadge(compact: true)` overlay when locked. Only `blockOnly`
+    is capped (custom creation is already Pro-gated; fixedFourPlusText
+    is hard-capped at 4 regardless of tier).
+  See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
+  [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).
 - **`LayoutsScreen` refreshes its VM manually on push-pop** because
   `LayoutRepository` is **not** a `ChangeNotifier`. If you change the
   repository to notify, drop the manual `vm.refresh()` after

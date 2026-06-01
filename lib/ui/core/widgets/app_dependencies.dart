@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
@@ -21,6 +22,7 @@ class AppDependencies extends InheritedWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.subscriptionRepository,
     required super.child,
   });
 
@@ -33,6 +35,7 @@ class AppDependencies extends InheritedWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final SubscriptionRepository subscriptionRepository;
 
   static AppDependencies of(BuildContext context) {
     final widget = context
@@ -51,5 +54,6 @@ class AppDependencies extends InheritedWidget {
       blockSettings != oldWidget.blockSettings ||
       quoteService != oldWidget.quoteService ||
       weatherService != oldWidget.weatherService ||
-      photoStorage != oldWidget.photoStorage;
+      photoStorage != oldWidget.photoStorage ||
+      subscriptionRepository != oldWidget.subscriptionRepository;
 }
