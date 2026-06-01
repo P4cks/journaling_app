@@ -74,7 +74,10 @@ that lives in block-grid sections.
   - `blocks`, `mode` (`BlockMode.readOnly` | `BlockMode.editable`),
     `onBlockChanged` (per-block edit callback),
   - `cardTrailing(block, index)` — optional builder for the top-right affordance,
-  - `onReorder(from, to)` — enables long-press drag & drop (Notion-style),
+  - `onReorder(from, to)` — enables long-press drag & drop (Notion-style).
+    The callback receives the **final post-remove indices**, so
+    handlers should do plain `removeAt(from) + insert(to, item)`. No
+    further adjustment.
   - `padding` (default 16),
   - `onJumpToDate(date)` — forwarded to the memory block.
   - `onInteractionLockChanged(blockId, locked)` — forwarded to blocks
@@ -91,6 +94,20 @@ that lives in block-grid sections.
     and by the custom-layout editor (stacking multiple block-grid
     sections). Cross-grid drag is NOT supported — each grid's
     `DragTarget` is isolated.
+  - `onAddBlock` — optional `VoidCallback` that, when non-null,
+    renders an inline `+ Add block` `TextButton.icon` below the
+    grid (or by itself when `blocks` is empty). The `DragTarget`
+    intentionally wraps the grid only — drops on the button row
+    fall through, so the user can't accidentally drop a tile "onto"
+    the affordance. The layout editor uses this to host its
+    section-level Add button; the journal pager passes `null`.
+  - `maxBlocks` — optional `int` cap. Hides the `onAddBlock` button
+    once `blocks.length >= maxBlocks`. The grid does **not** reject
+    extra blocks supplied via `blocks` — this is purely an
+    affordance gate. The view-model is the authority on what's
+    allowed (e.g. `LayoutEditorViewModel.addBlockInFixedFour`
+    refuses past `fixedFourCapacity`). Used by the layout editor's
+    `fixedFourPlusText` body.
 
 - [block_widget.dart](block_widget.dart) — `BlockWidget`. Dispatches on
   `data.type` and constructs the per-type widget. Forwards `editing`

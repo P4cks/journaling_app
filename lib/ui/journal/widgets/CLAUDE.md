@@ -133,6 +133,26 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   detect keyboard visibility — `viewInsets.bottom > 0` is the
   conventional test. Don't switch to `viewPaddingOf` (that's the
   inverse — system insets like the bottom nav-bar).
+- **`TableCalendar` is keyed on the visible week/month** in both
+  `_WeekStripState` and `_MonthCalendarState`. `table_calendar` 3.2.0's
+  `didUpdateWidget → _updatePage → animateToPage` flow is unreliable
+  when the parent pushes a new `focusedDay` that crosses a week/month
+  boundary — symptoms in the wild were "dragging the journal pager
+  back from May 24 to May 23 lands the strip on June 2033" and
+  "tapping Today moves the journal entry but the week strip doesn't
+  scroll". The fix is `key: ValueKey('week-<Sunday>')` on the week
+  strip and `key: ValueKey('month-<yyyy-mm>')` on the month sheet —
+  Flutter remounts the State (and rebuilds its internal
+  `PageController`) whenever the user's selection crosses a
+  boundary, so `initialPage` is always recomputed from the new
+  `focusedDay`. Inside a week/month the Key stays stable, so taps
+  and internal chevron/swipe navigation animate normally without
+  remounting. `_focusedDay` is also stored as UTC midnight via
+  `_WeekStripState._toUtcMidnight(...)` to match `firstDay`/
+  `lastDay`, but that alone wasn't sufficient — the package
+  normalises focusedDay in its own constructor regardless.
+  `selectedDayPredicate` uses `isSameDay` (y/m/d only) so a UTC
+  `focusedDay` still matches the user's local `widget.selectedDate`.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.

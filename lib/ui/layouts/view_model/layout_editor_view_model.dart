@@ -232,13 +232,13 @@ class LayoutEditorViewModel extends ChangeNotifier {
   void moveSlot(int from, int to) {
     final s = _blockOnlySection;
     if (from < 0 || from >= s.slots.length) return;
-    if (to == from || to == from + 1) return;
-    final adjusted = to > from ? to - 1 : to;
+    if (to < 0 || to >= s.slots.length) return;
+    if (from == to) return;
     final list = [...s.slots];
     final item = list.removeAt(from);
-    list.insert(adjusted, item);
+    list.insert(to, item);
     s.slots = list;
-    debugPrint('[LayoutEditorVM] moveSlot $from -> $to (adjusted=$adjusted)');
+    debugPrint('[LayoutEditorVM] moveSlot $from -> $to');
     notifyListeners();
   }
 
@@ -405,11 +405,11 @@ class LayoutEditorViewModel extends ChangeNotifier {
   void moveSlotInSection(String sectionId, int from, int to) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (from < 0 || from >= section.slots.length) return;
-    if (to == from || to == from + 1) return;
-    final adjusted = to > from ? to - 1 : to;
+    if (to < 0 || to >= section.slots.length) return;
+    if (from == to) return;
     final list = [...section.slots];
     final item = list.removeAt(from);
-    list.insert(adjusted, item);
+    list.insert(to, item);
     section.slots = list;
     debugPrint(
       '[LayoutEditorVM] moveSlotInSection $sectionId $from -> $to',

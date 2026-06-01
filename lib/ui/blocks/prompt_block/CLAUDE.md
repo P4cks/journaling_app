@@ -55,13 +55,18 @@ The widget reads the prompt from `widget.data.content`. It only reads
   schedules `showPromptPickerSheet` via
   `WidgetsBinding.instance.addPostFrameCallback`. A `_autoPromptShown`
   flag prevents re-firing on theme changes or other dependency churn.
-- **Long-press to re-pick** — the editable body is wrapped in a
-  `GestureDetector(onLongPress: …)` *inside* `BlockGrid`'s outer
-  `LongPressDraggable`. The inner gesture wins the long-press; the
-  drag-to-reorder still works on the rest of the tile (this is the
-  same nested pattern the photo block uses).
+- **Pencil button to re-pick** — when the prompt is set and the
+  block is editable, a small 22×22 `IconButton(HugeIcons.strokeRoundedPencil)`
+  sits next to the prompt label and opens the picker on tap.
+  Replaces the prior outer `GestureDetector(onLongPress: …)` — that
+  long-press raced `BlockGrid`'s `LongPressDraggable` and silently
+  opened the picker mid-drag. The icon owns its own tap target; the
+  rest of the tile (including the answer field) is free for drag-
+  to-reorder and the standard double-tap-to-engage flow.
 - **Tap to recover** — if the user dismisses the auto-picker, the
   editable view shows a "Tap to choose" body that re-opens the picker.
+  The pencil button is suppressed in this state to avoid two
+  affordances for the same action.
 - **Re-pick with existing answer** — if the user re-picks a different
   prompt and the answer is non-empty, a confirm dialog offers
   `Cancel` / `Clear it` / `Keep my answer`. `Cancel` aborts; `Clear`
@@ -72,11 +77,11 @@ The widget reads the prompt from `widget.data.content`. It only reads
 - `BlockMode.readOnly` — prompt label on top (primary-colored,
   semibold), then the user's answer or "Not answered yet" italic
   placeholder. No picker, no long-press.
-- `BlockMode.editable` — prompt label on top, then a multi-line
-  `TextField` that fills the remaining vertical space (`Expanded` +
-  `expands: true`). Picker auto-opens on empty-prompt first build;
-  long-press re-opens it. Same per-keystroke save pattern as the text
-  block.
+- `BlockMode.editable` — prompt label + pencil button on top, then a
+  multi-line `TextField` that fills the remaining vertical space
+  (`Expanded` + `expands: true`). Picker auto-opens on empty-prompt
+  first build; tapping the pencil re-opens it. Same per-keystroke
+  save pattern as the text block.
 
 ## Gotchas
 

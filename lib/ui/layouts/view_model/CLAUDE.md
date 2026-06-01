@@ -117,10 +117,14 @@ are restricted to photo / memory.
 `blockOnly` (operates on the single implicit section):
 - `addBlock(result)` — append a fresh `BlockSlot`.
 - `removeSlot(slotId)` — remove by id. No-op if not found.
-- `moveSlot(from, to)` — **insertion-based** semantics matching
-  [BlockGrid](../../blocks/CLAUDE.md): `to == from` and `to == from + 1`
-  are no-ops; when `to > from`, the effective insert index is
-  `to - 1` because the source is removed first.
+- `moveSlot(from, to)` — plain `removeAt(from) + insert(to, item)`.
+  `BlockGrid._onAccept` already adjusts the drop index for the
+  post-remove list, so the VM does *no* further translation. Match
+  this exactly with `MainJournalViewModel.reorderBlockInSection`. The
+  pre-fix code did a second adjustment (`to > from ? to - 1 : to`)
+  and dropped `to == from + 1` as a no-op — that made forward
+  one-position moves silently fail and forward multi-position moves
+  off-by-one. Don't reintroduce.
 
 `fixedFourPlusText` (capacity hard-capped via
 `LayoutEditorViewModel.fixedFourCapacity = 4`):
@@ -151,6 +155,8 @@ layout naturally contain only the chosen blocks.
   the section's `rows` from the slot count
   (`(slots.length / 2).ceil()`). `rows` is purely a renderer hint;
   the BlockGrid sizes itself to its blocks regardless.
+  `moveSlotInSection` uses the same plain `removeAt + insert` as
+  `moveSlot` — `BlockGrid` already adjusts indices.
 
 ## Gotchas
 
@@ -158,9 +164,10 @@ layout naturally contain only the chosen blocks.
   because the widget's `dispose` calls `vm.dispose()` (which disposes
   the controller). Don't try to construct another controller in the
   widget — the listener wiring becomes ambiguous.
-- **`moveSlot` mirrors `BlockGrid`'s no-op detection.** If you change
-  the DnD semantics, change both — they must agree or tiles will
-  shuffle unexpectedly.
+- **`moveSlot` mirrors `MainJournalViewModel.reorderBlockInSection`.**
+  Both treat `to` as the final post-remove index — `BlockGrid` does
+  the adjustment in `_onAccept`. If you ever change `BlockGrid`'s
+  drop semantics, change all three sites in lock-step.
 - **`save` doesn't notify.** It's a fire-and-pop. The screen pops on
   return, and the list screen will `refresh()` on push-pop.
 

@@ -266,13 +266,39 @@ class _WeekStrip extends StatefulWidget {
 }
 
 class _WeekStripState extends State<_WeekStrip> {
-  late DateTime _focusedDay = widget.selectedDate;
+  late DateTime _focusedDay = _toUtcMidnight(widget.selectedDate);
+
+  /// UTC-midnight representation of a date — matches what
+  /// `TableCalendar` stores internally (its constructor calls
+  /// `normalizeDate(focusedDay)`, which does exactly this).
+  static DateTime _toUtcMidnight(DateTime d) =>
+      DateTime.utc(d.year, d.month, d.day);
+
+  /// Sunday-anchored start of the week containing [d]. Used as the
+  /// key seed for [TableCalendar] so crossing a week boundary forces
+  /// the calendar's internal `PageController` to be rebuilt from
+  /// scratch with the correct `initialPage`. The package's own
+  /// `didUpdateWidget → _updatePage → animateToPage` path is
+  /// unreliable in practice — pushing a new `focusedDay` one week
+  /// back didn't move the visible page (and tapping "Today" from
+  /// another week didn't either), and the controller could land on
+  /// a completely wrong page (we hit a "June 2033" symptom). A
+  /// keyed remount sidesteps the package's internal animation state
+  /// machine entirely: the new State's `initState` recomputes
+  /// `initialPage` from the new `widget.focusedDay`, so the calendar
+  /// always opens on the user's actual week.
+  static DateTime _sundayOfWeek(DateTime d) {
+    final n = _toUtcMidnight(d);
+    // `weekday`: Monday=1, …, Saturday=6, Sunday=7.
+    final delta = n.weekday == DateTime.sunday ? 0 : n.weekday;
+    return n.subtract(Duration(days: delta));
+  }
 
   @override
   void didUpdateWidget(covariant _WeekStrip oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate) {
-      _focusedDay = widget.selectedDate;
+      _focusedDay = _toUtcMidnight(widget.selectedDate);
     }
   }
 
@@ -292,6 +318,13 @@ class _WeekStripState extends State<_WeekStrip> {
             ? DateTime.utc(2100, 12, 31)
             : DateTime.utc(now.year, now.month, now.day);
         return TableCalendar(
+          // Key on the Sunday of the visible week so the calendar's
+          // internal State (including its `PageController`) is
+          // recreated whenever the user crosses a week boundary —
+          // see `_sundayOfWeek` for why.
+          key: ValueKey(
+            'week-${_sundayOfWeek(widget.selectedDate).toIso8601String()}',
+          ),
           firstDay: firstDay,
           lastDay: lastDay,
           focusedDay: _focusedDay,
@@ -365,7 +398,8 @@ class _MonthCalendar extends StatefulWidget {
 }
 
 class _MonthCalendarState extends State<_MonthCalendar> {
-  late DateTime _focusedDay = widget.selectedDate;
+  late DateTime _focusedDay =
+      _WeekStripState._toUtcMidnight(widget.selectedDate);
 
   bool _hasEntry(DateTime day) =>
       widget.entriesByDay.contains(CalendarBottomBar._normalize(day));
@@ -383,6 +417,17 @@ class _MonthCalendarState extends State<_MonthCalendar> {
             ? DateTime.utc(2100, 12, 31)
             : DateTime.utc(now.year, now.month, now.day);
         return TableCalendar(
+          // Key on the year/month of the externally-selected day so the
+          // calendar's State is rebuilt with a fresh `PageController`
+          // when the selection moves to a different month. Internal
+          // chevron / swipe navigation does NOT change `selectedDate`,
+          // so the Key stays stable and the user's in-sheet navigation
+          // animates normally. Mirrors the same workaround the week
+          // strip uses — see `_WeekStripState._sundayOfWeek` for why.
+          key: ValueKey(
+            'month-${widget.selectedDate.year}-'
+            '${widget.selectedDate.month.toString().padLeft(2, '0')}',
+          ),
           firstDay: firstDay,
           lastDay: lastDay,
           focusedDay: _focusedDay,

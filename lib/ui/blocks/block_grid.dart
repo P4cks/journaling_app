@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 // ---------------------------------------------------------------------------
 // BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
@@ -57,6 +59,8 @@ class BlockGrid extends StatefulWidget {
     this.editingBlockId,
     this.onRequestBlockEdit,
     this.onRequestExitEdit,
+    this.onAddBlock,
+    this.maxBlocks,
   });
 
   final List<JournalBlockData> blocks;
@@ -69,6 +73,21 @@ class BlockGrid extends StatefulWidget {
   final EdgeInsets padding;
   final bool scrollable;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+
+  /// Optional "Add block" affordance rendered below the grid. When
+  /// non-null the grid hosts its own `TextButton.icon`; pass `null`
+  /// (the journal pager's default) to suppress the button entirely.
+  /// When [maxBlocks] is set and reached, the button is hidden so the
+  /// caller doesn't have to gate it themselves.
+  final VoidCallback? onAddBlock;
+
+  /// Optional cap on the number of blocks the caller wants to permit.
+  /// Used by the layout editor's `fixedFourPlusText` body to enforce
+  /// a four-block ceiling. The grid only uses this to decide whether
+  /// to render the [onAddBlock] button — it does not reject extra
+  /// blocks supplied via [blocks] (the view-model is the authority on
+  /// what's allowed; this is purely an affordance gate).
+  final int? maxBlocks;
 
   /// Id of the block currently in in-place edit mode, or null when no
   /// tile is being edited. Drives the `PostItBlock` scale + outline
@@ -391,6 +410,10 @@ class _BlockGridState extends State<BlockGrid> {
 
   static const double _crossAxisSpacing = 12;
 
+  bool get _showAddButton =>
+      widget.onAddBlock != null &&
+      (widget.maxBlocks == null || widget.blocks.length < widget.maxBlocks!);
+
   @override
   Widget build(BuildContext context) {
     final lineInfo = _reorderable ? _insertionLineInfo() : null;
@@ -404,11 +427,8 @@ class _BlockGridState extends State<BlockGrid> {
         children: _buildTiles(),
       ),
     );
-    final Widget gridContent = widget.scrollable
-        ? SingleChildScrollView(child: staggered)
-        : staggered;
 
-    final Widget body;
+    final Widget grid;
     if (_reorderable) {
       final dragTarget = DragTarget<int>(
         onWillAcceptWithDetails: (_) => true,
@@ -419,10 +439,10 @@ class _BlockGridState extends State<BlockGrid> {
           }
         },
         onAcceptWithDetails: (details) => _onAccept(details.data),
-        builder: (_, _, _) => gridContent,
+        builder: (_, _, _) => staggered,
       );
 
-      body = Stack(
+      grid = Stack(
         key: _gridKey,
         children: [
           dragTarget,
@@ -441,16 +461,48 @@ class _BlockGridState extends State<BlockGrid> {
         ],
       );
     } else {
-      body = Stack(
+      grid = Stack(
         key: _gridKey,
         children: [
-          gridContent,
+          staggered,
           ..._buildGhosts(),
         ],
       );
     }
 
-    return body;
+    Widget composed = grid;
+    if (_showAddButton) {
+      // The DragTarget intentionally wraps the grid only — drops on
+      // the Add-block button row fall through, so the user can't
+      // accidentally drop a tile "onto" the affordance.
+      composed = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (widget.blocks.isNotEmpty) grid,
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              widget.padding.left,
+              widget.blocks.isEmpty ? widget.padding.top : 4,
+              widget.padding.right,
+              widget.padding.bottom,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: widget.onAddBlock,
+                icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
+                label: const Text('Add block'),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return widget.scrollable
+        ? SingleChildScrollView(child: composed)
+        : composed;
   }
 
   List<Widget> _buildTiles() {

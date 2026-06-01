@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 class PromptBlockWidget extends StatefulWidget {
   const PromptBlockWidget({
@@ -175,7 +177,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     final scheme = theme.colorScheme;
     final isEditable = widget.mode == BlockMode.editable;
 
-    final promptLabel = prompt.isEmpty
+    final promptText = prompt.isEmpty
         ? Text(
             isEditable ? 'Tap to pick a prompt' : 'No prompt set',
             style: theme.textTheme.bodySmall?.copyWith(
@@ -191,6 +193,42 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
               height: 1.25,
             ),
           );
+
+    // In editable mode with a prompt set, surface a small pencil
+    // affordance next to the prompt label so the user can re-pick. The
+    // previous long-press affordance raced `BlockGrid`'s
+    // `LongPressDraggable` for the gesture, so dragging-to-reorder a
+    // prompt tile would silently open the picker. The pencil button
+    // owns its tap target and the rest of the tile is free to drag.
+    // When the prompt is empty the body itself is tappable (the
+    // "Tap to choose" state), so the icon is suppressed to avoid two
+    // affordances for the same action.
+    final canRepick = isEditable && prompt.isNotEmpty;
+    final promptLabel = canRepick
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: promptText),
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: IconButton(
+                  tooltip: 'Change prompt',
+                  iconSize: 14,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => _openPicker(initial: false),
+                  icon: AppIcon(
+                    HugeIcons.strokeRoundedPencil,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          )
+        : promptText;
 
     Widget body;
     if (!isEditable) {
@@ -272,24 +310,15 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       );
     }
 
-    if (!isEditable) {
-      return Padding(
-        padding: const EdgeInsets.all(12),
-        child: body,
-      );
-    }
-
-    // Long-press to re-pick. Always-on in editable mode — single-tap
-    // semantics handle focus / picker-open naturally. Padding sits
-    // INSIDE the gesture detector so taps in the 12 px chrome inset
-    // still reach the long-press / focus handlers.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPress: () => _openPicker(initial: false),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: body,
-      ),
+    // Same padding for read-only and editable — no outer gesture
+    // wrapper. Re-picking the prompt goes through the inline pencil
+    // button rendered next to the prompt label (see `promptLabel`
+    // above). Single-tap on the answer field focuses via
+    // `DelayedTapFocus`; long-press passes through to `BlockGrid`'s
+    // drag-to-reorder.
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: body,
     );
   }
 }

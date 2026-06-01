@@ -26,19 +26,17 @@ tapped:
   AppBar `+` to add a block, swipe-remove via the tile's `cardTrailing`
   X. Saving stores one `LayoutSection(kind: blockGrid)` whose
   `blocks` list is the user's slot list.
-- **fixedFourPlusText** — locked structure: a 2×2 cell grid + a
-  `text` section. Cells start empty; each empty cell shows a
-  `+ Add block` placeholder. Tapping a placeholder opens the
-  add-block sheet and fills the cell; filled cells show the type's
-  read-only sample with a small X to remove (tapping a filled tile
-  swaps its type via the same add-block sheet). Filled cells
-  **compress to the front** — deleting the second cell of three
-  filled leaves `[filled, filled, empty, empty]`. The user can save
-  with anywhere from 0 to 4 filled cells. **Only the filled cells
-  are persisted as `BlockTemplate`s, so entries created from this
-  layout only render the actually-chosen blocks** — empty cells
-  never appear in the rendered entry. No add/remove sections, no
-  resize. No AppBar `+`.
+- **fixedFourPlusText** — locked structure: a block grid (capped at
+  4 blocks) + a `text` section. Renders via the same `BlockGrid` the
+  custom layout uses, with `maxBlocks: 4` and an inline `onAddBlock`
+  Add button that auto-hides at four. Drag-drop, swap-via-tap, and
+  remove-X all flow through the grid — visually identical to a
+  block-grid section in a journal entry. Save with 0–4 blocks; only
+  the filled slots are persisted as `BlockTemplate`s. No add/remove
+  sections, no resize, no AppBar `+`. The text section preview uses
+  `TextSectionWidget` in `BlockMode.readOnly` (over an empty
+  `TextBlockContent`) so it shows the same "No text yet" italic
+  placeholder a fresh entry would.
 - **custom** — fully editable. The editor renders a vertical stack
   of section cards. Each card has up/down/delete affordances; for
   block-grid sections an inline "Add block" button (the grid grows
@@ -108,20 +106,29 @@ schema bump.
 
 The layout editor renders its block-grid sections with the same
 [BlockGrid](../blocks/CLAUDE.md) the journal pager uses — passing
-`BlockMode.readOnly` plus `onReorder` (to enable DnD) plus
-`cardTrailing` (to inject a remove-X button at the top-right of each
-tile). For the blockOnly kind the grid scrolls (default `scrollable:
-true`); for fixedFourPlusText and custom the grid is embedded in a
-stacking column and uses `scrollable: false`. The blocks are
-constructed ad-hoc from `BlockSlot`s (the VM's lightweight `(id, type)`
-pair) via `BlockType.sampleData(id: slot.id)` (see
-[block_type_display.dart](../blocks/block_type_display.dart)), so each
-tile renders the same rich, sample-content placeholder shown in the
-"Add block" sheet. The sample is preview-only — it never lands in
+`BlockMode.readOnly` plus `onReorder` (DnD), `cardTrailing` (the
+remove-X), `onBlockTap` (tap-to-swap-type), and `onAddBlock` (the
+inline `+ Add block` button below the grid). For the blockOnly kind
+the grid scrolls (`scrollable: true`) and the AppBar `+` adds blocks
+because the body shows nothing when empty. For fixedFourPlusText and
+custom the grid is embedded in a stacking column with
+`scrollable: false`; fixedFourPlusText additionally passes
+`maxBlocks: 4` so the Add button auto-hides at the cap. All three
+kinds share the same drag-drop code path as the journal pager —
+when the journal entry's DnD works, the layout editor's does too.
+
+The blocks are constructed from `BlockSlot`s (the VM's lightweight
+`(id, type)` pair) by `_slotPreviewData(slot, blockSettings,
+themeSettings)`, which builds a `JournalBlockData` via
+`BlockType.sampleData(id: slot.id)` (see
+[block_type_display.dart](../blocks/block_type_display.dart)) and
+**seeds `BlockVisuals` deterministically from the slot id** against
+the live post-it palette. The visuals stay stable across rebuilds and
+match what a materialized entry will use — so the editor previews
+the entry pixel-for-pixel (including rotation / offset / colour when
+post-it mode is on). The sample is preview-only — it never lands in
 saved entries (see *Block configuration lives elsewhere* above for
-how layouts materialize). This is what makes the layout editor look
-identical to the entry editor and the picker — important so the user
-understands the connection.
+how layouts materialize).
 
 ## Gotchas
 
@@ -134,10 +141,12 @@ understands the connection.
   un-set a default by tapping; you set another or delete the current
   one (which clears the setting via the repository invariant — see
   [data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md)).
-- **`LayoutEditorViewModel.moveSlot` translates insert-before semantics
-  into list indices**: when moving forward, `to` becomes `to - 1`
-  after the source is removed. This matches `BlockGrid`'s
-  insertion-based DnD; don't change without also reviewing the grid.
+- **`LayoutEditorViewModel.moveSlot` is plain `removeAt + insert`** —
+  `BlockGrid._onAccept` already adjusts the drop index for the post-
+  remove list. The pre-fix code did a second adjustment AND dropped
+  `to == from + 1` as a no-op, which made forward one-position
+  moves silently fail and longer moves off-by-one. Match
+  `MainJournalViewModel.reorderBlockInSection` exactly.
 
 ## When to update this file
 
