@@ -86,13 +86,13 @@ READ CLAUDE.md for further implementation details
 
 ## Subscription / monetization
 
-* [ ] `XL` **Subscription scaffolding** — feature-gating infrastructure that scales to multiple tiers (e.g. free / pro / pro+). Tier capability flags read from a single source so individual gates are one-liners. Using a tool like revenuecat
-* [ ] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. (requires scaffolding)
+* [x] `XL` **Subscription scaffolding** — RevenueCat integration (`purchases_flutter` + `purchases_ui_flutter`). `SubscriptionService` (thin SDK wrapper, the only `purchases_flutter` importer) → `SubscriptionRepository` (`ChangeNotifier`) exposing a single `isPro` flag driven by the `pro` entitlement (`kProEntitlementId`), wired through `AppDependencies`. Configured in `main.dart` with the Test Store key (`test_…`; swap for `appl_`/`goog_` per-platform keys in production). Paywall + Customer Center presented via `RevenueCatUI` from a new `/subscription` screen reachable from a Settings tile. Further gates are now one-liners against `subscriptionRepository.isPro`.
+* [x] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. Gate lives entirely in `LayoutsScreen._openNewLayoutFlow`: a non-Pro user with ≥1 layout gets `RevenueCatUI.presentPaywallIfNeeded('pro')` instead of the kind picker; creation proceeds only on `PaywallResult.purchased`. The first-launch seeded "Default" layout counts as the one free layout.
 * [ ] `XL` **Gate: cloud synchronization (paid only)** — accounts + sync backend (separate piece of work).
-* [ ] `S` **Gate: block count per layout for free users** — paid tiers unlock more blocks per layout (or unlimited). (requires scaffolding)
+* [x] `S` **Gate: block count per layout for free users** — paid tiers unlock unlimited. Free `blockOnly` layouts are capped at `kFreeMaxBlocksPerLayout` (6) blocks; the (N+1)th add presents the paywall. Gate lives in `LayoutEditorScreen._addBlockBlockOnly`, with the AppBar `+` greyed and badged (`ProLockBadge(compact: true)`) once at the cap. Custom layouts are Pro-only to create, so they aren't separately block-capped.
 * [ ] `S` **Gate: statistics and insight (paid only)** - (requires scaffolding)
 * [ ] `M` **Gate: limited selection of blocks for free users** - set some default blocks, text block, mood block etc. maybe let user select one as a gift after 7 day streak
 * [ ] `S` **Gate: change theme (paid only)** - custom themes only configurable as a paid user. For free users only default theme
-* [ ] `S` **Gate: differently styled layouts** - restrict free users to 4 blocks followed by one text section or something along those lines, paid users can choose to have only blocks or customize sections
-* [ ] `S` **Paywall or grey out locked features (TBD)**
+* [x] `S` **Gate: differently styled layouts** — free users may create `blockOnly` and `fixedFourPlusText` layouts; the `custom` (fully customizable sections) kind is Pro-only. The kind-picker sheet (`showLayoutKindPickerSheet`) greys + badges the custom tile for free users and presents the paywall on tap, popping with `LayoutKind.custom` only on a successful purchase.
+* [x] `S` **Paywall or grey out locked features** — established the shared lock-UX pattern in `lib/ui/core/widgets/pro_gate.dart`: `requirePro(subscriptions)` (paywall-on-demand gate primitive) + `ProLockBadge` (compact crown dot for icon overlay; full "Pro" chip for list tiles). Locked controls render greyed with a badge and present the paywall on tap. Used by the layout-kind picker (custom) and the blockOnly block-count cap.
 * [ ] `S` **

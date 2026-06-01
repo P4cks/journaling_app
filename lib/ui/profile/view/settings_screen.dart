@@ -61,6 +61,26 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
             SettingsSection(
+              label: "Subscription",
+              children: [
+                ListenableBuilder(
+                  listenable: AppDependencies.of(
+                    context,
+                  ).subscriptionRepository,
+                  builder: (context, _) {
+                    final isPro = AppDependencies.of(
+                      context,
+                    ).subscriptionRepository.isPro;
+                    return SettingsNavTile(
+                      icon: HugeIcons.strokeRoundedCrown,
+                      title: isPro ? 'Manage subscription' : 'Upgrade to Pro',
+                      route: Routes.subscription,
+                    );
+                  },
+                ),
+              ],
+            ),
+            SettingsSection(
               label: "Debug",
               children: [
                 Padding(

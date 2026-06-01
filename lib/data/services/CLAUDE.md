@@ -197,6 +197,19 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   `google_sign_in`. Maps Firebase `User` → `AppUser`, wraps Firebase
   exceptions in `AuthFailure`, and supports email/password, Google,
   Apple, password reset, and sign-out.
+- [subscription_service.dart](subscription_service.dart) —
+  `SubscriptionService`. The **only** class that imports
+  `purchases_flutter` (RevenueCat). Static `configure()` calls
+  `Purchases.configure(...)` exactly once (from `main.dart`, before any
+  other Purchases call) with a platform-selected key — currently the
+  Test Store key `test_…` for both platforms (TODO: `appl_`/`goog_`
+  for production). Instance methods wrap `getCustomerInfo`,
+  `getOfferings`, `restorePurchases`, add/remove customer-info listener,
+  and `logIn`/`logOut` (the last two unused until auth↔subscription
+  linking is enabled). Also exports `kProEntitlementId = 'pro'` — the
+  single source of truth for the Pro entitlement identifier (change
+  here if the dashboard identifier differs). Consumed only by
+  [SubscriptionRepository](../repositories/subscription_repository.dart).
 
 ## Implementation details
 

@@ -21,6 +21,8 @@ every screen has access to repositories without per-route plumbing.
     "Sign in" row when signed out; the screen itself shows the
     signed-in card when an account exists, so it's safe to deep-link
     in either state)
+  - `/subscription` → `SubscriptionScreen` (RevenueCat paywall +
+    Customer Center; pushed from the Settings "Subscription" tile)
   - `/layouts` (+ `new`, `edit/:id`) → `LayoutsScreen` / `LayoutEditorScreen`
   - `/block-settings` → `BlockSettingsScreen` (inline sections; no
     per-type sub-routes after the save-on-leave rewrite)

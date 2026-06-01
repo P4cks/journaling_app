@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -37,6 +39,7 @@ class LayoutsScreen extends StatefulWidget {
 
 class _LayoutsScreenState extends State<LayoutsScreen> {
   LayoutsViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
@@ -45,6 +48,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
       final deps = AppDependencies.of(context);
       _viewModel = LayoutsViewModel(repository: deps.layoutRepository);
       _viewModel!.addListener(_onChanged);
+      _subscriptions = deps.subscriptionRepository;
     }
   }
 
@@ -69,7 +73,15 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
   }
 
   Future<void> _openNewLayoutFlow() async {
-    final kind = await showLayoutKindPickerSheet(context);
+    final vm = _viewModel;
+    final subs = _subscriptions;
+    if (vm == null || subs == null) return;
+    // Free users keep their one (seeded) layout; creating a second requires
+    // the `pro` entitlement (BACKLOG #90). `requirePro` short-circuits when
+    // already Pro and otherwise presents the paywall.
+    if (vm.layouts.isNotEmpty && !await requirePro(subs)) return;
+    if (!mounted) return;
+    final kind = await showLayoutKindPickerSheet(context, subscriptions: subs);
     if (!mounted || kind == null) return;
     await context.push(Routes.newLayoutFor(kind));
     if (!mounted) return;

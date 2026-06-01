@@ -48,12 +48,19 @@ sheet is a stateless top-level function returning the user's pick or
   - Used by the layout editor's icon AppBar action. Callers may pass
     the returned name (or `null`) straight into `vm.setIconName`.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
-  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Three-tile
-  sheet ("Only blocks", "4 blocks + text", "Fully customizable"),
-  each with an icon and one-line description. Shown when the user
-  taps the FAB on the layouts list. Returns the picked `LayoutKind`;
-  the caller pushes the editor with that kind via
-  `Routes.newLayoutFor(kind)`.
+  `Future<LayoutKind?> showLayoutKindPickerSheet(context, {required
+  SubscriptionRepository subscriptions})`. Three-tile sheet ("Only
+  blocks", "4 blocks + text", "Fully customizable"), each with an icon
+  and one-line description. Shown when the user taps the FAB on the
+  layouts list. Returns the picked `LayoutKind`; the caller pushes the
+  editor with that kind via `Routes.newLayoutFor(kind)`.
+  - **The "Fully customizable" (`custom`) tile is Pro-only (BACKLOG
+    #96).** For free users it renders greyed with a trailing
+    `ProLockBadge`; tapping it calls `requirePro(subscriptions)` and
+    only pops with `LayoutKind.custom` on a successful purchase
+    (otherwise the sheet stays open). Pro users pop immediately. The
+    other two kinds are always free. `_KindTile` gained a `locked`
+    flag driving the grey + badge.
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —

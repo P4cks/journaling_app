@@ -14,8 +14,9 @@ screen-specific.
 - [widgets/app_dependencies.dart](widgets/app_dependencies.dart) —
   `AppDependencies extends InheritedWidget`. The DI root. Holds
   `AuthRepository`, `JournalRepository`, `LayoutRepository`,
-  `DebugSettings`, `ThemeSettings`, `BlockSettings`, `QuoteService`,
-  `WeatherService`, and `PhotoStorageService`. Accessed via
+  `SubscriptionRepository`, `DebugSettings`, `ThemeSettings`,
+  `BlockSettings`, `QuoteService`, `WeatherService`, and
+  `PhotoStorageService`. Accessed via
   `AppDependencies.of(context)`. The static accessor `assert`s that
   an ancestor exists — failing fast in development is better than
   mysterious nulls.

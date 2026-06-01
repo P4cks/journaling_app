@@ -12,6 +12,22 @@ coordination live.
   error/success messages. Public methods wrap email sign-in/register,
   password reset, Google, Apple, and sign-out. UI should use this
   repository instead of importing Firebase SDK classes.
+- [subscription_repository.dart](subscription_repository.dart) —
+  `SubscriptionRepository extends ChangeNotifier`. Wraps
+  [SubscriptionService](../services/subscription_service.dart) and
+  exposes a single `isPro` getter (true when the `pro` entitlement —
+  `kProEntitlementId` — is active in `CustomerInfo`). Subscribes to the
+  RevenueCat customer-info update listener in its constructor (mirrors
+  `AuthRepository`'s stream subscription) and removes it in `dispose`.
+  `init()` (called once from `main.dart` after
+  `SubscriptionService.configure`) fetches initial `CustomerInfo` +
+  `Offerings`; `restore()` re-applies prior purchases. **Entitlement
+  state is never persisted to Hive** — the SDK caches it and the
+  listener keeps this notifier live, so a purchase made on the
+  `RevenueCatUI` paywall flips `isPro` automatically (no manual
+  `purchasePackage`). UI reads `isPro` for gates (e.g.
+  [LayoutsScreen](../../ui/layouts/view/layouts_screen.dart)) and the
+  [SubscriptionScreen](../../ui/subscription/view/subscription_screen.dart).
 - [journal_repository.dart](journal_repository.dart) — `JournalRepository extends ChangeNotifier`.
   - **Date keying**: `_normalize(d)` strips time-of-day → `DateTime(y, m, d)`;
     `_dateKey(d)` is `_normalize(d).toIso8601String()`. **All public
