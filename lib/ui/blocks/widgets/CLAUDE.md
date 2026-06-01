@@ -68,8 +68,12 @@ text block and the full-width text section.
      `_editingBlockId` — the in-place edit-mode outline disappears
      in lock-step with the carousel collapsing.
 
-  The expanded route passes `autoCollapse: false` so the picker
-  stays open until the user dismisses the route.
+  Both grid and expanded hosts pass `autoCollapse: true` so the
+  picker behaves uniformly — collapse to the centred glyph after
+  1.5 s of inactivity in either context. The expanded route still
+  passes `onRequestExitEdit: null` so the collapse doesn't try to
+  clear a non-existent in-place editing flag; the route itself stays
+  open and the user can tap the centred glyph to re-engage.
 
   Props:
   - `blockId` — opaque string used by `onInteractionLockChanged`.
@@ -86,8 +90,10 @@ text block and the full-width text section.
     so the host can clear `_editingBlockId`. Pass null in the
     expanded route since the picker stays open there.
   - `editing` (default `false`) — externally-driven edit-mode flag.
-  - `autoCollapse` (default `true`) — set to false in the expanded
-    route to keep the picker open.
+  - `autoCollapse` (default `true`) — passed `true` from every host
+    (grid and expanded). Previously the expanded route passed
+    `false`, but the user expectation is uniform 1.5 s collapse
+    behaviour in both contexts.
   - `viewportFraction` (0.42), `collapseDelay` (1500 ms),
     `switchDuration` (180 ms) — tunables with sensible defaults.
 

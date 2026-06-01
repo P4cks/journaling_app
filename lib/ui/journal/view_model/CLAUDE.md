@@ -39,6 +39,13 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
   unchanged blocks list (cheap; the comprehension reuses references).
 - `updateTitle(newTitle)` — trim → empty becomes null. No-op on
   unchanged.
+- `reorderBlockInSection(sectionId, from, to)` — moves the block at
+  `from` to `to` within the matching section's `blocks` list, bumps
+  `lastModified`, persists via `saveJournalEntry`. Insertion
+  semantics match `LayoutEditorViewModel.moveSlotInSection` — the
+  caller (`BlockGrid` via `JournalPager`'s drag-drop) already adjusts
+  the target index for the post-remove list. Used by the journal
+  pager's drag-and-drop in editable entries.
 - `applyLayout(layout)` — destructive; re-materializes the entry's
   **sections** from the new layout (calls
   `JournalRepository.materializeLayout`). Caller must confirm.

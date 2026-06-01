@@ -47,9 +47,13 @@ class MoodTrackerWidget extends StatelessWidget {
         onRequestExitEdit: expanded ? null : onRequestExitEdit,
         onDoubleTap: onDoubleTap,
         editing: editing || expanded,
-        // Auto-collapse only in-place. In the expanded route the
-        // picker stays open until the user dismisses.
-        autoCollapse: !expanded,
+        // Auto-collapse in both grid and expanded mode. In the
+        // expanded route the carousel collapses to the centred glyph
+        // after 1.5 s of inactivity (matching the grid behavior); the
+        // user re-engages by tapping it. The route itself stays open
+        // — `onRequestExitEdit` is null in expanded mode so the
+        // collapse-timer only flips the picker visually.
+        autoCollapse: true,
       ),
     );
   }

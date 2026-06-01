@@ -84,6 +84,13 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
             minLines: null,
             keyboardType: TextInputType.multiline,
             textAlignVertical: TextAlignVertical.top,
+            // Internal scroll disabled — long content overflows the
+            // visible 1×1 cell and is clipped by the chrome's
+            // antiAlias clipBehavior. The block's content area is a
+            // fixed slot; users see what fits and the rest is stored
+            // but not shown. Re-enable only if the block model
+            // changes to a content-bounded variant.
+            scrollPhysics: const NeverScrollableScrollPhysics(),
             decoration: const InputDecoration(
               hintText: 'Write something…',
               border: InputBorder.none,
