@@ -12,9 +12,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       layouts get a stronger background tint and a filled glyph.
     - Title: layout name.
     - Subtitle: `"N block(s)"`.
-    - Trailing: a star button (filled when default; tappable on
-      non-defaults to set as default; disabled when already default)
-      and a chevron.
+    - Trailing (GUS-28): the default row shows a `LayoutDefaultChip`
+      ("★ Default" pill); non-default rows show an explicit
+      `TextButton.icon` "Set default" that calls `vm.setDefault`. A
+      chevron follows. (Replaced the old bare star `IconButton` whose
+      meaning relied on a tooltip.)
     - Tap → open the editor at `/profile/layouts/edit/<id>`.
   - FAB → open the editor at `/profile/layouts/new`.
   - `_openEditor` awaits the push and then `vm.refresh()` — because

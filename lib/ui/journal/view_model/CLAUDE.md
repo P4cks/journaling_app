@@ -38,6 +38,9 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
   today page). Today resolves to the trailing index when empty. The
   screen uses non-null here both to position `JournalPager`'s
   controller and to decide whether to mount the pager at all.
+- `defaultLayoutId` — `_layoutRepository.getDefault()?.id`, or `null`.
+  Passed to `showLayoutPickerSheet` so the picker highlights the
+  default row (GUS-28).
 - `createWithLayout(layout)` — calls
   `JournalRepository.createEntryForDate`. The repository notifies; we
   rebuild `_entries` / `_entriesByDay` and notify. We also notify

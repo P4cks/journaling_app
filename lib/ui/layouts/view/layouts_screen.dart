@@ -11,6 +11,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_kind_picker_sheet.dart';
 
 String _layoutSummary(JournalLayout layout) {
@@ -137,18 +138,18 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: AppIcon(
-                            HugeIcons.strokeRoundedStar,
-                            color: isDefault ? scheme.primary : null,
+                        if (isDefault)
+                          const LayoutDefaultChip()
+                        else
+                          TextButton.icon(
+                            icon: AppIcon(
+                              HugeIcons.strokeRoundedStar,
+                              size: 16,
+                            ),
+                            label: const Text('Set default'),
+                            onPressed: () => vm.setDefault(layout.id),
                           ),
-                          tooltip: isDefault
-                              ? 'Default layout'
-                              : 'Set as default',
-                          onPressed: isDefault
-                              ? null
-                              : () => vm.setDefault(layout.id),
-                        ),
+                        const SizedBox(width: 4),
                         AppIcon(HugeIcons.strokeRoundedArrowRight01),
                         const SizedBox(width: 8),
                       ],

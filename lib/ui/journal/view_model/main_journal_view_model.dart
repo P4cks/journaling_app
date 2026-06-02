@@ -84,6 +84,10 @@ class MainJournalViewModel extends ChangeNotifier {
 
   List<JournalLayout> getAvailableLayouts() => _layoutRepository.getAll();
 
+  /// Id of the user's default layout, or `null` when none is set. Used by
+  /// the layout picker to highlight the default row (GUS-28).
+  String? get defaultLayoutId => _layoutRepository.getDefault()?.id;
+
   /// Materializes an entry for the currently-selected date using
   /// [layout]. Used by the Make-entry CTA.
   JournalEntry createWithLayout(JournalLayout layout) {

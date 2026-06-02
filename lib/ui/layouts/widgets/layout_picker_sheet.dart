@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
 
 String _summarize(JournalLayout layout) {
   switch (layout.kind) {
@@ -32,12 +33,17 @@ String _summarize(JournalLayout layout) {
 /// dialog (existing blocks will be replaced); the home CTA skips the
 /// confirm because there is nothing to replace.
 ///
+/// Pass [defaultLayoutId] to highlight the user's default layout: its row
+/// gets a tinted leading icon and a trailing "Default" chip so the user
+/// can tell at a glance which layout a no-pick entry would use (GUS-28).
+///
 /// Uses the shared `showDraggableSheet` scaffold so the drag handle,
 /// title, and `DraggableScrollableSheet` chrome match the calendar and
 /// add-block sheets.
 Future<JournalLayout?> showLayoutPickerSheet(
   BuildContext context, {
   required List<JournalLayout> layouts,
+  String? defaultLayoutId,
   String title = 'Choose layout',
 }) {
   if (layouts.isEmpty) return Future.value(null);
@@ -48,10 +54,16 @@ Future<JournalLayout?> showLayoutPickerSheet(
       SliverList(
         delegate: SliverChildBuilderDelegate((listCtx, index) {
           final layout = layouts[index];
+          final isDefault = layout.id == defaultLayoutId;
+          final scheme = Theme.of(listCtx).colorScheme;
           return ListTile(
-            leading: HugeIcon(icon: layoutIconFor(layout.iconName).icon),
+            leading: HugeIcon(
+              icon: layoutIconFor(layout.iconName).icon,
+              color: isDefault ? scheme.primary : null,
+            ),
             title: Text(layout.name),
             subtitle: Text(_summarize(layout)),
+            trailing: isDefault ? const LayoutDefaultChip() : null,
             onTap: () => Navigator.of(listCtx).pop(layout),
           );
         }, childCount: layouts.length),
