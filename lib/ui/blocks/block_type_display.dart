@@ -15,6 +15,14 @@ import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
+/// Built-in block types locked behind Pro. Edit this set to change the
+/// free/Pro split — [BlockTypeDisplay.isProOnly] derives from it. Free
+/// users get every other built-in block; only these stay Pro. (GUS-34)
+const Set<BlockType> kProOnlyBlockTypes = {
+  BlockType.weatherApi, // "Weather (live)"
+  BlockType.quoteBlock, // "Quote of the day"
+};
+
 extension BlockTypeDisplay on BlockType {
   String get label {
     switch (this) {
@@ -259,27 +267,16 @@ extension BlockTypeDisplay on BlockType {
     }
   }
 
-  /// Whether this block type is locked behind Pro. Free users get the
-  /// two basic blocks (text + mood); everything else is Pro. The
-  /// add-block sheet greys + badges locked cells and presents the
-  /// paywall on tap rather than hiding them (discoverability). (GUS-19)
-  bool get isProOnly {
-    switch (this) {
-      case BlockType.textBlock:
-      case BlockType.moodTracker:
-        return false;
-      case BlockType.weatherManual:
-      case BlockType.promptBlock:
-      case BlockType.todoBlock:
-      case BlockType.quoteBlock:
-      case BlockType.memoryBlock:
-      case BlockType.weatherApi:
-      case BlockType.photoBlock:
-      case BlockType.locationBlock:
-      case BlockType.customCarousel:
-        return true;
-    }
-  }
+  /// Whether this block type is locked behind Pro. Derived from
+  /// [kProOnlyBlockTypes] so the free/Pro split is one declarative edit.
+  /// The add-block sheet greys + badges locked cells and presents the
+  /// paywall on tap rather than hiding them (discoverability). (GUS-19,
+  /// GUS-34)
+  ///
+  /// `customCarousel` is intentionally never in [kProOnlyBlockTypes]:
+  /// custom blocks are gated by *count* (1 free; see
+  /// `kFreeMaxCustomBlocks` in pro_gate.dart), not by a blanket Pro flag.
+  bool get isProOnly => kProOnlyBlockTypes.contains(this);
 
   /// Whether editing this block raises the keyboard. Drives the
   /// expanded-overlay layout: keyboard-using blocks sit in the top half

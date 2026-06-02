@@ -136,9 +136,13 @@ that lives in block-grid sections.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
-  - `isProOnly` — true for every block except `textBlock` + `moodTracker`
-    (the free set). Read by the add-block sheet to grey + badge locked
-    cells and present the paywall on tap (GUS-19). Pure UI gate — the
+  - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
+    (currently `{weatherApi, quoteBlock}`); edit that set to change the
+    free/Pro split — every other built-in block is free (GUS-34).
+    `customCarousel` is deliberately NOT in the set: custom blocks are
+    gated by *count* (`kFreeMaxCustomBlocks`, 1 free) not a blanket flag.
+    Read by the add-block sheet to grey + badge locked cells and present
+    the paywall on tap (GUS-19/GUS-34). Pure UI gate — the
     repository/materializer never consult it.
 
 

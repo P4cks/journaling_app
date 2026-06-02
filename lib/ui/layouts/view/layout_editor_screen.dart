@@ -276,44 +276,57 @@ class _BlockOnlyBody extends StatelessWidget {
     final settings = deps.blockSettings;
     final theme = deps.themeSettings;
     final slots = vm.sections.first.slots;
-    if (slots.isEmpty) {
-      return Center(
-        child: Text(
-          'No blocks yet. Tap + to add a block.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).disabledColor,
-          ),
-        ),
-      );
-    }
-    return BlockGrid(
-      blocks: [
-        for (final slot in slots) _slotPreviewData(slot, settings, theme),
+    final hint = ProLimitHint(
+      used: slots.length,
+      max: kFreeMaxBlocksPerLayout,
+      noun: 'blocks',
+      subscriptions: deps.subscriptionRepository,
+    );
+    final Widget content = slots.isEmpty
+        ? Center(
+            child: Text(
+              'No blocks yet. Tap + to add a block.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).disabledColor,
+              ),
+            ),
+          )
+        : BlockGrid(
+            blocks: [
+              for (final slot in slots)
+                _slotPreviewData(slot, settings, theme),
+            ],
+            mode: BlockMode.readOnly,
+            onReorder: (from, to) {
+              // `BlockGrid` already adjusts the target index for the post-
+              // remove list, so the VM call here is just `from -> to` with
+              // no further translation. Replacing the slot id by index
+              // matches `MainJournalViewModel.reorderBlockInSection`.
+              vm.moveSlot(from, to);
+            },
+            onBlockTap: (block, index) async {
+              final picked = await showAddBlockSheet(context);
+              if (picked != null) {
+                vm.replaceSlotType(block.id, picked);
+              }
+            },
+            cardTrailing: (block, index) => IconButton(
+              tooltip: 'Remove',
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              icon: AppIcon(
+                HugeIcons.strokeRoundedCancel01,
+                color: scheme.onSurfaceVariant,
+              ),
+              onPressed: () => vm.removeSlot(block.id),
+            ),
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(padding: const EdgeInsets.only(top: 8), child: hint),
+        Expanded(child: content),
       ],
-      mode: BlockMode.readOnly,
-      onReorder: (from, to) {
-        // `BlockGrid` already adjusts the target index for the post-
-        // remove list, so the VM call here is just `from -> to` with
-        // no further translation. Replacing the slot id by index
-        // matches `MainJournalViewModel.reorderBlockInSection`.
-        vm.moveSlot(from, to);
-      },
-      onBlockTap: (block, index) async {
-        final picked = await showAddBlockSheet(context);
-        if (picked != null) {
-          vm.replaceSlotType(block.id, picked);
-        }
-      },
-      cardTrailing: (block, index) => IconButton(
-        tooltip: 'Remove',
-        iconSize: 18,
-        visualDensity: VisualDensity.compact,
-        icon: AppIcon(
-          HugeIcons.strokeRoundedCancel01,
-          color: scheme.onSurfaceVariant,
-        ),
-        onPressed: () => vm.removeSlot(block.id),
-      ),
     );
   }
 }
@@ -498,6 +511,13 @@ class _CustomBody extends StatelessWidget {
   Future<void> _addSection(BuildContext context) async {
     FocusScope.of(context).unfocus();
     final subscriptions = AppDependencies.of(context).subscriptionRepository;
+    // Free users cap a custom layout at `kFreeMaxSectionsCustom` sections;
+    // the (N+1)th add presents the paywall. (GUS-32)
+    if (!subscriptions.isPro &&
+        vm.sections.length >= kFreeMaxSectionsCustom) {
+      if (!await requirePro(subscriptions, context: context)) return;
+      if (!context.mounted) return;
+    }
     final picked = await showAddSectionSheet(
       context,
       subscriptions: subscriptions,
@@ -555,6 +575,12 @@ class _CustomBody extends StatelessWidget {
                 onConfirmRemove: (label) => _confirmRemove(context, label),
               ),
           const SizedBox(height: 12),
+          ProLimitHint(
+            used: sections.length,
+            max: kFreeMaxSectionsCustom,
+            noun: 'sections',
+            subscriptions: AppDependencies.of(context).subscriptionRepository,
+          ),
           _AddSectionTapZone(onTap: () => _addSection(context)),
           const SizedBox(height: 24),
         ],
