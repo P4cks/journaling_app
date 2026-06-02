@@ -15,8 +15,9 @@ Fuses the responsibilities of the pre-merge `HomeViewModel` and
 | State                  | Purpose                                              |
 |------------------------|------------------------------------------------------|
 | `_selectedDate`        | Drives the AppBar, the body branch, and the pager.   |
-| `_entries`             | Sorted ascending. Data source for `JournalPager`.    |
+| `_entries`             | Sorted ascending. Calendar dots + entry lookups.     |
 | `_entriesByDay`        | `Set<DateTime>` for the calendar's `eventLoader`.    |
+| `_pagerDates`          | Normalized dates the pager renders (data source for `JournalPager`). |
 
 All DateTimes are local-midnight normalized via `_dateOnly`.
 
@@ -25,9 +26,18 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
 - `setSelectedDate(date)` — guard against no-op; notify.
 - `entryForDate(date)` — repository passthrough (`getEntryForDate`).
   O(1) Hive lookup.
-- `pageIndexForDate(date)` — linear scan of `_entries`; returns
-  `int?` (null when no entry). The screen feeds this to `JournalPager`'s
-  controller.
+- `pagerDates` — the dates `JournalPager` iterates: entry dates,
+  ascending, **plus today appended** when today has no entry yet (the
+  trailing synthetic make-entry page; GUS-29). Today is always the max
+  (entries are today-or-earlier), so appending keeps it sorted.
+  Rebuilt in `_rebuildEntries` alongside `_entries`.
+- `todayHasEntry` — `_entriesByDay.contains(today)`. False ⇒ the pager
+  carries the synthetic today page.
+- `pageIndexForDate(date)` — linear scan of `pagerDates`; returns
+  `int?` (null when the date is neither an entry day nor the synthetic
+  today page). Today resolves to the trailing index when empty. The
+  screen uses non-null here both to position `JournalPager`'s
+  controller and to decide whether to mount the pager at all.
 - `createWithLayout(layout)` — calls
   `JournalRepository.createEntryForDate`. The repository notifies; we
   rebuild `_entries` / `_entriesByDay` and notify. We also notify

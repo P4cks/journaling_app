@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_nav_tile.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
@@ -29,7 +31,12 @@ class SettingsScreen extends StatelessWidget {
           children: [
             SettingsSection(
               label: "Appearance",
-              children: [_AppearanceSettingsContent(theme: theme)],
+              children: [
+                _AppearanceSettingsContent(
+                  theme: theme,
+                  subscriptions: deps.subscriptionRepository,
+                ),
+              ],
             ),
             SettingsSection(
               label: "Post-it style",
@@ -215,9 +222,13 @@ class SettingsScreen extends StatelessWidget {
 /// vertical set of controls and rebuilds when the theme mode, selected palette,
 /// or custom-palette list changes.
 class _AppearanceSettingsContent extends StatelessWidget {
-  const _AppearanceSettingsContent({required this.theme});
+  const _AppearanceSettingsContent({
+    required this.theme,
+    required this.subscriptions,
+  });
 
   final ThemeSettings theme;
+  final SubscriptionRepository subscriptions;
 
   /// Opens the theme editor with a blank custom-palette template.
   ///
@@ -253,8 +264,11 @@ class _AppearanceSettingsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Theme mode (light/dark/system) stays free; only palette
+    // customization is Pro-gated (GUS-26). Listen to both notifiers so
+    // the picker un-greys immediately after a successful purchase.
     return ListenableBuilder(
-      listenable: theme,
+      listenable: Listenable.merge([theme, subscriptions]),
       builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -274,6 +288,8 @@ class _AppearanceSettingsContent extends StatelessWidget {
             onAdd: () => _addPalette(context),
             onEdit: (palette) => _editPalette(context, palette),
             onDelete: (palette) => theme.deleteCustomPalette(palette.id),
+            locked: !subscriptions.isPro,
+            onUnlock: () => requirePro(subscriptions, context: context),
           ),
         ],
       ),

@@ -14,6 +14,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   show surface + color dots, right-aligned name text, and edit/delete
   icon actions. Calls back for select/add/edit/delete; persistence stays
   in `ThemeSettings`.
+  - **Pro gating (GUS-26).** A `locked` flag + an async
+    `Future<bool> Function()? onUnlock` callback. When `locked`, every
+    affordance except keeping the **currently-selected** palette is
+    gated: non-selected tiles + the Add-theme tile grey out and show a
+    `ProLockBadge`, and a shared `_guard` helper runs the action only
+    after `onUnlock()` (which the Settings screen wires to
+    `requirePro(subscriptions)`) resolves `true`. The active palette
+    stays usable so the app still renders a coherent theme.
 - [swatch_grid_picker.dart](swatch_grid_picker.dart) —
   `Future<SwatchResult?> showSwatchPicker(...)` + `SwatchResult` value
   class + private `_SwatchDialog`, `_Swatch`, `_LabelSlider`.

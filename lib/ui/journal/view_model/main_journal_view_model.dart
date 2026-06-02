@@ -30,16 +30,30 @@ class MainJournalViewModel extends ChangeNotifier {
   DateTime _selectedDate;
   List<JournalEntry> _entries = const [];
   Set<DateTime> _entriesByDay = const <DateTime>{};
+  List<DateTime> _pagerDates = const <DateTime>[];
 
   DateTime get selectedDate => _selectedDate;
 
   /// All entries the user has, sorted ascending by date — drives the
-  /// horizontal `PageView` on the screen.
+  /// calendar's dot marker / lookups. Note the pager iterates
+  /// [pagerDates], not this list, because the pager can include a
+  /// trailing synthetic "today" page that has no entry yet.
   List<JournalEntry> get entries => _entries;
 
   /// Set of normalized days that have an entry — drives the calendar's
   /// dot marker.
   Set<DateTime> get entriesByDay => _entriesByDay;
+
+  /// Normalized dates the horizontal pager renders, ascending. These
+  /// are the entry dates, plus **today appended** when today has no
+  /// entry yet — so the user can swipe from the last existing entry
+  /// onto a trailing "make entry" page. Today sorts last because
+  /// entries are always today-or-earlier. (GUS-29)
+  List<DateTime> get pagerDates => _pagerDates;
+
+  /// Whether today already has a materialized entry. When false the
+  /// pager carries a trailing synthetic today page.
+  bool get todayHasEntry => _entriesByDay.contains(_dateOnly(DateTime.now()));
 
   /// Entry for [date], or `null` when none exists. Cheap O(1) via the
   /// repository — used by the screen to decide between PageView vs
@@ -49,12 +63,13 @@ class MainJournalViewModel extends ChangeNotifier {
 
   JournalEntry? get currentEntry => entryForDate(_selectedDate);
 
-  /// Page index of the entry for [date] in [entries], or `null` when
-  /// the date has no entry.
+  /// Page index of [date] in [pagerDates], or `null` when the date is
+  /// neither an entry day nor the synthetic today page. Today resolves
+  /// to the trailing index when today has no entry.
   int? pageIndexForDate(DateTime date) {
     final key = _dateOnly(date);
-    for (var i = 0; i < _entries.length; i++) {
-      if (_dateOnly(_entries[i].date) == key) return i;
+    for (var i = 0; i < _pagerDates.length; i++) {
+      if (_pagerDates[i] == key) return i;
     }
     return null;
   }
@@ -184,6 +199,13 @@ class MainJournalViewModel extends ChangeNotifier {
       ..sort((a, b) => _dateOnly(a.date).compareTo(_dateOnly(b.date)));
     _entries = List.unmodifiable(all);
     _entriesByDay = {for (final e in all) _dateOnly(e.date)};
+    final today = _dateOnly(DateTime.now());
+    final dates = [for (final e in all) _dateOnly(e.date)];
+    // Append a trailing synthetic today page when today has no entry.
+    // Entries are always today-or-earlier, so today is the max — safe
+    // to append after the ascending entry dates.
+    if (!_entriesByDay.contains(today)) dates.add(today);
+    _pagerDates = List.unmodifiable(dates);
   }
 
   void _onRepositoryChanged() {

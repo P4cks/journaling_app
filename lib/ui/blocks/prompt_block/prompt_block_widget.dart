@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -295,6 +297,15 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
                 minLines: null,
                 keyboardType: TextInputType.multiline,
                 textAlignVertical: TextAlignVertical.top,
+                maxLength: kTextInputMaxChars,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                buildCounter:
+                    (
+                      _, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) => null,
                 decoration: const InputDecoration(
                   hintText: 'Your answer…',
                   border: InputBorder.none,

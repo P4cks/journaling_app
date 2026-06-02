@@ -19,16 +19,24 @@ journal/
 - **Selected date** drives both the AppBar title region and the body.
   Default: today. Changing via the calendar or a horizontal swipe
   updates `_selectedDate` in the VM.
-- **Body** — when the selected date has an entry, renders
-  `JournalPager` (a `PageView.builder` over `vm.entries`, sorted
-  ascending). Each page renders the entry's sections vertically: a
+- **Body** — renders `JournalPager` whenever the selected date is one
+  of the pager's pages (`vm.pageIndexForDate(date) != null`) — i.e. it
+  has an entry, or it's the trailing **synthetic today page** (today
+  with no entry yet). The pager is a `PageView.builder` over
+  `vm.pagerDates` (entry dates, plus today appended when today has no
+  entry), sorted ascending. Each page renders the entry's sections
+  vertically: a
   text section becomes a full-width `TextSectionWidget`; a block-grid
   section becomes a non-scrolling `BlockGrid`. The whole stack scrolls
   together inside a single outer `SingleChildScrollView`. Editable for
   today (or when `DebugSettings.unlockAllDays` is on), read-only for
   past days.
-- **Empty-day body** — today shows `MakeEntryCta`; past empty days
-  show `NoEntryReadOnly`. Matches the pre-merge behaviour exactly.
+- **Empty-day body** — today with no entry is now a trailing page
+  *inside* the pager that renders `MakeEntryCta` (so you can swipe
+  from the last existing entry onto it; GUS-29). Past empty days show
+  `NoEntryReadOnly`; a past empty day under `debug.unlockAllDays`
+  still shows the standalone `MakeEntryCta` fallback (not folded into
+  the pager).
 - **AppBar** — `JournalTitle` (editable title + date subtitle) on
   the left; right actions are the Change-layout icon (when editable +
   hasEntry), a Statistics icon (pushes `/statistics`), and the
@@ -43,9 +51,12 @@ journal/
 - **Layout change** is destructive (replaces the entry's sections
   list, re-materializing from the new layout). Confirmed via a dialog
   before applying.
-- **Swipe semantics** — left/right only between adjacent existing
-  entries. Skips empty days. Selecting an empty day in the calendar
-  takes the body out of the pager and into the CTA / read-only state.
+- **Swipe semantics** — left/right between adjacent pager pages
+  (existing entries plus the trailing today page when today is empty).
+  Skips empty *past* days. Selecting an empty past day in the calendar
+  takes the body out of the pager into the read-only / CTA state, but
+  swiping right from the last entry now lands on today's make-entry
+  page rather than dead-ending.
 
 ## Subdirectory CLAUDE.md files
 

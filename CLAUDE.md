@@ -69,9 +69,13 @@ A new top-level directory is added under lib/ → add it to the tree diagram and
 The boot sequence in main.dart changes (new init step, new box, new global service).
 The maintenance contract itself changes — keep this section accurate so future AGENTSs follow it.
 
-## Updating BACKLOG.md
+## Tracking work in Linear
 
-When the feature has been finished with the agreement of the user update the BACKLOG.md file to reflect that the feature has been implemented
+Work is tracked in Linear: workspace **GustoJournalingApp**, team prefix `GUS-` (e.g. `GUS-19`). Use the Linear MCP tools to read and update issues.
+
+- New work goes in Linear, not in a file. `BACKLOG.md` is deprecated and frozen — do not add new items to it (it is kept only as a historical record of shipped work).
+- When you start implementing an issue, move it to **In Progress**; when the branch/PR is up, move it to **In Review**; on merge (with the user's agreement), move it to **Done**.
+- Reference the issue id in commit messages and PR titles so they link back, e.g. `feat: gate theming to Pro (GUS-26)`.
 
 ## Backwards-compatibility policy (pre-1.0)
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -91,6 +92,11 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
             // but not shown. Re-enable only if the block model
             // changes to a content-bounded variant.
             scrollPhysics: const NeverScrollableScrollPhysics(),
+            maxLength: kTextInputMaxChars,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             decoration: const InputDecoration(
               hintText: 'Write something…',
               border: InputBorder.none,

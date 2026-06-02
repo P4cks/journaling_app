@@ -2,6 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 
+/// Shared character cap for every editable text-input block (1×1 text
+/// block, full-width text section, prompt answer, todo item). A single
+/// constant rather than a per-type configurable setting — see GUS-10.
+const int kTextInputMaxChars = 280;
+
 /// Shared [TextEditingController] + [FocusNode] lifecycle for State
 /// classes whose widget renders a single [TextBlockContent]-backed
 /// block.

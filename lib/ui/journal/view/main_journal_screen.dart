@@ -226,6 +226,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
         final entry = vm.currentEntry;
         final hasEntry = entry != null;
         final editable = _isToday(selectedDate) || debug.unlockAllDays;
+        // The pager renders whenever the selected date is one of its
+        // pages — i.e. it has an entry, or it's the trailing synthetic
+        // today page (today with no entry). Past empty days fall through
+        // to the read-only / debug make-entry states below. (GUS-29)
+        final inPager = vm.pageIndexForDate(selectedDate) != null;
         final scheme = Theme.of(context).colorScheme;
 
         // While the keyboard is up the AppBar collapses to a single
@@ -290,7 +295,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
             child: Material(
               color: scheme.surfaceContainerLow,
               child: SizedBox.expand(
-                child: hasEntry
+                child: inPager
                     ? JournalPager(
                         viewModel: vm,
                         modeFor: (e) =>
@@ -300,6 +305,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                         onRequestTextSectionEdit: (block) =>
                             _requestBlockEdit(block, isTextSection: true),
                         onReorderBlockInSection: vm.reorderBlockInSection,
+                        onMakeEntry: _onMakeEntry,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

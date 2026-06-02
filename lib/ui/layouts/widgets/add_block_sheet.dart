@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -14,6 +15,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
@@ -82,7 +84,10 @@ class _AddBlockSheetBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final settings = AppDependencies.of(context).blockSettings;
+    final deps = AppDependencies.of(context);
+    final settings = deps.blockSettings;
+    final subscriptions = deps.subscriptionRepository;
+    final isPro = subscriptions.isPro;
     final visibleTypes = BlockType.values
         .where((t) => !_hiddenBlockTypes.contains(t))
         .where((t) => allowedTypes == null || allowedTypes!.contains(t))
@@ -108,8 +113,11 @@ class _AddBlockSheetBody extends StatelessWidget {
                   childAspectRatio: 0.72,
                 ),
                 itemCount: visibleTypes.length,
-                itemBuilder: (gridCtx, i) =>
-                    _BuiltinCell(type: visibleTypes[i]),
+                itemBuilder: (gridCtx, i) => _BuiltinCell(
+                  type: visibleTypes[i],
+                  locked: !isPro && visibleTypes[i].isProOnly,
+                  subscriptions: subscriptions,
+                ),
               ),
             ),
             if (showCustomSection) ...[
@@ -147,8 +155,11 @@ class _AddBlockSheetBody extends StatelessWidget {
                           childAspectRatio: 0.72,
                         ),
                     itemCount: customs.length,
-                    itemBuilder: (gridCtx, i) =>
-                        _CustomCell(definition: customs[i]),
+                    itemBuilder: (gridCtx, i) => _CustomCell(
+                      definition: customs[i],
+                      locked: !isPro && BlockType.customCarousel.isProOnly,
+                      subscriptions: subscriptions,
+                    ),
                   ),
                 ),
               Padding(
@@ -173,28 +184,35 @@ class _AddBlockSheetBody extends StatelessWidget {
 }
 
 class _BuiltinCell extends StatelessWidget {
-  const _BuiltinCell({required this.type});
+  const _BuiltinCell({
+    required this.type,
+    required this.locked,
+    required this.subscriptions,
+  });
 
   final BlockType type;
+  final bool locked;
+  final SubscriptionRepository subscriptions;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => Navigator.of(context).pop(AddBlockResultBuiltin(type)),
+      onTap: () => _pickBlock(
+        context: context,
+        locked: locked,
+        subscriptions: subscriptions,
+        result: AddBlockResultBuiltin(type),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: AbsorbPointer(
-              child: BlockChrome(
-                child: BlockWidget(
-                  data: type.sampleData(id: 'preview-${type.name}'),
-                  mode: BlockMode.readOnly,
-                ),
-              ),
+          _PreviewTile(
+            locked: locked,
+            child: BlockWidget(
+              data: type.sampleData(id: 'preview-${type.name}'),
+              mode: BlockMode.readOnly,
             ),
           ),
           const SizedBox(height: 8),
@@ -202,6 +220,7 @@ class _BuiltinCell extends StatelessWidget {
             type.label,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
+              color: locked ? theme.disabledColor : null,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -210,7 +229,9 @@ class _BuiltinCell extends StatelessWidget {
           Text(
             type.description,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: locked
+                  ? theme.disabledColor
+                  : theme.colorScheme.onSurfaceVariant,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -221,10 +242,59 @@ class _BuiltinCell extends StatelessWidget {
   }
 }
 
+/// Square block preview with the shared chrome. When [locked], the
+/// preview dims and a compact Pro crown overlays the top-right corner.
+class _PreviewTile extends StatelessWidget {
+  const _PreviewTile({required this.locked, required this.child});
+
+  final bool locked;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = AspectRatio(
+      aspectRatio: 1,
+      child: AbsorbPointer(child: BlockChrome(child: child)),
+    );
+    if (!locked) return tile;
+    return Stack(
+      children: [
+        Opacity(opacity: 0.45, child: tile),
+        const Positioned(top: 6, right: 6, child: ProLockBadge(compact: true)),
+      ],
+    );
+  }
+}
+
+/// Shared tap handler for both built-in and custom cells: when [locked],
+/// present the paywall and only pop with [result] on a successful
+/// purchase; otherwise pop immediately.
+Future<void> _pickBlock({
+  required BuildContext context,
+  required bool locked,
+  required SubscriptionRepository subscriptions,
+  required AddBlockResult result,
+}) async {
+  if (!locked) {
+    Navigator.of(context).pop(result);
+    return;
+  }
+  final ok = await requirePro(subscriptions, context: context);
+  if (ok && context.mounted) {
+    Navigator.of(context).pop(result);
+  }
+}
+
 class _CustomCell extends StatelessWidget {
-  const _CustomCell({required this.definition});
+  const _CustomCell({
+    required this.definition,
+    required this.locked,
+    required this.subscriptions,
+  });
 
   final CustomCarouselDefinition definition;
+  final bool locked;
+  final SubscriptionRepository subscriptions;
 
   @override
   Widget build(BuildContext context) {
@@ -245,24 +315,25 @@ class _CustomCell extends StatelessWidget {
     );
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () =>
-          Navigator.of(context).pop(AddBlockResultCustom(definition.id)),
+      onTap: () => _pickBlock(
+        context: context,
+        locked: locked,
+        subscriptions: subscriptions,
+        result: AddBlockResultCustom(definition.id),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: AbsorbPointer(
-              child: BlockChrome(
-                child: BlockWidget(data: data, mode: BlockMode.readOnly),
-              ),
-            ),
+          _PreviewTile(
+            locked: locked,
+            child: BlockWidget(data: data, mode: BlockMode.readOnly),
           ),
           const SizedBox(height: 8),
           Text(
             definition.title.isEmpty ? 'Untitled' : definition.title,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
+              color: locked ? theme.disabledColor : null,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -271,7 +342,9 @@ class _CustomCell extends StatelessWidget {
           Text(
             '${definition.items.length} item${definition.items.length == 1 ? '' : 's'}',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: locked
+                  ? theme.disabledColor
+                  : theme.colorScheme.onSurfaceVariant,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

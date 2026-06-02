@@ -28,14 +28,30 @@ sheet is a stateless top-level function returning the user's pick or
   tiles). Pass `allowedTypes` to restrict to a subset (used by
   feature-block sections — also hides the custom section since feature
   blocks must be photo/memory). The `title` defaults to "Add block".
+  - **Pro gating (GUS-19).** Reads `subscriptionRepository` via
+    `AppDependencies`. For free users, built-in cells whose
+    `BlockType.isProOnly` is true (everything except text + mood) and
+    every custom-carousel cell render **greyed (`_PreviewTile`
+    dims + a compact `ProLockBadge`)** rather than being filtered out.
+    Tapping a locked cell routes through the shared `_pickBlock` helper:
+    it calls `requirePro` and pops with the selection only on a
+    successful purchase; unlocked cells pop immediately.
 - [add_section_sheet.dart](add_section_sheet.dart) —
-  `Future<SectionKind?> showAddSectionSheet(context)`. Three-tile
-  sheet (Text section / Block grid / Feature block). Block-grid
-  sections start empty — there is no row picker; the user adds blocks
-  afterwards and the grid grows to fit. Feature-block sections also
-  start empty; the editor body lets the user pick one photo or memory
-  block via `showAddBlockSheet(allowedTypes: …)`. Custom-layout editor
-  uses this when the user taps the "Add section" zone at the bottom.
+  `Future<SectionKind?> showAddSectionSheet(context, {required
+  SubscriptionRepository subscriptions})`. Three-tile sheet (Text
+  section / Block grid / Feature block), each rendered via the private
+  `_SectionTile` (with a `locked` flag). Block-grid sections start
+  empty — there is no row picker; the user adds blocks afterwards and
+  the grid grows to fit. Feature-block sections also start empty; the
+  editor body lets the user pick one photo or memory block via
+  `showAddBlockSheet(allowedTypes: …)`. Custom-layout editor uses this
+  when the user taps the "Add section" zone at the bottom (passing
+  `subscriptions` from `AppDependencies`).
+  - **Feature block is Pro-only (GUS-19):** for free users
+    (`!kFreeSectionKinds.contains(featureBlock)`) the tile greys +
+    badges and tapping presents the paywall, popping
+    `SectionKind.featureBlock` only on a successful purchase. Text +
+    block-grid are always free.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
@@ -48,19 +64,18 @@ sheet is a stateless top-level function returning the user's pick or
   - Used by the layout editor's icon AppBar action. Callers may pass
     the returned name (or `null`) straight into `vm.setIconName`.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
-  `Future<LayoutKind?> showLayoutKindPickerSheet(context, {required
-  SubscriptionRepository subscriptions})`. Three-tile sheet ("Only
-  blocks", "4 blocks + text", "Fully customizable"), each with an icon
-  and one-line description. Shown when the user taps the FAB on the
-  layouts list. Returns the picked `LayoutKind`; the caller pushes the
-  editor with that kind via `Routes.newLayoutFor(kind)`.
-  - **The "Fully customizable" (`custom`) tile is Pro-only (BACKLOG
-    #96).** For free users it renders greyed with a trailing
-    `ProLockBadge`; tapping it calls `requirePro(subscriptions)` and
-    only pops with `LayoutKind.custom` on a successful purchase
-    (otherwise the sheet stays open). Pro users pop immediately. The
-    other two kinds are always free. `_KindTile` gained a `locked`
-    flag driving the grey + badge.
+  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Three-tile
+  sheet ("Only blocks", "4 blocks + text", "Fully customizable"), each
+  with an icon and one-line description. Shown when the user taps the
+  FAB on the layouts list. Returns the picked `LayoutKind`; the caller
+  pushes the editor with that kind via `Routes.newLayoutFor(kind)`.
+  - **All three kinds are free to pick (GUS-19 reversal of BACKLOG
+    #96).** Monetization moved off the layout *kind* and onto
+    block/section selection, so the `custom` tile is no longer gated —
+    `_KindTile` lost its `locked` flag and the sheet no longer takes a
+    `subscriptions` param. (Free `blockOnly` layouts are still capped at
+    `kFreeMaxBlocksPerLayout`, and the add-block / add-section sheets
+    gate individual Pro blocks/sections.)
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —

@@ -100,6 +100,8 @@ cross-cutting conventions, the running PR/session log, and the
 workflow-with-the-user section. Don't duplicate those into the
 per-directory files — link instead.
 
+Feature backlog now lives in Linear (workspace **GustoJournalingApp**, team prefix `GUS-`), not in `BACKLOG.md` — see the project-root CLAUDE.md "Tracking work in Linear" section. `BACKLOG.md` is frozen as a historical record.
+
 ## Files in this directory
 
 - [main.dart](main.dart) — app entrypoint. Order matters:
