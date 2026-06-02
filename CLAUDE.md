@@ -74,7 +74,7 @@ The maintenance contract itself changes — keep this section accurate so future
 Work is tracked in Linear: workspace **GustoJournalingApp**, team prefix `GUS-` (e.g. `GUS-19`). Use the Linear MCP tools to read and update issues.
 
 - New work goes in Linear, not in a file. `BACKLOG.md` is deprecated and frozen — do not add new items to it (it is kept only as a historical record of shipped work).
-- When you start implementing an issue, move it to **In Progress**; when the branch/PR is up, move it to **In Review**; on merge (with the user's agreement), move it to **Done**.
+- When you start implementing an issue, move it to **In Progress**. **Immediately after opening a PR (`gh pr create`), move every issue the PR addresses to **In Review** without waiting to be asked.** On merge (with the user's agreement), move it to **Done**.
 - Reference the issue id in commit messages and PR titles so they link back, e.g. `feat: gate theming to Pro (GUS-26)`.
 
 ## Backwards-compatibility policy (pre-1.0)
