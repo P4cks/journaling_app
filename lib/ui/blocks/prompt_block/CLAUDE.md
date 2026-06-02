@@ -81,8 +81,11 @@ The widget reads the prompt from `widget.data.content`. It only reads
   multi-line `TextField` that fills the remaining vertical space
   (`Expanded` + `expands: true`). Picker auto-opens on empty-prompt
   first build; tapping the pencil re-opens it. Same per-keystroke
-  save pattern as the text block. The answer field is capped at the
-  shared `kTextInputMaxChars` (counter hidden).
+  save pattern as the text block. The answer field is capped at
+  `BlockInputLimits.of(debug).promptChars` (default
+  `kPromptAnswerMaxChars` = 280, debug-overridable) with a **visible**
+  `current/limit` counter (`buildCharCounter()`), wrapped in
+  `ListenableBuilder(listenable: debugSettings)` for live tuning.
 
 ## Gotchas
 

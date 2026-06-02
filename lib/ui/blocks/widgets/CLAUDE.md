@@ -22,15 +22,27 @@ text block and the full-width text section.
   into block content (`onSelected`). Custom-carousel orphan handling
   stays in `CustomCarouselWidget` — the scaffold only sees a
   resolved, non-empty options list.
+- [block_input_limits.dart](block_input_limits.dart) — per-block-type
+  input caps + the shared visible counter (GUS-10 rework). Replaces the
+  old single hidden `kTextInputMaxChars`.
+  - Hard-coded defaults: `kTextBlockMaxChars` (280),
+    `kTextSectionMaxChars` (280), `kPromptAnswerMaxChars` (280),
+    `kTodoItemMaxChars` (80), `kTodoMaxItems` (8). These are the
+    shipped values — the debug menu can override any of them at runtime
+    (see `DebugSettings` nullable-int fields). Once a tuned value is
+    settled, bake it back into the constant here and drop the override.
+  - `BlockInputLimits.of(debugSettings)` resolves the **effective**
+    value per limit (`override ?? default`). Call once per build and
+    read the field you need. Wrap the editable subtree in
+    `ListenableBuilder(listenable: debugSettings)` so live debug tuning
+    re-resolves and updates open blocks.
+  - `buildCharCounter({onlyWhenFocused})` — a shared
+    `TextField.buildCounter` that renders a compact `current/limit`
+    counter (labelSmall, `onSurfaceVariant` → `error` at the cap).
+    Visible when focused or non-empty; pass `onlyWhenFocused: true` for
+    dense layouts (todo rows) so only the active field shows its
+    counter.
 - [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
-  also exports `const int kTextInputMaxChars` (currently 280) — the
-  single shared character cap applied to every editable text-input
-  block (1×1 text block, full-width text section, prompt answer, todo
-  item). It's a flat constant, not a per-type configurable setting (a
-  per-type cap was tried and removed as unwanted; GUS-10 reintroduced
-  it as one shared value). Each field passes `maxLength:
-  kTextInputMaxChars` + `maxLengthEnforcement: enforced` and hides the
-  counter with `buildCounter: (...) => null`.
   `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
   Owns the `TextEditingController` + `FocusNode` lifecycle for State
   classes whose widget renders a single `TextBlockContent`-backed
@@ -142,5 +154,9 @@ text block and the full-width text section.
 - A new tunable is exposed on the carousel.
 - The text-content controller mixin grows new lifecycle hooks or its
   abstract surface changes.
+- A new per-block input limit is added, or the default values /
+  resolver / counter shape in `block_input_limits.dart` change (also
+  touch the matching block-type CLAUDE.md and the debug-menu docs in
+  `lib/ui/profile/view/CLAUDE.md`).
 - The carousel scaffold's surface area grows (new prop, new internal
   rendering rule like a custom empty placeholder).

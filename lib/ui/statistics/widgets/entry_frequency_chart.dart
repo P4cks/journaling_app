@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/statistics/view_model/statistics_view_model.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/stats_empty_state.dart';
 
-/// Vertical bars: entries per ISO week. Week start matches
-/// `table_calendar`'s default Monday-start convention.
+/// Vertical bars: entries per bucket. Bucket size adapts to the range
+/// via [granularity] — weekly (Monday-start, matching `table_calendar`),
+/// monthly, or yearly (GUS-17).
 class EntryFrequencyChart extends StatelessWidget {
-  const EntryFrequencyChart({super.key, required this.buckets});
+  const EntryFrequencyChart({
+    super.key,
+    required this.buckets,
+    required this.granularity,
+  });
 
-  final List<WeekBucket> buckets;
+  final List<FreqBucket> buckets;
+  final FreqGranularity granularity;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +23,11 @@ class EntryFrequencyChart extends StatelessWidget {
     final total = buckets.fold<int>(0, (a, b) => a + b.count);
 
     return _Card(
-      title: 'Entries per week',
+      title: switch (granularity) {
+        FreqGranularity.week => 'Entries per week',
+        FreqGranularity.month => 'Entries per month',
+        FreqGranularity.year => 'Entries per year',
+      },
       child: total == 0
           ? const SizedBox(
               height: 180,
@@ -83,7 +93,7 @@ class EntryFrequencyChart extends StatelessWidget {
                             return Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                _bottomLabel(buckets[idx].weekStart),
+                                _bottomLabel(buckets[idx].bucketStart),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: scheme.onSurfaceVariant,
                                 ),
@@ -137,21 +147,29 @@ class EntryFrequencyChart extends StatelessWidget {
 
   int _bottomInterval() {
     final n = buckets.length;
-    if (n <= 6) return 1;
-    if (n <= 12) return 2;
+    if (n <= 5) return 1;
+    // 12 monthly bars (Year view) → interval 3 → ~4 labels, leaving
+    // generous spacing so they never crowd on narrow phones.
+    if (n <= 12) return 3;
     if (n <= 26) return 4;
-    // Large ranges (Year ≈ 52 weeks, All): target ~5 evenly spaced
-    // labels. With month-abbreviation labels (see [_bottomLabel]) this
-    // reads as a timeline without crowding.
+    // Large bucket counts (weekly All ≈ many weeks): target ~5 evenly
+    // spaced labels so they read as a timeline without crowding.
     return (n / 5).ceil();
   }
 
-  /// Short labels for short ranges (`M/D`); month abbreviations for
-  /// large ranges so the thinned-out labels stay narrow and don't
-  /// overlap. (GUS-17)
-  String _bottomLabel(DateTime weekStart) {
-    if (buckets.length > 26) return _monthAbbr[weekStart.month - 1];
-    return '${weekStart.month}/${weekStart.day}';
+  /// Label per bucket, keyed off [granularity]: weekly `M/D`; monthly
+  /// bare `MMM` (no year suffix — it widened the labels enough to
+  /// overlap on the 365-day Year range, which always straddles two
+  /// calendar years); yearly `YYYY`. (GUS-17)
+  String _bottomLabel(DateTime bucketStart) {
+    switch (granularity) {
+      case FreqGranularity.week:
+        return '${bucketStart.month}/${bucketStart.day}';
+      case FreqGranularity.month:
+        return _monthAbbr[bucketStart.month - 1];
+      case FreqGranularity.year:
+        return '${bucketStart.year}';
+    }
   }
 
   static const _monthAbbr = <String>[

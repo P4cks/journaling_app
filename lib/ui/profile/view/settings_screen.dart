@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -137,6 +138,49 @@ class SettingsScreen extends StatelessWidget {
                       );
                     },
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      'Input-limit tuning — these override the per-block '
+                      'character caps for testing. Once you settle on good '
+                      'values, hard-code them into BlockInputLimits defaults '
+                      'and drop the debug overrides.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  _DebugLimitTile(
+                    title: 'Text block char limit',
+                    value: debug.textBlockCharLimit,
+                    defaultValue: kTextBlockMaxChars,
+                    onChanged: debug.setTextBlockCharLimit,
+                  ),
+                  _DebugLimitTile(
+                    title: 'Text section char limit',
+                    value: debug.textSectionCharLimit,
+                    defaultValue: kTextSectionMaxChars,
+                    onChanged: debug.setTextSectionCharLimit,
+                  ),
+                  _DebugLimitTile(
+                    title: 'Prompt answer char limit',
+                    value: debug.promptCharLimit,
+                    defaultValue: kPromptAnswerMaxChars,
+                    onChanged: debug.setPromptCharLimit,
+                  ),
+                  _DebugLimitTile(
+                    title: 'Todo item char limit',
+                    value: debug.todoItemCharLimit,
+                    defaultValue: kTodoItemMaxChars,
+                    onChanged: debug.setTodoItemCharLimit,
+                  ),
+                  _DebugLimitTile(
+                    title: 'Todo max items',
+                    value: debug.todoMaxItems,
+                    defaultValue: kTodoMaxItems,
+                    onChanged: debug.setTodoMaxItems,
+                  ),
                   _DebugColorPickerTile(
                     theme: theme,
                     icon: HugeIcons.strokeRoundedPaintBucket,
@@ -172,8 +216,23 @@ class SettingsScreen extends StatelessWidget {
                   Builder(
                     builder: (context) {
                       final errorColor = Theme.of(context).colorScheme.error;
+                      final primaryColor = Theme.of(
+                        context,
+                      ).colorScheme.primary;
                       return Column(
                         children: [
+                          ListTile(
+                            leading: AppIcon(
+                              HugeIcons.strokeRoundedDatabaseAdd,
+                              color: primaryColor,
+                            ),
+                            title: const Text('Generate sample entries'),
+                            subtitle: const Text(
+                              'Fill ~400 past days with random moods + text '
+                              'to populate the statistics charts.',
+                            ),
+                            onTap: () => _generateSampleEntries(context),
+                          ),
                           ListTile(
                             leading: AppIcon(
                               HugeIcons.strokeRoundedDelete02,
@@ -213,6 +272,86 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Debug-menu row for one per-block input limit. Shows the effective
+/// value (override or default), opens a numeric editor on tap, and
+/// offers "Reset to default" (clears the override → `null`).
+class _DebugLimitTile extends StatelessWidget {
+  const _DebugLimitTile({
+    required this.title,
+    required this.value,
+    required this.defaultValue,
+    required this.onChanged,
+  });
+
+  final String title;
+  final int? value;
+  final int defaultValue;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final effective = value ?? defaultValue;
+    final overridden = value != null;
+    return ListTile(
+      leading: AppIcon(HugeIcons.strokeRoundedTextFont),
+      title: Text(title),
+      subtitle: Text(
+        overridden
+            ? 'Override: $effective (default $defaultValue)'
+            : 'Default: $defaultValue',
+      ),
+      trailing: Text(
+        '$effective',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      onTap: () => _edit(context),
+    );
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    final controller = TextEditingController(text: '${value ?? defaultValue}');
+    final result = await showDialog<int?>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Limit',
+            helperText: 'Default: $defaultValue',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Sentinel: negative => reset to default (override null).
+              Navigator.of(dialogContext).pop(-1);
+            },
+            child: const Text('Reset to default'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(null),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              Navigator.of(
+                dialogContext,
+              ).pop(parsed == null || parsed <= 0 ? null : parsed);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result == null) return; // dismissed / cancel / invalid
+    onChanged(result < 0 ? null : result);
   }
 }
 
@@ -344,6 +483,26 @@ Future<void> _confirmAndDeleteAllEntries(BuildContext context) async {
         deleted == 0
             ? 'No entries to delete'
             : 'Deleted $deleted entr${deleted == 1 ? 'y' : 'ies'}',
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+/// Debug action (GUS-35): populate the statistics charts with realistic
+/// data. Generates randomized sample entries across the past ~400 days
+/// (skipping days that already have an entry). Non-destructive.
+Future<void> _generateSampleEntries(BuildContext context) async {
+  final created = await AppDependencies.of(
+    context,
+  ).journalRepository.debugGenerateSampleEntries();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        created == 0
+            ? 'No entries created (those days already have entries)'
+            : 'Generated $created sample entr${created == 1 ? 'y' : 'ies'}',
       ),
       duration: const Duration(seconds: 2),
     ),

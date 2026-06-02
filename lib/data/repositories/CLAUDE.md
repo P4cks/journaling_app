@@ -86,6 +86,16 @@ coordination live.
     debug menu. Iterates every entry and removes it; notifies once
     if any were deleted. Returns the count. Layouts and settings
     are untouched.
+  - `debugGenerateSampleEntries({days = 400, density = 0.7})` —
+    **debug-only** (GUS-35); backs the Settings → Debug "Generate
+    sample entries" action. Walks the past `days` days, and for ~`density`
+    of them (and only when no entry already exists for that date)
+    writes a self-contained entry: one `blockGrid` section holding a
+    `textBlock` (random word count via `_sampleText`) + a `moodTracker`
+    (random `moodEmojis` pick via `_sampleMood`, ~15% left null so the
+    mood-over-time line shows gaps). Today is skipped (loop starts at
+    `back = 1`). Notifies once if any were created; returns the count.
+    Non-destructive — never overwrites existing entries.
   - `getAllEntries()` — unsorted; sorting is caller's job
     (`JournalEntriesViewModel` and `HomeViewModel.entriesByDay`
     each do their own).

@@ -4,7 +4,9 @@ import 'package:journaling_app_rewrite/data/model/block_content/text_block_conte
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 /// Full-width text section. Backs onto the same `TextBlockContent`
 /// shape as `TextBlockWidget` so it round-trips through the journal
@@ -74,33 +76,35 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
       );
     }
 
+    final debug = AppDependencies.of(context).debugSettings;
     if (widget.expanded) {
       // Expanded-route variant: no card chrome, no outline. Text fills
       // the parent constraints; top-left alignment for natural
       // long-form journal entry feel.
-      return TextField(
-        controller: controller,
-        focusNode: focusNode,
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
-        textAlignVertical: TextAlignVertical.top,
-        textAlign: TextAlign.start,
-        style: theme.textTheme.bodyLarge,
-        maxLength: kTextInputMaxChars,
-        maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter:
-            (_, {required currentLength, required isFocused, maxLength}) =>
-                null,
-        decoration: const InputDecoration(
-          hintText: 'Write something…',
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
+      return ListenableBuilder(
+        listenable: debug,
+        builder: (context, _) => TextField(
+          controller: controller,
+          focusNode: focusNode,
+          expands: true,
+          maxLines: null,
+          minLines: null,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          textAlignVertical: TextAlignVertical.top,
+          textAlign: TextAlign.start,
+          style: theme.textTheme.bodyLarge,
+          maxLength: BlockInputLimits.of(debug).textSectionChars,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+          buildCounter: buildCharCounter(),
+          decoration: const InputDecoration(
+            hintText: 'Write something…',
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: emitText,
         ),
-        onChanged: emitText,
       );
     }
 
@@ -113,25 +117,26 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
       child: DelayedTapFocus(
         focusNode: focusNode,
         onDoubleTap: widget.onDoubleTap,
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          maxLines: null,
-          minLines: 4,
-          keyboardType: TextInputType.multiline,
-          textCapitalization: TextCapitalization.sentences,
-          maxLength: kTextInputMaxChars,
-          maxLengthEnforcement: MaxLengthEnforcement.enforced,
-          buildCounter:
-              (_, {required currentLength, required isFocused, maxLength}) =>
-                  null,
-          decoration: const InputDecoration(
-            hintText: 'Write something…',
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
+        child: ListenableBuilder(
+          listenable: debug,
+          builder: (context, _) => TextField(
+            controller: controller,
+            focusNode: focusNode,
+            maxLines: null,
+            minLines: 4,
+            keyboardType: TextInputType.multiline,
+            textCapitalization: TextCapitalization.sentences,
+            maxLength: BlockInputLimits.of(debug).textSectionChars,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: buildCharCounter(),
+            decoration: const InputDecoration(
+              hintText: 'Write something…',
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onChanged: emitText,
           ),
-          onChanged: emitText,
         ),
       ),
     );

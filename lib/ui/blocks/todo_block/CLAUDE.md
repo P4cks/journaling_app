@@ -21,11 +21,21 @@ matching the text block's bounded behaviour. Content shape:
   when done). Empty list → "No todos" italic placeholder. The Column
   is wrapped in `ClipRect` so excess rows clip to the cell.
 - `BlockMode.editable` — non-scrolling `Column` of rows inside a
-  `ClipRect`, each row a single-line `TextField` (capped at the shared
-  `kTextInputMaxChars`, counter hidden) plus a tiny ✕
+  `ClipRect`, each row a single-line `TextField` plus a tiny ✕
   button. Tapping the bubble toggles done. The "+ Add item" InkWell
   lives OUTSIDE the ClipRect at the natural bottom of the outer
   Column so it stays visible even when items overflow.
+  **Two independent caps** (GUS-10 rework, both UI-enforced — no Hive
+  bump), resolved via `BlockInputLimits.of(debug)` with the editable
+  body wrapped in `ListenableBuilder(listenable: debugSettings)`:
+  - **Chars per item** — `todoItemChars` (default `kTodoItemMaxChars`
+    = 80, debug-overridable). Each row's field shows a `current/limit`
+    counter via `buildCharCounter(onlyWhenFocused: true)` so only the
+    actively-edited row displays it.
+  - **Item count** — `todoMaxItems` (default `kTodoMaxItems` = 8,
+    debug-overridable). `_add` no-ops at the cap; the "Add item"
+    control greys out and an `n/max tasks` label sits to its right
+    (turning `error`-coloured at the cap).
 
 ## Implementation details
 

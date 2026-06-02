@@ -22,6 +22,14 @@ class SettingsStorageService {
   static const _blockMemoryEligibleTypesKey = 'block.memory.eligibleTypes';
   static const _subscriptionLastKnownProKey = 'subscription.lastKnownPro';
   static const _subscriptionDebugForceFreeKey = 'subscription.debugForceFree';
+  // Debug-only per-block input-limit overrides. Absent → use the
+  // hard-coded default in BlockInputLimits. Stored as the int's string
+  // form; deleted when cleared back to default.
+  static const _limitTextBlockKey = 'debug.limit.textBlock';
+  static const _limitTextSectionKey = 'debug.limit.textSection';
+  static const _limitPromptKey = 'debug.limit.prompt';
+  static const _limitTodoItemKey = 'debug.limit.todoItem';
+  static const _limitTodoMaxItemsKey = 'debug.limit.todoMaxItems';
   // Legacy key `block.expandOnEdit` is intentionally not read anymore
   // — both single-tap (in-place edit) and double-tap (expanded route)
   // are always active. Old values on disk are harmless under the
@@ -161,4 +169,32 @@ class SettingsStorageService {
 
   Future<void> setSubscriptionDebugForceFree(bool value) =>
       _box.put(_subscriptionDebugForceFreeKey, value.toString());
+
+  int? _getInt(String key) {
+    final raw = _box.get(key);
+    if (raw == null) return null;
+    return int.tryParse(raw);
+  }
+
+  Future<void> _setInt(String key, int? value) =>
+      value == null ? _box.delete(key) : _box.put(key, value.toString());
+
+  int? getLimitTextBlock() => _getInt(_limitTextBlockKey);
+  Future<void> setLimitTextBlock(int? value) =>
+      _setInt(_limitTextBlockKey, value);
+
+  int? getLimitTextSection() => _getInt(_limitTextSectionKey);
+  Future<void> setLimitTextSection(int? value) =>
+      _setInt(_limitTextSectionKey, value);
+
+  int? getLimitPrompt() => _getInt(_limitPromptKey);
+  Future<void> setLimitPrompt(int? value) => _setInt(_limitPromptKey, value);
+
+  int? getLimitTodoItem() => _getInt(_limitTodoItemKey);
+  Future<void> setLimitTodoItem(int? value) =>
+      _setInt(_limitTodoItemKey, value);
+
+  int? getLimitTodoMaxItems() => _getInt(_limitTodoMaxItemsKey);
+  Future<void> setLimitTodoMaxItems(int? value) =>
+      _setInt(_limitTodoMaxItemsKey, value);
 }
