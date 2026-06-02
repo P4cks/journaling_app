@@ -53,7 +53,11 @@ for how they fit together; this file is per-file notes.
   `compact: false` → a `primaryContainer` "Pro" chip for trailing a
   list tile (e.g. the locked layout-kind picker tile). `const int
   kFreeMaxBlocksPerLayout = 6` — free-tier block cap for `blockOnly`
-  layouts (BACKLOG #92).
+  layouts (BACKLOG #92). `const Set<SectionKind> kFreeSectionKinds =
+  {text, blockGrid}` — section kinds free users may add; `featureBlock`
+  is Pro (GUS-19), so the add-section sheet greys + badges it. (Block
+  gating is keyed off `BlockType.isProOnly` instead, in
+  [../../blocks/block_type_display.dart](../../blocks/block_type_display.dart).)
 - [settings_nav_tile.dart](settings_nav_tile.dart) — `SettingsNavTile`.
   Icon + title + caret-right `ListTile` that pushes a named `route`
   via `context.push`. Used for navigation rows inside settings

@@ -136,6 +136,10 @@ that lives in block-grid sections.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
+  - `isProOnly` — true for every block except `textBlock` + `moodTracker`
+    (the free set). Read by the add-block sheet to grey + badge locked
+    cells and present the paywall on tap (GUS-19). Pure UI gate — the
+    repository/materializer never consult it.
 
 
 - [widgets/collapsible_carousel_block.dart](widgets/collapsible_carousel_block.dart) —

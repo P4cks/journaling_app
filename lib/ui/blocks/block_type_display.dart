@@ -259,6 +259,28 @@ extension BlockTypeDisplay on BlockType {
     }
   }
 
+  /// Whether this block type is locked behind Pro. Free users get the
+  /// two basic blocks (text + mood); everything else is Pro. The
+  /// add-block sheet greys + badges locked cells and presents the
+  /// paywall on tap rather than hiding them (discoverability). (GUS-19)
+  bool get isProOnly {
+    switch (this) {
+      case BlockType.textBlock:
+      case BlockType.moodTracker:
+        return false;
+      case BlockType.weatherManual:
+      case BlockType.promptBlock:
+      case BlockType.todoBlock:
+      case BlockType.quoteBlock:
+      case BlockType.memoryBlock:
+      case BlockType.weatherApi:
+      case BlockType.photoBlock:
+      case BlockType.locationBlock:
+      case BlockType.customCarousel:
+        return true;
+    }
+  }
+
   /// Whether editing this block raises the keyboard. Drives the
   /// expanded-overlay layout: keyboard-using blocks sit in the top half
   /// (keyboard fits below); other blocks sit centered.

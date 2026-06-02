@@ -1,5 +1,7 @@
 # Backlog
 
+> ⚠️ **Deprecated — work is now tracked in Linear** (workspace **GustoJournalingApp**, team prefix `GUS-`). This file is kept only as a historical record of shipped work; **do not add new items here.** See the project-root `CLAUDE.md` "Tracking work in Linear" section.
+
 Running list of feature ideas. Not prioritized — pick whichever fits the moment.
 Add a complexity measure to the idea
 Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the relevant section, or create a new section if nothing fits.

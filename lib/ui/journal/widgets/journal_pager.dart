@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
+import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 
 /// Horizontal pager over the user's entries (sorted ascending). The
 /// page index is kept in sync with the view-model's `selectedDate`:
@@ -40,10 +41,16 @@ class JournalPager extends StatefulWidget {
     this.onRequestTextSectionEdit,
     this.onRequestExitEdit,
     this.onReorderBlockInSection,
+    this.onMakeEntry,
   });
 
   final MainJournalViewModel viewModel;
   final BlockMode Function(JournalEntry entry) modeFor;
+
+  /// Tapped from the trailing synthetic "today" page (rendered when
+  /// today has no entry yet). Routes to the screen's make-entry flow.
+  /// Null disables the CTA page's button. (GUS-29)
+  final VoidCallback? onMakeEntry;
 
   /// When true, the pager disables its horizontal swipe physics even
   /// if no inner carousel is expanded. Used by the screen to lock the
@@ -160,9 +167,17 @@ class _JournalPagerState extends State<JournalPager> {
       _lockedBlockIds.clear();
       return;
     }
+    final entry = widget.viewModel.entryForDate(
+      widget.viewModel.pagerDates[target],
+    );
+    if (entry == null) {
+      // Synthetic today page — no blocks, so no locks survive.
+      _lockedBlockIds.clear();
+      return;
+    }
 
     final visibleBlockIds = <String>{
-      for (final section in widget.viewModel.entries[target].sections)
+      for (final section in entry.sections)
         for (final block in section.blocks) block.id,
     };
     _lockedBlockIds.removeWhere((id) => !visibleBlockIds.contains(id));
@@ -170,19 +185,23 @@ class _JournalPagerState extends State<JournalPager> {
 
   @override
   Widget build(BuildContext context) {
-    final entries = widget.viewModel.entries;
-    if (entries.isEmpty) return const SizedBox.shrink();
+    final pagerDates = widget.viewModel.pagerDates;
+    if (pagerDates.isEmpty) return const SizedBox.shrink();
     final pagerLocked = _lockedBlockIds.isNotEmpty || widget.externalLock;
     return PageView.builder(
       controller: _controller,
-      itemCount: entries.length,
+      itemCount: pagerDates.length,
       physics: pagerLocked ? const NeverScrollableScrollPhysics() : null,
       onPageChanged: (index) {
         _activeIndex = index;
-        widget.viewModel.setSelectedDate(entries[index].date);
+        widget.viewModel.setSelectedDate(pagerDates[index]);
       },
       itemBuilder: (context, index) {
-        final entry = entries[index];
+        final entry = widget.viewModel.entryForDate(pagerDates[index]);
+        // Trailing synthetic today page — today has no entry yet.
+        if (entry == null) {
+          return MakeEntryCta(onTap: widget.onMakeEntry);
+        }
         final mode = widget.modeFor(entry);
         if (entry.sections.isEmpty) {
           return _EmptyBlocksMessage();

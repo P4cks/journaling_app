@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:hugeicons/hugeicons.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
+import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -10,6 +11,14 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 /// Free-tier cap on blocks in a single `blockOnly` layout. Pro unlocks
 /// unlimited blocks. (BACKLOG #92)
 const int kFreeMaxBlocksPerLayout = 6;
+
+/// Section kinds free users may add. `featureBlock` is Pro-only, so the
+/// add-section sheet greys + badges it and presents the paywall on tap.
+/// (GUS-19)
+const Set<SectionKind> kFreeSectionKinds = {
+  SectionKind.text,
+  SectionKind.blockGrid,
+};
 
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;

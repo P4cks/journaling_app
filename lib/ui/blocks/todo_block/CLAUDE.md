@@ -21,7 +21,8 @@ matching the text block's bounded behaviour. Content shape:
   when done). Empty list → "No todos" italic placeholder. The Column
   is wrapped in `ClipRect` so excess rows clip to the cell.
 - `BlockMode.editable` — non-scrolling `Column` of rows inside a
-  `ClipRect`, each row a single-line `TextField` plus a tiny ✕
+  `ClipRect`, each row a single-line `TextField` (capped at the shared
+  `kTextInputMaxChars`, counter hidden) plus a tiny ✕
   button. Tapping the bubble toggles done. The "+ Add item" InkWell
   lives OUTSIDE the ClipRect at the natural bottom of the outer
   Column so it stays visible even when items overflow.

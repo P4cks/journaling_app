@@ -23,6 +23,14 @@ text block and the full-width text section.
   stays in `CustomCarouselWidget` — the scaffold only sees a
   resolved, non-empty options list.
 - [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
+  also exports `const int kTextInputMaxChars` (currently 280) — the
+  single shared character cap applied to every editable text-input
+  block (1×1 text block, full-width text section, prompt answer, todo
+  item). It's a flat constant, not a per-type configurable setting (a
+  per-type cap was tried and removed as unwanted; GUS-10 reintroduced
+  it as one shared value). Each field passes `maxLength:
+  kTextInputMaxChars` + `maxLengthEnforcement: enforced` and hides the
+  counter with `buildCounter: (...) => null`.
   `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
   Owns the `TextEditingController` + `FocusNode` lifecycle for State
   classes whose widget renders a single `TextBlockContent`-backed

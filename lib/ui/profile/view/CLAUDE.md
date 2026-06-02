@@ -75,7 +75,7 @@ pushes these screens.
 |-----------------------------|-------------------------|------------------------------------|
 | `SettingsSection` "Appearance" | `themeSettings`      | mode selector + palette strip      |
 | `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
-| "Theme" + `PalettePicker` | `themeSettings` | horizontal Graphite/user-theme strip |
+| "Theme" + `PalettePicker` | `themeSettings` + `subscriptionRepository` | horizontal Graphite/user-theme strip; Pro-gated (GUS-26) |
 | `showThemeEditorSheet`    | —                       | add/edit user themes                |
 | `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
 | `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
@@ -105,7 +105,12 @@ pushes these screens.
 - `_AppearanceSettingsContent` — owns the Appearance section's live
   `ThemeSettings` listener, mode selector, palette strip, and add/edit/delete
   custom-theme callbacks. `SettingsScreen` only decides where the section sits
-  in the list.
+  in the list. Takes a `SubscriptionRepository` (passed from
+  `AppDependencies`) and listens to it alongside `ThemeSettings` via
+  `Listenable.merge`, so the palette strip un-greys immediately after a
+  purchase. Passes `locked: !isPro` + `onUnlock: () =>
+  requirePro(subscriptions, context:)` into `PalettePicker` (GUS-26).
+  Theme mode stays free.
 - `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
   for user themes; edits name, surface tint, secondary, accent, and text
   colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.

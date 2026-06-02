@@ -497,7 +497,11 @@ class _CustomBody extends StatelessWidget {
 
   Future<void> _addSection(BuildContext context) async {
     FocusScope.of(context).unfocus();
-    final picked = await showAddSectionSheet(context);
+    final subscriptions = AppDependencies.of(context).subscriptionRepository;
+    final picked = await showAddSectionSheet(
+      context,
+      subscriptions: subscriptions,
+    );
     if (picked == null) return;
     vm.addSection(picked);
   }

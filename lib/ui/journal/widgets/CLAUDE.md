@@ -13,7 +13,10 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   title field; commits on submit / blur, cancels via Escape. The
   parent VM normalizes empty/whitespace → null (date fallback).
 - [make_entry_cta.dart](make_entry_cta.dart) — `MakeEntryCta`. Centered
-  icon + title + subtitle + tonal button. Used when today has no entry.
+  icon + title + subtitle + tonal button. Used when today has no entry
+  (both as a standalone empty-day body and as the pager's trailing
+  today page). `onTap` is nullable — a null renders the button
+  disabled.
 - [no_entry_read_only.dart](no_entry_read_only.dart) — `NoEntryReadOnly`.
   Centered "No entry was made on this day." message for past days
   with no entry.
@@ -85,7 +88,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   carries the "has entry" signal.
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
-  `vm.entries` sorted ascending. Two-way sync with `vm.selectedDate`
+  `vm.pagerDates` sorted ascending (entry dates plus a trailing
+  synthetic today page when today has no entry — GUS-29). Each page
+  resolves its entry via `vm.entryForDate(date)`; a null entry (the
+  today page) renders `MakeEntryCta(onTap: widget.onMakeEntry)`
+  instead of `_SectionsBody`. Two-way sync with `vm.selectedDate`
   — external changes animate the controller; user swipes call
   `vm.setSelectedDate`. Pass `externalLock: true` to forcibly disable
   the horizontal swipe (used by `MainJournalScreen` while a TextField

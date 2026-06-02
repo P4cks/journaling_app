@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -8,7 +9,7 @@ import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller
 /// Full-width text section. Backs onto the same `TextBlockContent`
 /// shape as `TextBlockWidget` so it round-trips through the journal
 /// entry's section blocks list, but renders without a `BlockCard`
-/// chrome — grows with its content. No cap on input length.
+/// chrome — grows with its content. Capped at [kTextInputMaxChars].
 class TextSectionWidget extends StatefulWidget {
   const TextSectionWidget({
     super.key,
@@ -88,6 +89,11 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
         textAlignVertical: TextAlignVertical.top,
         textAlign: TextAlign.start,
         style: theme.textTheme.bodyLarge,
+        maxLength: kTextInputMaxChars,
+        maxLengthEnforcement: MaxLengthEnforcement.enforced,
+        buildCounter:
+            (_, {required currentLength, required isFocused, maxLength}) =>
+                null,
         decoration: const InputDecoration(
           hintText: 'Write something…',
           border: InputBorder.none,
@@ -114,6 +120,11 @@ class _TextSectionWidgetState extends State<TextSectionWidget>
           minLines: 4,
           keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
+          maxLength: kTextInputMaxChars,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+          buildCounter:
+              (_, {required currentLength, required isFocused, maxLength}) =>
+                  null,
           decoration: const InputDecoration(
             hintText: 'Write something…',
             border: InputBorder.none,

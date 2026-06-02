@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
 class PalettePicker extends StatelessWidget {
@@ -12,6 +13,8 @@ class PalettePicker extends StatelessWidget {
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
+    this.locked = false,
+    this.onUnlock,
   });
 
   final String selectedId;
@@ -20,6 +23,28 @@ class PalettePicker extends StatelessWidget {
   final VoidCallback onAdd;
   final ValueChanged<SurfacePalette> onEdit;
   final ValueChanged<SurfacePalette> onDelete;
+
+  /// When true, theme customization is Pro-gated (GUS-26). The currently
+  /// selected palette stays usable so the app still renders a coherent
+  /// theme; every other affordance (selecting another palette, adding,
+  /// editing, deleting) presents the paywall via [onUnlock] and only
+  /// proceeds on a successful purchase.
+  final bool locked;
+
+  /// Presents the paywall and resolves `true` when the user is (now) Pro.
+  /// Required to be non-null when [locked] is true.
+  final Future<bool> Function()? onUnlock;
+
+  /// Runs [action] directly when unlocked; otherwise presents the paywall
+  /// and runs it only on a successful purchase.
+  Future<void> _guard(VoidCallback action) async {
+    if (!locked) {
+      action();
+      return;
+    }
+    final ok = await onUnlock?.call() ?? false;
+    if (ok) action();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,16 +57,23 @@ class PalettePicker extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           if (index == palettes.length) {
-            return _AddThemeTile(onTap: onAdd);
+            return _AddThemeTile(locked: locked, onTap: () => _guard(onAdd));
           }
           final palette = palettes[index];
+          final selected = palette.id == selectedId;
           return _PaletteTile(
             palette: palette,
-            selected: palette.id == selectedId,
+            selected: selected,
+            // The active palette stays visually usable; others grey out.
+            locked: locked && !selected,
             outlineColor: scheme.outline,
-            onTap: () => onSelected(palette.id),
-            onEdit: palette.isCustom ? () => onEdit(palette) : null,
-            onDelete: palette.isCustom ? () => onDelete(palette) : null,
+            onTap: () => _guard(() => onSelected(palette.id)),
+            onEdit: palette.isCustom
+                ? () => _guard(() => onEdit(palette))
+                : null,
+            onDelete: palette.isCustom
+                ? () => _guard(() => onDelete(palette))
+                : null,
           );
         },
       ),
@@ -50,13 +82,15 @@ class PalettePicker extends StatelessWidget {
 }
 
 class _AddThemeTile extends StatelessWidget {
-  const _AddThemeTile({required this.onTap});
+  const _AddThemeTile({required this.onTap, this.locked = false});
 
   final VoidCallback onTap;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final fg = locked ? scheme.onSurfaceVariant.withValues(alpha: 0.6) : null;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -71,9 +105,17 @@ class _AddThemeTile extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppIcon(HugeIcons.strokeRoundedPlusSignCircle, size: 18),
+            if (locked)
+              const ProLockBadge(compact: true)
+            else
+              AppIcon(HugeIcons.strokeRoundedPlusSignCircle, size: 18),
             const SizedBox(width: 8),
-            Text('Add theme', style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              'Add theme',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: fg),
+            ),
           ],
         ),
       ),
@@ -89,10 +131,12 @@ class _PaletteTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.locked = false,
   });
 
   final SurfacePalette palette;
   final bool selected;
+  final bool locked;
   final Color outlineColor;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
@@ -110,7 +154,7 @@ class _PaletteTile extends StatelessWidget {
         : const Color(0xFFFFFFFF);
     final canEdit = onEdit != null && onDelete != null;
 
-    return InkWell(
+    final tile = InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -176,6 +220,14 @@ class _PaletteTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (!locked) return tile;
+    return Stack(
+      children: [
+        Opacity(opacity: 0.45, child: tile),
+        const Positioned(top: 8, right: 8, child: ProLockBadge(compact: true)),
+      ],
     );
   }
 }

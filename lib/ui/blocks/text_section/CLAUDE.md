@@ -24,7 +24,9 @@ trick lets the section reuse the existing JSON path and the
 - `BlockMode.readOnly` — plain `Text` in the same padded container.
   Empty text shows "No text yet" in italic + `disabledColor`.
 - `BlockMode.editable` — `TextField` with `maxLines: null`, `minLines: 4`,
-  no `expands`. Grows with content. No cap on input length.
+  no `expands`. Grows with content, capped at `kTextInputMaxChars`
+  (shared constant; counter hidden). The expanded-route variant
+  (`expands: true`) carries the same cap.
   - Wrapped in `AbsorbPointer(absorbing: !widget.editing)` so
     single-taps do not focus the field. The double-tap detector lives
     in `_SectionsBody` (the section-aware journal pager body) — see

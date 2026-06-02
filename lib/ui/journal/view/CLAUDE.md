@@ -20,8 +20,9 @@ Scaffold
 │                editing: Done (unfocus)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand
 │         └── GestureDetector (unfocus-on-tap; disabled when editing)
-│              └── hasEntry
-│                   ? JournalPager(vm, modeFor: …, externalLock: editing)
+│              └── inPager (vm.pageIndexForDate(date) != null)
+│                   ? JournalPager(vm, modeFor: …, externalLock: editing,
+│                                  onMakeEntry: _onMakeEntry)
 │                   : editable ? MakeEntryCta : NoEntryReadOnly
 └── bottomNavigationBar: CalendarBottomBar(selectedDate, entriesByDay, onDateSelected)
 ```
@@ -81,8 +82,10 @@ for the full gesture + propagation contract.
 Same gate as before the merge. Used for two decisions:
 
 1. Whether the title is editable.
-2. Whether the body is `MakeEntryCta` (editable + no entry) or
-   `NoEntryReadOnly` (read-only + no entry).
+2. Whether a past empty day's body is the standalone `MakeEntryCta`
+   (editable via `unlockAllDays`) or `NoEntryReadOnly` (read-only).
+   Today's empty body is no longer decided here — it's the pager's
+   trailing synthetic page (`inPager` is true for today). (GUS-29)
 3. Whether each pager page uses `BlockMode.editable` or `BlockMode.readOnly`
    (per-entry — the pager itself can span past + present, so the mode
    is computed per page).

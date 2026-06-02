@@ -23,7 +23,9 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
   - `minLines: null`
   - `scrollPhysics: NeverScrollableScrollPhysics()`
   - inside a `SizedBox.expand`
-  Without `expands` / `maxLines: null` the field tries to grow with
+  The field is capped at `kTextInputMaxChars` (shared constant from
+  the controller mixin; counter hidden). Without `expands` /
+  `maxLines: null` the field tries to grow with
   content and blows out the 1×1 cell. The `NeverScrollableScrollPhysics`
   disables the TextField's internal scroll so the block doesn't
   scroll within its cell — overflow content is clipped by the

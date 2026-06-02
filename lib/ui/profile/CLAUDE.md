@@ -34,6 +34,12 @@ Settings contains:
 1. **Appearance** — expanded by default; theme mode (segmented), surface
    palette grid, secondary/accent color pickers for built-ins, and
    full surface/secondary/accent/text editing for custom slots.
+   **Theming is Pro-gated (GUS-26):** theme mode (light/dark/system)
+   stays free, but for free users `PalettePicker` greys + badges every
+   palette except the active one and the Add-theme tile, presenting the
+   paywall on tap (`PalettePicker.locked` + `onUnlock`, wired to
+   `requirePro` in `_AppearanceSettingsContent`). The active palette
+   stays usable so the app keeps a coherent theme.
 2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
    (defaults to on; flipping it off restores the pre-post-it flat-card
    look without rebuilding any data), followed by a `Wrap` of color

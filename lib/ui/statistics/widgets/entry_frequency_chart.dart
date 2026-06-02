@@ -70,16 +70,20 @@ class EntryFrequencyChart extends StatelessWidget {
                           showTitles: true,
                           reservedSize: 24,
                           interval: _bottomInterval().toDouble(),
+                          // Don't force-draw the first/last bucket: at
+                          // wide intervals the edge labels would sit
+                          // half-off the chart and clip.
+                          minIncluded: false,
+                          maxIncluded: false,
                           getTitlesWidget: (value, meta) {
                             final idx = value.toInt();
                             if (idx < 0 || idx >= buckets.length) {
                               return const SizedBox.shrink();
                             }
-                            final w = buckets[idx].weekStart;
                             return Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                '${w.month}/${w.day}',
+                                _bottomLabel(buckets[idx].weekStart),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: scheme.onSurfaceVariant,
                                 ),
@@ -136,8 +140,34 @@ class EntryFrequencyChart extends StatelessWidget {
     if (n <= 6) return 1;
     if (n <= 12) return 2;
     if (n <= 26) return 4;
-    return (n / 6).ceil();
+    // Large ranges (Year ≈ 52 weeks, All): target ~5 evenly spaced
+    // labels. With month-abbreviation labels (see [_bottomLabel]) this
+    // reads as a timeline without crowding.
+    return (n / 5).ceil();
   }
+
+  /// Short labels for short ranges (`M/D`); month abbreviations for
+  /// large ranges so the thinned-out labels stay narrow and don't
+  /// overlap. (GUS-17)
+  String _bottomLabel(DateTime weekStart) {
+    if (buckets.length > 26) return _monthAbbr[weekStart.month - 1];
+    return '${weekStart.month}/${weekStart.day}';
+  }
+
+  static const _monthAbbr = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   double _barWidth() {
     final n = buckets.length;
