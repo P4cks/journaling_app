@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
@@ -245,6 +246,16 @@ class _CustomCarouselList extends StatelessWidget {
   final Future<bool> Function() maybeSaveOnLeave;
 
   Future<void> _navigateToEditor(BuildContext context, String? id) async {
+    // Creating a new custom block is gated to `kFreeMaxCustomBlocks` for
+    // free users; editing an existing one is never gated. (GUS-34)
+    if (id == null) {
+      final subscriptions = AppDependencies.of(context).subscriptionRepository;
+      if (!subscriptions.isPro &&
+          settings.customCarousels.length >= kFreeMaxCustomBlocks) {
+        if (!await requirePro(subscriptions, context: context)) return;
+        if (!context.mounted) return;
+      }
+    }
     final canLeave = await maybeSaveOnLeave();
     if (!context.mounted || !canLeave) return;
     if (id == null) {

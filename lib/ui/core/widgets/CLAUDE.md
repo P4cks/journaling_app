@@ -51,12 +51,21 @@ for how they fit together; this file is per-file notes.
   `compact: true` → small filled crown dot for overlaying on an icon
   button (e.g. the editor's Add-block `+` at the block cap);
   `compact: false` → a `primaryContainer` "Pro" chip for trailing a
-  list tile (e.g. the locked layout-kind picker tile). `const int
-  kFreeMaxBlocksPerLayout = 6` — free-tier block cap for `blockOnly`
-  layouts (BACKLOG #92). `const Set<SectionKind> kFreeSectionKinds =
-  {text, blockGrid}` — section kinds free users may add; `featureBlock`
-  is Pro (GUS-19), so the add-section sheet greys + badges it. (Block
-  gating is keyed off `BlockType.isProOnly` instead, in
+  list tile (e.g. the locked layout-kind picker tile).
+  `ProLimitHint({used, max, noun, subscriptions})` — inline free-user
+  caption for a counted cap: "`used` of `max` `noun` used" below the cap,
+  a tappable "limit reached — Upgrade to Pro" row (calls `requirePro`) at
+  the cap, and `SizedBox.shrink()` for Pro users (GUS-33). Surfaced in the
+  block-only + custom layout editor bodies and the add-block sheet's
+  custom section.
+  **Free-tier caps (all in this file):** `kFreeMaxBlocksPerLayout = 6`
+  (blocks in a `blockOnly` layout, BACKLOG #92); `kFreeMaxSectionsCustom
+  = 3` (sections in a `custom` layout, GUS-32); `kFreeMaxCustomBlocks = 1`
+  (user-defined custom carousel blocks, GUS-34); `const Set<SectionKind>
+  kFreeSectionKinds = {text, blockGrid}` — section kinds free users may
+  add; `featureBlock` is Pro (GUS-19), so the add-section sheet greys +
+  badges it. (Built-in block gating is keyed off `BlockType.isProOnly` /
+  `kProOnlyBlockTypes` in
   [../../blocks/block_type_display.dart](../../blocks/block_type_display.dart).)
 - [settings_nav_tile.dart](settings_nav_tile.dart) — `SettingsNavTile`.
   Icon + title + caret-right `ListTile` that pushes a named `route`

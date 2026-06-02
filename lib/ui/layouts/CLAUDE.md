@@ -157,11 +157,21 @@ how layouts materialize).
     the cap; the AppBar `+` renders greyed with a
     `ProLockBadge(compact: true)` overlay when locked. Only `blockOnly`
     is capped (fixedFourPlusText is hard-capped at 4 regardless of tier).
-  - **GUS-19 — free users limited to basic blocks + sections.**
-    The add-block sheet greys + badges every `BlockType.isProOnly`
-    cell (all but text + mood) and every custom-carousel cell; tapping
-    presents the paywall and pops the selection only on purchase. The
-    add-section sheet gates the **Feature block** tile the same way
+    `_BlockOnlyBody` shows a `ProLimitHint` ("N of 6 blocks used") above
+    the grid for free users.
+  - **GUS-32 — free `custom` layouts capped at `kFreeMaxSectionsCustom`
+    (3) sections.** `_CustomBody._addSection` calls `requirePro` at the
+    cap before opening the add-section sheet; `_CustomBody` shows a
+    `ProLimitHint` ("N of 3 sections used") above the add-section zone.
+  - **GUS-19/GUS-34 — built-in block gating is now a small Pro set.**
+    The add-block sheet greys + badges every `BlockType.isProOnly` cell.
+    `isProOnly` derives from `kProOnlyBlockTypes` = `{weatherApi,
+    quoteBlock}` (GUS-34) — every other built-in block is now FREE.
+    Custom-carousel cells are no longer blanket-locked; instead creating
+    a new custom block is capped at `kFreeMaxCustomBlocks` (1) — the "Add
+    custom block" button (add-block sheet *and* `block_settings_screen`)
+    calls `requirePro` at the cap, with a `ProLimitHint` above it. The
+    add-section sheet still gates the **Feature block** tile
     (`featureBlock ∉ kFreeSectionKinds`); text + block-grid stay free.
   See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
   [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).

@@ -20,6 +20,15 @@ const Set<SectionKind> kFreeSectionKinds = {
   SectionKind.blockGrid,
 };
 
+/// Free-tier cap on sections in a `custom` (customizable) layout. The
+/// (N+1)th add presents the paywall. (GUS-32)
+const int kFreeMaxSectionsCustom = 3;
+
+/// Free-tier cap on user-defined custom carousel blocks. Creating a
+/// further one presents the paywall on the "Add custom block" tap.
+/// (GUS-34)
+const int kFreeMaxCustomBlocks = 1;
+
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;
 /// `false` when they cancel, are offline, or the paywall errors.
@@ -139,6 +148,85 @@ class ProLockBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Inline caption telling a free user how much of a counted Pro limit
+/// they've used (e.g. blocks per layout, sections, custom blocks). Below
+/// the cap it reads "`used` of `max` `noun` used"; at the cap it becomes a
+/// tappable "`noun` limit reached — Upgrade" row that presents the paywall
+/// via [requirePro]. Renders nothing for Pro users. (GUS-33)
+class ProLimitHint extends StatelessWidget {
+  const ProLimitHint({
+    super.key,
+    required this.used,
+    required this.max,
+    required this.noun,
+    required this.subscriptions,
+  });
+
+  final int used;
+  final int max;
+
+  /// Plural noun for the counted item, e.g. "blocks", "sections".
+  final String noun;
+  final SubscriptionRepository subscriptions;
+
+  @override
+  Widget build(BuildContext context) {
+    if (subscriptions.isPro) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final atLimit = used >= max;
+
+    if (!atLimit) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
+          '$used of $max $noun used',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => requirePro(subscriptions, context: context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            AppIcon(
+              HugeIcons.strokeRoundedCrown,
+              size: 14,
+              color: scheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: '$noun limit reached — ',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: 'Upgrade to Pro',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
