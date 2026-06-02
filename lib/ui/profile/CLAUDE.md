@@ -61,12 +61,23 @@ Settings contains:
    `subscriptionRepository.debugForceFree` / `setDebugForceFree`; masks
    `isPro` to false locally to test the free experience — it does NOT
    cancel or touch the real RevenueCat subscription, which has no client
-   cancel API), surface override, and HSL free-pick for secondary/accent.
+   cancel API), **per-block input-limit tuning** (GUS-10 — 5
+   `_DebugLimitTile`s that override the `BlockInputLimits` defaults for
+   text / text-section / prompt char caps + todo chars-per-item + todo
+   max-items, with a note to bake tuned values back into the defaults),
+   **Generate sample entries** (GUS-35 — a non-destructive action that
+   fills ~400 past days with random mood + text entries so the
+   statistics charts have data to render), surface override, and HSL
+   free-pick for secondary/accent.
 
-Block-settings is rendered inline by `BlockSettingsScreen` —
-sections for Text block (char limit), Prompt block (list + strategy),
-Mood tracker (title), Manual weather (title). Edits go into draft
-state in `BlockSettingsViewModel`; the screen prompts Cancel /
+Block-settings is rendered inline by `BlockSettingsScreen` — two
+sections: **Prompt Block** (the prompt list + the Random Prompts
+toggle) and **Carousel Blocks** (the "Show titles above carousels"
+switch + the custom-carousel definition list). Text blocks have no
+per-type-global settings here — the per-block character cap is a
+runtime concern resolved via `BlockInputLimits` (tunable in the Debug
+menu, see item 6 above), not a block-settings field. Edits go into
+draft state in `BlockSettingsViewModel`; the screen prompts Cancel /
 Discard / Save on leave. Saves write back to
 [BlockSettings](../../data/services/block_settings.dart).
 

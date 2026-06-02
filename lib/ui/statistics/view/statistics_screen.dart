@@ -88,7 +88,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SliverToBoxAdapter(child: SectionHeader(label: 'Frequency')),
             SliverToBoxAdapter(
-              child: EntryFrequencyChart(buckets: vm.entryFrequency),
+              child: EntryFrequencyChart(
+                buckets: vm.entryFrequency,
+                granularity: vm.entryFrequencyGranularity,
+              ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],

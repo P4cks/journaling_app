@@ -6,7 +6,7 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -289,31 +289,31 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
             child: DelayedTapFocus(
               focusNode: _focusNode,
               onDoubleTap: widget.onDoubleTap,
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                expands: true,
-                maxLines: null,
-                minLines: null,
-                keyboardType: TextInputType.multiline,
-                textAlignVertical: TextAlignVertical.top,
-                maxLength: kTextInputMaxChars,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                buildCounter:
-                    (
-                      _, {
-                      required currentLength,
-                      required isFocused,
-                      maxLength,
-                    }) => null,
-                decoration: const InputDecoration(
-                  hintText: 'Your answer…',
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onChanged: (value) =>
-                    _emit(prompt: content.prompt, answer: value),
+              child: ListenableBuilder(
+                listenable: AppDependencies.of(context).debugSettings,
+                builder: (context, _) {
+                  final debug = AppDependencies.of(context).debugSettings;
+                  return TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    expands: true,
+                    maxLines: null,
+                    minLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textAlignVertical: TextAlignVertical.top,
+                    maxLength: BlockInputLimits.of(debug).promptChars,
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    buildCounter: buildCharCounter(),
+                    decoration: const InputDecoration(
+                      hintText: 'Your answer…',
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (value) =>
+                        _emit(prompt: content.prompt, answer: value),
+                  );
+                },
               ),
             ),
           ),

@@ -84,9 +84,11 @@ pushes these screens.
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
+| Input-limit caption + 5 `_DebugLimitTile`s | `debugSettings` | tune per-block char/item caps; see below |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
+| `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count SnackBar |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
 
@@ -99,6 +101,35 @@ pushes these screens.
   `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
   + show a SnackBar with the deleted count. The layouts variant
   surfaces "default restored" because the repository re-seeds.
+- `_generateSampleEntries(context)` — debug (GUS-35); no confirm
+  (non-destructive) — calls `JournalRepository.debugGenerateSampleEntries`
+  and SnackBars the created count. Lets you populate the statistics
+  charts with ~400 days of random mood + text data.
+
+## Debug input-limit controls (GUS-10)
+
+Inside `if (debug.debugMenuVisible) ...[` (above the surface-color
+overrides) sits an italic caption — *"Input-limit tuning — these
+override the per-block character caps for testing. Once you settle on
+good values, hard-code them into `BlockInputLimits` defaults and drop
+the debug overrides."* — followed by 5 `_DebugLimitTile`s bound to
+`DebugSettings`' nullable-int override getters/setters
+(`textBlockCharLimit`, `textSectionCharLimit`, `promptCharLimit`,
+`todoItemCharLimit`, `todoMaxItems`). Each tile's `defaultValue` is the
+matching `BlockInputLimits` constant (`kTextBlockMaxChars`,
+`kTextSectionMaxChars`, `kPromptAnswerMaxChars`, `kTodoItemMaxChars`,
+`kTodoMaxItems`). The blocks resolve the effective value via
+`BlockInputLimits.of(debugSettings)` (override ?? default) and rebuild
+live through `ListenableBuilder(listenable: debugSettings)`, so editing
+a value here updates any open block immediately.
+
+- `_DebugLimitTile` (`StatelessWidget`) — `ListTile` showing the
+  effective value (trailing) and an "override N / default M" subtitle.
+  `_edit` opens an `AlertDialog` with a numeric `TextField` and three
+  actions: **Reset to default** pops the sentinel `-1`, **Cancel** pops
+  `null`, **Save** pops the parsed int (or `null` when blank/invalid/≤0).
+  `onChanged` maps `< 0` → `null` (clear override) so a reset restores
+  the default; a positive int sets the override.
 
 ## Private widgets
 

@@ -4,7 +4,9 @@ import 'package:journaling_app_rewrite/data/model/block_content/text_block_conte
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 class TextBlockWidget extends StatefulWidget {
   const TextBlockWidget({
@@ -71,39 +73,41 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
     // anywhere in the 160 px chrome area (including the 12 px inset)
     // reach the focus handler — see the chrome's "padding lives inside
     // each block widget" comment in `block_chrome.dart`.
+    final debug = AppDependencies.of(context).debugSettings;
     return DelayedTapFocus(
       focusNode: focusNode,
       onDoubleTap: widget.onDoubleTap,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: SizedBox.expand(
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            expands: true,
-            maxLines: null,
-            minLines: null,
-            keyboardType: TextInputType.multiline,
-            textAlignVertical: TextAlignVertical.top,
-            // Internal scroll disabled — long content overflows the
-            // visible 1×1 cell and is clipped by the chrome's
-            // antiAlias clipBehavior. The block's content area is a
-            // fixed slot; users see what fits and the rest is stored
-            // but not shown. Re-enable only if the block model
-            // changes to a content-bounded variant.
-            scrollPhysics: const NeverScrollableScrollPhysics(),
-            maxLength: kTextInputMaxChars,
-            maxLengthEnforcement: MaxLengthEnforcement.enforced,
-            buildCounter:
-                (_, {required currentLength, required isFocused, maxLength}) =>
-                    null,
-            decoration: const InputDecoration(
-              hintText: 'Write something…',
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
+        child: ListenableBuilder(
+          listenable: debug,
+          builder: (context, _) => SizedBox.expand(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              expands: true,
+              maxLines: null,
+              minLines: null,
+              keyboardType: TextInputType.multiline,
+              textAlignVertical: TextAlignVertical.top,
+              // Internal scroll disabled — long content overflows the
+              // visible 1×1 cell and is clipped by the chrome's
+              // antiAlias clipBehavior. The block's content area is a
+              // fixed slot; users see what fits and the rest is stored
+              // but not shown. Re-enable only if the block model
+              // changes to a content-bounded variant.
+              scrollPhysics: const NeverScrollableScrollPhysics(),
+              maxLength: BlockInputLimits.of(debug).textBlockChars,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              buildCounter: buildCharCounter(),
+              decoration: const InputDecoration(
+                hintText: 'Write something…',
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: emitText,
             ),
-            onChanged: emitText,
           ),
         ),
       ),

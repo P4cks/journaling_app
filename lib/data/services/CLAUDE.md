@@ -62,8 +62,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     cold start can still honour an existing subscription — written by
     `SubscriptionRepository` on every customer-info update),
     `subscription.debugForceFree` (`true`/`false`; absent → `false`;
-    debug "simulate free account" override). If you add another, give it
-    a namespaced key and add a typed accessor pair. Abandoned legacy keys
+    debug "simulate free account" override),
+    `debug.limit.textBlock` / `debug.limit.textSection` /
+    `debug.limit.prompt` / `debug.limit.todoItem` /
+    `debug.limit.todoMaxItems` (int stored as its string form; absent →
+    use the hard-coded default in
+    [block_input_limits.dart](../../ui/blocks/widgets/block_input_limits.dart);
+    debug-only per-block input-limit overrides, deleted when reset to
+    default — accessed via the `_getInt`/`_setInt` helper pair). If you
+    add another, give it a namespaced key and add a typed accessor pair. Abandoned legacy keys
     (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
     are intentionally not read by the service anymore and may still
     be present on existing users' disks; per the pre-1.0
@@ -84,6 +91,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - `showExpandedBlockDoneButton` (default `false`) — developer-only
     affordance that overlays a Done button on the expanded route.
     Lives in the Settings → Debug section.
+  - Per-block input-limit overrides (GUS-10 rework):
+    `textBlockCharLimit`, `textSectionCharLimit`, `promptCharLimit`,
+    `todoItemCharLimit`, `todoMaxItems` — all **nullable ints**
+    (`null` = use the hard-coded default in `BlockInputLimits`). Same
+    snapshot→guard→persist→`notifyListeners` setter pattern. Tuned from
+    the Settings → Debug section so we can find good caps before baking
+    them into the defaults; blocks resolve the effective value via
+    `BlockInputLimits.of(debugSettings)` and listen to this notifier
+    for live updates.
 - [photo_storage_service.dart](photo_storage_service.dart) — `PhotoStorageService`.
   Copies `image_picker` results into `<app-docs>/photos/<uuid>.<ext>`
   and exposes:

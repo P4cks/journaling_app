@@ -38,8 +38,13 @@ statistics/
 - Mood-over-time is a line chart with score 0–5. Days with no mood
   emit `null` from the VM and break the line into multiple
   `LineChartBarData` segments.
-- Entry frequency is weekly bars; week start is Monday to match
-  `table_calendar`'s default.
+- Entry frequency bars adapt their bucket size to the range (GUS-17):
+  `week`/`month` → weekly bars (Monday-start, matching
+  `table_calendar`); `year` → monthly bars (12); `all` → weekly /
+  monthly / yearly chosen by the data span (≤ ~6 mo weekly, ≤ ~3 yr
+  monthly, else yearly). The VM exposes the chosen
+  `entryFrequencyGranularity` so the chart titles + labels itself
+  ("Entries per week / month / year").
 - Empty state: page-level `SliverFillRemaining` when no entries fall
   in the range. Per-chart inline empty state when entries exist but
   no mood data.
@@ -47,7 +52,7 @@ statistics/
 ## Subdirectory CLAUDE.md files
 
 - [view/CLAUDE.md](view/CLAUDE.md) — `StatisticsScreen`
-- [view_model/CLAUDE.md](view_model/CLAUDE.md) — `StatisticsViewModel`, `StatRange`, `MoodPoint`, `WeekBucket`
+- [view_model/CLAUDE.md](view_model/CLAUDE.md) — `StatisticsViewModel`, `StatRange`, `MoodPoint`, `FreqBucket`, `FreqGranularity`
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — the chart + range + summary widgets
 
 ## Mood score scale

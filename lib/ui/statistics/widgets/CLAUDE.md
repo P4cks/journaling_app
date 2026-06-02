@@ -29,8 +29,19 @@ See [../CLAUDE.md](../CLAUDE.md) for how these compose into the screen.
   X-axis label step adapts to the number of points (1-day step for a
   week, ~5-day for a month, ~30-day for a year).
 - [entry_frequency_chart.dart](entry_frequency_chart.dart) —
-  `EntryFrequencyChart`. fl_chart `BarChart`; one bar per ISO week.
-  Bar width and bottom-label step adapt to the number of buckets.
+  `EntryFrequencyChart`. fl_chart `BarChart` over `List<FreqBucket>`
+  (`bucketStart` + `count`) plus a `FreqGranularity` (`week`/`month`/
+  `year`). One bar per bucket; bar width and `_bottomInterval` thinning
+  adapt to the bucket count. The card title is granularity-driven
+  ("Entries per week / month / year"). `_bottomLabel` formats by
+  granularity: weekly `M/D`, monthly bare `MMM` (**no year suffix** —
+  the 365-day Year range always straddles two calendar years, so a
+  `'YY` suffix widened every label enough to overlap; GUS-17), yearly
+  `YYYY`. `_bottomInterval` thins labels (12 monthly bars → interval 3
+  → ~4 labels) and `SideTitles.minIncluded/maxIncluded: false` keeps
+  the first/last labels off the chart edges. The VM (`StatisticsViewModel`) owns
+  bucketing + granularity selection — see
+  [../view_model/CLAUDE.md](../view_model/CLAUDE.md).
 - [stats_empty_state.dart](stats_empty_state.dart) — `StatsEmptyState`.
   Reused for the page-level empty state and per-chart inline empty
   state (`compact: true`).

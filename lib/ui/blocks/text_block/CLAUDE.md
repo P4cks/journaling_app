@@ -23,8 +23,13 @@ stored in `JournalBlockData.contentJson`; the typed wrapper is
   - `minLines: null`
   - `scrollPhysics: NeverScrollableScrollPhysics()`
   - inside a `SizedBox.expand`
-  The field is capped at `kTextInputMaxChars` (shared constant from
-  the controller mixin; counter hidden). Without `expands` /
+  The field is capped at `BlockInputLimits.of(debug).textBlockChars`
+  (default `kTextBlockMaxChars` = 280, debug-overridable) with a
+  **visible** `current/limit` counter via `buildCharCounter()`
+  ([../widgets/block_input_limits.dart](../widgets/block_input_limits.dart)).
+  The editable subtree is wrapped in
+  `ListenableBuilder(listenable: debugSettings)` so debug tuning
+  updates the cap live. Without `expands` /
   `maxLines: null` the field tries to grow with
   content and blows out the 1×1 cell. The `NeverScrollableScrollPhysics`
   disables the TextField's internal scroll so the block doesn't
