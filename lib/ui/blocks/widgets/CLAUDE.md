@@ -150,10 +150,11 @@ text block and the full-width text section.
 - **`AnimatedSwitcher` uses two distinct `ValueKey`s** (`'carousel-collapsed'`
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.
-- **`_initialIndex` defaults to 0 when `selected` is null or unknown.**
-  Newly-materialized mood/weather blocks have no selection yet, so the
-  carousel opens at index 0 (the first option in the list) on first
-  engage.
+- **`_initialIndex` defaults to the MIDDLE option when `selected` is null
+  or unknown.** Newly-materialized mood/weather blocks have no selection
+  yet, so the carousel opens centred on the middle option on first engage
+  — this matches `_UnfocusedCarouselPreview` (which also centres on the
+  middle), so tapping to expand doesn't visibly jump to index 0.
 
 ## When to update this file
 

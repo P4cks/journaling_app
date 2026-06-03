@@ -98,11 +98,16 @@ class _CollapsibleCarouselBlockState<T>
   /// on every reschedule and on `dispose`.
   int _collapseGen = 0;
 
+  /// Page the carousel opens on. With a selection we open on it; with no
+  /// selection (or an unknown one) we open on the MIDDLE option so the
+  /// expand is continuous with the collapsed preview, which centres on
+  /// the middle too — otherwise tapping would visibly jump to index 0.
   int get _initialIndex {
+    final mid = widget.options.length ~/ 2;
     final sel = widget.selected;
-    if (sel == null) return 0;
+    if (sel == null) return mid;
     final idx = widget.options.indexOf(sel);
-    return idx < 0 ? 0 : idx;
+    return idx < 0 ? mid : idx;
   }
 
   @override
