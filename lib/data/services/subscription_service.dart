@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/config/app_flavor.dart';
