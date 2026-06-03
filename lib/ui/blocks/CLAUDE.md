@@ -177,13 +177,14 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [block_text_section/block_text_section_widget.dart](block_text_section/block_text_section_widget.dart) —
   `BlockTextSectionWidget`. Renders a `SectionKind.blockTextBody`
   section (GUS-9): a photo/memory block floated top-left with text
-  wrapping around it. **Both modes** use the same `Text.rich` +
-  `WidgetSpan(alignment: PlaceholderAlignment.top)` float-wrap (zero
-  new dependency); the float block is sized to a real grid tile
-  (`(maxWidth-44)/2`). In editable mode the wrap is wrapped in a
-  translucent tap that opens the expanded text editor (a `TextField`
-  can't live in a `WidgetSpan`). Takes the two blocks separately
-  (`floatBlock` nullable, `textBlock` required). See
+  wrapping around it over **multiple** lines (a `TextPainter` measures
+  how much fits beside the block, then splits the text into a `Row`
+  beside it + full-width remainder below — NOT a `Text.rich`
+  `WidgetSpan`, which only wraps the first line). The float block is
+  sized to a real grid tile (`(maxWidth-44)/2`). In editable mode a
+  single tap edits in place (`autofocus` `TextField`, block stays
+  floated-left), a double tap opens the expanded route. Takes the two
+  blocks separately (`floatBlock` nullable, `textBlock` required). See
   [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
   `WannadoSectionWidget`. Renders a `SectionKind.wannado` section

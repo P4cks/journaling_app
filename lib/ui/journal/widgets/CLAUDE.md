@@ -143,7 +143,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   independent), and passes them as `textBlock` (required) + `floatBlock`
   (nullable). Suppressed only if no `textBlock` is present (malformed).
   Wires `onRequestBlockEdit` (float block) + `onRequestTextSectionEdit`
-  / `textEditing` (text) the same as the `featureBlock` + `text` cases.
+  (text, double-tap → expanded route) the same as the `featureBlock` +
+  `text` cases. The widget owns its own single-tap-to-edit state, so
+  there is no `editingBlockId`/`textEditing` plumbing for this section.
 
   **`SectionKind.wannado`** → renders `const WannadoSectionWidget()`
   (GUS-8). The widget takes **no arguments** and self-fetches the
