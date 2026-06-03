@@ -9,7 +9,8 @@ surfaces; verify both after structural changes.
 Full-width text content lives in its own widget — [text_section/](text_section/)
 — used by the section-aware journal pager for `SectionKind.text`
 sections and stylistically distinct from the `text_block` 1×1 tile
-that lives in block-grid sections.
+that lives in block-grid sections. A single-line heading variant lives
+in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 
 ## Files
 
@@ -168,6 +169,11 @@ that lives in block-grid sections.
   action on a tap inside the route. Text sections render the text
   directly on the blur — no card chrome.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
+- [header_section/header_section_widget.dart](header_section/header_section_widget.dart) —
+  `HeaderSectionWidget`. Single-line heading for `SectionKind.header`
+  (GUS-6). Shares `TextContentControllerMixin` with the text block /
+  section but renders a bold one-liner with no expanded route / Hero.
+  See [header_section/CLAUDE.md](header_section/CLAUDE.md).
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —

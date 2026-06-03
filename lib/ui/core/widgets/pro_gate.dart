@@ -18,6 +18,8 @@ const int kFreeMaxBlocksPerLayout = 6;
 const Set<SectionKind> kFreeSectionKinds = {
   SectionKind.text,
   SectionKind.blockGrid,
+  SectionKind.header,
+  SectionKind.divider,
 };
 
 /// Free-tier cap on sections in a `custom` (customizable) layout. The

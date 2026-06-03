@@ -101,6 +101,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       the X-remove calls `vm.clearFeatureBlock`. `_EmptyAddBlockCell`
       is no longer used by `_FixedFourPlusTextBody` (which now uses
       `BlockGrid.onAddBlock`) — feature-block is the only caller.
+    - `header` → `_HeaderSectionPreview` — a `HeaderSectionWidget` in
+      `BlockMode.readOnly` over an empty `TextBlockContent` (mirrors
+      `_TextSectionPreview`; shows the italic "Heading" placeholder).
+      No add affordance — the heading text is entered per-entry. (GUS-6)
+    - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
 
 ## Gotchas
 

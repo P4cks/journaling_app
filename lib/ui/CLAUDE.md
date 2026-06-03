@@ -15,7 +15,8 @@ the same three-part shape:
 
 - [blocks/CLAUDE.md](blocks/CLAUDE.md) — `BlockGrid`, `BlockCard`, the
   `BlockWidget` dispatcher, and one concrete-block subdir per block type
-  ([text_block/](blocks/text_block/), [mood_tracker/](blocks/mood_tracker/)).
+  ([text_block/](blocks/text_block/), [text_section/](blocks/text_section/),
+  [header_section/](blocks/header_section/), [mood_tracker/](blocks/mood_tracker/)).
   Shared by the journal pager (main screen) and the layout editor.
 - [core/CLAUDE.md](core/CLAUDE.md) — non-screen-specific widgets and
   helpers used everywhere. `AppDependencies` (DI), `AppIcon`

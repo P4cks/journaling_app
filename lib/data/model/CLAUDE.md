@@ -24,12 +24,19 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   existing text JSON path and char-limit enforcement. For
   `SectionKind.featureBlock` the blocks list contains exactly one
   materialized block (a `photoBlock` or `memoryBlock`) rendered at
-  2×2 (full body width, square).
-- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock }`.
+  2×2 (full body width, square). For `SectionKind.header` the blocks
+  list is exactly one `textBlock` (same trick as `text`); for
+  `SectionKind.divider` the blocks list is **empty** (purely visual).
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
   `featureBlock` is a single-tile 2×2 section; the layout editor
   restricts the block type to `photoBlock` or `memoryBlock` (defended
-  by `LayoutEditorViewModel.featureBlockAllowedTypes`).
+  by `LayoutEditorViewModel.featureBlockAllowedTypes`). `header` (GUS-6,
+  FREE) is a single-line heading backed by one `textBlock` (reuses the
+  text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
+  visual rule carrying **no** blocks — it renders even with an empty
+  `blocks` list. (`blockTextBody` / `wannado` are planned next, to be
+  appended after `divider`.)
 - [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**

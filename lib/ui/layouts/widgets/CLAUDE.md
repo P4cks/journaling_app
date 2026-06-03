@@ -67,9 +67,10 @@ sheet is a stateless top-level function returning the user's pick or
     successful purchase; unlocked cells pop immediately.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
-  SubscriptionRepository subscriptions})`. Three-tile sheet (Text
-  section / Block grid / Feature block), each rendered via the private
-  `_SectionTile` (with a `locked` flag). Block-grid sections start
+  SubscriptionRepository subscriptions})`. Five-tile sheet (Text
+  section / Block grid / Header / Divider / Feature block), each
+  rendered via the private `_SectionTile` (with a `locked` flag).
+  Header (GUS-6) and Divider (GUS-7) are always free. Block-grid sections start
   empty — there is no row picker; the user adds blocks afterwards and
   the grid grows to fit. Feature-block sections also start empty; the
   editor body lets the user pick one photo or memory block via

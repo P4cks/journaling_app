@@ -129,6 +129,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   filled with one tile). Empty feature sections (no template) render
   nothing.
 
+  **`SectionKind.header`** → renders `HeaderSectionWidget` over the
+  section's single `textBlock` (GUS-6). Edits in place (single-tap the
+  field) — no Hero / expanded route, so unlike the `text` case it is
+  not Hero-wrapped. **`SectionKind.divider`** → a padded `Divider`
+  (GUS-7); **renders even though `blocks` is empty** (the
+  blockGrid/featureBlock cases suppress empties, but a divider has no
+  blocks by design).
+
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled
   slots), `_SectionsBody` returns `SizedBox.shrink()` for that

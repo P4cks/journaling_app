@@ -10,8 +10,21 @@
 ///   square aspect ratio). `blocks` holds exactly one template; `rows`
 ///   is `null`. The layout editor restricts the block type to
 ///   `BlockType.photoBlock` or `BlockType.memoryBlock`.
+/// - [header] — a single-line heading. Backed by exactly one
+///   `JournalBlockData` of type `BlockType.textBlock` (reuses the
+///   `TextBlockContent` JSON path, like [text]), rendered as a large
+///   bold one-liner. (GUS-6, FREE.)
+/// - [divider] — a purely visual horizontal rule. Carries **no**
+///   blocks; renders even with an empty `blocks` list. (GUS-7, FREE.)
 ///
 /// Append-only. New values **must** be added at the end — Hive
 /// serialises enums by index, so reordering would corrupt persisted
-/// data.
-enum SectionKind { text, blockGrid, featureBlock }
+/// data. (`blockTextBody` and `wannado` are planned next, appended
+/// after `divider` — see GUS-9 / GUS-8.)
+enum SectionKind {
+  text,
+  blockGrid,
+  featureBlock,
+  header,
+  divider,
+}

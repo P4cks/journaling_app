@@ -79,6 +79,11 @@ coordination live.
         with no selection (`emoji: null` / `conditionId: null`), so an
         untouched entry remains empty per `JournalBlockEmptiness` and
         gets swept at end of day if the user never interacts.
+    - `SectionKind.header` — yields an `EntrySection` whose `blocks`
+      list is exactly one fresh empty `textBlock` (copy of the `text`
+      case — reuses the text JSON path + emptiness classification).
+    - `SectionKind.divider` — yields an `EntrySection` with `blocks:
+      const []` (purely visual; contributes nothing to emptiness).
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.

@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
@@ -360,6 +361,25 @@ class _SectionsBody extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: feature,
+        );
+      case SectionKind.header:
+        // Backed by a single textBlock (like `text`). Edits in place via
+        // the editingBlockId path — no expanded route, so no Hero.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        final block = section.blocks.first;
+        return HeaderSectionWidget(
+          key: ValueKey(section.id),
+          data: block,
+          mode: mode,
+          onChanged: onBlockChanged,
+          editing: editingBlockId == block.id,
+        );
+      case SectionKind.divider:
+        // Purely visual — renders even though `blocks` is empty (unlike
+        // the blockGrid/featureBlock cases which suppress empties).
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Divider(height: 1),
         );
     }
   }

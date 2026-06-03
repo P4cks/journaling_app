@@ -298,6 +298,25 @@ class JournalRepository extends ChangeNotifier {
                 ? const []
                 : [_materializeOne(section.blocks.first, date, nextPromptSlot)],
           ),
+          // Header reuses the text-block JSON path (like `text`): one
+          // fresh empty textBlock holds the heading string.
+          SectionKind.header => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.header,
+            blocks: [
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: const TextBlockContent(text: '').toMap(),
+              ),
+            ],
+          ),
+          // Divider is purely visual — carries no blocks.
+          SectionKind.divider => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.divider,
+            blocks: const [],
+          ),
         },
     ];
   }

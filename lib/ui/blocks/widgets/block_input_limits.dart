@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 /// back into the constant here and drop the matching debug override.
 const int kTextBlockMaxChars = 280;
 const int kTextSectionMaxChars = 280;
+const int kHeaderSectionMaxChars = 60;
 const int kPromptAnswerMaxChars = 280;
 const int kTodoItemMaxChars = 80;
 const int kTodoMaxItems = 8;

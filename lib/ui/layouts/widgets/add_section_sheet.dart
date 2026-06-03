@@ -52,6 +52,18 @@ Future<SectionKind?> showAddSectionSheet(
             onTap: () => Navigator.of(sheetContext).pop(SectionKind.blockGrid),
           ),
           _SectionTile(
+            icon: HugeIcons.strokeRoundedHeading,
+            label: 'Header',
+            description: 'A single-line heading to break up the page.',
+            onTap: () => Navigator.of(sheetContext).pop(SectionKind.header),
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedRemove01,
+            label: 'Divider',
+            description: 'A horizontal rule between sections.',
+            onTap: () => Navigator.of(sheetContext).pop(SectionKind.divider),
+          ),
+          _SectionTile(
             icon: HugeIcons.strokeRoundedKeyframe,
             label: 'Feature block',
             description: 'A large 2×2 single block — photo or memory.',

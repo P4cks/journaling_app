@@ -17,6 +17,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -610,6 +611,8 @@ class _SectionCard extends StatelessWidget {
       SectionKind.blockGrid => ('Block grid', 'block grid'),
       SectionKind.text => ('Text section', 'text section'),
       SectionKind.featureBlock => ('Feature block', 'feature block'),
+      SectionKind.header => ('Header', 'header'),
+      SectionKind.divider => ('Divider', 'divider'),
     };
 
     return Container(
@@ -682,6 +685,14 @@ class _SectionCard extends StatelessWidget {
             SectionKind.featureBlock => _FeatureBlockSectionBody(
               vm: vm,
               sectionIndex: index,
+            ),
+            SectionKind.header => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: _HeaderSectionPreview(),
+            ),
+            SectionKind.divider => const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Divider(height: 1),
             ),
           },
         ],
@@ -799,6 +810,22 @@ class _TextSectionPreview extends StatelessWidget {
     return TextSectionWidget(
       data: JournalBlockData.create(
         id: 'layout-editor-text-preview',
+        type: BlockType.textBlock,
+        content: const TextBlockContent(text: '').toMap(),
+      ),
+      mode: BlockMode.readOnly,
+    );
+  }
+}
+
+class _HeaderSectionPreview extends StatelessWidget {
+  const _HeaderSectionPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return HeaderSectionWidget(
+      data: JournalBlockData.create(
+        id: 'layout-editor-header-preview',
         type: BlockType.textBlock,
         content: const TextBlockContent(text: '').toMap(),
       ),
