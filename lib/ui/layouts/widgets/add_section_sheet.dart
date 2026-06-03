@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 
 /// Modal bottom sheet that picks a new section type — text, block-grid,
@@ -24,22 +25,14 @@ Future<SectionKind?> showAddSectionSheet(
       !isPro && !kFreeSectionKinds.contains(SectionKind.featureBlock);
   final blockTextLocked =
       !isPro && !kFreeSectionKinds.contains(SectionKind.blockTextBody);
-  return showModalBottomSheet<SectionKind>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Add a section',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-          ),
+
+
+  return showDraggableSheet<SectionKind>(
+    context,
+    title: "Add a Section",
+    slivers: (sheetContext, controller) => [
+      SliverList(
+        delegate: SliverChildListDelegate([
           _SectionTile(
             icon: HugeIcons.strokeRoundedTextFont,
             label: 'Text section',
@@ -101,7 +94,7 @@ Future<SectionKind?> showAddSectionSheet(
           const SizedBox(height: 8),
         ],
       ),
-    ),
+    ),]
   );
 }
 

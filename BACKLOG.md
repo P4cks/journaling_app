@@ -8,7 +8,7 @@ Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the releva
 
 READ CLAUDE.md for further implementation details
 
-**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
+**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural dfluecisions)
 
 ## UX / structure
 
