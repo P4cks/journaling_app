@@ -18,6 +18,7 @@ the same three-part shape:
   ([text_block/](blocks/text_block/), [text_section/](blocks/text_section/),
   [header_section/](blocks/header_section/),
   [block_text_section/](blocks/block_text_section/),
+  [wannado_section/](blocks/wannado_section/),
   [mood_tracker/](blocks/mood_tracker/)).
   Shared by the journal pager (main screen) and the layout editor.
 - [core/CLAUDE.md](core/CLAUDE.md) — non-screen-specific widgets and

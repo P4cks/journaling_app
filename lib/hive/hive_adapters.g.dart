@@ -400,6 +400,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         return SectionKind.divider;
       case 7:
         return SectionKind.blockTextBody;
+      case 8:
+        return SectionKind.wannado;
       default:
         return SectionKind.text;
     }
@@ -420,6 +422,8 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         writer.writeByte(4);
       case SectionKind.blockTextBody:
         writer.writeByte(7);
+      case SectionKind.wannado:
+        writer.writeByte(8);
     }
   }
 

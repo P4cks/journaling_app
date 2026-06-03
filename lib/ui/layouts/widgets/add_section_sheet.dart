@@ -25,6 +25,8 @@ Future<SectionKind?> showAddSectionSheet(
       !isPro && !kFreeSectionKinds.contains(SectionKind.featureBlock);
   final blockTextLocked =
       !isPro && !kFreeSectionKinds.contains(SectionKind.blockTextBody);
+  final wannadoLocked =
+      !isPro && !kFreeSectionKinds.contains(SectionKind.wannado);
 
 
   return showDraggableSheet<SectionKind>(
@@ -88,6 +90,24 @@ Future<SectionKind?> showAddSectionSheet(
               final ok = await requirePro(subscriptions, context: sheetContext);
               if (ok && sheetContext.mounted) {
                 Navigator.of(sheetContext).pop(SectionKind.blockTextBody);
+              }
+            },
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedSparkles,
+            label: 'Wanna-dos',
+            description:
+                'A rotating carousel of your wanna-dos. Manage the list '
+                'in Block settings.',
+            locked: wannadoLocked,
+            onTap: () async {
+              if (!wannadoLocked) {
+                Navigator.of(sheetContext).pop(SectionKind.wannado);
+                return;
+              }
+              final ok = await requirePro(subscriptions, context: sheetContext);
+              if (ok && sheetContext.mounted) {
+                Navigator.of(sheetContext).pop(SectionKind.wannado);
               }
             },
           ),

@@ -72,8 +72,9 @@ for how they fit together; this file is per-file notes.
   (user-defined custom carousel blocks, GUS-34); `kFreeMaxLayouts = 1`
   (saved layouts, BACKLOG #90 / GUS-40); `const Set<SectionKind>
   kFreeSectionKinds = {text, blockGrid, header, divider}` — section
-  kinds free users may add; `featureBlock` is Pro (GUS-19), so the
-  add-section sheet greys + badges it. `header` (GUS-6) and `divider`
+  kinds free users may add; `featureBlock` (GUS-19), `blockTextBody`
+  (GUS-9), and `wannado` (GUS-8) are all Pro (NOT in the set), so the
+  add-section sheet greys + badges them. `header` (GUS-6) and `divider`
   (GUS-7) are free. (Built-in block gating is keyed off `BlockType.isProOnly` /
   `kProOnlyBlockTypes` in
   [../../blocks/block_type_display.dart](../../blocks/block_type_display.dart).)

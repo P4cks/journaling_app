@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
+import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
@@ -13,6 +14,9 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
 
 /// Block-type-global configuration screen.
 ///
@@ -138,6 +142,14 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
                     context,
                   ).layoutRepository,
                   maybeSaveOnLeave: _maybeSaveOnLeave,
+                ),
+              ],
+            ),
+            SettingsSection(
+              label: 'Wanna-dos',
+              children: [
+                _WannadoList(
+                  settings: AppDependencies.of(context).blockSettings,
                 ),
               ],
             ),
@@ -330,6 +342,130 @@ class _CustomCarouselList extends StatelessWidget {
       },
     );
   }
+}
+
+/// Manages the user's *global* wanna-do list (GUS-8) — a single bucket
+/// list rendered by every `SectionKind.wannado` section as a rotating
+/// carousel. Pure display: items have text only, no done state. Writes
+/// directly to [BlockSettings] (not draft state), mirroring
+/// `_CustomCarouselList` / `_MemoryEligibleTypesPicker`, so additions /
+/// edits / deletes surface in every visible wannado section immediately.
+class _WannadoList extends StatelessWidget {
+  const _WannadoList({required this.settings});
+
+  final BlockSettings settings;
+
+  Future<void> _add(BuildContext context) async {
+    final text = await _showEditDialog(context);
+    if (text == null) return;
+    await settings.addWannado(WannadoItem(id: _uuid.v4(), text: text));
+  }
+
+  Future<void> _edit(BuildContext context, WannadoItem item) async {
+    final text = await _showEditDialog(context, initial: item.text);
+    if (text == null) return;
+    await settings.updateWannado(item.copyWith(text: text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) {
+        final items = settings.wannados;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'A single bucket list shown by every Wanna-dos section. '
+                'Items rotate through one at a time.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            for (final item in items)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(item.text),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit',
+                      icon: AppIcon(HugeIcons.strokeRoundedPencil),
+                      onPressed: () => _edit(context, item),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete',
+                      icon: AppIcon(
+                        HugeIcons.strokeRoundedDelete02,
+                        color: theme.colorScheme.error,
+                      ),
+                      onPressed: () => settings.deleteWannado(item.id),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => _add(context),
+                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+                  label: const Text('Add wanna-do'),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Single-field add/edit dialog for a wanna-do. Returns the trimmed
+/// text, or `null` on cancel / empty.
+Future<String?> _showEditDialog(
+  BuildContext context, {
+  String? initial,
+}) async {
+  final controller = TextEditingController(text: initial ?? '');
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(initial == null ? 'Add wanna-do' : 'Edit wanna-do'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        maxLength: 80,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          hintText: 'e.g. See the northern lights',
+        ),
+        onSubmitted: (value) =>
+            Navigator.of(dialogContext).pop(value.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(dialogContext).pop(controller.text.trim()),
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null || result.isEmpty) return null;
+  return result;
 }
 
 class _CustomDefinitionRow extends StatelessWidget {

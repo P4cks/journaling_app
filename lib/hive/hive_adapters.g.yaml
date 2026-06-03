@@ -115,7 +115,7 @@ types:
         index: 2
   SectionKind:
     typeId: 11
-    nextIndex: 8
+    nextIndex: 9
     fields:
       text:
         index: 0
@@ -129,3 +129,5 @@ types:
         index: 4
       blockTextBody:
         index: 7
+      wannado:
+        index: 8

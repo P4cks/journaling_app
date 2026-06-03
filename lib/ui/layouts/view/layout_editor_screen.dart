@@ -19,6 +19,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -614,6 +615,7 @@ class _SectionCard extends StatelessWidget {
       SectionKind.header => ('Header', 'header'),
       SectionKind.divider => ('Divider', 'divider'),
       SectionKind.blockTextBody => ('Block + text', 'block + text'),
+      SectionKind.wannado => ('Wanna-dos', 'wanna-dos'),
     };
 
     return Container(
@@ -698,6 +700,13 @@ class _SectionCard extends StatelessWidget {
             SectionKind.blockTextBody => _BlockTextSectionBody(
               vm: vm,
               sectionIndex: index,
+            ),
+            // Content-free per entry — previews the *global* wanna-do
+            // list (rotating carousel). No per-section add affordance;
+            // items are managed in Block settings.
+            SectionKind.wannado => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: WannadoSectionWidget(),
             ),
           },
         ],

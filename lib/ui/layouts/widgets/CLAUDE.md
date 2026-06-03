@@ -67,21 +67,24 @@ sheet is a stateless top-level function returning the user's pick or
     successful purchase; unlocked cells pop immediately.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
-  SubscriptionRepository subscriptions})`. Six-tile sheet (Text
+  SubscriptionRepository subscriptions})`. Seven-tile sheet (Text
   section / Block grid / Header / Divider / Feature block / Block +
-  text), each rendered via the private `_SectionTile` (with a `locked`
-  flag). Header (GUS-6) and Divider (GUS-7) are always free. Block-grid
+  text / Wanna-dos), each rendered via the private `_SectionTile` (with
+  a `locked` flag). Header (GUS-6) and Divider (GUS-7) are always free.
+  Block-grid
   sections start empty — there is no row picker; the user adds blocks
   afterwards and the grid grows to fit. Feature-block and block-text
   sections also start empty; the editor body lets the user pick one
   photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
   Custom-layout editor uses this when the user taps the "Add section"
   zone at the bottom (passing `subscriptions` from `AppDependencies`).
-  - **Feature block (GUS-19) and Block + text (GUS-9) are Pro-only:**
-    for free users (`!kFreeSectionKinds.contains(kind)`) the tile greys
-    + badges and tapping presents the paywall, popping the kind only on
-    a successful purchase. Text + block-grid + header + divider are
-    always free.
+  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-dos
+    (GUS-8) are Pro-only:** for free users
+    (`!kFreeSectionKinds.contains(kind)`) the tile greys + badges and
+    tapping presents the paywall, popping the kind only on a successful
+    purchase. Text + block-grid + header + divider are always free. The
+    Wanna-dos tile description points the user to manage the list in
+    Block settings (the section itself has no per-section add affordance).
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)

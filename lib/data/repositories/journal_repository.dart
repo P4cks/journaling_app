@@ -334,6 +334,13 @@ class JournalRepository extends ChangeNotifier {
               ),
             ],
           ),
+          // Wanna-dos render the global list off `BlockSettings`; the
+          // section itself is content-free per entry.
+          SectionKind.wannado => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.wannado,
+            blocks: const [],
+          ),
         },
     ];
   }

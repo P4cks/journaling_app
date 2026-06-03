@@ -90,6 +90,13 @@ coordination live.
       template) materializes like `featureBlock`; the `textBlock` is
       fresh + empty like `text`. The widget looks each up by type so
       order is irrelevant.
+    - `SectionKind.wannado` — yields an `EntrySection` with `blocks:
+      const []` (content-free). The section renders the **global**
+      wanna-do list off `BlockSettings` at render time; nothing is
+      materialized into the entry. Like `divider`, contributes nothing
+      to emptiness — so an entry whose only section is wannado is swept
+      at midnight if otherwise untouched (consistent with the
+      global-list design; a wanna-do is not per-entry content).
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.

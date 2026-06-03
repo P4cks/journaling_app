@@ -23,11 +23,17 @@
 ///   `textBlock`. The layout template stores only the float block (0
 ///   or 1 template, like [featureBlock]); the `textBlock` is
 ///   materialized fresh (always starts empty, like [text]). (GUS-9, PRO.)
+/// - [wannado] — a "wanna-do" / bucket-list section. Pure display: it
+///   renders the user's **global** wanna-do list (managed in Block
+///   settings, stored on `BlockSettings`) as a vertical auto-rotating
+///   carousel. Carries **no** per-entry blocks (`blocks` is always
+///   empty) — the list is global, not per-entry, so the section is
+///   content-free and never round-trips data through the layout.
+///   (GUS-8, PRO.)
 ///
 /// Append-only. New values **must** be added at the end — Hive
 /// serialises enums by index, so reordering would corrupt persisted
-/// data. (`wannado` is planned next, appended after `blockTextBody` —
-/// see GUS-8.)
+/// data.
 enum SectionKind {
   text,
   blockGrid,
@@ -35,4 +41,5 @@ enum SectionKind {
   header,
   divider,
   blockTextBody,
+  wannado,
 }

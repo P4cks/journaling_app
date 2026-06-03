@@ -115,6 +115,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
       (both generalized to accept this kind). The text block is entered
       per-entry (not an editor slot). (GUS-9)
+    - `wannado` → a `WannadoSectionWidget` preview (the same widget the
+      journal pager renders). It self-fetches the **global** wanna-do
+      list off `AppDependencies.blockSettings` and rotates live in the
+      editor. No add affordance — items are managed in Block settings,
+      not per-section. (GUS-8)
 
 ## Gotchas
 

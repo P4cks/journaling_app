@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_text_section/block_text_s
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 
@@ -413,6 +414,13 @@ class _SectionsBody extends StatelessWidget {
             textEditing: editingBlockId == textBlock.id,
           ),
         );
+      case SectionKind.wannado:
+        // Content-free per entry — renders the *global* wanna-do list
+        // off BlockSettings (grabbed from AppDependencies inside the
+        // widget) as a vertical auto-rotating carousel. Pure display:
+        // identical for editable and read-only days, so `mode` is
+        // intentionally ignored.
+        return const WannadoSectionWidget();
     }
   }
 }

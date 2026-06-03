@@ -18,11 +18,15 @@ directory hosts the pushed screens:
   configuration only. The profile dropdown's "Sign in" row pushes
   `/profile` directly.
 - **Block-settings** (`/block-settings`) — block-type-global
-  configuration inline on one screen. Two sections: **Prompt Block**
-  (the prompt list + the Random Prompts toggle) and **Carousel
+  configuration inline on one screen. Sections: **Prompt Block**
+  (the prompt list + the Random Prompts toggle), **Carousel
   Blocks** (a single global "Show titles above carousels" switch +
-  the custom-carousel definition list with Edit / Delete / Add).
-  Edits are kept as drafts in `BlockSettingsViewModel`; a Cancel /
+  the custom-carousel definition list with Edit / Delete / Add),
+  **Wanna-dos** (the global wanna-do bucket-list editor — add / edit /
+  delete items the wannado carousel section renders across all entries;
+  GUS-8), and **Memory Block**.
+  Built-in field edits are kept as drafts in `BlockSettingsViewModel`;
+  a Cancel /
   Discard / Save dialog runs on leave, mirroring the layout editor.
   No more per-type push-into-sub-screen routes. **No text-block
   config**, **no per-type mood / weather title fields** — text and
@@ -70,10 +74,13 @@ Settings contains:
    statistics charts have data to render), surface override, and HSL
    free-pick for secondary/accent.
 
-Block-settings is rendered inline by `BlockSettingsScreen` — two
+Block-settings is rendered inline by `BlockSettingsScreen` —
 sections: **Prompt Block** (the prompt list + the Random Prompts
-toggle) and **Carousel Blocks** (the "Show titles above carousels"
-switch + the custom-carousel definition list). Text blocks have no
+toggle), **Carousel Blocks** (the "Show titles above carousels"
+switch + the custom-carousel definition list), **Wanna-dos** (the
+global wanna-do bucket-list editor; GUS-8), and **Memory Block**. The
+Wanna-dos list writes through `BlockSettings` immediately (not a
+draft). Text blocks have no
 per-type-global settings here — the per-block character cap is a
 runtime concern resolved via `BlockInputLimits` (tunable in the Debug
 menu, see item 6 above), not a block-settings field. Edits go into
