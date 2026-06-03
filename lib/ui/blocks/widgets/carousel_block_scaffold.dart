@@ -176,17 +176,29 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
       return Center(child: widget.itemBuilder(context, value, true));
     }
     // Empty state. In an editable entry, preview the carousel "unfocused"
-    // — the first option dimmed — so the tile reads as something you can
-    // engage rather than a dead em-dash (GUS-39). Read-only past entries
-    // keep the em-dash: a faint option there would look like a selection
-    // that was never actually made.
+    // — every option laid out small and dimmed — so the tile reads as a
+    // picker you can engage rather than a dead em-dash (GUS-39). Read-only
+    // past entries keep the em-dash: faint options there would look like a
+    // selection that was never actually made.
     if (widget.mode == BlockMode.readOnly || widget.options.isEmpty) {
       return const _CarouselEmptyPlaceholder();
     }
     return Center(
       child: Opacity(
         opacity: 0.4,
-        child: widget.itemBuilder(context, widget.options.first, false),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final option in widget.options)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: widget.itemBuilder(context, option, false),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

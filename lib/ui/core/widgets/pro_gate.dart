@@ -157,6 +157,60 @@ class ProLockBadge extends StatelessWidget {
   }
 }
 
+/// "Add custom block" button shared by the add-block sheet and the Block
+/// Settings screen. Greyed + crown-badged at the free cap
+/// ([kFreeMaxCustomBlocks]); tapping at the cap presents the paywall and
+/// only invokes [onAddAllowed] on a successful upgrade. Below the cap it
+/// calls [onAddAllowed] directly. Callers own the navigation. (GUS-40)
+class AddCustomBlockButton extends StatelessWidget {
+  const AddCustomBlockButton({
+    super.key,
+    required this.subscriptions,
+    required this.currentCount,
+    required this.onAddAllowed,
+  });
+
+  final SubscriptionRepository subscriptions;
+  final int currentCount;
+  final VoidCallback onAddAllowed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final atLimit =
+        !subscriptions.isPro && currentCount >= kFreeMaxCustomBlocks;
+    return OutlinedButton.icon(
+      style: atLimit
+          ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)
+          : null,
+      onPressed: () async {
+        if (atLimit) {
+          if (!await requirePro(subscriptions, context: context)) return;
+          if (!context.mounted) return;
+        }
+        onAddAllowed();
+      },
+      icon: atLimit
+          ? Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedPlusSign,
+                  color: theme.disabledColor,
+                ),
+                const Positioned(
+                  top: -6,
+                  right: -6,
+                  child: ProLockBadge(compact: true),
+                ),
+              ],
+            )
+          : AppIcon(HugeIcons.strokeRoundedPlusSign),
+      label: const Text('Add custom block'),
+    );
+  }
+}
+
 /// Inline caption telling a free user how much of a counted Pro limit
 /// they've used (e.g. blocks per layout, sections, custom blocks). Below
 /// the cap it reads "`used` of `max` `noun` used"; at the cap it becomes a

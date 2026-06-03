@@ -245,17 +245,10 @@ class _CustomCarouselList extends StatelessWidget {
   final LayoutRepository layoutRepository;
   final Future<bool> Function() maybeSaveOnLeave;
 
+  // The free-tier cap on *creating* a new custom block is enforced by the
+  // [AddCustomBlockButton] (GUS-34/GUS-40); this just saves any dirty draft
+  // and pushes. `id == null` → new, otherwise edit (never gated).
   Future<void> _navigateToEditor(BuildContext context, String? id) async {
-    // Creating a new custom block is gated to `kFreeMaxCustomBlocks` for
-    // free users; editing an existing one is never gated. (GUS-34)
-    if (id == null) {
-      final subscriptions = AppDependencies.of(context).subscriptionRepository;
-      if (!subscriptions.isPro &&
-          settings.customCarousels.length >= kFreeMaxCustomBlocks) {
-        if (!await requirePro(subscriptions, context: context)) return;
-        if (!context.mounted) return;
-      }
-    }
     final canLeave = await maybeSaveOnLeave();
     if (!context.mounted || !canLeave) return;
     if (id == null) {
@@ -314,14 +307,21 @@ class _CustomCarouselList extends StatelessWidget {
                 onEdit: () => _navigateToEditor(context, def.id),
                 onDelete: () => _confirmDelete(context, def),
               ),
+            ProLimitHint(
+              used: defs.length,
+              max: kFreeMaxCustomBlocks,
+              noun: 'custom blocks',
+              subscriptions: AppDependencies.of(context).subscriptionRepository,
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: () => _navigateToEditor(context, null),
-                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
-                  label: const Text('Add custom block'),
+                child: AddCustomBlockButton(
+                  subscriptions:
+                      AppDependencies.of(context).subscriptionRepository,
+                  currentCount: defs.length,
+                  onAddAllowed: () => _navigateToEditor(context, null),
                 ),
               ),
             ),

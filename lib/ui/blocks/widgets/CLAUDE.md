@@ -14,8 +14,9 @@ text block and the full-width text section.
   `BlockWithTitle` wrap (callers pass the resolved title with the
   `carouselTitlesEnabled` gate already applied — `null` collapses the
   row), and the collapsed/empty rendering. **Empty state (no selection):**
-  in `BlockMode.editable` it previews the first option dimmed to 40%
-  opacity ("unfocused carousel", GUS-39) so the tile invites a tap; in
+  in `BlockMode.editable` it previews ALL options laid out small in a
+  `FittedBox`-scaled `Row`, dimmed to 40% opacity ("unfocused carousel",
+  GUS-39) so the tile reads as a picker and invites a tap; in
   `BlockMode.readOnly` (or when `options` is empty) it falls back to the
   private em-dash `_CarouselEmptyPlaceholder`. With a selection it centres
   the glyph. `BlockMode.editable`

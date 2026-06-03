@@ -168,11 +168,11 @@ how layouts materialize).
     `isProOnly` derives from `kProOnlyBlockTypes` = `{weatherApi,
     quoteBlock}` (GUS-34) — every other built-in block is now FREE.
     Custom-carousel cells are no longer blanket-locked; instead creating
-    a new custom block is capped at `kFreeMaxCustomBlocks` (1) — the "Add
-    custom block" button (add-block sheet *and* `block_settings_screen`)
+    a new custom block is capped at `kFreeMaxCustomBlocks` (1) — the shared
+    `AddCustomBlockButton` (add-block sheet *and* `block_settings_screen`)
     calls `requirePro` at the cap, with a `ProLimitHint` above it. At the
-    cap the add-block sheet's button also renders greyed with a
-    `ProLockBadge(compact: true)` overlay (GUS-40). The
+    cap the button renders greyed with a `ProLockBadge(compact: true)`
+    overlay (GUS-40). The
     add-section sheet still gates the **Feature block** tile
     (`featureBlock ∉ kFreeSectionKinds`); text + block-grid stay free.
   - **GUS-40 — free users capped at `kFreeMaxLayouts` (1) saved layout.**
