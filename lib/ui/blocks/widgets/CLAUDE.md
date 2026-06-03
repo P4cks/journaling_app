@@ -34,11 +34,15 @@ text block and the full-width text section.
   input caps + the shared visible counter (GUS-10 rework). Replaces the
   old single hidden `kTextInputMaxChars`.
   - Hard-coded defaults: `kTextBlockMaxChars` (280),
-    `kTextSectionMaxChars` (280), `kPromptAnswerMaxChars` (280),
-    `kTodoItemMaxChars` (80), `kTodoMaxItems` (8). These are the
-    shipped values — the debug menu can override any of them at runtime
-    (see `DebugSettings` nullable-int fields). Once a tuned value is
-    settled, bake it back into the constant here and drop the override.
+    `kTextSectionMaxChars` (280), `kHeaderSectionMaxChars` (60),
+    `kPromptAnswerMaxChars` (280), `kTodoItemMaxChars` (80),
+    `kTodoMaxItems` (8). These are the shipped values — the debug menu
+    can override any of them at runtime (see `DebugSettings`
+    nullable-int fields). Once a tuned value is settled, bake it back
+    into the constant here and drop the override.
+    `kHeaderSectionMaxChars` is consumed **directly** by
+    `HeaderSectionWidget` (not surfaced through `BlockInputLimits.of`
+    or a debug override) — it's a short fixed cap, no live tuning.
   - `BlockInputLimits.of(debugSettings)` resolves the **effective**
     value per limit (`override ?? default`). Call once per build and
     read the field you need. Wrap the editable subtree in

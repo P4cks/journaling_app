@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -7,8 +8,11 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_text_section/block_text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 
@@ -361,6 +365,62 @@ class _SectionsBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: feature,
         );
+      case SectionKind.header:
+        // Backed by a single textBlock (like `text`). Edits in place via
+        // the editingBlockId path — no expanded route, so no Hero.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        final block = section.blocks.first;
+        return HeaderSectionWidget(
+          key: ValueKey(section.id),
+          data: block,
+          mode: mode,
+          onChanged: onBlockChanged,
+          editing: editingBlockId == block.id,
+        );
+      case SectionKind.divider:
+        // Purely visual — renders even though `blocks` is empty (unlike
+        // the blockGrid/featureBlock cases which suppress empties).
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Divider(height: 1),
+        );
+      case SectionKind.blockTextBody:
+        // Two blocks: a float block (photo/memory) and a textBlock. Look
+        // each up by type so order is irrelevant. The text block always
+        // exists; the float block is null when none was configured.
+        JournalBlockData? textBlock;
+        JournalBlockData? floatBlock;
+        for (final b in section.blocks) {
+          if (b.type == BlockType.textBlock) {
+            textBlock ??= b;
+          } else if (b.type == BlockType.photoBlock ||
+              b.type == BlockType.memoryBlock) {
+            floatBlock ??= b;
+          }
+        }
+        if (textBlock == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: BlockTextSectionWidget(
+            key: ValueKey(section.id),
+            floatBlock: floatBlock,
+            textBlock: textBlock,
+            mode: mode,
+            onBlockChanged: onBlockChanged,
+            onJumpToDate: onJumpToDate,
+            onLockChanged: onLockChanged,
+            onRequestBlockEdit: onRequestBlockEdit,
+            onRequestTextSectionEdit: onRequestTextSectionEdit,
+            textEditing: editingBlockId == textBlock.id,
+          ),
+        );
+      case SectionKind.wannado:
+        // Content-free per entry — renders the *global* wanna-do list
+        // off BlockSettings (grabbed from AppDependencies inside the
+        // widget) as a vertical auto-rotating carousel. Pure display:
+        // identical for editable and read-only days, so `mode` is
+        // intentionally ignored.
+        return const WannadoSectionWidget();
     }
   }
 }

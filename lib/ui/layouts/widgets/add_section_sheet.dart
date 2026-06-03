@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 
 /// Modal bottom sheet that picks a new section type — text, block-grid,
@@ -22,22 +23,18 @@ Future<SectionKind?> showAddSectionSheet(
   final isPro = subscriptions.isPro;
   final featureLocked =
       !isPro && !kFreeSectionKinds.contains(SectionKind.featureBlock);
-  return showModalBottomSheet<SectionKind>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Add a section',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-          ),
+  final blockTextLocked =
+      !isPro && !kFreeSectionKinds.contains(SectionKind.blockTextBody);
+  final wannadoLocked =
+      !isPro && !kFreeSectionKinds.contains(SectionKind.wannado);
+
+
+  return showDraggableSheet<SectionKind>(
+    context,
+    title: "Add a Section",
+    slivers: (sheetContext, controller) => [
+      SliverList(
+        delegate: SliverChildListDelegate([
           _SectionTile(
             icon: HugeIcons.strokeRoundedTextFont,
             label: 'Text section',
@@ -50,6 +47,18 @@ Future<SectionKind?> showAddSectionSheet(
             description:
                 'A 2-column grid of 1×1 blocks. Add blocks to grow it.',
             onTap: () => Navigator.of(sheetContext).pop(SectionKind.blockGrid),
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedHeading,
+            label: 'Header',
+            description: 'A single-line heading to break up the page.',
+            onTap: () => Navigator.of(sheetContext).pop(SectionKind.header),
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedRemove01,
+            label: 'Divider',
+            description: 'A horizontal rule between sections.',
+            onTap: () => Navigator.of(sheetContext).pop(SectionKind.divider),
           ),
           _SectionTile(
             icon: HugeIcons.strokeRoundedKeyframe,
@@ -67,10 +76,45 @@ Future<SectionKind?> showAddSectionSheet(
               }
             },
           ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedImage01,
+            label: 'Block + text',
+            description:
+                'A photo or memory floated left with text wrapping around it.',
+            locked: blockTextLocked,
+            onTap: () async {
+              if (!blockTextLocked) {
+                Navigator.of(sheetContext).pop(SectionKind.blockTextBody);
+                return;
+              }
+              final ok = await requirePro(subscriptions, context: sheetContext);
+              if (ok && sheetContext.mounted) {
+                Navigator.of(sheetContext).pop(SectionKind.blockTextBody);
+              }
+            },
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedSparkles,
+            label: 'Wanna-dos',
+            description:
+                'A rotating carousel of your wanna-dos. Manage the list '
+                'in Block settings.',
+            locked: wannadoLocked,
+            onTap: () async {
+              if (!wannadoLocked) {
+                Navigator.of(sheetContext).pop(SectionKind.wannado);
+                return;
+              }
+              final ok = await requirePro(subscriptions, context: sheetContext);
+              if (ok && sheetContext.mounted) {
+                Navigator.of(sheetContext).pop(SectionKind.wannado);
+              }
+            },
+          ),
           const SizedBox(height: 8),
         ],
       ),
-    ),
+    ),]
   );
 }
 
