@@ -110,7 +110,10 @@ text block and the full-width text section.
   - `itemBuilder(ctx, option, isSelected)` — carousel page.
   - `collapsedBuilder(ctx, selected)` — collapsed view; should render
     a placeholder when `selected == null`.
-  - `onSelected(T)` — called on page change.
+  - `onSelected(T)` — called on page change, AND once on engaging an
+    unselected carousel (commits the centred middle option so a plain
+    tap registers a value without a swipe — `jumpToPage` doesn't fire
+    `onPageChanged`).
   - `onInteractionLockChanged(blockId, locked)` — lifted to
     `JournalPager` to disable the outer horizontal date-swipe while
     expanded.

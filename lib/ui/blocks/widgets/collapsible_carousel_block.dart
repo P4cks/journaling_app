@@ -127,8 +127,20 @@ class _CollapsibleCarouselBlockState<T>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         widget.onInteractionLockChanged?.call(widget.blockId, true);
+        _registerMiddleIfUnselected();
         if (widget.autoCollapse) _scheduleCollapse();
       });
+    }
+  }
+
+  /// On engaging an unselected carousel, commit the centred (middle)
+  /// option as the selection so a plain tap registers it — the page the
+  /// user sees focused becomes the actual pick, no swipe required.
+  /// `jumpToPage` doesn't fire `onPageChanged`, so without this an empty
+  /// carousel would expand without ever recording a value.
+  void _registerMiddleIfUnselected() {
+    if (widget.selected == null && widget.options.isNotEmpty) {
+      widget.onSelected(widget.options[_initialIndex]);
     }
   }
 
@@ -175,6 +187,7 @@ class _CollapsibleCarouselBlockState<T>
       if (_controller.hasClients) {
         _controller.jumpToPage(_initialIndex);
       }
+      _registerMiddleIfUnselected();
       if (widget.autoCollapse) _scheduleCollapse();
     });
   }
