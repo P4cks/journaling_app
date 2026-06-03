@@ -108,9 +108,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
     - `blockTextBody` → `_BlockTextSectionBody` — a `Row` of the
       float-block picker (`_EmptyAddBlockCell` / `_FilledCell`, same
-      slot machinery as `_FeatureBlockSectionBody`, sized 120×120) left
-      of a read-only `_TextSectionPreview`, hinting the materialized
-      entry's magazine float arrangement. The picker uses
+      slot machinery as `_FeatureBlockSectionBody`) left of a read-only
+      `_TextSectionPreview`, hinting the materialized entry's float
+      arrangement. The block is sized like the entry (~42% of width,
+      clamped 120–200, via a `LayoutBuilder` wrapping the whole Row) so
+      the preview matches a "normal" block size rather than a fixed
+      120px square. The picker uses
       `showAddBlockSheet(allowedTypes: featureBlockAllowedTypes)` →
       `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
       (both generalized to accept this kind). The text block is entered

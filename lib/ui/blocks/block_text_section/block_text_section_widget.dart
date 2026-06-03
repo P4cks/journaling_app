@@ -131,44 +131,57 @@ class BlockTextSectionWidget extends StatelessWidget {
       );
     }
 
-    // Editable: the float block (still tappable to configure) stacked
-    // above a plain full-width text field.
+    // Editable: the text field sits to the RIGHT of the float block
+    // (still tappable to configure), mirroring the read-mode float
+    // arrangement. The text grows vertically beside the block rather
+    // than wrapping under it — an editable TextField can't live inside
+    // the `Text.rich` WidgetSpan used for the read-mode wrap.
+    final textField = TextSectionWidget(
+      key: ValueKey(textBlock.id),
+      data: textBlock,
+      mode: mode,
+      onChanged: onBlockChanged,
+      editing: textEditing,
+      onDoubleTap: onRequestTextSectionEdit == null
+          ? null
+          : () => onRequestTextSectionEdit!(textBlock),
+    );
+
+    if (float == null) {
+      // No float block configured — full-width text field.
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: textField,
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (float != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final blockSize = (constraints.maxWidth * 0.5).clamp(
-                      140.0,
-                      220.0,
-                    );
-                    return SizedBox(
-                      width: blockSize,
-                      height: blockSize,
-                      child: _buildFloatBlock(context, float),
-                    );
-                  },
+      // LayoutBuilder must wrap the whole Row: a LayoutBuilder placed
+      // directly as a Row child is laid out with unbounded width, so
+      // `maxWidth` would be infinity. Compute the block size from the
+      // full row width here, then hand it down.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final blockSize = (constraints.maxWidth * 0.42).clamp(120.0, 200.0);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 12),
+                child: SizedBox(
+                  width: blockSize,
+                  height: blockSize,
+                  child: _buildFloatBlock(context, float),
                 ),
               ),
-            ),
-          TextSectionWidget(
-            key: ValueKey(textBlock.id),
-            data: textBlock,
-            mode: mode,
-            onChanged: onBlockChanged,
-            editing: textEditing,
-            onDoubleTap: onRequestTextSectionEdit == null
-                ? null
-                : () => onRequestTextSectionEdit!(textBlock),
-          ),
-        ],
+              // TextSectionWidget supplies its own 16px horizontal
+              // padding, which doubles as the gap to the block and the
+              // right margin.
+              Expanded(child: textField),
+            ],
+          );
+        },
       ),
     );
   }

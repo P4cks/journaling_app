@@ -32,12 +32,18 @@ type, so their order inside `EntrySection.blocks` is irrelevant.
   right and wraps full-width once it passes the block's bottom. Empty
   text shows "No text yet" italic + `disabledColor`. When `floatBlock`
   is null, falls back to a plain padded `Text` (like a text section).
-- `BlockMode.editable` — the float-wrap is **not** used. The float
-  block renders as a left-aligned square (~50% width, clamped 140–220),
-  still tappable to configure (double-tap → `onRequestBlockEdit`),
-  above a full-width `TextSectionWidget` (its own in-place/expanded
-  edit path via `onRequestTextSectionEdit` + `textEditing`). This
-  mirrors how text sections separate edit (field) from display.
+- `BlockMode.editable` — the `Text.rich` float-wrap is **not** used (an
+  editable `TextField` can't live inside a `WidgetSpan`). Instead the
+  float block sits in a `Row` as a left square (~42% width, clamped
+  120–200, sized via a `LayoutBuilder` that **wraps the whole Row** —
+  a `LayoutBuilder` placed directly as a Row child gets unbounded
+  width), still tappable to configure (double-tap → `onRequestBlockEdit`),
+  with the `TextSectionWidget` in an `Expanded` **to its right** (its
+  own in-place/expanded edit path via `onRequestTextSectionEdit` +
+  `textEditing`). The text grows vertically beside the block rather
+  than wrapping under it. When `floatBlock` is null, the text is
+  full-width (no Row). `TextSectionWidget`'s own 16px horizontal
+  padding doubles as the gap to the block + the right margin.
 
 The float block subtree mirrors the journal pager's `featureBlock`
 case: `Hero(tag: blockHeroTag(block.id))` → `Material` →

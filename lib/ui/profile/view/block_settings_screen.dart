@@ -434,38 +434,66 @@ Future<String?> _showEditDialog(
   BuildContext context, {
   String? initial,
 }) async {
-  final controller = TextEditingController(text: initial ?? '');
   final result = await showDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(initial == null ? 'Add wanna-do' : 'Edit wanna-do'),
+    builder: (_) => _WannadoEditDialog(initial: initial),
+  );
+  if (result == null || result.isEmpty) return null;
+  return result;
+}
+
+/// The add/edit dialog content. **Stateful so it owns its
+/// `TextEditingController`** and disposes it in its own `dispose()` —
+/// disposing the controller synchronously right after `showDialog`
+/// returns crashes the TextField as it rebuilds during the dialog's
+/// exit animation ("A TextEditingController was used after being
+/// disposed"), and that thrown exception aborts the frame so a freshly
+/// added wanna-do never paints until a restart.
+class _WannadoEditDialog extends StatefulWidget {
+  const _WannadoEditDialog({this.initial});
+
+  final String? initial;
+
+  @override
+  State<_WannadoEditDialog> createState() => _WannadoEditDialogState();
+}
+
+class _WannadoEditDialogState extends State<_WannadoEditDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial ?? '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop(_controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.initial == null ? 'Add wanna-do' : 'Edit wanna-do'),
       content: TextField(
-        controller: controller,
+        controller: _controller,
         autofocus: true,
         maxLength: 80,
         textCapitalization: TextCapitalization.sentences,
         decoration: const InputDecoration(
           hintText: 'e.g. See the northern lights',
         ),
-        onSubmitted: (value) =>
-            Navigator.of(dialogContext).pop(value.trim()),
+        onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
+          onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: () =>
-              Navigator.of(dialogContext).pop(controller.text.trim()),
-          child: const Text('Save'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Save')),
       ],
-    ),
-  );
-  controller.dispose();
-  if (result == null || result.isEmpty) return null;
-  return result;
+    );
+  }
 }
 
 class _CustomDefinitionRow extends StatelessWidget {

@@ -839,24 +839,35 @@ class _BlockTextSectionBody extends StatelessWidget {
     final sectionId = section.id;
     final slots = section.slots;
 
+    // Size the float block the same proportional way the materialized
+    // entry does (~42% of width, clamped) so the editor preview matches
+    // a "normal" block size, not a fixed 120px square. LayoutBuilder must
+    // wrap the whole Row — a LayoutBuilder placed directly as a Row child
+    // gets unbounded width (maxWidth == infinity).
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            height: 120,
-            child: slots.isEmpty
-                ? _EmptyAddBlockCell(onTap: () => _pickType(context))
-                : _FilledCell(
-                    slot: slots.first,
-                    onSwapType: () => _pickType(context, isSwap: true),
-                    onRemove: () => vm.clearFeatureBlock(sectionId),
-                  ),
-          ),
-          const Expanded(child: _TextSectionPreview()),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final blockSize = (constraints.maxWidth * 0.42).clamp(120.0, 200.0);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: blockSize,
+                height: blockSize,
+                child: slots.isEmpty
+                    ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+                    : _FilledCell(
+                        slot: slots.first,
+                        onSwapType: () => _pickType(context, isSwap: true),
+                        onRemove: () => vm.clearFeatureBlock(sectionId),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: _TextSectionPreview()),
+            ],
+          );
+        },
       ),
     );
   }
