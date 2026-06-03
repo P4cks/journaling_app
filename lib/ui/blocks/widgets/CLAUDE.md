@@ -14,10 +14,12 @@ text block and the full-width text section.
   `BlockWithTitle` wrap (callers pass the resolved title with the
   `carouselTitlesEnabled` gate already applied — `null` collapses the
   row), and the collapsed/empty rendering. **Empty state (no selection):**
-  in `BlockMode.editable` it previews the middle option plus its
-  immediate left/right neighbours (a 3-item peek) laid out small in a
-  `FittedBox`-scaled `Row`, dimmed to 40% opacity ("unfocused carousel",
-  GUS-39) so the tile reads as a picker and invites a tap; in
+  in `BlockMode.editable` it previews the carousel exactly as it looks
+  once tapped — the same non-interactive `PageView` peek (centre page +
+  neighbours peeking, `viewportFraction` 0.42) via the private
+  `_UnfocusedCarouselPreview` — but with EVERY page "unfocused" (scaled
+  to 0.6 + 45% opacity), so none is highlighted big and it reads as
+  "nothing picked yet" ("unfocused carousel", GUS-39); in
   `BlockMode.readOnly` (or when `options` is empty) it falls back to the
   private em-dash `_CarouselEmptyPlaceholder`. With a selection it centres
   the glyph. `BlockMode.editable`

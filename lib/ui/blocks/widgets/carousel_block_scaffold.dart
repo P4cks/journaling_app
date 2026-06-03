@@ -175,40 +175,89 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
     if (value != null) {
       return Center(child: widget.itemBuilder(context, value, true));
     }
-    // Empty state. In an editable entry, preview the carousel "unfocused"
-    // — the middle option plus its immediate left/right neighbours (a
-    // 3-item peek), all small and dimmed — so the tile reads as a picker
-    // you can engage rather than a dead em-dash (GUS-39). Read-only past
-    // entries keep the em-dash: faint options there would look like a
-    // selection that was never actually made.
+    // Empty state. In an editable entry, preview the carousel exactly as
+    // it looks once tapped — the same `PageView` peek (centre page +
+    // neighbours peeking) — but with EVERY page rendered "unfocused"
+    // (scaled down + dimmed), so none is highlighted big and it reads as
+    // "you haven't picked anything yet" (GUS-39). Read-only past entries
+    // keep the em-dash: faint options there would look like a selection
+    // that was never actually made.
     if (widget.mode == BlockMode.readOnly || widget.options.isEmpty) {
       return const _CarouselEmptyPlaceholder();
     }
-    final options = widget.options;
-    final mid = options.length ~/ 2;
-    final start = (mid - 1).clamp(0, options.length);
-    final end = (mid + 2).clamp(0, options.length); // exclusive
-    final window = options.sublist(start, end);
-    return Center(
-      child: Opacity(
-        opacity: 0.4,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final option in window)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: widget.itemBuilder(context, option, false),
-                ),
-            ],
+    return _UnfocusedCarouselPreview<T>(
+      options: widget.options,
+      itemBuilder: widget.itemBuilder,
+    );
+  }
+}
+
+/// Non-interactive preview of the carousel in its "unfocused" state:
+/// the same `PageView` peek the expanded picker uses (centre page plus
+/// neighbours peeking via [_kViewportFraction]), but with every page
+/// scaled down + dimmed so none is highlighted — signalling "nothing
+/// picked yet". Owns its own [PageController] (centred on the middle
+/// option) so the controller is disposed properly; built only in the
+/// editable empty state by [CarouselBlockScaffold]. (GUS-39)
+class _UnfocusedCarouselPreview<T> extends StatefulWidget {
+  const _UnfocusedCarouselPreview({
+    required this.options,
+    required this.itemBuilder,
+  });
+
+  final List<T> options;
+  final Widget Function(BuildContext context, T option, bool isSelected)
+  itemBuilder;
+
+  @override
+  State<_UnfocusedCarouselPreview<T>> createState() =>
+      _UnfocusedCarouselPreviewState<T>();
+}
+
+class _UnfocusedCarouselPreviewState<T>
+    extends State<_UnfocusedCarouselPreview<T>> {
+  late final PageController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(
+      initialPage: widget.options.length ~/ 2,
+      viewportFraction: _kViewportFraction,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView.builder(
+      controller: _controller,
+      // The whole tile's tap is owned by the scaffold's GestureDetector
+      // (single tap expands), so the preview itself must not scroll.
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: widget.options.length,
+      itemBuilder: (ctx, index) => Center(
+        child: Opacity(
+          // Mirrors the expanded carousel's unfocused-page styling.
+          opacity: 0.45,
+          child: Transform.scale(
+            scale: 0.6,
+            child: widget.itemBuilder(ctx, widget.options[index], false),
           ),
         ),
       ),
     );
   }
 }
+
+/// Viewport fraction shared with `CollapsibleCarouselBlock`'s default so
+/// the unfocused preview peeks identically to the expanded picker.
+const double _kViewportFraction = 0.42;
 
 /// Dimmed em-dash shown when a carousel has no selection and no options
 /// to preview (or in a read-only past entry). Kept private so callers go
