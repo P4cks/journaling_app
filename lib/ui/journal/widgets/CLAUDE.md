@@ -137,6 +137,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   blockGrid/featureBlock cases suppress empties, but a divider has no
   blocks by design).
 
+  **`SectionKind.blockTextBody`** → renders `BlockTextSectionWidget`
+  (GUS-9). `_buildSection` walks `section.blocks`, picking the first
+  `textBlock` and the first `photoBlock`/`memoryBlock` by type (order-
+  independent), and passes them as `textBlock` (required) + `floatBlock`
+  (nullable). Suppressed only if no `textBlock` is present (malformed).
+  Wires `onRequestBlockEdit` (float block) + `onRequestTextSectionEdit`
+  / `textEditing` (text) the same as the `featureBlock` + `text` cases.
+
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled
   slots), `_SectionsBody` returns `SizedBox.shrink()` for that

@@ -174,6 +174,15 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   (GUS-6). Shares `TextContentControllerMixin` with the text block /
   section but renders a bold one-liner with no expanded route / Hero.
   See [header_section/CLAUDE.md](header_section/CLAUDE.md).
+- [block_text_section/block_text_section_widget.dart](block_text_section/block_text_section_widget.dart) —
+  `BlockTextSectionWidget`. Renders a `SectionKind.blockTextBody`
+  section (GUS-9): a photo/memory block floated top-left with text
+  wrapping around it. Read mode uses `Text.rich` +
+  `WidgetSpan(alignment: PlaceholderAlignment.top)` (zero new
+  dependency); editable mode stacks the still-tappable float block
+  above a full-width `TextSectionWidget`. Takes the two blocks
+  separately (`floatBlock` nullable, `textBlock` required). See
+  [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —
