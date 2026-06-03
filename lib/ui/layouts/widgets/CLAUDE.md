@@ -48,6 +48,15 @@ sheet is a stateless top-level function returning the user's pick or
   feature-block sections — this hides BOTH the tab switcher and the
   custom section, leaving just the search field + built-in grid; feature
   blocks must be photo/memory). The `title` defaults to "Add block".
+  - **Post-it previews (GUS-23).** Each `_PreviewTile` is fed a
+    `BlockVisuals` from `_previewVisuals(context, seed)` —
+    `BlockVisuals.random(Random(seed.hashCode), themeSettings.postItPalette)`
+    where `seed` is the block type name (built-in) or the definition id
+    (custom). Mirrors `_slotPreviewData` in the layout editor so the
+    sheet previews match a materialized entry's post-it look (rotation /
+    offset / colour). Deterministic seed → stable across rebuilds; when
+    post-it mode is off `BlockChrome` ignores the fields, so the call is
+    harmless.
   - **Pro gating (GUS-19).** Reads `subscriptionRepository` via
     `AppDependencies`. For free users, built-in cells whose
     `BlockType.isProOnly` is true (everything except text + mood) and
@@ -84,11 +93,16 @@ sheet is a stateless top-level function returning the user's pick or
   - Used by the layout editor's icon AppBar action. Callers may pass
     the returned name (or `null`) straight into `vm.setIconName`.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
-  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Three-tile
-  sheet ("Only blocks", "4 blocks + text", "Fully customizable"), each
-  with an icon and one-line description. Shown when the user taps the
-  FAB on the layouts list. Returns the picked `LayoutKind`; the caller
-  pushes the editor with that kind via `Routes.newLayoutFor(kind)`.
+  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Two-tile
+  sheet ("Only blocks", "Fully customizable"), each with an icon and
+  one-line description. Shown when the user taps the FAB on the layouts
+  list. Returns the picked `LayoutKind`; the caller pushes the editor
+  with that kind via `Routes.newLayoutFor(kind)`.
+  - **`fixedFourPlusText` ("4 blocks + text") was retired from the
+    picker (GUS-31)** — users can no longer create one. The enum value
+    is kept (append-only — Hive serialises by index) and the editor /
+    `layout_picker_sheet` summary still handle it, so any pre-existing
+    layout of that kind still opens and renders.
   - **All three kinds are free to pick (GUS-19 reversal of BACKLOG
     #96).** Monetization moved off the layout *kind* and onto
     block/section selection, so the `custom` tile is no longer gated —
@@ -96,10 +110,15 @@ sheet is a stateless top-level function returning the user's pick or
     `subscriptions` param. (Free `blockOnly` layouts are still capped at
     `kFreeMaxBlocksPerLayout`, and the add-block / add-section sheets
     gate individual Pro blocks/sections.)
+- [layout_default_chip.dart](layout_default_chip.dart) —
+  `LayoutDefaultChip`. Compact rounded "★ Default" pill
+  (`primaryContainer`). Shared by the layouts list
+  (`LayoutsScreen` trailing) and the `showLayoutPickerSheet` default
+  row so the default reads identically in both places (GUS-28).
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, title})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -107,6 +126,10 @@ sheet is a stateless top-level function returning the user's pick or
   row, and the `DraggableScrollableSheet` chrome. Returns the picked
   layout or `null`. Subtitle text per row summarises the layout via
   its `kind` (e.g. "4 blocks + text" for `fixedFourPlusText`).
+  - **Default highlight (GUS-28).** Pass `defaultLayoutId` (from
+    `MainJournalViewModel.defaultLayoutId`); the matching row gets a
+    `primary`-tinted leading icon and a trailing `LayoutDefaultChip`.
+    Omit it (or pass `null`) to render no highlight.
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action

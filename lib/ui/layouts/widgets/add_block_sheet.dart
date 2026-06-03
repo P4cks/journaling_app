@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -375,6 +378,18 @@ class _NoMatchesHint extends StatelessWidget {
   }
 }
 
+/// Deterministic post-it visuals for a preview tile, seeded from a
+/// stable [seed] (block type name or custom-definition id) against the
+/// live post-it palette — mirrors `_slotPreviewData` in the layout
+/// editor so the add-block sheet previews match what a materialized
+/// entry looks like (rotation / offset / colour). The seed is stable,
+/// so visuals don't jitter across rebuilds. When post-it mode is off,
+/// `BlockChrome` ignores these fields, so they're harmless. (GUS-23)
+BlockVisuals _previewVisuals(BuildContext context, String seed) {
+  final palette = AppDependencies.of(context).themeSettings.postItPalette;
+  return BlockVisuals.random(Random(seed.hashCode), palette);
+}
+
 class _BuiltinCell extends StatelessWidget {
   const _BuiltinCell({
     required this.type,
@@ -402,6 +417,7 @@ class _BuiltinCell extends StatelessWidget {
         children: [
           _PreviewTile(
             locked: locked,
+            visuals: _previewVisuals(context, type.name),
             child: BlockWidget(
               data: type.sampleData(id: 'preview-${type.name}'),
               mode: BlockMode.readOnly,
@@ -436,17 +452,26 @@ class _BuiltinCell extends StatelessWidget {
 
 /// Square block preview with the shared chrome. When [locked], the
 /// preview dims and a compact Pro crown overlays the top-right corner.
+///
+/// [visuals] carry the post-it look (rotation / offset / colour). They
+/// only take effect when post-it mode is enabled — `BlockChrome` ignores
+/// them otherwise (GUS-23).
 class _PreviewTile extends StatelessWidget {
-  const _PreviewTile({required this.locked, required this.child});
+  const _PreviewTile({
+    required this.locked,
+    required this.child,
+    this.visuals = BlockVisuals.zero,
+  });
 
   final bool locked;
   final Widget child;
+  final BlockVisuals visuals;
 
   @override
   Widget build(BuildContext context) {
     final tile = AspectRatio(
       aspectRatio: 1,
-      child: AbsorbPointer(child: BlockChrome(child: child)),
+      child: AbsorbPointer(child: BlockChrome(visuals: visuals, child: child)),
     );
     if (!locked) return tile;
     return Stack(
@@ -518,6 +543,7 @@ class _CustomCell extends StatelessWidget {
         children: [
           _PreviewTile(
             locked: locked,
+            visuals: _previewVisuals(context, definition.id),
             child: BlockWidget(data: data, mode: BlockMode.readOnly),
           ),
           const SizedBox(height: 8),

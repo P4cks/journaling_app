@@ -163,6 +163,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final picked = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
+      defaultLayoutId: vm.defaultLayoutId,
     );
     if (picked == null || !mounted) return;
     vm.createWithLayout(picked);
@@ -176,6 +177,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final selected = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
+      defaultLayoutId: vm.defaultLayoutId,
     );
     if (selected == null || !mounted) return;
     final confirm = await showDialog<bool>(

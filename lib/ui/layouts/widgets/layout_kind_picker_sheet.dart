@@ -7,11 +7,16 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 /// creating a new layout. Returns the chosen kind, or `null` if
 /// dismissed.
 ///
-/// All three kinds are free to pick — monetization moved off the layout
-/// *kind* onto block/section selection (GUS-19), so the `custom` kind is
-/// no longer Pro-gated here. (Free `blockOnly` layouts are still capped at
-/// [kFreeMaxBlocksPerLayout] blocks, and the add-block / add-section
-/// sheets gate individual Pro blocks/sections.)
+/// Only [LayoutKind.blockOnly] and [LayoutKind.custom] are offered.
+/// `fixedFourPlusText` was retired from the picker (GUS-31) — the enum
+/// value is kept (append-only) so any pre-existing layout of that kind
+/// still opens, but new ones can no longer be created.
+///
+/// Both offered kinds are free to pick — monetization moved off the
+/// layout *kind* onto block/section selection (GUS-19), so the `custom`
+/// kind is no longer Pro-gated here. (Free `blockOnly` layouts are still
+/// capped at [kFreeMaxBlocksPerLayout] blocks, and the add-block /
+/// add-section sheets gate individual Pro blocks/sections.)
 Future<LayoutKind?> showLayoutKindPickerSheet(BuildContext context) {
   return showModalBottomSheet<LayoutKind>(
     context: context,
@@ -35,14 +40,6 @@ Future<LayoutKind?> showLayoutKindPickerSheet(BuildContext context) {
             description:
                 'A single grid of 1×1 blocks. Add, remove, and reorder them freely.',
             onTap: () => Navigator.of(sheetContext).pop(LayoutKind.blockOnly),
-          ),
-          _KindTile(
-            icon: HugeIcons.strokeRoundedLayout01,
-            label: '4 blocks + text',
-            description:
-                'A 2×2 block grid above a text section. Pick the four block types — structure is locked.',
-            onTap: () =>
-                Navigator.of(sheetContext).pop(LayoutKind.fixedFourPlusText),
           ),
           _KindTile(
             icon: HugeIcons.strokeRoundedAddCircle,
