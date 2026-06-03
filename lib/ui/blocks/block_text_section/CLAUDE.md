@@ -25,25 +25,34 @@ type, so their order inside `EntrySection.blocks` is irrelevant.
 
 ## Modes
 
-- `BlockMode.readOnly` — the float-wrap. A `LayoutBuilder` sizes the
-  float block to a square (~42% of width, clamped 120–200), wrapped in
-  a `WidgetSpan(alignment: PlaceholderAlignment.top)` as the first
-  inline element of a `Text.rich`; the text `TextSpan` flows to its
-  right and wraps full-width once it passes the block's bottom. Empty
-  text shows "No text yet" italic + `disabledColor`. When `floatBlock`
-  is null, falls back to a plain padded `Text` (like a text section).
-- `BlockMode.editable` — the `Text.rich` float-wrap is **not** used (an
-  editable `TextField` can't live inside a `WidgetSpan`). Instead the
-  float block sits in a `Row` as a left square (~42% width, clamped
-  120–200, sized via a `LayoutBuilder` that **wraps the whole Row** —
-  a `LayoutBuilder` placed directly as a Row child gets unbounded
-  width), still tappable to configure (double-tap → `onRequestBlockEdit`),
-  with the `TextSectionWidget` in an `Expanded` **to its right** (its
-  own in-place/expanded edit path via `onRequestTextSectionEdit` +
-  `textEditing`). The text grows vertically beside the block rather
-  than wrapping under it. When `floatBlock` is null, the text is
-  full-width (no Row). `TextSectionWidget`'s own 16px horizontal
-  padding doubles as the gap to the block + the right margin.
+**Both modes render the SAME `Text.rich` float-wrap for display** so
+the text genuinely wraps around the block in the entry (the user's
+explicit requirement). The float block is the first inline element via
+`WidgetSpan(alignment: PlaceholderAlignment.top)`; the text `TextSpan`
+flows to its right and wraps full-width once it passes the block's
+bottom.
+
+- **Block size = a real grid tile.** A `LayoutBuilder` (hoisted ABOVE
+  the horizontal padding, so `maxWidth` is the full section width)
+  computes `_gridTileSize(maxWidth) = ((maxWidth - 44) / 2).clamp(120,
+  220)` — the same width one tile occupies in a 2-column `BlockGrid`
+  (16px left + 16px right padding + 12px inter-column spacing, ÷2).
+  Don't reintroduce the old `* 0.42` proportional size; it did NOT
+  match a grid tile.
+- `BlockMode.readOnly` — the float-wrap is inert. Empty text shows
+  "No text yet" italic + `disabledColor`. `floatBlock == null` →
+  plain padded `Text`.
+- `BlockMode.editable` — same float-wrap for display, but the whole
+  padded `Text.rich` is wrapped in a
+  `GestureDetector(behavior: HitTestBehavior.translucent, onTap:)`
+  that calls `onRequestTextSectionEdit(textBlock)` → opens the
+  expanded editor route (an editable `TextField` **can't** live inside
+  a `WidgetSpan`, so editing is delegated, not inline). The float
+  block sits deeper in the gesture arena (its own `GestureDetector`
+  inside `BlockWidget` wins for taps on it), so the translucent tap
+  only fires for the surrounding text. Empty text shows a "Tap to
+  write…" italic hint. `floatBlock == null` → full-width plain `Text`
+  wrapped in the same tap-to-edit `GestureDetector`.
 
 The float block subtree mirrors the journal pager's `featureBlock`
 case: `Hero(tag: blockHeroTag(block.id))` → `Material` →
@@ -66,4 +75,5 @@ same way (double-tap only when editable && `usesEditMode`).
 
 - The float arrangement changes (e.g. float-right option, configurable
   block size).
-- The editable layout diverges from "block stacked above field".
+- The block-size formula diverges from a grid tile, or the editable
+  edit path stops delegating to the expanded route.

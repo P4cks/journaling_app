@@ -839,17 +839,18 @@ class _BlockTextSectionBody extends StatelessWidget {
     final sectionId = section.id;
     final slots = section.slots;
 
-    // Size the float block the same proportional way the materialized
-    // entry does (~42% of width, clamped) so the editor preview matches
-    // a "normal" block size, not a fixed 120px square. LayoutBuilder must
-    // wrap the whole Row — a LayoutBuilder placed directly as a Row child
-    // gets unbounded width (maxWidth == infinity).
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final blockSize = (constraints.maxWidth * 0.42).clamp(120.0, 200.0);
-          return Row(
+    // Size the float block to exactly one tile of a 2-column BlockGrid so
+    // the editor preview matches a "normal" block. The grid reserves 16px
+    // left + 16px right padding + 12px inter-column spacing, so a single
+    // tile is (fullWidth - 44) / 2. LayoutBuilder sits ABOVE the padding so
+    // `maxWidth` is the full section width (a LayoutBuilder placed directly
+    // as a Row child would get unbounded width).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final blockSize = ((constraints.maxWidth - 44) / 2).clamp(120.0, 220.0);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
@@ -866,9 +867,9 @@ class _BlockTextSectionBody extends StatelessWidget {
               const SizedBox(width: 12),
               const Expanded(child: _TextSectionPreview()),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -177,11 +177,13 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [block_text_section/block_text_section_widget.dart](block_text_section/block_text_section_widget.dart) —
   `BlockTextSectionWidget`. Renders a `SectionKind.blockTextBody`
   section (GUS-9): a photo/memory block floated top-left with text
-  wrapping around it. Read mode uses `Text.rich` +
-  `WidgetSpan(alignment: PlaceholderAlignment.top)` (zero new
-  dependency); editable mode stacks the still-tappable float block
-  above a full-width `TextSectionWidget`. Takes the two blocks
-  separately (`floatBlock` nullable, `textBlock` required). See
+  wrapping around it. **Both modes** use the same `Text.rich` +
+  `WidgetSpan(alignment: PlaceholderAlignment.top)` float-wrap (zero
+  new dependency); the float block is sized to a real grid tile
+  (`(maxWidth-44)/2`). In editable mode the wrap is wrapped in a
+  translucent tap that opens the expanded text editor (a `TextField`
+  can't live in a `WidgetSpan`). Takes the two blocks separately
+  (`floatBlock` nullable, `textBlock` required). See
   [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
   `WannadoSectionWidget`. Renders a `SectionKind.wannado` section

@@ -82,107 +82,95 @@ class BlockTextSectionWidget extends StatelessWidget {
     );
   }
 
+  /// Block tile width that matches a single tile in a 2-column
+  /// `BlockGrid`: full section width minus the grid's 16px left + 16px
+  /// right padding + 12px inter-column spacing, divided by 2. Clamped so
+  /// it never gets absurd on very wide / very narrow viewports.
+  static double _gridTileSize(double maxWidth) =>
+      ((maxWidth - 44) / 2).clamp(120.0, 220.0);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final float = floatBlock;
+    final content = TextBlockContent.fromMap(textBlock.content);
+    final isEmpty = content.text.trim().isEmpty;
+    final editable = mode == BlockMode.editable;
 
-    if (mode == BlockMode.readOnly) {
-      final content = TextBlockContent.fromMap(textBlock.content);
-      final isEmpty = content.text.trim().isEmpty;
-      final textStyle = theme.textTheme.bodyMedium?.copyWith(
-        fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
-        color: isEmpty ? theme.disabledColor : null,
-      );
-      final displayText = isEmpty ? 'No text yet' : content.text;
-
-      if (float == null) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Text(displayText, style: textStyle),
-        );
-      }
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final blockSize = (constraints.maxWidth * 0.42).clamp(120.0, 200.0);
-            return Text.rich(
-              TextSpan(
-                children: [
-                  WidgetSpan(
-                    alignment: PlaceholderAlignment.top,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 12, bottom: 8),
-                      child: SizedBox(
-                        width: blockSize,
-                        height: blockSize,
-                        child: _buildFloatBlock(context, float),
-                      ),
-                    ),
-                  ),
-                  TextSpan(text: displayText, style: textStyle),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    // Editable: the text field sits to the RIGHT of the float block
-    // (still tappable to configure), mirroring the read-mode float
-    // arrangement. The text grows vertically beside the block rather
-    // than wrapping under it — an editable TextField can't live inside
-    // the `Text.rich` WidgetSpan used for the read-mode wrap.
-    final textField = TextSectionWidget(
-      key: ValueKey(textBlock.id),
-      data: textBlock,
-      mode: mode,
-      onChanged: onBlockChanged,
-      editing: textEditing,
-      onDoubleTap: onRequestTextSectionEdit == null
-          ? null
-          : () => onRequestTextSectionEdit!(textBlock),
+    // In editable mode an empty text block shows an actionable hint;
+    // in read-only mode it mirrors the text section's "No text yet".
+    final displayText = isEmpty
+        ? (editable ? 'Tap to write…' : 'No text yet')
+        : content.text;
+    final textStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+      color: isEmpty ? theme.disabledColor : null,
     );
 
+    // Tapping the text (anywhere not on the float block) opens the
+    // expanded editor. The float block sits deeper in the gesture arena
+    // (its own GestureDetector inside BlockWidget wins for taps on it),
+    // so this translucent tap only fires for the surrounding text.
+    void Function()? onTextTap;
+    if (editable && onRequestTextSectionEdit != null) {
+      onTextTap = () => onRequestTextSectionEdit!(textBlock);
+    }
+
+    // No float block: plain full-width text. Editable still routes taps
+    // to the expanded editor (read-only is inert).
     if (float == null) {
-      // No float block configured — full-width text field.
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: textField,
+      final plain = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Text(displayText, style: textStyle),
+      );
+      if (onTextTap == null) return plain;
+      return GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: onTextTap,
+        child: plain,
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      // LayoutBuilder must wrap the whole Row: a LayoutBuilder placed
-      // directly as a Row child is laid out with unbounded width, so
-      // `maxWidth` would be infinity. Compute the block size from the
-      // full row width here, then hand it down.
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final blockSize = (constraints.maxWidth * 0.42).clamp(120.0, 200.0);
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16, top: 12),
-                child: SizedBox(
-                  width: blockSize,
-                  height: blockSize,
-                  child: _buildFloatBlock(context, float),
+    // Both modes render the same `Text.rich` + `WidgetSpan` float-wrap so
+    // the text wraps around the block (magazine `float: left`). The
+    // editable TextField can't live inside a WidgetSpan, so editing is
+    // delegated to the expanded route via the surrounding tap.
+    //
+    // LayoutBuilder sits ABOVE the horizontal padding so `maxWidth` is the
+    // full section width — `_gridTileSize` subtracts the grid's own
+    // paddings to reproduce a real grid tile's width.
+    final wrap = LayoutBuilder(
+      builder: (context, constraints) {
+        final blockSize = _gridTileSize(constraints.maxWidth);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.top,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12, bottom: 8),
+                    child: SizedBox(
+                      width: blockSize,
+                      height: blockSize,
+                      child: _buildFloatBlock(context, float),
+                    ),
+                  ),
                 ),
-              ),
-              // TextSectionWidget supplies its own 16px horizontal
-              // padding, which doubles as the gap to the block and the
-              // right margin.
-              Expanded(child: textField),
-            ],
-          );
-        },
-      ),
+                TextSpan(text: displayText, style: textStyle),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (onTextTap == null) return wrap;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: onTextTap,
+      child: wrap,
     );
   }
 }
