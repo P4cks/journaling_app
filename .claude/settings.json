@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "mcp__5ae8304c-5249-427b-bb67-efd37c9c2e1c__get_issue"
+    ]
+  }
+}
