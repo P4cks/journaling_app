@@ -7,9 +7,9 @@ then full-width beneath it — the magazine `float: left` look.
 ## Files
 
 - [block_text_section_widget.dart](block_text_section_widget.dart) —
-  `BlockTextSectionWidget` (StatefulWidget, uses
-  `TextContentControllerMixin`). Composes a `BlockWidget` (the float
-  block) with measured wrapping text + an inline editor.
+  `BlockTextSectionWidget` (StatelessWidget). Composes a `BlockWidget`
+  (the float block) with measured wrapping text; editing is delegated
+  to the expanded route.
 
 ## Content shape
 
@@ -63,32 +63,21 @@ to a single `Text.rich` float.
 - `BlockMode.readOnly` — the float-wrap is inert. Empty text shows
   "No text yet" italic + `disabledColor`. `floatBlock == null` →
   plain padded `Text`.
-- `BlockMode.editable` — single tap edits **in place**, double tap
-  opens the expanded route. This matches every other block:
-  - The display (float-wrap, or full-width `Text` when `floatBlock ==
-    null`) is wrapped in a `GestureDetector(behavior: translucent,
-    onTap: _enterEdit, onDoubleTap: → onRequestTextSectionEdit)`. The
-    float block sits deeper in the gesture arena (its own
-    `GestureDetector` inside `BlockWidget`), so the translucent tap
-    only fires for the surrounding text. The `GestureDetector` with
-    both `onTap`+`onDoubleTap` is what delays the single tap by the
-    double-tap timeout, so a double tap doesn't first flash the
-    keyboard.
-  - `_enterEdit` flips a local `_editing` flag → the build swaps to
-    `_buildEditor`, an `autofocus: true` `TextField` (block stays
-    floated-left, the field fills the column to its right; no jump). A
-    `TextField` **can't** flow around an inline block, so editing
-    intentionally does NOT wrap — it returns to the wrapping display on
-    blur.
-  - A `focusNode` listener flips `_editing` back to false when the
-    field loses focus (Done / tap-outside), so the float-wrap display
-    (which reflows text under the block) reappears.
+- `BlockMode.editable` — a tap on the text opens the **expanded
+  route** for editing. The display (float-wrap, or full-width `Text`
+  when `floatBlock == null`) is wrapped in a `GestureDetector(behavior:
+  translucent, onTap: → onRequestTextSectionEdit)`. The float block
+  sits deeper in the gesture arena (its own `GestureDetector` inside
+  `BlockWidget`), so the translucent tap only fires for the surrounding
+  text — taps on the block engage it (double-tap → `onRequestBlockEdit`).
 
-The controller / focus / per-keystroke emit come from
-`TextContentControllerMixin` (shared with the 1×1 text block and the
-full-width text section). The char cap + visible counter come from
-`BlockInputLimits.of(debug).textSectionChars` + `buildCharCounter()`,
-the same as `TextSectionWidget`.
+  **Why delegate instead of editing in place?** A `TextField` can't
+  flow around the inline block, so an in-place editor has to drop the
+  wrap. The only stable layout (block-left + narrow field-right) then
+  reflows the text awkwardly when the field loses focus and the
+  display re-wraps it under the block. Sending the tap straight to the
+  expanded route gives the text the full width and avoids that reflow
+  surprise — this was a deliberate call after trying the inline editor.
 
 The float block subtree mirrors the journal pager's `featureBlock`
 case: `Hero(tag: blockHeroTag(block.id))` → `Material` →
@@ -102,16 +91,13 @@ same way (double-tap only when editable && `usesEditMode`).
   …))`.** Using a non-zero `x` would snap to the *end* of the line at
   that height and could split mid-line, leaving a ragged seam between
   the beside text and the below text. Keep `x == 0`.
-- **Editing replaces the wrap, it doesn't wrap.** A `TextField` can't
-  live in a float, so the in-place editor is a block-left + field-right
-  `Row`. The block keeps its grid-tile size/position so there's no jump
-  between display and edit.
-- **`autofocus: true` is what raises the keyboard on single tap.** The
-  editor `TextField` is only mounted while `_editing` is true; it
-  autofocuses on mount. Don't drive focus through the mixin's `editing`
-  override here — this widget owns `_editing` locally instead of taking
-  an external `editingBlockId`/`textEditing` flag (the pager no longer
-  passes one).
+- **Editing is delegated, not in place.** A `TextField` can't flow
+  around the inline block, and the stable in-place layout (block-left +
+  narrow field-right) reflows the text on blur. So the widget is
+  stateless and a tap just calls `onRequestTextSectionEdit` → expanded
+  route. There is no `editingBlockId`/`textEditing` flag (the pager no
+  longer passes one). If you re-add an inline editor, you must solve the
+  on-blur reflow first.
 - **The text block is not an editor slot.** It's materialized fresh by
   `JournalRepository.materializeLayout`; only the float block lives in
   `SectionDraft.slots` / the layout template. Don't try to round-trip
@@ -122,5 +108,5 @@ same way (double-tap only when editable && `usesEditMode`).
 - The float arrangement changes (e.g. float-right option, configurable
   block size), or the measure/split heuristic changes.
 - The block-size formula diverges from a grid tile.
-- The edit affordance changes (e.g. inline editing learns to wrap, or
-  reverts to delegating to the expanded route).
+- The edit affordance changes (e.g. inline editing is reintroduced once
+  the wrap/reflow problem is solved).

@@ -182,8 +182,8 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   beside it + full-width remainder below — NOT a `Text.rich`
   `WidgetSpan`, which only wraps the first line). The float block is
   sized to a real grid tile (`(maxWidth-44)/2`). In editable mode a
-  single tap edits in place (`autofocus` `TextField`, block stays
-  floated-left), a double tap opens the expanded route. Takes the two
+  tap on the text opens the expanded route (editing is delegated — a
+  `TextField` can't wrap around the inline block). Takes the two
   blocks separately (`floatBlock` nullable, `textBlock` required). See
   [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —

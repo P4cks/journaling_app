@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
@@ -7,9 +6,6 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 /// Renders a `SectionKind.blockTextBody` section: a photo/memory block
 /// floated top-left with text wrapping around it (magazine `float:
@@ -23,17 +19,15 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 /// lines instead of dropping under it after one line — Flutter's
 /// `WidgetSpan` float only wraps the first line, so it is NOT used.
 ///
-/// **Editing** mirrors every other block: a single tap focuses an
-/// in-place `TextField`; a double tap opens the expanded route. A
-/// `TextField` can't wrap around an inline block, so while focused the
-/// layout swaps to block-left + field-right (the block keeps its
-/// position, so there's no jump); on blur it returns to the float-wrap
-/// display, which reflows the text under the block.
+/// **Editing** is delegated to the expanded route: a `TextField` can't
+/// flow around an inline block, and an in-place narrow-column editor
+/// reflows the text awkwardly on blur, so a tap on the text opens the
+/// expanded editor directly (where the text gets the full width).
 ///
 /// The two blocks are passed in separately and looked up by the caller
 /// by type, so their order inside `EntrySection.blocks` is irrelevant.
 /// [floatBlock] is null when the layout template carried no float block.
-class BlockTextSectionWidget extends StatefulWidget {
+class BlockTextSectionWidget extends StatelessWidget {
   const BlockTextSectionWidget({
     super.key,
     required this.floatBlock,
@@ -60,54 +54,13 @@ class BlockTextSectionWidget extends StatefulWidget {
   /// Host's "engage float block" callback (double-tap → expand / fire).
   final ValueChanged<JournalBlockData>? onRequestBlockEdit;
 
-  /// Host's "engage text" callback (double-tap → expanded text route).
+  /// Host's "engage text" callback (tap → expanded text route).
   final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
-
-  @override
-  State<BlockTextSectionWidget> createState() => _BlockTextSectionWidgetState();
-}
-
-class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
-    with TextContentControllerMixin<BlockTextSectionWidget> {
-  /// True while the in-place `TextField` is mounted + focused. Driven to
-  /// true by a single tap, back to false when the field loses focus.
-  bool _editing = false;
-
-  @override
-  JournalBlockData get data => widget.textBlock;
-
-  @override
-  ValueChanged<JournalBlockData>? get onChanged => widget.onBlockChanged;
-
-  @override
-  void initState() {
-    super.initState();
-    focusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    focusNode.removeListener(_onFocusChange);
-    super.dispose();
-  }
-
-  // Leaving the field (Done / tap-outside) returns to the float-wrap
-  // display. Entering edit mode is driven by the tap handler, so only
-  // react to focus loss here.
-  void _onFocusChange() {
-    if (mounted && _editing && !focusNode.hasFocus) {
-      setState(() => _editing = false);
-    }
-  }
-
-  void _enterEdit() {
-    if (!_editing) setState(() => _editing = true);
-  }
 
   Widget _buildFloatBlock(BuildContext context, JournalBlockData block) {
     final canDoubleTap =
-        widget.mode == BlockMode.editable &&
-        widget.onRequestBlockEdit != null &&
+        mode == BlockMode.editable &&
+        onRequestBlockEdit != null &&
         block.type.usesEditMode;
     return Hero(
       tag: blockHeroTag(block.id),
@@ -119,13 +72,11 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
           child: BlockWidget(
             key: ValueKey(block.id),
             data: block,
-            mode: widget.mode,
-            onChanged: widget.onBlockChanged,
-            onJumpToDate: widget.onJumpToDate,
-            onInteractionLockChanged: widget.onLockChanged,
-            onDoubleTap: canDoubleTap
-                ? () => widget.onRequestBlockEdit!(block)
-                : null,
+            mode: mode,
+            onChanged: onBlockChanged,
+            onJumpToDate: onJumpToDate,
+            onInteractionLockChanged: onLockChanged,
+            onDoubleTap: canDoubleTap ? () => onRequestBlockEdit!(block) : null,
           ),
         ),
       ),
@@ -146,10 +97,10 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final float = widget.floatBlock;
-    final content = TextBlockContent.fromMap(widget.textBlock.content);
+    final float = floatBlock;
+    final content = TextBlockContent.fromMap(textBlock.content);
     final isEmpty = content.text.trim().isEmpty;
-    final editable = widget.mode == BlockMode.editable;
+    final editable = mode == BlockMode.editable;
 
     // In editable mode an empty text block shows an actionable hint;
     // in read-only mode it mirrors the text section's "No text yet".
@@ -165,13 +116,6 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         final blockSize = _gridTileSize(maxWidth);
-
-        // Editable + focused → inline editor (a TextField can't wrap
-        // around the block, so editing swaps to block-left + field-right;
-        // the block keeps its position so there's no jump).
-        if (editable && _editing) {
-          return _buildEditor(context, theme, float, blockSize);
-        }
 
         final display = float == null
             ? Padding(
@@ -190,18 +134,16 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
                 textStyle,
               );
 
-        if (!editable) return display;
+        if (!editable || onRequestTextSectionEdit == null) return display;
 
-        // Single tap → inline edit; double tap → expanded route. The
-        // translucent behaviour lets taps on the float block reach its
-        // own gesture detector (engage / expand the block) — only taps
-        // on the surrounding text fall through to these handlers.
+        // A tap on the text opens the expanded editor directly (a
+        // TextField can't wrap around the inline block, so editing is
+        // delegated rather than done in place). The translucent
+        // behaviour lets taps on the float block reach its own gesture
+        // detector — only taps on the surrounding text fall through.
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
-          onTap: _enterEdit,
-          onDoubleTap: widget.onRequestTextSectionEdit == null
-              ? null
-              : () => widget.onRequestTextSectionEdit!(widget.textBlock),
+          onTap: () => onRequestTextSectionEdit!(textBlock),
           child: display,
         );
       },
@@ -238,10 +180,7 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
         padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            blockChild,
-            Text(displayText, style: textStyle),
-          ],
+          children: [blockChild, Text(displayText, style: textStyle)],
         ),
       );
     }
@@ -277,66 +216,6 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
             ],
           ),
           if (below.isNotEmpty) Text(below, style: textStyle),
-        ],
-      ),
-    );
-  }
-
-  /// In-place editor shown while the text field is focused. A
-  /// `TextField` can't flow around the block, so the block stays
-  /// floated-left and the field fills the column to its right.
-  Widget _buildEditor(
-    BuildContext context,
-    ThemeData theme,
-    JournalBlockData? float,
-    double blockSize,
-  ) {
-    final debug = AppDependencies.of(context).debugSettings;
-    final field = ListenableBuilder(
-      listenable: debug,
-      builder: (context, _) => TextField(
-        controller: controller,
-        focusNode: focusNode,
-        autofocus: true,
-        maxLines: null,
-        minLines: float == null ? 4 : (blockSize / 24).floor().clamp(4, 8),
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
-        style: theme.textTheme.bodyMedium,
-        maxLength: BlockInputLimits.of(debug).textSectionChars,
-        maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter: buildCharCounter(),
-        decoration: const InputDecoration(
-          hintText: 'Write something…',
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onChanged: emitText,
-      ),
-    );
-
-    if (float == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
-        child: field,
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: _gap, bottom: _bottomGap),
-            child: SizedBox(
-              width: blockSize,
-              height: blockSize,
-              child: _buildFloatBlock(context, float),
-            ),
-          ),
-          Expanded(child: field),
         ],
       ),
     );
