@@ -40,6 +40,23 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            // The Dart side reads via --dart-define; this is just for documentation
+            // buildConfigField("String", "REVENUECAT_API_KEY", "\"test_UHarMPzXLEUHFTZqqcFVHqhtKhF\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            // Production flavor has the same applicationId as the release
+            // The API key is passed via --dart-define at build time
+            // buildConfigField("String", "REVENUECAT_API_KEY", "\"TODO: appl_... from RevenueCat dashboard\"")
+        }
+    }
 }
 
 flutter {

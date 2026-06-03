@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/config/app_flavor.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 /// RevenueCat entitlement identifier for "Journaling App Pro".
@@ -10,25 +11,26 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// change ONLY this constant — every gate reads through it.
 const String kProEntitlementId = 'pro';
 
-/// RevenueCat Test Store key (the `test_` prefix). Correct for development /
-/// sandbox across both platforms. For production store builds, replace the two
-/// per-platform constants below with the real public SDK keys
-/// (`appl_…` for App Store, `goog_…` for Google Play).
-const String _revenueCatTestKey = 'test_UHarMPzXLEUHFTZqqcFVHqhtKhF';
-const String _revenueCatIosKey = _revenueCatTestKey; // TODO: appl_... for prod
-const String _revenueCatAndroidKey =
-    _revenueCatTestKey; // TODO: goog_... for prod
-
 /// Thin wrapper over the `purchases_flutter` SDK. This is the **only** file
 /// that imports `purchases_flutter`; everything else goes through
 /// [SubscriptionRepository]. Keeps the SDK surface in one place so swapping
 /// keys or SDK calls never leaks into the UI/data layers.
+///
+/// The RevenueCat API key is flavor-aware: pass `--dart-define` at build time.
+/// See [AppFlavor] for details.
 class SubscriptionService {
   /// Configures the SDK. Must be called exactly once, before any other
   /// `Purchases` call. Invoked from `main()` before the repository is built.
+  ///
+  /// The API key is determined by the current [AppFlavor]. For local development
+  /// and TestFlight, use the test key. For production (App Store / Play Store),
+  /// use the production key passed via `--dart-define=REVENUECAT_API_KEY=appl_...`.
   static Future<void> configure() async {
     await Purchases.setLogLevel(kDebugMode ? LogLevel.debug : LogLevel.warn);
-    final key = Platform.isAndroid ? _revenueCatAndroidKey : _revenueCatIosKey;
+    final key = AppFlavor.revenueCatApiKey;
+    debugPrint(
+      '[SubscriptionService] Configuring RevenueCat with key: $key (${AppFlavor.flavorName})',
+    );
     await Purchases.configure(PurchasesConfiguration(key));
   }
 
