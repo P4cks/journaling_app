@@ -97,12 +97,12 @@ pushes these screens.
 | `showThemeEditorSheet`    | —                       | add/edit user themes                |
 | `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
 | `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
-| `SettingsSection` "Debug" | `debugSettings`         | debug rows render only when enabled |
+| `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
+| `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
 | `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
-| Input-limit caption + 5 `_DebugLimitTile`s | `debugSettings` | tune per-block char/item caps; see below |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
@@ -124,30 +124,20 @@ pushes these screens.
   and SnackBars the created count. Lets you populate the statistics
   charts with ~400 days of random mood + text data.
 
-## Debug input-limit controls (GUS-10)
+## Debug menu visibility (GUS-10 follow-up)
 
-Inside `if (debug.debugMenuVisible) ...[` (above the surface-color
-overrides) sits an italic caption — *"Input-limit tuning — these
-override the per-block character caps for testing. Once you settle on
-good values, hard-code them into `BlockInputLimits` defaults and drop
-the debug overrides."* — followed by 5 `_DebugLimitTile`s bound to
-`DebugSettings`' nullable-int override getters/setters
-(`textBlockCharLimit`, `textSectionCharLimit`, `promptCharLimit`,
-`todoItemCharLimit`, `todoMaxItems`). Each tile's `defaultValue` is the
-matching `BlockInputLimits` constant (`kTextBlockMaxChars`,
-`kTextSectionMaxChars`, `kPromptAnswerMaxChars`, `kTodoItemMaxChars`,
-`kTodoMaxItems`). The blocks resolve the effective value via
-`BlockInputLimits.of(debugSettings)` (override ?? default) and rebuild
-live through `ListenableBuilder(listenable: debugSettings)`, so editing
-a value here updates any open block immediately.
+The entire Settings → "Debug" `SettingsSection` is wrapped in a
+collection-`if (kDebugMode)` (from `package:flutter/foundation.dart`),
+so in release builds it — including the "Show debug menu" toggle — is
+absent from the tree and a production user can never reach the
+destructive actions, the "simulate free account" override, or the
+color overrides. Inside a debug build the existing `debugMenuVisible`
+toggle still gates the detailed rows.
 
-- `_DebugLimitTile` (`StatelessWidget`) — `ListTile` showing the
-  effective value (trailing) and an "override N / default M" subtitle.
-  `_edit` opens an `AlertDialog` with a numeric `TextField` and three
-  actions: **Reset to default** pops the sentinel `-1`, **Cancel** pops
-  `null`, **Save** pops the parsed int (or `null` when blank/invalid/≤0).
-  `onChanged` maps `< 0` → `null` (clear override) so a reset restores
-  the default; a positive int sets the override.
+The former per-block input-limit tuning tiles (`_DebugLimitTile`, the
+italic caption, the `BlockInputLimits` scaffold) were **removed** —
+text blocks/sections/prompt answers/todo items are now uncapped; only
+the header keeps a fixed 60-char cap.
 
 ## Private widgets
 

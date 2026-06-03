@@ -180,7 +180,10 @@ class BlockTextSectionWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [blockChild, Text(displayText, style: textStyle)],
+          children: [
+            blockChild,
+            Text(displayText, style: textStyle),
+          ],
         ),
       );
     }

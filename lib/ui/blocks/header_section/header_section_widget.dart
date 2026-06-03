@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
+
+/// Max chars for a heading. A short fixed cap — the header is the only
+/// remaining capped text input (blocks and sections are uncapped).
+const int kHeaderSectionMaxChars = 60;
 
 /// Single-line heading section (`SectionKind.header`, GUS-6, FREE).
 ///
@@ -80,12 +83,12 @@ class _HeaderSectionWidgetState extends State<HeaderSectionWidget>
         style: style,
         maxLength: kHeaderSectionMaxChars,
         maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter: buildCharCounter(onlyWhenFocused: true),
         decoration: const InputDecoration(
           hintText: 'Heading',
           border: InputBorder.none,
           isDense: true,
           contentPadding: EdgeInsets.zero,
+          counterText: '',
         ),
         onChanged: emitText,
       ),

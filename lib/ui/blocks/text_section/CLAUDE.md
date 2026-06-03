@@ -24,13 +24,11 @@ trick lets the section reuse the existing JSON path and the
 - `BlockMode.readOnly` — plain `Text` in the same padded container.
   Empty text shows "No text yet" in italic + `disabledColor`.
 - `BlockMode.editable` — `TextField` with `maxLines: null`, `minLines: 4`,
-  no `expands`. Grows with content, capped at
-  `BlockInputLimits.of(debug).textSectionChars` (default
-  `kTextSectionMaxChars` = 280, debug-overridable) with a **visible**
-  `current/limit` counter (`buildCharCounter()`). The expanded-route
-  variant (`expands: true`) carries the same cap + counter. Both fields
-  are wrapped in `ListenableBuilder(listenable: debugSettings)` for live
-  tuning.
+  no `expands`. Grows with content; input is **uncapped** (the GUS-10
+  char-cap scaffold was removed — no `maxLength`, no enforcement, no
+  counter). The expanded-route variant (`expands: true`) is likewise
+  uncapped and scrolls. Sections are full-width long-form regions —
+  unlike the 1×1 blocks they are **never truncated**.
   - Wrapped in `AbsorbPointer(absorbing: !widget.editing)` so
     single-taps do not focus the field. The double-tap detector lives
     in `_SectionsBody` (the section-aware journal pager body) — see

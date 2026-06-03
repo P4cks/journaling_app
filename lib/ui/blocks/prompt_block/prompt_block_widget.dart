@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -18,6 +16,7 @@ class PromptBlockWidget extends StatefulWidget {
     this.onChanged,
     this.onDoubleTap,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -31,6 +30,11 @@ class PromptBlockWidget extends StatefulWidget {
   /// True when this block is the active edit target. Focuses the answer
   /// field; gates inner pointer events so single taps are inert.
   final bool editing;
+
+  /// True when rendered inside the expanded route. The answer field
+  /// becomes scrollable so the full (uncapped) text is reachable; in the
+  /// grid it stays clipped to the fixed 1×1 cell.
+  final bool expanded;
 
   @override
   State<PromptBlockWidget> createState() => _PromptBlockWidgetState();
@@ -236,18 +240,34 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     if (!isEditable) {
       final answer = content.answer.trim();
       final isEmpty = answer.isEmpty;
+      final answerStyle = theme.textTheme.bodyMedium?.copyWith(
+        fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+        color: isEmpty ? theme.disabledColor : null,
+      );
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           promptLabel,
           const SizedBox(height: 6),
+          // Answer is uncapped on input but the cell is fixed-size, so
+          // truncate the read-only display to what fits + ellipsis.
           Expanded(
-            child: Text(
-              isEmpty ? 'Not answered yet' : content.answer,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
-                color: isEmpty ? theme.disabledColor : null,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final lineHeight = TextPainter(
+                  text: TextSpan(text: 'A', style: answerStyle),
+                  textDirection: Directionality.of(context),
+                ).preferredLineHeight;
+                final maxLines = (constraints.maxHeight / lineHeight)
+                    .floor()
+                    .clamp(1, 1 << 30);
+                return Text(
+                  isEmpty ? 'Not answered yet' : content.answer,
+                  style: answerStyle,
+                  maxLines: maxLines,
+                  overflow: TextOverflow.ellipsis,
+                );
+              },
             ),
           ),
         ],
@@ -289,31 +309,27 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
             child: DelayedTapFocus(
               focusNode: _focusNode,
               onDoubleTap: widget.onDoubleTap,
-              child: ListenableBuilder(
-                listenable: AppDependencies.of(context).debugSettings,
-                builder: (context, _) {
-                  final debug = AppDependencies.of(context).debugSettings;
-                  return TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    expands: true,
-                    maxLines: null,
-                    minLines: null,
-                    keyboardType: TextInputType.multiline,
-                    textAlignVertical: TextAlignVertical.top,
-                    maxLength: BlockInputLimits.of(debug).promptChars,
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                    buildCounter: buildCharCounter(),
-                    decoration: const InputDecoration(
-                      hintText: 'Your answer…',
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onChanged: (value) =>
-                        _emit(prompt: content.prompt, answer: value),
-                  );
-                },
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                keyboardType: TextInputType.multiline,
+                textAlignVertical: TextAlignVertical.top,
+                // Grid clips to the fixed cell; expanded route scrolls
+                // so the full uncapped answer is reachable.
+                scrollPhysics: widget.expanded
+                    ? const ClampingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                decoration: const InputDecoration(
+                  hintText: 'Your answer…',
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (value) =>
+                    _emit(prompt: content.prompt, answer: value),
               ),
             ),
           ),

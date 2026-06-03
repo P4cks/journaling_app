@@ -30,30 +30,16 @@ text block and the full-width text section.
   into block content (`onSelected`). Custom-carousel orphan handling
   stays in `CustomCarouselWidget` — the scaffold only sees a
   resolved, non-empty options list.
-- [block_input_limits.dart](block_input_limits.dart) — per-block-type
-  input caps + the shared visible counter (GUS-10 rework). Replaces the
-  old single hidden `kTextInputMaxChars`.
-  - Hard-coded defaults: `kTextBlockMaxChars` (280),
-    `kTextSectionMaxChars` (280), `kHeaderSectionMaxChars` (60),
-    `kPromptAnswerMaxChars` (280), `kTodoItemMaxChars` (80),
-    `kTodoMaxItems` (8). These are the shipped values — the debug menu
-    can override any of them at runtime (see `DebugSettings`
-    nullable-int fields). Once a tuned value is settled, bake it back
-    into the constant here and drop the override.
-    `kHeaderSectionMaxChars` is consumed **directly** by
-    `HeaderSectionWidget` (not surfaced through `BlockInputLimits.of`
-    or a debug override) — it's a short fixed cap, no live tuning.
-  - `BlockInputLimits.of(debugSettings)` resolves the **effective**
-    value per limit (`override ?? default`). Call once per build and
-    read the field you need. Wrap the editable subtree in
-    `ListenableBuilder(listenable: debugSettings)` so live debug tuning
-    re-resolves and updates open blocks.
-  - `buildCharCounter({onlyWhenFocused})` — a shared
-    `TextField.buildCounter` that renders a compact `current/limit`
-    counter (labelSmall, `onSurfaceVariant` → `error` at the cap).
-    Visible when focused or non-empty; pass `onlyWhenFocused: true` for
-    dense layouts (todo rows) so only the active field shows its
-    counter.
+- **Character caps were removed.** The old `block_input_limits.dart`
+  (per-block char caps + shared visible counter + debug-tunable
+  overrides, GUS-10) is **deleted**. Text blocks, prompt answers, todo
+  items, and text sections now accept **unlimited** input. 1×1 blocks
+  truncate their read-only display with an ellipsis to fit the fixed
+  cell and scroll only in the expanded route; text sections grow/scroll
+  freely. The only surviving cap is `kHeaderSectionMaxChars` (60),
+  now a local constant inside `HeaderSectionWidget`. The todo
+  **item-count** cap (`kTodoMaxItems` = 8) survives as a local constant
+  in `TodoBlockWidget` (a count, not a char cap).
 - [text_content_controller_mixin.dart](text_content_controller_mixin.dart) —
   `TextContentControllerMixin<T extends StatefulWidget> on State<T>`.
   Owns the `TextEditingController` + `FocusNode` lifecycle for State
@@ -170,9 +156,5 @@ text block and the full-width text section.
 - A new tunable is exposed on the carousel.
 - The text-content controller mixin grows new lifecycle hooks or its
   abstract surface changes.
-- A new per-block input limit is added, or the default values /
-  resolver / counter shape in `block_input_limits.dart` change (also
-  touch the matching block-type CLAUDE.md and the debug-menu docs in
-  `lib/ui/profile/view/CLAUDE.md`).
 - The carousel scaffold's surface area grows (new prop, new internal
   rendering rule like a custom empty placeholder).

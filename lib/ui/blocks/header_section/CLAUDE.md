@@ -26,8 +26,13 @@ seeds a `header` section with exactly one fresh empty `textBlock`
   "Heading" in italic + `disabledColor`.
 - `BlockMode.editable` — a capped single-line `TextField(maxLines: 1)`
   styled `titleLarge` bold, hint "Heading", `maxLength:
-  kHeaderSectionMaxChars` (60), counter via
-  `buildCharCounter(onlyWhenFocused: true)`.
+  kHeaderSectionMaxChars` (60) + `maxLengthEnforcement: enforced`. The
+  default Material counter is suppressed via `counterText: ''`. The
+  header is the **only remaining capped text input** in the app — all
+  other text blocks/sections are uncapped after the GUS-10 char-cap
+  scaffold was removed. `kHeaderSectionMaxChars` is now a **local
+  constant** in this file (it was the lone survivor of the deleted
+  `block_input_limits.dart`).
 
 ## Differences from `TextSectionWidget`
 

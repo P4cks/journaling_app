@@ -88,8 +88,8 @@ visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
 ## Block configuration lives elsewhere
 
 The layout editor only chooses **which** block types appear; it does
-not configure them. Per-type configuration (e.g. prompt list, text
-char limit) is global and edited from Profile → Block settings, backed
+not configure them. Per-type configuration (e.g. the prompt list) is
+global and edited from Profile → Block settings, backed
 by [BlockSettings](../../data/services/block_settings.dart). When an
 entry is materialized from a layout (see
 [data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md)),

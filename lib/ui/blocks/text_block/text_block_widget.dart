@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/text_content_controller_mixin.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 class TextBlockWidget extends StatefulWidget {
   const TextBlockWidget({
@@ -16,6 +13,7 @@ class TextBlockWidget extends StatefulWidget {
     this.onChanged,
     this.onDoubleTap,
     this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -37,6 +35,11 @@ class TextBlockWidget extends StatefulWidget {
   /// see [BlockGrid].
   final bool editing;
 
+  /// True when rendered inside the expanded route. The editable field
+  /// becomes scrollable so the full (uncapped) text is reachable; in the
+  /// grid it stays clipped to the fixed 1×1 cell.
+  final bool expanded;
+
   @override
   State<TextBlockWidget> createState() => _TextBlockWidgetState();
 }
@@ -57,14 +60,33 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
     if (widget.mode == BlockMode.readOnly) {
       final content = TextBlockContent.fromMap(widget.data.content);
       final isEmpty = content.text.trim().isEmpty;
+      final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
+        color: isEmpty ? Theme.of(context).disabledColor : null,
+      );
       return Padding(
         padding: const EdgeInsets.all(12),
-        child: Text(
-          isEmpty ? 'No text yet' : content.text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
-            color: isEmpty ? Theme.of(context).disabledColor : null,
-          ),
+        // Text is uncapped on input but the 1×1 cell is fixed-size, so
+        // truncate the read-only display to the number of lines that fit
+        // and append an ellipsis. `LayoutBuilder` sees the chrome's
+        // stable reference constraints (see block_chrome.dart).
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final lineHeight = TextPainter(
+              text: TextSpan(text: 'A', style: style),
+              textDirection: Directionality.of(context),
+            ).preferredLineHeight;
+            final maxLines = (constraints.maxHeight / lineHeight).floor().clamp(
+              1,
+              1 << 30,
+            );
+            return Text(
+              isEmpty ? 'No text yet' : content.text,
+              style: style,
+              maxLines: maxLines,
+              overflow: TextOverflow.ellipsis,
+            );
+          },
         ),
       );
     }
@@ -73,41 +95,33 @@ class _TextBlockWidgetState extends State<TextBlockWidget>
     // anywhere in the 160 px chrome area (including the 12 px inset)
     // reach the focus handler — see the chrome's "padding lives inside
     // each block widget" comment in `block_chrome.dart`.
-    final debug = AppDependencies.of(context).debugSettings;
     return DelayedTapFocus(
       focusNode: focusNode,
       onDoubleTap: widget.onDoubleTap,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: ListenableBuilder(
-          listenable: debug,
-          builder: (context, _) => SizedBox.expand(
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              expands: true,
-              maxLines: null,
-              minLines: null,
-              keyboardType: TextInputType.multiline,
-              textAlignVertical: TextAlignVertical.top,
-              // Internal scroll disabled — long content overflows the
-              // visible 1×1 cell and is clipped by the chrome's
-              // antiAlias clipBehavior. The block's content area is a
-              // fixed slot; users see what fits and the rest is stored
-              // but not shown. Re-enable only if the block model
-              // changes to a content-bounded variant.
-              scrollPhysics: const NeverScrollableScrollPhysics(),
-              maxLength: BlockInputLimits.of(debug).textBlockChars,
-              maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              buildCounter: buildCharCounter(),
-              decoration: const InputDecoration(
-                hintText: 'Write something…',
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: emitText,
+        child: SizedBox.expand(
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            expands: true,
+            maxLines: null,
+            minLines: null,
+            keyboardType: TextInputType.multiline,
+            textAlignVertical: TextAlignVertical.top,
+            // Grid host clips overflow to the fixed 1×1 cell (the
+            // chrome's antiAlias clipBehavior); the expanded route
+            // scrolls so the full uncapped text is reachable.
+            scrollPhysics: widget.expanded
+                ? const ClampingScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
+            decoration: const InputDecoration(
+              hintText: 'Write something…',
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
             ),
+            onChanged: emitText,
           ),
         ),
       ),
