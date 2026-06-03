@@ -84,6 +84,12 @@ coordination live.
       case — reuses the text JSON path + emptiness classification).
     - `SectionKind.divider` — yields an `EntrySection` with `blocks:
       const []` (purely visual; contributes nothing to emptiness).
+    - `SectionKind.blockTextBody` — yields an `EntrySection` whose
+      `blocks` list is `[if (template present) materialized float
+      block, fresh empty textBlock]`. The float block (0 or 1
+      template) materializes like `featureBlock`; the `textBlock` is
+      fresh + empty like `text`. The widget looks each up by type so
+      order is irrelevant.
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.

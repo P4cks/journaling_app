@@ -613,6 +613,7 @@ class _SectionCard extends StatelessWidget {
       SectionKind.featureBlock => ('Feature block', 'feature block'),
       SectionKind.header => ('Header', 'header'),
       SectionKind.divider => ('Divider', 'divider'),
+      SectionKind.blockTextBody => ('Block + text', 'block + text'),
     };
 
     return Container(
@@ -693,6 +694,10 @@ class _SectionCard extends StatelessWidget {
             SectionKind.divider => const Padding(
               padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
               child: Divider(height: 1),
+            ),
+            SectionKind.blockTextBody => _BlockTextSectionBody(
+              vm: vm,
+              sectionIndex: index,
             ),
           },
         ],
@@ -793,6 +798,56 @@ class _FeatureBlockSectionBody extends StatelessWidget {
                 onSwapType: () => _pickType(context, isSwap: true),
                 onRemove: () => vm.clearFeatureBlock(sectionId),
               ),
+      ),
+    );
+  }
+}
+
+/// Editor body for a `blockTextBody` section: the float-block picker
+/// (photo/memory, identical slot machinery to `_FeatureBlockSectionBody`)
+/// laid out left of a read-only text preview, hinting the magazine
+/// float arrangement a materialized entry will show.
+class _BlockTextSectionBody extends StatelessWidget {
+  const _BlockTextSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(
+      context,
+      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
+      title: isSwap ? 'Swap block' : 'Choose block',
+    );
+    if (picked == null) return;
+    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+    final slots = section.slots;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            height: 120,
+            child: slots.isEmpty
+                ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+                : _FilledCell(
+                    slot: slots.first,
+                    onSwapType: () => _pickType(context, isSwap: true),
+                    onRemove: () => vm.clearFeatureBlock(sectionId),
+                  ),
+          ),
+          const Expanded(child: _TextSectionPreview()),
+        ],
       ),
     );
   }

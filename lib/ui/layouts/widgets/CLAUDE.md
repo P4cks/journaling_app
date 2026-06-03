@@ -67,21 +67,21 @@ sheet is a stateless top-level function returning the user's pick or
     successful purchase; unlocked cells pop immediately.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
-  SubscriptionRepository subscriptions})`. Five-tile sheet (Text
-  section / Block grid / Header / Divider / Feature block), each
-  rendered via the private `_SectionTile` (with a `locked` flag).
-  Header (GUS-6) and Divider (GUS-7) are always free. Block-grid sections start
-  empty — there is no row picker; the user adds blocks afterwards and
-  the grid grows to fit. Feature-block sections also start empty; the
-  editor body lets the user pick one photo or memory block via
-  `showAddBlockSheet(allowedTypes: …)`. Custom-layout editor uses this
-  when the user taps the "Add section" zone at the bottom (passing
-  `subscriptions` from `AppDependencies`).
-  - **Feature block is Pro-only (GUS-19):** for free users
-    (`!kFreeSectionKinds.contains(featureBlock)`) the tile greys +
-    badges and tapping presents the paywall, popping
-    `SectionKind.featureBlock` only on a successful purchase. Text +
-    block-grid are always free.
+  SubscriptionRepository subscriptions})`. Six-tile sheet (Text
+  section / Block grid / Header / Divider / Feature block / Block +
+  text), each rendered via the private `_SectionTile` (with a `locked`
+  flag). Header (GUS-6) and Divider (GUS-7) are always free. Block-grid
+  sections start empty — there is no row picker; the user adds blocks
+  afterwards and the grid grows to fit. Feature-block and block-text
+  sections also start empty; the editor body lets the user pick one
+  photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
+  Custom-layout editor uses this when the user taps the "Add section"
+  zone at the bottom (passing `subscriptions` from `AppDependencies`).
+  - **Feature block (GUS-19) and Block + text (GUS-9) are Pro-only:**
+    for free users (`!kFreeSectionKinds.contains(kind)`) the tile greys
+    + badges and tapping presents the paywall, popping the kind only on
+    a successful purchase. Text + block-grid + header + divider are
+    always free.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)

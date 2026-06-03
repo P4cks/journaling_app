@@ -317,6 +317,23 @@ class JournalRepository extends ChangeNotifier {
             kind: SectionKind.divider,
             blocks: const [],
           ),
+          // Block + text body: the float block (photo/memory, 0 or 1
+          // template) materialized like `featureBlock`, plus a fresh
+          // empty `textBlock` (like `text`). The widget looks each up by
+          // type, so order is irrelevant.
+          SectionKind.blockTextBody => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.blockTextBody,
+            blocks: [
+              if (section.blocks.isNotEmpty)
+                _materializeOne(section.blocks.first, date, nextPromptSlot),
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: const TextBlockContent(text: '').toMap(),
+              ),
+            ],
+          ),
         },
     ];
   }

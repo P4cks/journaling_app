@@ -16,15 +16,23 @@
 ///   bold one-liner. (GUS-6, FREE.)
 /// - [divider] — a purely visual horizontal rule. Carries **no**
 ///   blocks; renders even with an empty `blocks` list. (GUS-7, FREE.)
+/// - [blockTextBody] — a photo/memory block floated top-left with
+///   text wrapping to its right and then full-width beneath it
+///   (magazine `float: left`). Carries **two** blocks: the float
+///   block (a `photoBlock` or `memoryBlock`, looked up by type) and a
+///   `textBlock`. The layout template stores only the float block (0
+///   or 1 template, like [featureBlock]); the `textBlock` is
+///   materialized fresh (always starts empty, like [text]). (GUS-9, PRO.)
 ///
 /// Append-only. New values **must** be added at the end — Hive
 /// serialises enums by index, so reordering would corrupt persisted
-/// data. (`blockTextBody` and `wannado` are planned next, appended
-/// after `divider` — see GUS-9 / GUS-8.)
+/// data. (`wannado` is planned next, appended after `blockTextBody` —
+/// see GUS-8.)
 enum SectionKind {
   text,
   blockGrid,
   featureBlock,
   header,
   divider,
+  blockTextBody,
 }

@@ -27,7 +27,10 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   2×2 (full body width, square). For `SectionKind.header` the blocks
   list is exactly one `textBlock` (same trick as `text`); for
   `SectionKind.divider` the blocks list is **empty** (purely visual).
-- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider }`.
+  For `SectionKind.blockTextBody` the blocks list holds **two** blocks:
+  a float block (`photoBlock` or `memoryBlock`, may be absent) and a
+  `textBlock`; the widget looks each up by type, so order is irrelevant.
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
   `featureBlock` is a single-tile 2×2 section; the layout editor
   restricts the block type to `photoBlock` or `memoryBlock` (defended
@@ -35,8 +38,12 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   FREE) is a single-line heading backed by one `textBlock` (reuses the
   text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
   visual rule carrying **no** blocks — it renders even with an empty
-  `blocks` list. (`blockTextBody` / `wannado` are planned next, to be
-  appended after `divider`.)
+  `blocks` list. `blockTextBody` (GUS-9, PRO) floats a photo/memory
+  block top-left with text wrapping around it (magazine `float: left`);
+  the layout template stores only the float block (0 or 1, like
+  `featureBlock`) and the `textBlock` is materialized fresh (always
+  starts empty, like `text`). (`wannado` is planned next, to be
+  appended after `blockTextBody`.)
 - [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**

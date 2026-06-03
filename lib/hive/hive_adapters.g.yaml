@@ -115,7 +115,7 @@ types:
         index: 2
   SectionKind:
     typeId: 11
-    nextIndex: 7
+    nextIndex: 8
     fields:
       text:
         index: 0
@@ -127,3 +127,5 @@ types:
         index: 3
       divider:
         index: 4
+      blockTextBody:
+        index: 7

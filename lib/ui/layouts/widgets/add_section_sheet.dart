@@ -22,6 +22,8 @@ Future<SectionKind?> showAddSectionSheet(
   final isPro = subscriptions.isPro;
   final featureLocked =
       !isPro && !kFreeSectionKinds.contains(SectionKind.featureBlock);
+  final blockTextLocked =
+      !isPro && !kFreeSectionKinds.contains(SectionKind.blockTextBody);
   return showModalBottomSheet<SectionKind>(
     context: context,
     builder: (sheetContext) => SafeArea(
@@ -76,6 +78,23 @@ Future<SectionKind?> showAddSectionSheet(
               final ok = await requirePro(subscriptions, context: sheetContext);
               if (ok && sheetContext.mounted) {
                 Navigator.of(sheetContext).pop(SectionKind.featureBlock);
+              }
+            },
+          ),
+          _SectionTile(
+            icon: HugeIcons.strokeRoundedImage01,
+            label: 'Block + text',
+            description:
+                'A photo or memory floated left with text wrapping around it.',
+            locked: blockTextLocked,
+            onTap: () async {
+              if (!blockTextLocked) {
+                Navigator.of(sheetContext).pop(SectionKind.blockTextBody);
+                return;
+              }
+              final ok = await requirePro(subscriptions, context: sheetContext);
+              if (ok && sheetContext.mounted) {
+                Navigator.of(sheetContext).pop(SectionKind.blockTextBody);
               }
             },
           ),

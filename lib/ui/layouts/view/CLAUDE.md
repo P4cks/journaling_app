@@ -106,6 +106,15 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       `_TextSectionPreview`; shows the italic "Heading" placeholder).
       No add affordance — the heading text is entered per-entry. (GUS-6)
     - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
+    - `blockTextBody` → `_BlockTextSectionBody` — a `Row` of the
+      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`, same
+      slot machinery as `_FeatureBlockSectionBody`, sized 120×120) left
+      of a read-only `_TextSectionPreview`, hinting the materialized
+      entry's magazine float arrangement. The picker uses
+      `showAddBlockSheet(allowedTypes: featureBlockAllowedTypes)` →
+      `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
+      (both generalized to accept this kind). The text block is entered
+      per-entry (not an editor slot). (GUS-9)
 
 ## Gotchas
 

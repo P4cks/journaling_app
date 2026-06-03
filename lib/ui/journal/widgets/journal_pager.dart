@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -7,6 +8,7 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_text_section/block_text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
@@ -380,6 +382,36 @@ class _SectionsBody extends StatelessWidget {
         return const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Divider(height: 1),
+        );
+      case SectionKind.blockTextBody:
+        // Two blocks: a float block (photo/memory) and a textBlock. Look
+        // each up by type so order is irrelevant. The text block always
+        // exists; the float block is null when none was configured.
+        JournalBlockData? textBlock;
+        JournalBlockData? floatBlock;
+        for (final b in section.blocks) {
+          if (b.type == BlockType.textBlock) {
+            textBlock ??= b;
+          } else if (b.type == BlockType.photoBlock ||
+              b.type == BlockType.memoryBlock) {
+            floatBlock ??= b;
+          }
+        }
+        if (textBlock == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: BlockTextSectionWidget(
+            key: ValueKey(section.id),
+            floatBlock: floatBlock,
+            textBlock: textBlock,
+            mode: mode,
+            onBlockChanged: onBlockChanged,
+            onJumpToDate: onJumpToDate,
+            onLockChanged: onLockChanged,
+            onRequestBlockEdit: onRequestBlockEdit,
+            onRequestTextSectionEdit: onRequestTextSectionEdit,
+            textEditing: editingBlockId == textBlock.id,
+          ),
         );
     }
   }
