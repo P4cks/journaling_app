@@ -166,8 +166,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                   ],
                   selected: {_tab},
                   showSelectedIcon: false,
-                  onSelectionChanged: (sel) =>
-                      setState(() => _tab = sel.first),
+                  onSelectionChanged: (sel) => setState(() => _tab = sel.first),
                 ),
               ),
             if (!_showCustomSection || _tab == _BlockTab.defaults)
@@ -455,7 +454,9 @@ class _PreviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tile = AspectRatio(
       aspectRatio: 1,
-      child: AbsorbPointer(child: BlockChrome(visuals: visuals, child: child)),
+      child: AbsorbPointer(
+        child: BlockChrome(visuals: visuals, child: child),
+      ),
     );
     if (!locked) return tile;
     return Stack(

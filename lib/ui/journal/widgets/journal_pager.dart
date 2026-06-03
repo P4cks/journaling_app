@@ -411,7 +411,7 @@ class _SectionsBody extends StatelessWidget {
             onLockChanged: onLockChanged,
             onRequestBlockEdit: onRequestBlockEdit,
             onRequestTextSectionEdit: onRequestTextSectionEdit,
-            textEditing: editingBlockId == textBlock.id,
+            //textEditing: editingBlockId == textBlock.id,
           ),
         );
       case SectionKind.wannado:

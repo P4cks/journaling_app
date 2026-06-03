@@ -119,7 +119,9 @@ class SubscriptionRepository extends ChangeNotifier {
     try {
       _offerings = await _service.getOfferings();
     } on PlatformException catch (e) {
-      debugPrint('[SubscriptionRepository] ensureOfferings failed: ${e.message}');
+      debugPrint(
+        '[SubscriptionRepository] ensureOfferings failed: ${e.message}',
+      );
     }
     return hasOfferings;
   }

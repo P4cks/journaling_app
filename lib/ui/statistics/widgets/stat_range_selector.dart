@@ -52,10 +52,7 @@ class StatRangeSelector extends StatelessWidget {
               // a free user can only ever have a free range selected).
               selectedItemBuilder: (context) => [
                 for (final r in StatRange.values)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(r.label),
-                  ),
+                  Align(alignment: Alignment.centerLeft, child: Text(r.label)),
               ],
               items: [
                 for (final r in StatRange.values)

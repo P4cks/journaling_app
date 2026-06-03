@@ -330,8 +330,9 @@ class _CustomCarouselList extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: AddCustomBlockButton(
-                  subscriptions:
-                      AppDependencies.of(context).subscriptionRepository,
+                  subscriptions: AppDependencies.of(
+                    context,
+                  ).subscriptionRepository,
                   currentCount: defs.length,
                   onAddAllowed: () => _navigateToEditor(context, null),
                 ),
@@ -430,10 +431,7 @@ class _WannadoList extends StatelessWidget {
 
 /// Single-field add/edit dialog for a wanna-do. Returns the trimmed
 /// text, or `null` on cancel / empty.
-Future<String?> _showEditDialog(
-  BuildContext context, {
-  String? initial,
-}) async {
+Future<String?> _showEditDialog(BuildContext context, {String? initial}) async {
   final result = await showDialog<String>(
     context: context,
     builder: (_) => _WannadoEditDialog(initial: initial),

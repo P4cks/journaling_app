@@ -28,7 +28,6 @@ Future<SectionKind?> showAddSectionSheet(
   final wannadoLocked =
       !isPro && !kFreeSectionKinds.contains(SectionKind.wannado);
 
-
   return showDraggableSheet<SectionKind>(
     context,
     title: "Add a Section",
@@ -112,9 +111,9 @@ Future<SectionKind?> showAddSectionSheet(
             },
           ),
           const SizedBox(height: 8),
-        ],
+        ]),
       ),
-    ),]
+    ],
   );
 }
 

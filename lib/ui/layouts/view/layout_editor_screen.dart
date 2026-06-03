@@ -295,8 +295,7 @@ class _BlockOnlyBody extends StatelessWidget {
           )
         : BlockGrid(
             blocks: [
-              for (final slot in slots)
-                _slotPreviewData(slot, settings, theme),
+              for (final slot in slots) _slotPreviewData(slot, settings, theme),
             ],
             mode: BlockMode.readOnly,
             onReorder: (from, to) {
@@ -515,8 +514,7 @@ class _CustomBody extends StatelessWidget {
     final subscriptions = AppDependencies.of(context).subscriptionRepository;
     // Free users cap a custom layout at `kFreeMaxSectionsCustom` sections;
     // the (N+1)th add presents the paywall. (GUS-32)
-    if (!subscriptions.isPro &&
-        vm.sections.length >= kFreeMaxSectionsCustom) {
+    if (!subscriptions.isPro && vm.sections.length >= kFreeMaxSectionsCustom) {
       if (!await requirePro(subscriptions, context: context)) return;
       if (!context.mounted) return;
     }

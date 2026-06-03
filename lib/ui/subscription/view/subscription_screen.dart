@@ -38,7 +38,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final subs = _subscriptions!;
     await subs.restore();
     if (!mounted) return;
-    final message = subs.errorMessage ??
+    final message =
+        subs.errorMessage ??
         (subs.isPro
             ? 'Purchases restored — Journaling App Pro is active.'
             : 'No previous purchases found.');

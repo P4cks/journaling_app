@@ -238,7 +238,10 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
         padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [blockChild, Text(displayText, style: textStyle)],
+          children: [
+            blockChild,
+            Text(displayText, style: textStyle),
+          ],
         ),
       );
     }
@@ -268,7 +271,10 @@ class _BlockTextSectionWidgetState extends State<BlockTextSectionWidget>
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [blockChild, Expanded(child: Text(beside, style: textStyle))],
+            children: [
+              blockChild,
+              Expanded(child: Text(beside, style: textStyle)),
+            ],
           ),
           if (below.isNotEmpty) Text(below, style: textStyle),
         ],
