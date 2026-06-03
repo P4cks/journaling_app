@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
+import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 
 /// How a prompt is chosen when materializing a prompt block.
@@ -47,6 +49,21 @@ class BlockSettings extends ChangeNotifier {
   PromptStrategy _promptStrategy = PromptStrategy.random;
   bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
+  List<WannadoItem> _wannados = const [];
+
+  /// Block types that the memory block is allowed to snapshot from.
+  /// Defaults to the historical hardcoded set — text, mood, and
+  /// photo blocks. The user can narrow or widen this via the
+  /// Block-settings → Memory section. Memory blocks themselves are
+  /// excluded by design (memory-of-a-memory is recursive). Prompt
+  /// blocks are off by default (they're shaped differently and feel
+  /// weird as memories) but can be enabled.
+  static const Set<BlockType> defaultMemoryEligibleTypes = <BlockType>{
+    BlockType.textBlock,
+    BlockType.moodTracker,
+    BlockType.photoBlock,
+  };
+  Set<BlockType> _memoryEligibleTypes = defaultMemoryEligibleTypes;
 
   List<String> get prompts => List.unmodifiable(_prompts);
   PromptStrategy get promptStrategy => _promptStrategy;
@@ -59,6 +76,22 @@ class BlockSettings extends ChangeNotifier {
 
   List<CustomCarouselDefinition> get customCarousels =>
       List.unmodifiable(_customCarousels);
+
+  /// The user's **global** wanna-do / bucket list. Rendered by every
+  /// `SectionKind.wannado` section (pure display — no per-item done
+  /// state). Mutating it via [addWannado] / [updateWannado] /
+  /// [deleteWannado] notifies, so every visible wannado section
+  /// rebuilds live.
+  List<WannadoItem> get wannados => List.unmodifiable(_wannados);
+
+  /// Eligible block types for memory snapshots. Returned as an
+  /// unmodifiable set; mutate via [setMemoryEligibleTypes]. Memory
+  /// blocks themselves are filtered out before the set hits storage
+  /// (memory-of-a-memory recursion is never useful), so the UI may
+  /// surface `BlockType.memoryBlock` but the value here will never
+  /// contain it.
+  Set<BlockType> get memoryEligibleTypes =>
+      Set.unmodifiable(_memoryEligibleTypes);
 
   CustomCarouselDefinition? findCustomCarousel(String id) {
     for (final def in _customCarousels) {
@@ -94,8 +127,7 @@ class BlockSettings extends ChangeNotifier {
     if (titlesEnabledRaw != null) {
       _carouselTitlesEnabled = titlesEnabledRaw;
     }
-    final customCarouselsRaw =
-        _storage.getBlockCustomCarouselDefinitionsJson();
+    final customCarouselsRaw = _storage.getBlockCustomCarouselDefinitionsJson();
     if (customCarouselsRaw != null && customCarouselsRaw.isNotEmpty) {
       try {
         final decoded = jsonDecode(customCarouselsRaw);
@@ -110,6 +142,38 @@ class BlockSettings extends ChangeNotifier {
         // Corrupt JSON — fall back to empty.
       }
     }
+    final wannadosRaw = _storage.getBlockWannadosJson();
+    if (wannadosRaw != null && wannadosRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(wannadosRaw);
+        if (decoded is List) {
+          _wannados = [
+            for (final raw in decoded)
+              if (raw is Map<String, dynamic>) WannadoItem.fromMap(raw),
+          ];
+        }
+      } catch (_) {
+        // Corrupt JSON — fall back to empty.
+      }
+    }
+    final memoryRaw = _storage.getBlockMemoryEligibleTypesJson();
+    if (memoryRaw != null && memoryRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(memoryRaw);
+        if (decoded is List) {
+          final byName = {for (final t in BlockType.values) t.name: t};
+          _memoryEligibleTypes = {
+            for (final v in decoded)
+              if (v is String &&
+                  byName.containsKey(v) &&
+                  v != BlockType.memoryBlock.name)
+                byName[v]!,
+          };
+        }
+      } catch (_) {
+        // Corrupt JSON — fall back to the default.
+      }
+    }
   }
 
   Future<void> _persistCustomCarousels() async {
@@ -117,6 +181,13 @@ class BlockSettings extends ChangeNotifier {
         ? null
         : jsonEncode([for (final def in _customCarousels) def.toMap()]);
     await _storage.setBlockCustomCarouselDefinitionsJson(json);
+  }
+
+  Future<void> _persistWannados() async {
+    final json = _wannados.isEmpty
+        ? null
+        : jsonEncode([for (final item in _wannados) item.toMap()]);
+    await _storage.setBlockWannadosJson(json);
   }
 
   Future<void> setPrompts(List<String> prompts) async {
@@ -146,6 +217,24 @@ class BlockSettings extends ChangeNotifier {
     _carouselTitlesEnabled = value;
     await _storage.setBlockCarouselTitlesEnabled(value);
     debugPrint('[BlockSettings] setCarouselTitlesEnabled -> $value');
+    notifyListeners();
+  }
+
+  /// Replace the memory-block eligible-types set. The memoryBlock
+  /// type itself is filtered out before persistence (memory-of-a-
+  /// memory recursion). Passing the default set persists `null` so
+  /// future default changes propagate to all users.
+  Future<void> setMemoryEligibleTypes(Set<BlockType> types) async {
+    final cleaned = types.where((t) => t != BlockType.memoryBlock).toSet();
+    if (setEquals(cleaned, _memoryEligibleTypes)) return;
+    _memoryEligibleTypes = cleaned;
+    final isDefault = setEquals(cleaned, defaultMemoryEligibleTypes);
+    await _storage.setBlockMemoryEligibleTypesJson(
+      isDefault ? null : jsonEncode([for (final t in cleaned) t.name]),
+    );
+    debugPrint(
+      '[BlockSettings] setMemoryEligibleTypes -> ${cleaned.length} types',
+    );
     notifyListeners();
   }
 
@@ -184,6 +273,38 @@ class BlockSettings extends ChangeNotifier {
     _customCarousels = next;
     await _persistCustomCarousels();
     debugPrint('[BlockSettings] deleteCustomCarousel id=$id');
+    notifyListeners();
+  }
+
+  /// Append a new wanna-do to the global list. Caller owns the id (uuid).
+  Future<void> addWannado(WannadoItem item) async {
+    _wannados = [..._wannados, item];
+    await _persistWannados();
+    debugPrint('[BlockSettings] addWannado id=${item.id} text="${item.text}"');
+    notifyListeners();
+  }
+
+  /// Replace a wanna-do by id. No-op when id is not found.
+  Future<void> updateWannado(WannadoItem item) async {
+    final next = [..._wannados];
+    final i = next.indexWhere((w) => w.id == item.id);
+    if (i < 0) return;
+    next[i] = item;
+    _wannados = next;
+    await _persistWannados();
+    debugPrint(
+      '[BlockSettings] updateWannado id=${item.id} text="${item.text}"',
+    );
+    notifyListeners();
+  }
+
+  /// Remove a wanna-do by id. No-op when id is not found.
+  Future<void> deleteWannado(String id) async {
+    final next = [..._wannados]..removeWhere((w) => w.id == id);
+    if (next.length == _wannados.length) return;
+    _wannados = next;
+    await _persistWannados();
+    debugPrint('[BlockSettings] deleteWannado id=$id');
     notifyListeners();
   }
 

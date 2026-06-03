@@ -34,26 +34,14 @@ class CarouselIcon {
 /// in the picker (alphabetical within each rough category).
 final kCarouselIcons = <CarouselIcon>[
   // Nature / weather
-  CarouselIcon(
-    name: 'sun',
-    icon: HugeIcons.strokeRoundedSun01,
-    label: 'Sun',
-  ),
-  CarouselIcon(
-    name: 'moon',
-    icon: HugeIcons.strokeRoundedMoon,
-    label: 'Moon',
-  ),
+  CarouselIcon(name: 'sun', icon: HugeIcons.strokeRoundedSun01, label: 'Sun'),
+  CarouselIcon(name: 'moon', icon: HugeIcons.strokeRoundedMoon, label: 'Moon'),
   CarouselIcon(
     name: 'cloud',
     icon: HugeIcons.strokeRoundedCloud,
     label: 'Cloud',
   ),
-  CarouselIcon(
-    name: 'star',
-    icon: HugeIcons.strokeRoundedStar,
-    label: 'Star',
-  ),
+  CarouselIcon(name: 'star', icon: HugeIcons.strokeRoundedStar, label: 'Star'),
   CarouselIcon(
     name: 'leaf',
     icon: HugeIcons.strokeRoundedLeaf01,
@@ -79,11 +67,7 @@ final kCarouselIcons = <CarouselIcon>[
     icon: HugeIcons.strokeRoundedWave,
     label: 'Waves',
   ),
-  CarouselIcon(
-    name: 'fire',
-    icon: HugeIcons.strokeRoundedFire,
-    label: 'Fire',
-  ),
+  CarouselIcon(name: 'fire', icon: HugeIcons.strokeRoundedFire, label: 'Fire'),
   // Activities
   CarouselIcon(
     name: 'barbell',
@@ -131,11 +115,7 @@ final kCarouselIcons = <CarouselIcon>[
     icon: HugeIcons.strokeRoundedSoftDrink01,
     label: 'Beer',
   ),
-  CarouselIcon(
-    name: 'wine',
-    icon: HugeIcons.strokeRoundedDrink,
-    label: 'Wine',
-  ),
+  CarouselIcon(name: 'wine', icon: HugeIcons.strokeRoundedDrink, label: 'Wine'),
   CarouselIcon(
     name: 'cake',
     icon: HugeIcons.strokeRoundedBirthdayCake,
@@ -173,11 +153,7 @@ final kCarouselIcons = <CarouselIcon>[
     icon: HugeIcons.strokeRoundedBookOpen01,
     label: 'Reading',
   ),
-  CarouselIcon(
-    name: 'pen',
-    icon: HugeIcons.strokeRoundedPen01,
-    label: 'Write',
-  ),
+  CarouselIcon(name: 'pen', icon: HugeIcons.strokeRoundedPen01, label: 'Write'),
   CarouselIcon(
     name: 'briefcase',
     icon: HugeIcons.strokeRoundedBriefcase01,
@@ -204,22 +180,14 @@ final kCarouselIcons = <CarouselIcon>[
     icon: HugeIcons.strokeRoundedHome01,
     label: 'Home',
   ),
-  CarouselIcon(
-    name: 'bed',
-    icon: HugeIcons.strokeRoundedBed,
-    label: 'Sleep',
-  ),
+  CarouselIcon(name: 'bed', icon: HugeIcons.strokeRoundedBed, label: 'Sleep'),
   CarouselIcon(
     name: 'pawPrint',
     icon: HugeIcons.strokeRoundedBone01,
     label: 'Pet',
   ),
   // Misc
-  CarouselIcon(
-    name: 'gift',
-    icon: HugeIcons.strokeRoundedGift,
-    label: 'Gift',
-  ),
+  CarouselIcon(name: 'gift', icon: HugeIcons.strokeRoundedGift, label: 'Gift'),
   CarouselIcon(
     name: 'musicNote',
     icon: HugeIcons.strokeRoundedMusicNote01,

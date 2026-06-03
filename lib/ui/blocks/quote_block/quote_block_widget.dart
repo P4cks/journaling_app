@@ -21,11 +21,16 @@ class QuoteBlockWidget extends StatefulWidget {
     required this.data,
     required this.mode,
     this.onChanged,
+    this.onDoubleTap,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
+
+  /// Host's "push expanded route" callback — fires on double-tap.
+  /// Quote has no single-tap engage (display-only block).
+  final VoidCallback? onDoubleTap;
 
   @override
   State<QuoteBlockWidget> createState() => _QuoteBlockWidgetState();
@@ -78,6 +83,23 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
     final theme = Theme.of(context);
     final content = QuoteBlockContent.fromMap(widget.data.content);
 
+    final body = _buildBody(context, theme, content);
+    // Wrap the body so double-tap reaches the host. No `onTap` —
+    // quote is display-only; single taps are unconsumed (no flash).
+    // The 12 px chrome inset lives inside the detector so taps in the
+    // inset are claimed here (not bubbled up to the body's unfocus).
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onDoubleTap: widget.onDoubleTap,
+      child: Padding(padding: const EdgeInsets.all(12), child: body),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    ThemeData theme,
+    QuoteBlockContent content,
+  ) {
     if (content.quote != null && content.quote!.isNotEmpty) {
       return Center(
         child: SingleChildScrollView(

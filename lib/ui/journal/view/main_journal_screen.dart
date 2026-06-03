@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
@@ -40,6 +42,16 @@ class _MainJournalScreenState extends State<MainJournalScreen>
   /// reach descendants.
   bool _editing = false;
 
+  /// True while the expanded-block route is on the navigator stack. The
+  /// route's inner TextField raises the keyboard, but we don't want
+  /// `_editing` to flip and collapse the (hidden) AppBar to Done —
+  /// because as the route closes, the keyboard takes ~250 ms to slide
+  /// down while the route fades out in 220 ms, leaving the AppBar's
+  /// Done button briefly visible during the gap. Suppressing
+  /// [didChangeMetrics]'s keyboard tracking for the route's lifetime
+  /// avoids the flash.
+  bool _expandedRouteOpen = false;
+
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -75,8 +87,17 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
   @override
   void didChangeMetrics() {
-    final bottomInsets =
-        WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
+    // The expanded route owns the keyboard while it's up — don't let
+    // its TextField focus flip our AppBar to Done (which would then
+    // briefly flash as the route closes; see [_expandedRouteOpen]).
+    if (_expandedRouteOpen) return;
+    final bottomInsets = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .views
+        .first
+        .viewInsets
+        .bottom;
     final keyboardUp = bottomInsets > 0;
     if (keyboardUp != _editing) {
       setState(() => _editing = keyboardUp);
@@ -91,6 +112,50 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
+  /// Called from the journal pager when the user **double-taps** an
+  /// editable block. Single tap is handled inline by each block
+  /// widget (focuses the TextField, expands the carousel, etc.) — see
+  /// [DoubleTapListener] for why both gestures coexist without arena
+  /// conflicts.
+  ///
+  /// Pushes [ExpandedBlockRoute]. Edit state lives inside the route.
+  /// The text-section variant sets `isTextSection: true` so the route
+  /// renders the section text directly on the blur (no card chrome).
+  void _requestBlockEdit(JournalBlockData block, {bool isTextSection = false}) {
+    final vm = _viewModel;
+    // The single tap that preceded this double tap may have already
+    // focused a field — unfocus so the keyboard isn't dangling when
+    // the route opens (the route's own field is unfocused initially
+    // by design; user taps inside to start editing there).
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _expandedRouteOpen = true);
+    Navigator.of(context)
+        .push(
+          ExpandedBlockRoute(
+            data: block,
+            onChanged: vm?.updateBlock,
+            onJumpToDate: vm?.setSelectedDate,
+            isTextSection: isTextSection,
+          ),
+        )
+        .whenComplete(() {
+          if (!mounted) return;
+          // Drop the lock and re-sync `_editing` to the actual
+          // keyboard state (it stayed frozen while the route was up).
+          final bottomInsets = WidgetsBinding
+              .instance
+              .platformDispatcher
+              .views
+              .first
+              .viewInsets
+              .bottom;
+          setState(() {
+            _expandedRouteOpen = false;
+            _editing = bottomInsets > 0;
+          });
+        });
+  }
+
   Future<void> _onMakeEntry() async {
     final vm = _viewModel;
     if (vm == null) return;
@@ -98,6 +163,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final picked = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
+      defaultLayoutId: vm.defaultLayoutId,
     );
     if (picked == null || !mounted) return;
     vm.createWithLayout(picked);
@@ -111,6 +177,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final selected = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
+      defaultLayoutId: vm.defaultLayoutId,
     );
     if (selected == null || !mounted) return;
     final confirm = await showDialog<bool>(
@@ -161,6 +228,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
         final entry = vm.currentEntry;
         final hasEntry = entry != null;
         final editable = _isToday(selectedDate) || debug.unlockAllDays;
+        // The pager renders whenever the selected date is one of its
+        // pages — i.e. it has an entry, or it's the trailing synthetic
+        // today page (today with no entry). Past empty days fall through
+        // to the read-only / debug make-entry states below. (GUS-29)
+        final inPager = vm.pageIndexForDate(selectedDate) != null;
         final scheme = Theme.of(context).colorScheme;
 
         // While the keyboard is up the AppBar collapses to a single
@@ -225,12 +297,17 @@ class _MainJournalScreenState extends State<MainJournalScreen>
             child: Material(
               color: scheme.surfaceContainerLow,
               child: SizedBox.expand(
-                child: hasEntry
+                child: inPager
                     ? JournalPager(
                         viewModel: vm,
                         modeFor: (e) =>
                             _modeFor(e, unlockAllDays: debug.unlockAllDays),
                         externalLock: _editing,
+                        onRequestBlockEdit: (block) => _requestBlockEdit(block),
+                        onRequestTextSectionEdit: (block) =>
+                            _requestBlockEdit(block, isTextSection: true),
+                        onReorderBlockInSection: vm.reorderBlockInSection,
+                        onMakeEntry: _onMakeEntry,
                       )
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)

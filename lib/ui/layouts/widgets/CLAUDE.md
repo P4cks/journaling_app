@@ -12,30 +12,79 @@ sheet is a stateless top-level function returning the user's pick or
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   (the shared scaffold owns the drag handle, the title row, and the
-  `DraggableScrollableSheet` chrome). Body:
-  a 2-column grid of scaled-down built-in block previews
-  (`BlockWidget` in `BlockMode.readOnly` with `sampleData`), iterating
-  `BlockType.values` minus `_hiddenBlockTypes`. Bottom (when
-  `allowedTypes == null`): a **Custom blocks** section listing every
-  `BlockSettings.customCarousels` definition as its own tile (live
-  `CustomCarouselWidget` preview pointing at the registry), plus an
-  "Add custom block" `OutlinedButton` that pops the sheet and pushes
-  `Routes.newCustomBlock` so the editor stacks on the layout editor.
+  `DraggableScrollableSheet` chrome). The body is the **stateful**
+  `_AddBlockSheetBody` (was stateless before GUS-20/GUS-24), top → bottom:
+  - **Search field** (`_SearchField`) — a rounded `TextField` with a
+    leading search glyph and a trailing clear button (shown via a
+    `ValueListenableBuilder` on the controller once non-empty). Live
+    filters the active tab's cells: built-in cells match on
+    `BlockType.label` / `description`, custom cells on the definition
+    `title`. Query is stored trimmed + lower-cased; empty ⇒ no filter.
+    When a tab has no matches, `_NoMatchesHint` renders in place of the
+    grid. (GUS-20)
+  - **Tab switcher** — a 2-segment `SegmentedButton<_BlockTab>`
+    (**Default** / **Custom**), shown only when `allowedTypes == null`.
+    The two sections render **one-at-a-time** by tab (not stacked as
+    before). (GUS-24)
+  - **Default tab** (`_buildBuiltinGrid`): a 2-column grid of
+    scaled-down built-in block previews (`BlockWidget` in
+    `BlockMode.readOnly` with `sampleData`), iterating `BlockType.values`
+    minus `_hiddenBlockTypes`.
+  - **Custom tab** (`_buildCustomSection`, only when
+    `allowedTypes == null`): every `BlockSettings.customCarousels`
+    definition as its own tile (live `CustomCarouselWidget` preview
+    pointing at the registry), the `ProLimitHint`, plus an
+    "Add custom block" `OutlinedButton` that pops the sheet and pushes
+    `Routes.newCustomBlock` so the editor stacks on the layout editor.
+    The button captures `Navigator` + `GoRouter` before its `await`
+    and re-checks the State's `mounted` (lint-clean across the paywall
+    async gap).
+
   Subscribes to `BlockSettings` via `ListenableBuilder`, so a
-  definition saved in the editor appears in the section without
+  definition saved in the editor appears in the Custom tab without
   re-opening the sheet. `_hiddenBlockTypes` excludes `locationBlock`
   (WIP) and `customCarousel` (surfaces only via the per-definition
   tiles). Pass `allowedTypes` to restrict to a subset (used by
-  feature-block sections — also hides the custom section since feature
+  feature-block sections — this hides BOTH the tab switcher and the
+  custom section, leaving just the search field + built-in grid; feature
   blocks must be photo/memory). The `title` defaults to "Add block".
+  - **Post-it previews (GUS-23).** Each `_PreviewTile` is fed a
+    `BlockVisuals` from `_previewVisuals(context, seed)` —
+    `BlockVisuals.random(Random(seed.hashCode), themeSettings.postItPalette)`
+    where `seed` is the block type name (built-in) or the definition id
+    (custom). Mirrors `_slotPreviewData` in the layout editor so the
+    sheet previews match a materialized entry's post-it look (rotation /
+    offset / colour). Deterministic seed → stable across rebuilds; when
+    post-it mode is off `BlockChrome` ignores the fields, so the call is
+    harmless.
+  - **Pro gating (GUS-19).** Reads `subscriptionRepository` via
+    `AppDependencies`. For free users, built-in cells whose
+    `BlockType.isProOnly` is true (everything except text + mood) and
+    every custom-carousel cell render **greyed (`_PreviewTile`
+    dims + a compact `ProLockBadge`)** rather than being filtered out.
+    Tapping a locked cell routes through the shared `_pickBlock` helper:
+    it calls `requirePro` and pops with the selection only on a
+    successful purchase; unlocked cells pop immediately.
 - [add_section_sheet.dart](add_section_sheet.dart) —
-  `Future<SectionKind?> showAddSectionSheet(context)`. Three-tile
-  sheet (Text section / Block grid / Feature block). Block-grid
+  `Future<SectionKind?> showAddSectionSheet(context, {required
+  SubscriptionRepository subscriptions})`. Seven-tile sheet (Text
+  section / Block grid / Header / Divider / Feature block / Block +
+  text / Wanna-dos), each rendered via the private `_SectionTile` (with
+  a `locked` flag). Header (GUS-6) and Divider (GUS-7) are always free.
+  Block-grid
   sections start empty — there is no row picker; the user adds blocks
-  afterwards and the grid grows to fit. Feature-block sections also
-  start empty; the editor body lets the user pick one photo or memory
-  block via `showAddBlockSheet(allowedTypes: …)`. Custom-layout editor
-  uses this when the user taps the "Add section" zone at the bottom.
+  afterwards and the grid grows to fit. Feature-block and block-text
+  sections also start empty; the editor body lets the user pick one
+  photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
+  Custom-layout editor uses this when the user taps the "Add section"
+  zone at the bottom (passing `subscriptions` from `AppDependencies`).
+  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-dos
+    (GUS-8) are Pro-only:** for free users
+    (`!kFreeSectionKinds.contains(kind)`) the tile greys + badges and
+    tapping presents the paywall, popping the kind only on a successful
+    purchase. Text + block-grid + header + divider are always free. The
+    Wanna-dos tile description points the user to manage the list in
+    Block settings (the section itself has no per-section add affordance).
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
@@ -48,16 +97,32 @@ sheet is a stateless top-level function returning the user's pick or
   - Used by the layout editor's icon AppBar action. Callers may pass
     the returned name (or `null`) straight into `vm.setIconName`.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
-  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Three-tile
-  sheet ("Only blocks", "4 blocks + text", "Fully customizable"),
-  each with an icon and one-line description. Shown when the user
-  taps the FAB on the layouts list. Returns the picked `LayoutKind`;
-  the caller pushes the editor with that kind via
-  `Routes.newLayoutFor(kind)`.
+  `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Two-tile
+  sheet ("Only blocks", "Fully customizable"), each with an icon and
+  one-line description. Shown when the user taps the FAB on the layouts
+  list. Returns the picked `LayoutKind`; the caller pushes the editor
+  with that kind via `Routes.newLayoutFor(kind)`.
+  - **`fixedFourPlusText` ("4 blocks + text") was retired from the
+    picker (GUS-31)** — users can no longer create one. The enum value
+    is kept (append-only — Hive serialises by index) and the editor /
+    `layout_picker_sheet` summary still handle it, so any pre-existing
+    layout of that kind still opens and renders.
+  - **All three kinds are free to pick (GUS-19 reversal of BACKLOG
+    #96).** Monetization moved off the layout *kind* and onto
+    block/section selection, so the `custom` tile is no longer gated —
+    `_KindTile` lost its `locked` flag and the sheet no longer takes a
+    `subscriptions` param. (Free `blockOnly` layouts are still capped at
+    `kFreeMaxBlocksPerLayout`, and the add-block / add-section sheets
+    gate individual Pro blocks/sections.)
+- [layout_default_chip.dart](layout_default_chip.dart) —
+  `LayoutDefaultChip`. Compact rounded "★ Default" pill
+  (`primaryContainer`). Shared by the layouts list
+  (`LayoutsScreen` trailing) and the `showLayoutPickerSheet` default
+  row so the default reads identically in both places (GUS-28).
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, title})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -65,6 +130,10 @@ sheet is a stateless top-level function returning the user's pick or
   row, and the `DraggableScrollableSheet` chrome. Returns the picked
   layout or `null`. Subtitle text per row summarises the layout via
   its `kind` (e.g. "4 blocks + text" for `fixedFourPlusText`).
+  - **Default highlight (GUS-28).** Pass `defaultLayoutId` (from
+    `MainJournalViewModel.defaultLayoutId`); the matching row gets a
+    `primary`-tinted leading icon and a trailing `LayoutDefaultChip`.
+    Omit it (or pass `null`) to render no highlight.
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action

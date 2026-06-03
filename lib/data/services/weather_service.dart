@@ -136,12 +136,14 @@ class WeatherService {
       if (address is! Map) return null;
       // Nominatim returns one of city/town/village depending on the
       // place size. Prefer the most specific, fall back to less so.
-      final locality = (address['city'] ??
-              address['town'] ??
-              address['village'] ??
-              address['hamlet'] ??
-              address['municipality'] ??
-              address['county']) as String?;
+      final locality =
+          (address['city'] ??
+                  address['town'] ??
+                  address['village'] ??
+                  address['hamlet'] ??
+                  address['municipality'] ??
+                  address['county'])
+              as String?;
       final country = address['country'] as String?;
       if (locality == null && country == null) return null;
       if (locality != null && country != null) return '$locality, $country';

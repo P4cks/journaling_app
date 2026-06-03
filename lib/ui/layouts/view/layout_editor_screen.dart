@@ -1,19 +1,28 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/add_block_sheet.dart';
@@ -23,17 +32,36 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart';
 
 /// Build a preview `JournalBlockData` for a layout-editor slot. For
-/// built-in types we delegate to `BlockTypeDisplay.sampleData`. For
+/// built-in types we delegate to `BlockTypeDisplay.sampleData`; for
 /// `customCarousel` slots we thread the slot's `definitionId` (and
 /// pre-select the first item, if any) so the preview resolves the
 /// real definition's title + items instead of falling through to the
 /// "Deleted block" placeholder.
-JournalBlockData _slotPreviewData(BlockSlot slot, BlockSettings settings) {
+///
+/// Visuals are seeded from the slot id (`Random(slot.id.hashCode)`)
+/// against the live post-it palette so the editor mirrors what
+/// materialized entries look like — same rotation / offset / colour
+/// the user will get when they create an entry from the layout. The
+/// seed is deterministic, so visuals stay stable across rebuilds
+/// (rebuilds happen on every keystroke in the name field). When
+/// post-it mode is off, `BlockChrome` ignores the rotation/offset/
+/// colour fields anyway, so passing visuals is harmless.
+JournalBlockData _slotPreviewData(
+  BlockSlot slot,
+  BlockSettings settings,
+  ThemeSettings theme,
+) {
+  final visuals = BlockVisuals.random(
+    Random(slot.id.hashCode),
+    theme.postItPalette,
+  );
   if (slot.type != BlockType.customCarousel) {
-    return slot.type.sampleData(id: slot.id);
+    return slot.type.sampleData(id: slot.id).copyWith(visuals: visuals);
   }
   final defId = slot.definitionId;
-  if (defId == null) return slot.type.sampleData(id: slot.id);
+  if (defId == null) {
+    return slot.type.sampleData(id: slot.id).copyWith(visuals: visuals);
+  }
   final def = settings.findCustomCarousel(defId);
   final sample = (def == null || def.items.isEmpty) ? null : def.items.first;
   return JournalBlockData.create(
@@ -43,6 +71,7 @@ JournalBlockData _slotPreviewData(BlockSlot slot, BlockSettings settings) {
       definitionId: defId,
       selected: sample,
     ).toMap(),
+    visuals: visuals,
   );
 }
 
@@ -62,6 +91,7 @@ class LayoutEditorScreen extends StatefulWidget {
 
 class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   LayoutEditorViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
@@ -74,6 +104,7 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         initialKind: widget.initialKind,
       );
       _viewModel!.addListener(_onChanged);
+      _subscriptions = deps.subscriptionRepository;
     }
   }
 
@@ -118,9 +149,9 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         return true;
       case 'save':
         if (vm.nameController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add a name to save')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
           return false;
         }
         if (vm.nameConflict) {
@@ -146,7 +177,17 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   }
 
   Future<void> _addBlockBlockOnly() async {
+    final vm = _viewModel;
+    final subs = _subscriptions;
+    if (vm == null || subs == null) return;
     FocusScope.of(context).unfocus();
+    // Free users cap a blockOnly layout at `kFreeMaxBlocksPerLayout`
+    // blocks; the (N+1)th add presents the paywall (BACKLOG #92).
+    if (!subs.isPro &&
+        vm.sections.first.slots.length >= kFreeMaxBlocksPerLayout) {
+      if (!await requirePro(subs, context: context)) return;
+      if (!mounted) return;
+    }
     final selected = await showAddBlockSheet(context);
     if (selected != null) {
       _viewModel?.addBlock(selected);
@@ -166,6 +207,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   Widget build(BuildContext context) {
     final vm = _viewModel;
     if (vm == null) return const Scaffold();
+    final blockOnlyLocked =
+        vm.kind == LayoutKind.blockOnly &&
+        !(_subscriptions?.isPro ?? false) &&
+        vm.sections.first.slots.length >= kFreeMaxBlocksPerLayout;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: _handlePop,
@@ -176,9 +221,26 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           actions: [
             if (vm.kind == LayoutKind.blockOnly)
               IconButton(
-                tooltip: 'Add block',
+                tooltip: blockOnlyLocked
+                    ? 'Pro — unlimited blocks'
+                    : 'Add block',
                 onPressed: _addBlockBlockOnly,
-                icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+                icon: blockOnlyLocked
+                    ? Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          AppIcon(
+                            HugeIcons.strokeRoundedPlusSign,
+                            color: Theme.of(context).disabledColor,
+                          ),
+                          const Positioned(
+                            top: -4,
+                            right: -4,
+                            child: ProLockBadge(compact: true),
+                          ),
+                        ],
+                      )
+                    : AppIcon(HugeIcons.strokeRoundedPlusSign),
               ),
             IconButton(
               tooltip: 'Change icon',
@@ -212,38 +274,60 @@ class _BlockOnlyBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final settings = AppDependencies.of(context).blockSettings;
+    final deps = AppDependencies.of(context);
+    final settings = deps.blockSettings;
+    final theme = deps.themeSettings;
     final slots = vm.sections.first.slots;
-    if (slots.isEmpty) {
-      return Center(
-        child: Text(
-          'No blocks yet. Tap + to add a block.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).disabledColor,
-          ),
-        ),
-      );
-    }
-    return BlockGrid(
-      blocks: [for (final slot in slots) _slotPreviewData(slot, settings)],
-      mode: BlockMode.readOnly,
-      onReorder: vm.moveSlot,
-      onBlockTap: (block, index) async {
-        final picked = await showAddBlockSheet(context);
-        if (picked != null) {
-          vm.replaceSlotType(index, picked);
-        }
-      },
-      cardTrailing: (block, index) => IconButton(
-        tooltip: 'Remove',
-        iconSize: 18,
-        visualDensity: VisualDensity.compact,
-        icon: AppIcon(
-          HugeIcons.strokeRoundedCancel01,
-          color: scheme.onSurfaceVariant,
-        ),
-        onPressed: () => vm.removeSlot(block.id),
-      ),
+    final hint = ProLimitHint(
+      used: slots.length,
+      max: kFreeMaxBlocksPerLayout,
+      noun: 'blocks',
+      subscriptions: deps.subscriptionRepository,
+    );
+    final Widget content = slots.isEmpty
+        ? Center(
+            child: Text(
+              'No blocks yet. Tap + to add a block.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).disabledColor,
+              ),
+            ),
+          )
+        : BlockGrid(
+            blocks: [
+              for (final slot in slots) _slotPreviewData(slot, settings, theme),
+            ],
+            mode: BlockMode.readOnly,
+            onReorder: (from, to) {
+              // `BlockGrid` already adjusts the target index for the post-
+              // remove list, so the VM call here is just `from -> to` with
+              // no further translation. Replacing the slot id by index
+              // matches `MainJournalViewModel.reorderBlockInSection`.
+              vm.moveSlot(from, to);
+            },
+            onBlockTap: (block, index) async {
+              final picked = await showAddBlockSheet(context);
+              if (picked != null) {
+                vm.replaceSlotType(block.id, picked);
+              }
+            },
+            cardTrailing: (block, index) => IconButton(
+              tooltip: 'Remove',
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              icon: AppIcon(
+                HugeIcons.strokeRoundedCancel01,
+                color: scheme.onSurfaceVariant,
+              ),
+              onPressed: () => vm.removeSlot(block.id),
+            ),
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(padding: const EdgeInsets.only(top: 8), child: hint),
+        Expanded(child: content),
+      ],
     );
   }
 }
@@ -256,7 +340,7 @@ class _FixedFourPlusTextBody extends StatelessWidget {
   const _FixedFourPlusTextBody({required this.vm});
   final LayoutEditorViewModel vm;
 
-  Future<void> _fillCell(BuildContext context) async {
+  Future<void> _addBlock(BuildContext context) async {
     FocusScope.of(context).unfocus();
     final picked = await showAddBlockSheet(context);
     if (picked == null) return;
@@ -272,75 +356,58 @@ class _FixedFourPlusTextBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final deps = AppDependencies.of(context);
+    final settings = deps.blockSettings;
+    final theme = deps.themeSettings;
     final blockGridSection = vm.sections.firstWhere(
       (s) => s.kind == SectionKind.blockGrid,
     );
     final slots = blockGridSection.slots;
-    final isFull = slots.length >= LayoutEditorViewModel.fixedFourCapacity;
+    final sectionId = blockGridSection.id;
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 2x2 grid — filled cells render the block sample, empty cells
-          // show a "+ Add block" placeholder. Filled cells pack to the
-          // front; deleting one compresses the rest.
+          // Same BlockGrid the custom layout uses, capped at 4 via
+          // `maxBlocks`. Drag-drop, Add-block, and remove-X all flow
+          // through the grid so the editor matches a materialized
+          // entry visually (post-it visuals are seeded by
+          // `_slotPreviewData`).
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: StaggeredGrid.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                for (var i = 0; i < LayoutEditorViewModel.fixedFourCapacity; i++)
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: i < slots.length
-                        ? _FilledCell(
-                            slot: slots[i],
-                            onSwapType: () => _swapType(context, slots[i].id),
-                            onRemove: () =>
-                                vm.removeFixedFourSlot(slots[i].id),
-                          )
-                        : _EmptyAddBlockCell(
-                            onTap: isFull ? null : () => _fillCell(context),
-                          ),
-                  ),
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: BlockGrid(
+              blocks: [
+                for (final slot in slots)
+                  _slotPreviewData(slot, settings, theme),
               ],
+              mode: BlockMode.readOnly,
+              scrollable: false,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              maxBlocks: LayoutEditorViewModel.fixedFourCapacity,
+              onAddBlock: () => _addBlock(context),
+              onReorder: (from, to) =>
+                  vm.moveSlotInSection(sectionId, from, to),
+              onBlockTap: (block, _) => _swapType(context, block.id),
+              cardTrailing: (block, _) => IconButton(
+                tooltip: 'Remove',
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                icon: AppIcon(
+                  HugeIcons.strokeRoundedCancel01,
+                  color: scheme.onSurfaceVariant,
+                ),
+                onPressed: () => vm.removeFixedFourSlot(block.id),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Text section preview — content lives in the entry, not the layout.
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Text section',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Each entry created from this layout gets a full-width text area here.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.disabledColor,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Text section preview — uses the same `TextSectionWidget`
+          // the materialized entry will render in `BlockMode.readOnly`
+          // with empty content. That surfaces the "No text yet"
+          // placeholder verbatim, so the editor mirrors the entry's
+          // empty-state.
+          _TextSectionPreview(),
         ],
       ),
     );
@@ -361,10 +428,16 @@ class _FilledCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final settings = AppDependencies.of(context).blockSettings;
+    final deps = AppDependencies.of(context);
+    final preview = _slotPreviewData(
+      slot,
+      deps.blockSettings,
+      deps.themeSettings,
+    );
     return GestureDetector(
       onTap: onSwapType,
-      child: PostItBlock(
+      child: BlockChrome(
+        visuals: preview.visuals,
         topRight: IconButton(
           tooltip: 'Remove',
           iconSize: 16,
@@ -380,7 +453,7 @@ class _FilledCell extends StatelessWidget {
         child: AbsorbPointer(
           child: BlockWidget(
             key: ValueKey(slot.id),
-            data: _slotPreviewData(slot, settings),
+            data: preview,
             mode: BlockMode.readOnly,
           ),
         ),
@@ -406,10 +479,7 @@ class _EmptyAddBlockCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withValues(alpha: 0.5),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
         ),
         alignment: Alignment.center,
         child: Column(
@@ -441,7 +511,17 @@ class _CustomBody extends StatelessWidget {
 
   Future<void> _addSection(BuildContext context) async {
     FocusScope.of(context).unfocus();
-    final picked = await showAddSectionSheet(context);
+    final subscriptions = AppDependencies.of(context).subscriptionRepository;
+    // Free users cap a custom layout at `kFreeMaxSectionsCustom` sections;
+    // the (N+1)th add presents the paywall. (GUS-32)
+    if (!subscriptions.isPro && vm.sections.length >= kFreeMaxSectionsCustom) {
+      if (!await requirePro(subscriptions, context: context)) return;
+      if (!context.mounted) return;
+    }
+    final picked = await showAddSectionSheet(
+      context,
+      subscriptions: subscriptions,
+    );
     if (picked == null) return;
     vm.addSection(picked);
   }
@@ -495,6 +575,12 @@ class _CustomBody extends StatelessWidget {
                 onConfirmRemove: (label) => _confirmRemove(context, label),
               ),
           const SizedBox(height: 12),
+          ProLimitHint(
+            used: sections.length,
+            max: kFreeMaxSectionsCustom,
+            noun: 'sections',
+            subscriptions: AppDependencies.of(context).subscriptionRepository,
+          ),
           _AddSectionTapZone(onTap: () => _addSection(context)),
           const SizedBox(height: 24),
         ],
@@ -524,6 +610,10 @@ class _SectionCard extends StatelessWidget {
       SectionKind.blockGrid => ('Block grid', 'block grid'),
       SectionKind.text => ('Text section', 'text section'),
       SectionKind.featureBlock => ('Feature block', 'feature block'),
+      SectionKind.header => ('Header', 'header'),
+      SectionKind.divider => ('Divider', 'divider'),
+      SectionKind.blockTextBody => ('Block + text', 'block + text'),
+      SectionKind.wannado => ('Wanna-dos', 'wanna-dos'),
     };
 
     return Container(
@@ -553,14 +643,18 @@ class _SectionCard extends StatelessWidget {
                   tooltip: 'Move up',
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
-                  onPressed: isFirst ? null : () => vm.moveSection(index, index - 1),
+                  onPressed: isFirst
+                      ? null
+                      : () => vm.moveSection(index, index - 1),
                   icon: AppIcon(HugeIcons.strokeRoundedArrowUp01),
                 ),
                 IconButton(
                   tooltip: 'Move down',
                   iconSize: 18,
                   visualDensity: VisualDensity.compact,
-                  onPressed: isLast ? null : () => vm.moveSection(index, index + 1),
+                  onPressed: isLast
+                      ? null
+                      : () => vm.moveSection(index, index + 1),
                   icon: AppIcon(HugeIcons.strokeRoundedArrowDown01),
                 ),
                 IconButton(
@@ -581,14 +675,37 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           switch (section.kind) {
-            SectionKind.blockGrid =>
-              _BlockGridSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.blockGrid => _BlockGridSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
             SectionKind.text => const Padding(
-              padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
               child: _TextSectionPreview(),
             ),
-            SectionKind.featureBlock =>
-              _FeatureBlockSectionBody(vm: vm, sectionIndex: index),
+            SectionKind.featureBlock => _FeatureBlockSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
+            SectionKind.header => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: _HeaderSectionPreview(),
+            ),
+            SectionKind.divider => const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Divider(height: 1),
+            ),
+            SectionKind.blockTextBody => _BlockTextSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
+            // Content-free per entry — previews the *global* wanna-do
+            // list (rotating carousel). No per-section add affordance;
+            // items are managed in Block settings.
+            SectionKind.wannado => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: WannadoSectionWidget(),
+            ),
           },
         ],
       ),
@@ -612,74 +729,50 @@ class _BlockGridSectionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final settings = AppDependencies.of(context).blockSettings;
+    final deps = AppDependencies.of(context);
+    final settings = deps.blockSettings;
+    final theme = deps.themeSettings;
     final section = vm.sections[sectionIndex];
     final sectionId = section.id;
 
-    if (section.slots.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () => _addBlock(context),
-            icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
-            label: const Text('Add block'),
-          ),
-        ),
-      );
-    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          BlockGrid(
-            blocks: [
-              for (final slot in section.slots)
-                _slotPreviewData(slot, settings),
-            ],
-            mode: BlockMode.readOnly,
-            scrollable: false,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            onReorder: (from, to) =>
-                vm.moveSlotInSection(sectionId, from, to),
-            onBlockTap: (block, index) async {
-              final picked = await showAddBlockSheet(context);
-              if (picked != null) {
-                vm.replaceSlotType(index, picked);
-              }
-            },
-            cardTrailing: (block, index) => IconButton(
-              tooltip: 'Remove',
-              iconSize: 16,
-              visualDensity: VisualDensity.compact,
-              icon: AppIcon(
-                HugeIcons.strokeRoundedCancel01,
-                color: scheme.onSurfaceVariant,
-              ),
-              onPressed: () => vm.removeSlotInSection(sectionId, block.id),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => _addBlock(context),
-                icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
-                label: const Text('Add block'),
-              ),
-            ),
-          ),
+      child: BlockGrid(
+        blocks: [
+          for (final slot in section.slots)
+            _slotPreviewData(slot, settings, theme),
         ],
+        mode: BlockMode.readOnly,
+        scrollable: false,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        onAddBlock: () => _addBlock(context),
+        onReorder: (from, to) => vm.moveSlotInSection(sectionId, from, to),
+        onBlockTap: (block, _) async {
+          final picked = await showAddBlockSheet(context);
+          if (picked != null) {
+            vm.replaceSlotType(block.id, picked);
+          }
+        },
+        cardTrailing: (block, _) => IconButton(
+          tooltip: 'Remove',
+          iconSize: 16,
+          visualDensity: VisualDensity.compact,
+          icon: AppIcon(
+            HugeIcons.strokeRoundedCancel01,
+            color: scheme.onSurfaceVariant,
+          ),
+          onPressed: () => vm.removeSlotInSection(sectionId, block.id),
+        ),
       ),
     );
   }
 }
 
 class _FeatureBlockSectionBody extends StatelessWidget {
-  const _FeatureBlockSectionBody({required this.vm, required this.sectionIndex});
+  const _FeatureBlockSectionBody({
+    required this.vm,
+    required this.sectionIndex,
+  });
 
   final LayoutEditorViewModel vm;
   final int sectionIndex;
@@ -717,18 +810,100 @@ class _FeatureBlockSectionBody extends StatelessWidget {
   }
 }
 
+/// Editor body for a `blockTextBody` section: the float-block picker
+/// (photo/memory, identical slot machinery to `_FeatureBlockSectionBody`)
+/// laid out left of a read-only text preview, hinting the magazine
+/// float arrangement a materialized entry will show.
+class _BlockTextSectionBody extends StatelessWidget {
+  const _BlockTextSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(
+      context,
+      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
+      title: isSwap ? 'Swap block' : 'Choose block',
+    );
+    if (picked == null) return;
+    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+    final slots = section.slots;
+
+    // Size the float block to exactly one tile of a 2-column BlockGrid so
+    // the editor preview matches a "normal" block. The grid reserves 16px
+    // left + 16px right padding + 12px inter-column spacing, so a single
+    // tile is (fullWidth - 44) / 2. LayoutBuilder sits ABOVE the padding so
+    // `maxWidth` is the full section width (a LayoutBuilder placed directly
+    // as a Row child would get unbounded width).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final blockSize = ((constraints.maxWidth - 44) / 2).clamp(120.0, 220.0);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: blockSize,
+                height: blockSize,
+                child: slots.isEmpty
+                    ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+                    : _FilledCell(
+                        slot: slots.first,
+                        onSwapType: () => _pickType(context, isSwap: true),
+                        onRemove: () => vm.clearFeatureBlock(sectionId),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: _TextSectionPreview()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Read-only preview of a text section — uses the same
+/// `TextSectionWidget` the materialized entry renders. Backed by a
+/// fresh empty `TextBlockContent` so the widget shows its
+/// "No text yet" italic placeholder, mirroring an untouched entry.
 class _TextSectionPreview extends StatelessWidget {
   const _TextSectionPreview();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      'Each entry gets a full-width text area in this section.',
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.disabledColor,
-        fontStyle: FontStyle.italic,
+    return TextSectionWidget(
+      data: JournalBlockData.create(
+        id: 'layout-editor-text-preview',
+        type: BlockType.textBlock,
+        content: const TextBlockContent(text: '').toMap(),
       ),
+      mode: BlockMode.readOnly,
+    );
+  }
+}
+
+class _HeaderSectionPreview extends StatelessWidget {
+  const _HeaderSectionPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return HeaderSectionWidget(
+      data: JournalBlockData.create(
+        id: 'layout-editor-header-preview',
+        type: BlockType.textBlock,
+        content: const TextBlockContent(text: '').toMap(),
+      ),
+      mode: BlockMode.readOnly,
     );
   }
 }
@@ -759,7 +934,10 @@ class _AddSectionTapZone extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppIcon(HugeIcons.strokeRoundedPlusSign, color: theme.colorScheme.primary),
+              AppIcon(
+                HugeIcons.strokeRoundedPlusSign,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Add section',
@@ -775,4 +953,3 @@ class _AddSectionTapZone extends StatelessWidget {
     );
   }
 }
-

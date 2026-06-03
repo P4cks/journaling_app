@@ -15,8 +15,9 @@ Fuses the responsibilities of the pre-merge `HomeViewModel` and
 | State                  | Purpose                                              |
 |------------------------|------------------------------------------------------|
 | `_selectedDate`        | Drives the AppBar, the body branch, and the pager.   |
-| `_entries`             | Sorted ascending. Data source for `JournalPager`.    |
+| `_entries`             | Sorted ascending. Calendar dots + entry lookups.     |
 | `_entriesByDay`        | `Set<DateTime>` for the calendar's `eventLoader`.    |
+| `_pagerDates`          | Normalized dates the pager renders (data source for `JournalPager`). |
 
 All DateTimes are local-midnight normalized via `_dateOnly`.
 
@@ -25,9 +26,21 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
 - `setSelectedDate(date)` — guard against no-op; notify.
 - `entryForDate(date)` — repository passthrough (`getEntryForDate`).
   O(1) Hive lookup.
-- `pageIndexForDate(date)` — linear scan of `_entries`; returns
-  `int?` (null when no entry). The screen feeds this to `JournalPager`'s
-  controller.
+- `pagerDates` — the dates `JournalPager` iterates: entry dates,
+  ascending, **plus today appended** when today has no entry yet (the
+  trailing synthetic make-entry page; GUS-29). Today is always the max
+  (entries are today-or-earlier), so appending keeps it sorted.
+  Rebuilt in `_rebuildEntries` alongside `_entries`.
+- `todayHasEntry` — `_entriesByDay.contains(today)`. False ⇒ the pager
+  carries the synthetic today page.
+- `pageIndexForDate(date)` — linear scan of `pagerDates`; returns
+  `int?` (null when the date is neither an entry day nor the synthetic
+  today page). Today resolves to the trailing index when empty. The
+  screen uses non-null here both to position `JournalPager`'s
+  controller and to decide whether to mount the pager at all.
+- `defaultLayoutId` — `_layoutRepository.getDefault()?.id`, or `null`.
+  Passed to `showLayoutPickerSheet` so the picker highlights the
+  default row (GUS-28).
 - `createWithLayout(layout)` — calls
   `JournalRepository.createEntryForDate`. The repository notifies; we
   rebuild `_entries` / `_entriesByDay` and notify. We also notify
@@ -39,6 +52,13 @@ All DateTimes are local-midnight normalized via `_dateOnly`.
   unchanged blocks list (cheap; the comprehension reuses references).
 - `updateTitle(newTitle)` — trim → empty becomes null. No-op on
   unchanged.
+- `reorderBlockInSection(sectionId, from, to)` — moves the block at
+  `from` to `to` within the matching section's `blocks` list, bumps
+  `lastModified`, persists via `saveJournalEntry`. Insertion
+  semantics match `LayoutEditorViewModel.moveSlotInSection` — the
+  caller (`BlockGrid` via `JournalPager`'s drag-drop) already adjusts
+  the target index for the post-remove list. Used by the journal
+  pager's drag-and-drop in editable entries.
 - `applyLayout(layout)` — destructive; re-materializes the entry's
   **sections** from the new layout (calls
   `JournalRepository.materializeLayout`). Caller must confirm.

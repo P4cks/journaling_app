@@ -19,9 +19,7 @@ class BlockSettingsViewModel extends ChangeNotifier {
     _initialCarouselTitlesEnabled = settings.carouselTitlesEnabled;
     _promptStrategy = _initialPromptStrategy;
     _carouselTitlesEnabled = _initialCarouselTitlesEnabled;
-    promptsController = TextEditingController(
-      text: _initialPrompts.join('\n'),
-    );
+    promptsController = TextEditingController(text: _initialPrompts.join('\n'));
     promptsController.addListener(_notify);
   }
 

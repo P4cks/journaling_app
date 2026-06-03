@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_nav_tile.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/palette_picker.dart';
@@ -29,7 +32,12 @@ class SettingsScreen extends StatelessWidget {
           children: [
             SettingsSection(
               label: "Appearance",
-              children: [_AppearanceSettingsContent(theme: theme)],
+              children: [
+                _AppearanceSettingsContent(
+                  theme: theme,
+                  subscriptions: deps.subscriptionRepository,
+                ),
+              ],
             ),
             SettingsSection(
               label: "Post-it style",
@@ -61,99 +69,181 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
             SettingsSection(
-              label: "Debug",
+              label: "Subscription",
               children: [
-                Padding(
-                  padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
-                  child: SwitchListTile(
-                    secondary: AppIcon(HugeIcons.strokeRoundedBug01),
-                    title: const Text('Show debug menu'),
-                    value: debug.debugMenuVisible,
-                    onChanged: debug.setDebugMenuVisible,
-                  ),
+                ListenableBuilder(
+                  listenable: AppDependencies.of(
+                    context,
+                  ).subscriptionRepository,
+                  builder: (context, _) {
+                    final isPro = AppDependencies.of(
+                      context,
+                    ).subscriptionRepository.isPro;
+                    return SettingsNavTile(
+                      icon: HugeIcons.strokeRoundedCrown,
+                      title: isPro ? 'Manage subscription' : 'Upgrade to Pro',
+                      route: Routes.subscription,
+                    );
+                  },
                 ),
-                if (debug.debugMenuVisible) ...[
-                  SwitchListTile(
-                    secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
-                    title: const Text('Unlock all days'),
-                    subtitle: const Text(
-                      'Select and edit any past or future day',
-                    ),
-                    value: debug.unlockAllDays,
-                    onChanged: debug.setUnlockAllDays,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedPaintBucket,
-                    title: 'Override surface color',
-                    dialogTitle: 'Override surface',
-                    colorBuilder: (context) =>
-                        theme.debugSurfaceOverride ??
-                        Theme.of(context).colorScheme.surface,
-                    subtitleBuilder: () => theme.debugSurfaceOverride == null
-                        ? 'Using palette default'
-                        : 'Overridden — clear to restore',
-                    outlinedBuilder: () => theme.debugSurfaceOverride == null,
-                    onChange: theme.setDebugSurfaceOverride,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedColorPicker,
-                    title: 'Free-pick secondary (HSL)',
-                    dialogTitle: 'Free-pick secondary',
-                    colorBuilder: (_) => theme.effectiveSecondary,
-                    subtitleBuilder: () => 'Bypass curated swatches',
-                    onChange: theme.setSecondaryOverride,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedColorPicker,
-                    title: 'Free-pick accent (HSL)',
-                    dialogTitle: 'Free-pick accent',
-                    colorBuilder: (_) => theme.effectiveAccent,
-                    subtitleBuilder: () => 'Bypass curated swatches',
-                    onChange: theme.setAccentOverride,
-                  ),
-                  Builder(
-                    builder: (context) {
-                      final errorColor = Theme.of(context).colorScheme.error;
-                      return Column(
-                        children: [
-                          ListTile(
-                            leading: AppIcon(
-                              HugeIcons.strokeRoundedDelete02,
-                              color: errorColor,
-                            ),
-                            title: Text(
-                              'Delete all entries',
-                              style: TextStyle(color: errorColor),
-                            ),
-                            subtitle: const Text(
-                              'Wipe every journal entry. Cannot be undone.',
-                            ),
-                            onTap: () => _confirmAndDeleteAllEntries(context),
-                          ),
-                          ListTile(
-                            leading: AppIcon(
-                              HugeIcons.strokeRoundedDelete02,
-                              color: errorColor,
-                            ),
-                            title: Text(
-                              'Delete all layouts',
-                              style: TextStyle(color: errorColor),
-                            ),
-                            subtitle: const Text(
-                              'Wipe every layout. A fresh default is recreated.',
-                            ),
-                            onTap: () => _confirmAndDeleteAllLayouts(context),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
               ],
             ),
+            // BETA-ONLY: surfaces "Unlock all days" outside the
+            // kDebugMode-gated Debug section so beta testers can reach
+            // it in release builds. Remove this whole section before
+            // the 1.0 launch.
+            SettingsSection(
+              label: "Beta testing",
+              children: [
+                SwitchListTile(
+                  secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
+                  title: const Text('Unlock all days'),
+                  subtitle: const Text(
+                    'Select and edit any past or future day',
+                  ),
+                  value: debug.unlockAllDays,
+                  onChanged: debug.setUnlockAllDays,
+                ),
+              ],
+            ),
+            if (kDebugMode)
+              SettingsSection(
+                label: "Debug",
+                children: [
+                  Padding(
+                    padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
+                    child: SwitchListTile(
+                      secondary: AppIcon(HugeIcons.strokeRoundedBug01),
+                      title: const Text('Show debug menu'),
+                      value: debug.debugMenuVisible,
+                      onChanged: debug.setDebugMenuVisible,
+                    ),
+                  ),
+                  if (debug.debugMenuVisible) ...[
+                    SwitchListTile(
+                      secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
+                      title: const Text('Unlock all days'),
+                      subtitle: const Text(
+                        'Select and edit any past or future day',
+                      ),
+                      value: debug.unlockAllDays,
+                      onChanged: debug.setUnlockAllDays,
+                    ),
+                    SwitchListTile(
+                      secondary: AppIcon(
+                        HugeIcons.strokeRoundedCheckmarkCircle02,
+                      ),
+                      title: const Text('Show Done on expanded blocks'),
+                      subtitle: const Text(
+                        'Developer affordance — expanded blocks normally dismiss by tapping the backdrop.',
+                      ),
+                      value: debug.showExpandedBlockDoneButton,
+                      onChanged: debug.setShowExpandedBlockDoneButton,
+                    ),
+                    ListenableBuilder(
+                      listenable: deps.subscriptionRepository,
+                      builder: (context, _) {
+                        final subs = deps.subscriptionRepository;
+                        return SwitchListTile(
+                          secondary: AppIcon(HugeIcons.strokeRoundedCrown),
+                          title: const Text('Simulate free account'),
+                          subtitle: const Text(
+                            'Ignore your Pro entitlement to test the free '
+                            'experience. Does not cancel or affect your real '
+                            'subscription.',
+                          ),
+                          value: subs.debugForceFree,
+                          onChanged: subs.setDebugForceFree,
+                        );
+                      },
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedPaintBucket,
+                      title: 'Override surface color',
+                      dialogTitle: 'Override surface',
+                      colorBuilder: (context) =>
+                          theme.debugSurfaceOverride ??
+                          Theme.of(context).colorScheme.surface,
+                      subtitleBuilder: () => theme.debugSurfaceOverride == null
+                          ? 'Using palette default'
+                          : 'Overridden — clear to restore',
+                      outlinedBuilder: () => theme.debugSurfaceOverride == null,
+                      onChange: theme.setDebugSurfaceOverride,
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedColorPicker,
+                      title: 'Free-pick secondary (HSL)',
+                      dialogTitle: 'Free-pick secondary',
+                      colorBuilder: (_) => theme.effectiveSecondary,
+                      subtitleBuilder: () => 'Bypass curated swatches',
+                      onChange: theme.setSecondaryOverride,
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedColorPicker,
+                      title: 'Free-pick accent (HSL)',
+                      dialogTitle: 'Free-pick accent',
+                      colorBuilder: (_) => theme.effectiveAccent,
+                      subtitleBuilder: () => 'Bypass curated swatches',
+                      onChange: theme.setAccentOverride,
+                    ),
+                    Builder(
+                      builder: (context) {
+                        final errorColor = Theme.of(context).colorScheme.error;
+                        final primaryColor = Theme.of(
+                          context,
+                        ).colorScheme.primary;
+                        return Column(
+                          children: [
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDatabaseAdd,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Generate sample entries'),
+                              subtitle: const Text(
+                                'Fill ~400 past days with random moods + text '
+                                'to populate the statistics charts.',
+                              ),
+                              onTap: () => _generateSampleEntries(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Delete all entries',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every journal entry. Cannot be undone.',
+                              ),
+                              onTap: () => _confirmAndDeleteAllEntries(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Delete all layouts',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every layout. A fresh default is recreated.',
+                              ),
+                              onTap: () => _confirmAndDeleteAllLayouts(context),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
           ],
         ),
       ),
@@ -167,9 +257,13 @@ class SettingsScreen extends StatelessWidget {
 /// vertical set of controls and rebuilds when the theme mode, selected palette,
 /// or custom-palette list changes.
 class _AppearanceSettingsContent extends StatelessWidget {
-  const _AppearanceSettingsContent({required this.theme});
+  const _AppearanceSettingsContent({
+    required this.theme,
+    required this.subscriptions,
+  });
 
   final ThemeSettings theme;
+  final SubscriptionRepository subscriptions;
 
   /// Opens the theme editor with a blank custom-palette template.
   ///
@@ -205,8 +299,11 @@ class _AppearanceSettingsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Theme mode (light/dark/system) stays free; only palette
+    // customization is Pro-gated (GUS-26). Listen to both notifiers so
+    // the picker un-greys immediately after a successful purchase.
     return ListenableBuilder(
-      listenable: theme,
+      listenable: Listenable.merge([theme, subscriptions]),
       builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -226,6 +323,8 @@ class _AppearanceSettingsContent extends StatelessWidget {
             onAdd: () => _addPalette(context),
             onEdit: (palette) => _editPalette(context, palette),
             onDelete: (palette) => theme.deleteCustomPalette(palette.id),
+            locked: !subscriptions.isPro,
+            onUnlock: () => requirePro(subscriptions, context: context),
           ),
         ],
       ),
@@ -280,6 +379,26 @@ Future<void> _confirmAndDeleteAllEntries(BuildContext context) async {
         deleted == 0
             ? 'No entries to delete'
             : 'Deleted $deleted entr${deleted == 1 ? 'y' : 'ies'}',
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+/// Debug action (GUS-35): populate the statistics charts with realistic
+/// data. Generates randomized sample entries across the past ~400 days
+/// (skipping days that already have an entry). Non-destructive.
+Future<void> _generateSampleEntries(BuildContext context) async {
+  final created = await AppDependencies.of(
+    context,
+  ).journalRepository.debugGenerateSampleEntries();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        created == 0
+            ? 'No entries created (those days already have entries)'
+            : 'Generated $created sample entr${created == 1 ? 'y' : 'ies'}',
       ),
       duration: const Duration(seconds: 2),
     ),
@@ -475,7 +594,11 @@ class _AddPostItSwatch extends StatelessWidget {
           ),
         ),
         alignment: Alignment.center,
-        child: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 18, color: scheme.onSurface),
+        child: AppIcon(
+          HugeIcons.strokeRoundedPlusSign,
+          size: 18,
+          color: scheme.onSurface,
+        ),
       ),
     );
   }

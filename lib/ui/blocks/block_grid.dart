@@ -2,32 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
-import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 // ---------------------------------------------------------------------------
-// BlockGrid — Notion-style drag-to-reorder with post-it motion.
+// BlockGrid — Notion-style drag-to-reorder with Hero-ready tiles.
 //
-// Layout invariants (unchanged from the pre-post-it design):
+// Layout invariants:
 //  • Grid is never mutated during drag (no ghost tiles, no reflow).
 //  • A single DragTarget wraps the area; an insertion-line overlay shows
 //    the drop point.
 //  • Tile RenderBoxes stay axis-aligned — the rotation/offset in
-//    `PostItBlock` are visual only, so the insertion-index math is safe.
+//    `BlockChrome` are visual only, so the insertion-index math is safe.
 //
 // Motion layered on top:
-//  • Dragging tile scales to 1.03 with stronger shadow (via `PostItBlock`).
+//  • Dragging tile scales to 1.03 with stronger shadow (via `BlockChrome`).
 //  • Newly-added tiles fade + scale in (flutter_animate, keyed by block id).
 //  • Deleted tiles animate out via an overlay "ghost" rendered above the
 //    grid using the tile's last known bounds; ghosts are cleaned up after
 //    their animation finishes.
-//  • All motion respects `themeSettings.postItModeEnabled` — when off,
-//    flutter_animate effects are disabled so the grid behaves like the
-//    pre-post-it build.
+//  • Motion is INDEPENDENT of the `themeSettings.postItModeEnabled`
+//    theming flag — post-it is pure visuals only (see
+//    [chrome/block_chrome.dart](chrome/block_chrome.dart) docstring).
+//
+// Hero:
+//  • Each tile's content is wrapped in `Hero(tag: 'block-${data.id}')`
+//    so the `ExpandedBlockRoute` can morph between this in-grid tile
+//    and the full-screen view. Drag feedback and delete ghosts do NOT
+//    wrap in Hero (they're transient same-route widgets and would
+//    collide on tag uniqueness).
 // ---------------------------------------------------------------------------
+
+/// Hero tag used by both the in-grid tile (source) and the
+/// `ExpandedBlockRoute` (destination). Centralised so both call sites
+/// stay in lock-step.
+String blockHeroTag(String blockId) => 'block-$blockId';
 
 class BlockGrid extends StatefulWidget {
   const BlockGrid({
@@ -42,6 +56,11 @@ class BlockGrid extends StatefulWidget {
     this.onInteractionLockChanged,
     this.scrollable = true,
     this.onBlockTap,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
+    this.onRequestExitEdit,
+    this.onAddBlock,
+    this.maxBlocks,
   });
 
   final List<JournalBlockData> blocks;
@@ -55,12 +74,55 @@ class BlockGrid extends StatefulWidget {
   final bool scrollable;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
 
+  /// Optional "Add block" affordance rendered below the grid. When
+  /// non-null the grid hosts its own `TextButton.icon`; pass `null`
+  /// (the journal pager's default) to suppress the button entirely.
+  /// When [maxBlocks] is set and reached, the button is hidden so the
+  /// caller doesn't have to gate it themselves.
+  final VoidCallback? onAddBlock;
+
+  /// Optional cap on the number of blocks the caller wants to permit.
+  /// Used by the layout editor's `fixedFourPlusText` body to enforce
+  /// a four-block ceiling. The grid only uses this to decide whether
+  /// to render the [onAddBlock] button — it does not reject extra
+  /// blocks supplied via [blocks] (the view-model is the authority on
+  /// what's allowed; this is purely an affordance gate).
+  final int? maxBlocks;
+
+  /// Id of the block currently in in-place edit mode, or null when no
+  /// tile is being edited. Drives the `PostItBlock` scale + outline
+  /// affordance and the inner widget's interactive state.
+  final String? editingBlockId;
+
+  /// Fires when the user double-taps a tile whose [BlockType] opts into
+  /// the new edit-mode flow (`BlockTypeDisplay.usesEditMode`). The
+  /// hosting screen decides whether to push an expanded-block route or
+  /// just flip `editingBlockId` for in-place editing.
+  ///
+  /// For block types where `usesEditMode == false` (photo / location /
+  /// memory / quote / weather-api), the grid does NOT attach the
+  /// double-tap detector and those tiles keep their existing
+  /// single-tap behavior.
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+
+  /// Fires when an in-place carousel auto-collapses after 1.5 s. The
+  /// host clears `_editingBlockId` so the outline disappears in
+  /// lock-step.
+  final VoidCallback? onRequestExitEdit;
+
   @override
   State<BlockGrid> createState() => _BlockGridState();
 }
 
+/// Whether the insertion line should be drawn between/at-side of
+/// tiles (regular), as a horizontal stripe above row 0
+/// (aboveTop), or as a horizontal stripe below the last row
+/// (belowBottom).
+enum _InsertionEdge { none, aboveTop, belowBottom }
+
 class _BlockGridState extends State<BlockGrid> {
   int? _insertionIndex;
+  _InsertionEdge _insertionEdge = _InsertionEdge.none;
   int? _draggingIndex;
   List<GlobalKey> _tileKeys = const [];
   final GlobalKey _gridKey = GlobalKey();
@@ -117,18 +179,59 @@ class _BlockGridState extends State<BlockGrid> {
     return topLeft & tileBox.size;
   }
 
-  int _computeInsertionIndex(Offset globalPos) {
+  /// Computes the insertion index and the edge (regular / above-top /
+  /// below-bottom) for the current pointer position. The dragged tile
+  /// is excluded from the row-Y / nearest-X heuristics so the
+  /// algorithm doesn't anchor on the source's old slot — that was the
+  /// "first-row drag bug" (most visible when re-arranging within
+  /// row 0, where the source tile was always one of the row's only
+  /// two candidates and skewed `nearest`). Explicit above-/below-grid
+  /// branches short-circuit the "closest in Y picks an arbitrary
+  /// edge tile" case, replacing it with a clear "insert at front /
+  /// back" intent visualised by a horizontal insertion line.
+  ({int index, _InsertionEdge edge}) _computeInsertion(Offset globalPos) {
     final gridBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
-    if (gridBox == null) return widget.blocks.length;
+    if (gridBox == null) {
+      return (index: widget.blocks.length, edge: _InsertionEdge.none);
+    }
 
     final local = gridBox.globalToLocal(globalPos);
     final n = widget.blocks.length;
-    if (n == 0) return 0;
+    if (n == 0) return (index: 0, edge: _InsertionEdge.none);
 
     final centres = List<Offset?>.generate(n, (i) => _tileRect(i)?.center);
 
+    // Exclude the dragged tile from the candidate set. It's still
+    // painted (at low opacity) but its old slot shouldn't pull the
+    // insertion line toward itself.
+    final dragging = _draggingIndex;
+    if (dragging != null && dragging >= 0 && dragging < n) {
+      centres[dragging] = null;
+    }
+
+    // Detect above-grid and below-grid pointer positions. Walking
+    // _tileRect (not centres) because we want the actual rect bounds
+    // including the dragged tile, so the "above" threshold is the
+    // visual top of row 0 even when the user is dragging a row-0
+    // tile around.
+    double? minTop;
+    double? maxBottom;
+    for (var i = 0; i < n; i++) {
+      final rect = _tileRect(i);
+      if (rect == null) continue;
+      if (i == dragging) continue;
+      if (minTop == null || rect.top < minTop) minTop = rect.top;
+      if (maxBottom == null || rect.bottom > maxBottom) maxBottom = rect.bottom;
+    }
+    if (minTop != null && local.dy < minTop) {
+      return (index: 0, edge: _InsertionEdge.aboveTop);
+    }
+    if (maxBottom != null && local.dy > maxBottom) {
+      return (index: n, edge: _InsertionEdge.belowBottom);
+    }
+
     double bestDy = double.infinity;
-    int closestIdx = 0;
+    int closestIdx = -1;
     for (var i = 0; i < n; i++) {
       final c = centres[i];
       if (c == null) continue;
@@ -138,8 +241,14 @@ class _BlockGridState extends State<BlockGrid> {
         closestIdx = i;
       }
     }
+    if (closestIdx < 0) {
+      // Every tile filtered out (e.g. only the dragged tile remains
+      // and we already short-circuited above/below). Fall back to
+      // append-end so we never return an invalid index.
+      return (index: n, edge: _InsertionEdge.none);
+    }
 
-    final rowY = centres[closestIdx]?.dy ?? 0;
+    final rowY = centres[closestIdx]!.dy;
     const rowEpsilon = 4.0;
     final rowIndices = <int>[
       for (var i = 0; i < n; i++)
@@ -157,23 +266,32 @@ class _BlockGridState extends State<BlockGrid> {
     }
 
     final cx = centres[nearest]?.dx ?? local.dx;
-    return local.dx < cx ? nearest : nearest + 1;
+    return (
+      index: local.dx < cx ? nearest : nearest + 1,
+      edge: _InsertionEdge.none,
+    );
   }
 
   void _onDragStarted(int index) {
     setState(() {
       _draggingIndex = index;
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
     });
   }
 
   void _onDragUpdate(DragTargetDetails<int> details) {
-    final idx = _computeInsertionIndex(details.offset);
-    if (idx == _insertionIndex) return;
+    final result = _computeInsertion(details.offset);
+    if (result.index == _insertionIndex && result.edge == _insertionEdge) {
+      return;
+    }
 
     void apply() {
       if (!mounted) return;
-      setState(() => _insertionIndex = idx);
+      setState(() {
+        _insertionIndex = result.index;
+        _insertionEdge = result.edge;
+      });
     }
 
     if (WidgetsBinding.instance.schedulerPhase ==
@@ -188,6 +306,7 @@ class _BlockGridState extends State<BlockGrid> {
     if (!mounted) return;
     setState(() {
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
       _draggingIndex = null;
     });
   }
@@ -196,6 +315,7 @@ class _BlockGridState extends State<BlockGrid> {
     final insertAt = _insertionIndex ?? widget.blocks.length;
     setState(() {
       _insertionIndex = null;
+      _insertionEdge = _InsertionEdge.none;
       _draggingIndex = null;
     });
     final to = insertAt > from ? insertAt - 1 : insertAt;
@@ -207,6 +327,44 @@ class _BlockGridState extends State<BlockGrid> {
     if (idx == null) return null;
     final n = widget.blocks.length;
     if (n == 0) return null;
+
+    // Above row 0 — horizontal line spanning the full row width.
+    if (_insertionEdge == _InsertionEdge.aboveTop) {
+      final firstRect = _tileRect(0);
+      if (firstRect == null) return null;
+      final rowY = firstRect.center.dy;
+      var left = firstRect.left;
+      var right = firstRect.right;
+      for (var i = 1; i < n; i++) {
+        final r = _tileRect(i);
+        if (r == null) continue;
+        if ((r.center.dy - rowY).abs() < 4) {
+          if (r.left < left) left = r.left;
+          if (r.right > right) right = r.right;
+        }
+      }
+      final y = firstRect.top - 5;
+      return _InsertionLineInfo(start: Offset(left, y), end: Offset(right, y));
+    }
+
+    // Below last row — horizontal line spanning the full row width.
+    if (_insertionEdge == _InsertionEdge.belowBottom) {
+      final lastRect = _tileRect(n - 1);
+      if (lastRect == null) return null;
+      final rowY = lastRect.center.dy;
+      var left = lastRect.left;
+      var right = lastRect.right;
+      for (var i = 0; i < n - 1; i++) {
+        final r = _tileRect(i);
+        if (r == null) continue;
+        if ((r.center.dy - rowY).abs() < 4) {
+          if (r.left < left) left = r.left;
+          if (r.right > right) right = r.right;
+        }
+      }
+      final y = lastRect.bottom + 5;
+      return _InsertionLineInfo(start: Offset(left, y), end: Offset(right, y));
+    }
 
     if (idx >= n) {
       final r = _tileRect(n - 1);
@@ -246,10 +404,13 @@ class _BlockGridState extends State<BlockGrid> {
 
   static const double _crossAxisSpacing = 12;
 
+  bool get _showAddButton =>
+      widget.onAddBlock != null &&
+      (widget.maxBlocks == null || widget.blocks.length < widget.maxBlocks!);
+
   @override
   Widget build(BuildContext context) {
     final lineInfo = _reorderable ? _insertionLineInfo() : null;
-    final postIt = AppDependencies.of(context).themeSettings.postItModeEnabled;
 
     final staggered = Padding(
       padding: widget.padding,
@@ -257,14 +418,11 @@ class _BlockGridState extends State<BlockGrid> {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: _crossAxisSpacing,
-        children: _buildTiles(postIt: postIt),
+        children: _buildTiles(),
       ),
     );
-    final Widget gridContent = widget.scrollable
-        ? SingleChildScrollView(child: staggered)
-        : staggered;
 
-    final Widget body;
+    final Widget grid;
     if (_reorderable) {
       final dragTarget = DragTarget<int>(
         onWillAcceptWithDetails: (_) => true,
@@ -275,10 +433,10 @@ class _BlockGridState extends State<BlockGrid> {
           }
         },
         onAcceptWithDetails: (details) => _onAccept(details.data),
-        builder: (_, _, _) => gridContent,
+        builder: (_, _, _) => staggered,
       );
 
-      body = Stack(
+      grid = Stack(
         key: _gridKey,
         children: [
           dragTarget,
@@ -293,32 +451,61 @@ class _BlockGridState extends State<BlockGrid> {
                 ),
               ),
             ),
-          ..._buildGhosts(postIt: postIt),
+          ..._buildGhosts(),
         ],
       );
     } else {
-      body = Stack(
-        key: _gridKey,
+      grid = Stack(key: _gridKey, children: [staggered, ..._buildGhosts()]);
+    }
+
+    Widget composed = grid;
+    if (_showAddButton) {
+      // The DragTarget intentionally wraps the grid only — drops on
+      // the Add-block button row fall through, so the user can't
+      // accidentally drop a tile "onto" the affordance.
+      composed = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          gridContent,
-          ..._buildGhosts(postIt: postIt),
+          if (widget.blocks.isNotEmpty) grid,
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              widget.padding.left,
+              widget.blocks.isEmpty ? widget.padding.top : 4,
+              widget.padding.right,
+              widget.padding.bottom,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: widget.onAddBlock,
+                icon: AppIcon(HugeIcons.strokeRoundedPlusSign, size: 16),
+                label: const Text('Add block'),
+              ),
+            ),
+          ),
         ],
       );
     }
 
-    return body;
+    return widget.scrollable
+        ? SingleChildScrollView(child: composed)
+        : composed;
   }
 
-  List<Widget> _buildTiles({required bool postIt}) {
-    return [
-      for (var i = 0; i < widget.blocks.length; i++) _buildTile(i, postIt: postIt),
-    ];
+  List<Widget> _buildTiles() {
+    return [for (var i = 0; i < widget.blocks.length; i++) _buildTile(i)];
   }
 
-  Widget _buildTile(int index, {required bool postIt}) {
+  Widget _buildTile(int index) {
     final block = widget.blocks[index];
     final isDragging = _draggingIndex == index;
+    final usesEditMode = block.type.usesEditMode;
 
+    final canDoubleTap =
+        usesEditMode &&
+        widget.onRequestBlockEdit != null &&
+        widget.mode == BlockMode.editable;
     final inner = BlockWidget(
       key: ValueKey('content-${block.id}'),
       data: block,
@@ -326,48 +513,70 @@ class _BlockGridState extends State<BlockGrid> {
       onChanged: widget.onBlockChanged,
       onJumpToDate: widget.onJumpToDate,
       onInteractionLockChanged: widget.onInteractionLockChanged,
+      onDoubleTap: canDoubleTap
+          ? () => widget.onRequestBlockEdit!(block)
+          : null,
     );
 
-    final card = GestureDetector(
-      onTap: widget.onBlockTap == null
-          ? null
-          : () => widget.onBlockTap!(block, block.id),
-      child: PostItBlock(
-        visuals: block.visuals,
-        isDragging: isDragging,
-        topRight: widget.cardTrailing?.call(block, index),
-        child: inner,
+    // Hero source. Tag matches the destination wrapped by
+    // `ExpandedBlockRoute`. Material wrapper is REQUIRED — during a
+    // Hero flight the widget is rendered in the root Overlay,
+    // OUTSIDE the journal screen's Material(surfaceContainerLow).
+    // Without a Material ancestor inside the Hero, TextField /
+    // InkWell descendants throw "No Material widget found"
+    // mid-flight (and show the yellow-underline debug render).
+    Widget card = Hero(
+      tag: blockHeroTag(block.id),
+      child: Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          onTap: widget.onBlockTap == null
+              ? null
+              : () => widget.onBlockTap!(block, block.id),
+          child: BlockChrome(
+            visuals: block.visuals,
+            isDragging: isDragging,
+            topRight: widget.cardTrailing?.call(block, index),
+            child: inner,
+          ),
+        ),
       ),
     );
 
-    // Add animation: scale 0.9 → 1.0 + fade. Runs once on mount, keyed
-    // by block.id so re-orders don't replay it. Skipped when post-it
-    // mode is off so the classic look stays still.
-    final tileWidget = postIt
-        ? Animate(
-            key: ValueKey('animate-${block.id}'),
-            effects: [
-              const FadeEffect(
-                duration: Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-              ),
-              const ScaleEffect(
-                begin: Offset(0.9, 0.9),
-                end: Offset(1.0, 1.0),
-                duration: Duration(milliseconds: 280),
-                curve: Curves.easeOutBack,
-              ),
-            ],
-            child: card,
-          )
-        : card;
+    // No outer gesture wrapper. Each block widget owns its own
+    // `GestureDetector(onTap, onDoubleTap)` — single tap fires the
+    // block's engage action after `kDoubleTapTimeout`, double tap
+    // fires the `onDoubleTap` callback we passed via `BlockWidget`.
+    // Uniform behaviour across all block types: no flash on double
+    // tap.
+
+    // Mount animation: scale 0.9 → 1.0 + fade. Runs once on mount,
+    // keyed by block.id so re-orders don't replay it. Independent of
+    // post-it theming — the animation is a structural affordance, not
+    // a theme decoration.
+    final tileWidget = Animate(
+      key: ValueKey('animate-${block.id}'),
+      effects: const [
+        FadeEffect(
+          duration: Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        ),
+        ScaleEffect(
+          begin: Offset(0.9, 0.9),
+          end: Offset(1.0, 1.0),
+          duration: Duration(milliseconds: 280),
+          curve: Curves.easeOutBack,
+        ),
+      ],
+      child: card,
+    );
 
     Widget content = tileWidget;
 
     if (_reorderable) {
       final feedback = _DraggableFeedback(
         tileKey: _tileKeys[index],
-        child: PostItBlock(
+        child: BlockChrome(
           visuals: block.visuals,
           isDragging: true,
           child: BlockWidget(data: block, mode: BlockMode.readOnly),
@@ -399,7 +608,7 @@ class _BlockGridState extends State<BlockGrid> {
   // the source list has dropped them.
   // ---------------------------------------------------------------------
 
-  List<Widget> _buildGhosts({required bool postIt}) {
+  List<Widget> _buildGhosts() {
     if (_pendingDeletes.isEmpty) return const [];
     return [
       for (final pending in List<_PendingDelete>.from(_pendingDeletes))
@@ -417,34 +626,33 @@ class _BlockGridState extends State<BlockGrid> {
                   _pendingDeletes.removeWhere((p) => p == pending);
                 });
               },
-              effects: [
-                const FadeEffect(
+              effects: const [
+                FadeEffect(
                   begin: 1,
                   end: 0,
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
-                const ScaleEffect(
+                ScaleEffect(
                   begin: Offset(1.0, 1.0),
                   end: Offset(0.7, 0.7),
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
-                if (postIt)
-                  const RotateEffect(
-                    begin: 0,
-                    end: 0.04,
-                    duration: Duration(milliseconds: 320),
-                    curve: Curves.easeIn,
-                  ),
-                const MoveEffect(
+                RotateEffect(
+                  begin: 0,
+                  end: 0.04,
+                  duration: Duration(milliseconds: 320),
+                  curve: Curves.easeIn,
+                ),
+                MoveEffect(
                   begin: Offset.zero,
                   end: Offset(0, 16),
                   duration: Duration(milliseconds: 320),
                   curve: Curves.easeIn,
                 ),
               ],
-              child: PostItBlock(
+              child: BlockChrome(
                 visuals: pending.block.visuals,
                 child: BlockWidget(
                   data: pending.block,
@@ -483,11 +691,7 @@ class _DraggableFeedback extends StatelessWidget {
 
     return Material(
       type: MaterialType.transparency,
-      child: SizedBox(
-        width: size.width,
-        height: size.height,
-        child: child,
-      ),
+      child: SizedBox(width: size.width, height: size.height, child: child),
     );
   }
 }

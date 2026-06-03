@@ -52,19 +52,47 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     (`true`/`false`; absent → default `true`),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
-    carousels yet). If you add another, give it a namespaced key
-    and add a typed accessor pair. Abandoned legacy keys
-    (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
-    are intentionally not read by the service anymore and may still
-    be present on existing users' disks; per the pre-1.0
-    backwards-compatibility policy in the root `CLAUDE.md` we do not
-    migrate them.
+    carousels yet), `block.wannado.items` (JSON-encoded list of
+    `WannadoItem`s — the global wanna-do bucket list rendered by
+    `SectionKind.wannado` sections; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
+    default `true`; gates the expanded-block overlay vs in-place
+    edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
+    absent → default `false`; developer affordance that adds a Done
+    button to the expanded block route),
+    `subscription.lastKnownPro` (`true`/`false`; absent → `false`;
+    persisted snapshot of the **real** `pro` entitlement so an offline
+    cold start can still honour an existing subscription — written by
+    `SubscriptionRepository` on every customer-info update),
+    `subscription.debugForceFree` (`true`/`false`; absent → `false`;
+    debug "simulate free account" override).
+    If you add another, give it a namespaced key and add a typed
+    accessor pair. Abandoned legacy keys (`block.mood.title`,
+    `block.weather.title`, `block.text.charLimit`, and the former
+    `debug.limit.*` per-block input-limit overrides — all removed when
+    the GUS-10 char-cap scaffold was deleted) are intentionally not
+    read by the service anymore and may still be present on existing
+    users' disks; per the pre-1.0 backwards-compatibility policy in the
+    root `CLAUDE.md` we do not migrate them.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
     Debug `ExpansionTile`.
   - `unlockAllDays` bypasses both the calendar's future-day disable
     and the editor's read-only-for-past guard.
+  - `expandBlockOnEdit` (default `true`) — gates the new
+    double-tap-to-edit dispatch: ON pushes `ExpandedBlockRoute` over a
+    blurred entry; OFF flips the in-place `_editingBlockId` and shows
+    the scale + outline affordance on the active tile. Despite the
+    "Debug" file location this is a user-facing toggle shown in
+    Settings → Blocks.
+  - `showExpandedBlockDoneButton` (default `false`) — developer-only
+    affordance that overlays a Done button on the expanded route.
+    Lives in the Settings → Debug section.
+  - The per-block input-limit overrides (GUS-10:
+    `textBlockCharLimit`, `textSectionCharLimit`, `promptCharLimit`,
+    `todoItemCharLimit`, `todoMaxItems`) have been **removed** along
+    with the `BlockInputLimits` scaffold — text blocks/sections are
+    now uncapped (only the header keeps a fixed 60-char cap).
 - [photo_storage_service.dart](photo_storage_service.dart) — `PhotoStorageService`.
   Copies `image_picker` results into `<app-docs>/photos/<uuid>.<ext>`
   and exposes:
@@ -129,6 +157,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Caller owns id generation and uniqueness validation. Persisted as
     a JSON list; orphan-tolerant (delete doesn't cascade into layouts
     / entries — the widget renders a "deleted block" placeholder).
+  - `wannados` (`List<WannadoItem>`) — the user's **global** wanna-do
+    bucket list (GUS-8), rendered by every `SectionKind.wannado`
+    section as a rotating carousel. `addWannado`, `updateWannado`,
+    `deleteWannado` mutate (each notifies). **No toggle / done state**
+    — items are pure display (text only). Caller owns id generation.
+    Persisted as a JSON list (`block.wannado.items`); mirrors the
+    `customCarousels` storage pattern exactly.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
@@ -184,6 +219,24 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   `google_sign_in`. Maps Firebase `User` → `AppUser`, wraps Firebase
   exceptions in `AuthFailure`, and supports email/password, Google,
   Apple, password reset, and sign-out.
+- [subscription_service.dart](subscription_service.dart) —
+  `SubscriptionService`. The **only** class that imports
+  `purchases_flutter` (RevenueCat). Static `configure()` calls
+  `Purchases.configure(...)` exactly once (from `main.dart`, before any
+  other Purchases call) with a **build-mode-aware** key (`_apiKey`
+  getter): non-release builds (debug/profile) use the Test Store key
+  `test_…`; release builds use the platform-specific production key
+  (`appl_…` on iOS, `_googleApiKey` on Android). The Android production
+  key is **still a placeholder** (currently aliased to the Apple key) —
+  RevenueCat rejects an `appl_` key on Android, so a real `goog_…` key
+  must be set before the first Play Store release. Instance methods wrap
+  `getCustomerInfo`,
+  `getOfferings`, `restorePurchases`, add/remove customer-info listener,
+  and `logIn`/`logOut` (the last two unused until auth↔subscription
+  linking is enabled). Also exports `kProEntitlementId = 'pro'` — the
+  single source of truth for the Pro entitlement identifier (change
+  here if the dashboard identifier differs). Consumed only by
+  [SubscriptionRepository](../repositories/subscription_repository.dart).
 
 ## Implementation details
 

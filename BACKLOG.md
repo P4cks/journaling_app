@@ -1,12 +1,14 @@
 # Backlog
 
+> ⚠️ **Deprecated — work is now tracked in Linear** (workspace **GustoJournalingApp**, team prefix `GUS-`). This file is kept only as a historical record of shipped work; **do not add new items here.** See the project-root `CLAUDE.md` "Tracking work in Linear" section.
+
 Running list of feature ideas. Not prioritized — pick whichever fits the moment.
 Add a complexity measure to the idea
 Tick `[x]` when shipped (link the PR). Add new ideas at the bottom of the relevant section, or create a new section if nothing fits.
 
 READ CLAUDE.md for further implementation details
 
-**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural decisions)
+**Complexity legend:** `S` small (≤2h, isolated) · `M` medium (half-day to day, multiple files) · `L` large (multi-day, new patterns/data model) · `XL` extra-large (infrastructure, requires architectural dfluecisions)
 
 ## UX / structure
 
@@ -25,7 +27,9 @@ READ CLAUDE.md for further implementation details
 * [x] `S` **Complete Layout Preview** - Preview should be in layout
 * [x] `S` **Modal editing mode** — while a block (or the title) is being edited, the AppBar collapses to a single Done button and the swipe pager is locked, so editing can't accidentally navigate away. Tapping Done unfocuses the TextField. Driven off `WidgetsBindingObserver.didChangeMetrics` on `MainJournalScreen` (MediaQuery.viewInsetsOf inside the body returns 0 due to Scaffold's `resizeToAvoidBottomInset`). AppBar actions also unfocus before AND after navigation in the non-modal path to defend against Flutter's focus auto-restoration.
 * [x] `M` **Choose-layout sheet — half-screen scrollable** — `showLayoutPickerSheet` reworked to use the same `DraggableScrollableSheet` pattern as `showAddBlockSheet`, so long layout lists scroll inside the sheet instead of pushing the AppBar off-screen.
+* [x] `L` **Double-tap to edit blocks + expanded-block overlay** — disabled the post-it tap-wiggle (kept commented out for later revival), moved block editing behind a uniform double-tap gesture (single-tap is inert; long-press still reorders), added a `block.expandOnEdit` setting (default ON) that pushes an `ExpandedBlockRoute` over a blurred journal entry — keyboard blocks sit top-aligned so the keyboard fits below, others centered; with the setting OFF the active tile gets an in-place 1.05 scale + accent outline via `PostItBlock.isEditing`. Concrete editable widgets wrap their inner content in `AbsorbPointer(absorbing: !editing)` so single-taps are inert; `TextContentControllerMixin` now owns the `FocusNode` and requests focus on the false→true edit flip. Text sections follow the same model. Action blocks (photo/location/memory) keep their existing single-tap behavior. A debug `debug.expandedBlock.showDoneButton` toggle overlays a Done button on the expanded route for development.
 * [x] `M` **Replace Phosphor icons with HugeIcons** — swapped `phosphor_flutter` for the free `hugeicons` package (stroke-rounded family only — selection state now driven by colour). Centralised `AppIcon` rewrapped around `HugeIcon`; `secondaryColor` / `secondaryOpacity` props dropped. Curated `LayoutIcon` / `CarouselIcon` catalogues collapsed to a single `icon` field; persisted `name` ids retained so saved layouts and carousel picks still resolve. Closest-match substitutions documented inline in the catalogues.
+* [x] `XL` **Block UI rewrite — uniform architecture, Hero expansion, decoupled post-it theming** — replaced `PostItBlock` with `BlockChrome` (pure-theming chrome; no animation/gesture/interaction logic gated on `postItModeEnabled`) and introduced `BlockHostKind` / `BlockEditState` + `BlockRenderContext`. Wired `Hero(tag: blockHeroTag(block.id))` around every in-grid tile + text section + feature block so the new `ExpandedBlockRoute` morphs source→destination at 1:1 aspect (square with side margins on tall screens, top-aligned when keyboard is up). Outline rule fixed to grid-only (the expanded route's blur + Hero is its own affordance). Carousels no longer auto-expand on null selection — engaging is the only way in; the 1.5 s auto-collapse now also fires `onRequestExitEdit` so in-place edit mode exits in lock-step. `autoCollapse: false` in the expanded route keeps the picker open. Todo's "Add task" button is hidden outside the expanded view. Text sections in expanded mode render directly on the blur with no card chrome. Action blocks (photo + memory) flipped to `usesEditMode: true` and fire their action immediately on double-tap via top-level helpers (`firePhotoBlockAction` / `fireMemoryBlockAction`) when the setting is OFF; inside the route the user taps the body to fire. Keyboard blocks (text / prompt / todo) use a two-step backdrop dismiss inside the route: tap-1 unfocuses + re-centers, tap-2 pops the Hero. Wiggle animation removed entirely.
 
 ## Theming / typography
 
@@ -34,6 +38,7 @@ READ CLAUDE.md for further implementation details
 * [ ] `M` **Toggle between emoji and HugeIcons for blocks** — let users switch between emojis and HugeIcons stroke-rounded glyphs.
 * [ ] `L` **Animations** - rework animations for navigation to be smoother and visually appealing but discrete/
 * [ ] `S` **Change shadows on boxes**
+* [ ] `S` **Easter-egg** tapping block x amount of times makes it float down like a leaf
 
 ## Section ideas
 
@@ -83,13 +88,19 @@ READ CLAUDE.md for further implementation details
 
 ## Subscription / monetization
 
-* [ ] `XL` **Subscription scaffolding** — feature-gating infrastructure that scales to multiple tiers (e.g. free / pro / pro+). Tier capability flags read from a single source so individual gates are one-liners. Using a tool like revenuecat
-* [ ] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. (requires scaffolding)
+* [x] `XL` **Subscription scaffolding** — RevenueCat integration (`purchases_flutter` + `purchases_ui_flutter`). `SubscriptionService` (thin SDK wrapper, the only `purchases_flutter` importer) → `SubscriptionRepository` (`ChangeNotifier`) exposing a single `isPro` flag driven by the `pro` entitlement (`kProEntitlementId`), wired through `AppDependencies`. Configured in `main.dart` with the Test Store key (`test_…`; swap for `appl_`/`goog_` per-platform keys in production). Paywall + Customer Center presented via `RevenueCatUI` from a new `/subscription` screen reachable from a Settings tile. Further gates are now one-liners against `subscriptionRepository.isPro`.
+* [x] `S` **Gate: free users limited to 1 layout** — paid tiers unlock unlimited. Gate lives entirely in `LayoutsScreen._openNewLayoutFlow`: a non-Pro user with ≥1 layout gets `RevenueCatUI.presentPaywallIfNeeded('pro')` instead of the kind picker; creation proceeds only on `PaywallResult.purchased`. The first-launch seeded "Default" layout counts as the one free layout.
 * [ ] `XL` **Gate: cloud synchronization (paid only)** — accounts + sync backend (separate piece of work).
-* [ ] `S` **Gate: block count per layout for free users** — paid tiers unlock more blocks per layout (or unlimited). (requires scaffolding)
-* [ ] `S` **Gate: statistics and insight (paid only)** - (requires scaffolding)
+* [x] `S` **Gate: block count per layout for free users** — paid tiers unlock unlimited. Free `blockOnly` layouts are capped at `kFreeMaxBlocksPerLayout` (6) blocks; the (N+1)th add presents the paywall. Gate lives in `LayoutEditorScreen._addBlockBlockOnly`, with the AppBar `+` greyed and badged (`ProLockBadge(compact: true)`) once at the cap. Custom layouts are Pro-only to create, so they aren't separately block-capped.
+* [~] `S` **Gate: statistics and insight (paid only)** — statistics range now tiered: free users get `Week` / `Month`, while `Year` and `All` are Pro-locked (`StatRangeDisplay.isProOnly`). The former `SegmentedButton` switcher was replaced by `StatRangeSelector`'s dropdown — `Year` / `All` items badge with `ProLockBadge` and present the paywall via `requirePro` on selection. Remaining: any per-chart / insight gating beyond the range window.
 * [ ] `M` **Gate: limited selection of blocks for free users** - set some default blocks, text block, mood block etc. maybe let user select one as a gift after 7 day streak
 * [ ] `S` **Gate: change theme (paid only)** - custom themes only configurable as a paid user. For free users only default theme
+<<<<<<< HEAD
 * [ ] `S` **Gate: differently styled layouts** - restrict free users to 4 blocks followed by one text section or something along those lines, paid users can choose to have only blocks or customize sections
 * [ ] `S` **Paywall or grey out locked features (TBD)**
+=======
+* [x] `S` **Gate: differently styled layouts** — free users may create `blockOnly` and `fixedFourPlusText` layouts; the `custom` (fully customizable sections) kind is Pro-only. The kind-picker sheet (`showLayoutKindPickerSheet`) greys + badges the custom tile for free users and presents the paywall on tap, popping with `LayoutKind.custom` only on a successful purchase.
+* [x] `S` **Paywall or grey out locked features** — established the shared lock-UX pattern in `lib/ui/core/widgets/pro_gate.dart`: `requirePro(subscriptions)` (paywall-on-demand gate primitive) + `ProLockBadge` (compact crown dot for icon overlay; full "Pro" chip for list tiles). Locked controls render greyed with a badge and present the paywall on tap. Used by the layout-kind picker (custom) and the blockOnly block-count cap.
+* [x] `M` **Offline Pro failsafe + debug "cancel" + offline error handling** — three-part hardening of the Pro gate. (1) `SubscriptionRepository.isPro` now resolves in three tiers: a local `debugForceFree` override (Settings → Debug "Simulate free account" — masks `isPro` to false to test the free experience; RevenueCat has no client cancel API so this is a local mask only, not a real cancellation), then the SDK-cached live `pro` entitlement, then a persisted `subscription.lastKnownPro` failsafe so an offline cold start still honours an existing subscription. The failsafe snapshots the *real* entitlement on every customer-info update, never the override. Both booleans persist in the `settings` box. (2) `requirePro(subscriptions, {context})` is now offline-aware: it calls `ensureOfferings()` first and, when no offering can be loaded (offline / can't sell Pro), shows a "you're offline" SnackBar and returns `false` instead of a broken paywall; `PlatformException` / `PaywallResult.error` are likewise caught and reported. (3) `init()` / `restore()` swallow failures so an offline launch falls through to the persisted flag.
+>>>>>>> main
 * [ ] `S` **

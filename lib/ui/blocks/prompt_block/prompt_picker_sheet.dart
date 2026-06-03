@@ -76,8 +76,9 @@ class _PromptPickerBodyState extends State<_PromptPickerBody> {
             ListTile(
               title: Text(p),
               selected: p == widget.selected,
-              selectedTileColor: theme.colorScheme.primaryContainer
-                  .withValues(alpha: 0.4),
+              selectedTileColor: theme.colorScheme.primaryContainer.withValues(
+                alpha: 0.4,
+              ),
               onTap: () => Navigator.of(context).pop(p),
             ),
           ListTile(

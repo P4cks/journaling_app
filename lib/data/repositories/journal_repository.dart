@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_template.dart';
@@ -135,6 +136,123 @@ class JournalRepository extends ChangeNotifier {
     return deleted;
   }
 
+  /// **Debug-only.** Generates randomized sample entries across the
+  /// past [days] days to populate the statistics charts (GUS-35). Each
+  /// generated entry gets one block-grid section with a text block
+  /// (random word count) and a mood tracker (random emoji, occasionally
+  /// none so the mood-over-time line shows gaps), so every stat —
+  /// counts, words, mood distribution / over-time, and entry frequency
+  /// — has data to render. Roughly [density] of the days get an entry
+  /// so the frequency chart isn't a solid wall of bars.
+  ///
+  /// Days that already have an entry are skipped so real data is never
+  /// overwritten. Today is left untouched (the user may be drafting).
+  /// Returns the number of entries created; notifies once if any were.
+  Future<int> debugGenerateSampleEntries({
+    int days = 400,
+    double density = 0.7,
+  }) async {
+    final today = _normalize(DateTime.now());
+    var created = 0;
+    for (var back = 1; back <= days; back++) {
+      if (_rng.nextDouble() > density) continue;
+      final date = today.subtract(Duration(days: back));
+      if (getEntryForDate(date) != null) continue;
+      final entry = JournalEntry(
+        id: _uuid.v4(),
+        date: date,
+        lastModified: DateTime.now(),
+        sections: [
+          EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.blockGrid,
+            rows: 1,
+            blocks: [
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: TextBlockContent(text: _sampleText()).toMap(),
+                visuals: BlockVisuals.random(
+                  _rng,
+                  _themeSettings.postItPalette,
+                ),
+              ),
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.moodTracker,
+                content: MoodBlockContent(emoji: _sampleMood()).toMap(),
+                visuals: BlockVisuals.random(
+                  _rng,
+                  _themeSettings.postItPalette,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      await _storage.saveJournalEntry(_dateKey(date), entry);
+      created++;
+    }
+    if (created > 0) {
+      debugPrint(
+        '[JournalRepository] debugGenerateSampleEntries created $created '
+        'over $days days',
+      );
+      notifyListeners();
+    }
+    return created;
+  }
+
+  /// ~15% of generated days have no mood, so the mood-over-time line
+  /// renders gaps (the VM emits `null` for moodless days).
+  String? _sampleMood() {
+    if (_rng.nextDouble() < 0.15) return null;
+    return moodEmojis[_rng.nextInt(moodEmojis.length)];
+  }
+
+  static const _sampleWords = <String>[
+    'today',
+    'I',
+    'felt',
+    'grateful',
+    'for',
+    'the',
+    'small',
+    'moments',
+    'work',
+    'was',
+    'busy',
+    'but',
+    'good',
+    'walked',
+    'in',
+    'park',
+    'and',
+    'read',
+    'a',
+    'book',
+    'tired',
+    'happy',
+    'calm',
+    'thinking',
+    'about',
+    'tomorrow',
+    'coffee',
+    'rain',
+    'sun',
+    'morning',
+    'evening',
+    'friends',
+  ];
+
+  String _sampleText() {
+    final count = 5 + _rng.nextInt(40);
+    return List.generate(
+      count,
+      (_) => _sampleWords[_rng.nextInt(_sampleWords.length)],
+    ).join(' ');
+  }
+
   /// Materializes [layout] into a fresh list of [EntrySection]s with
   /// per-type initial content seeded from block-type-global settings.
   ///
@@ -146,10 +264,7 @@ class JournalRepository extends ChangeNotifier {
   ///
   /// Exposed publicly so the editor's `applyLayout` / change-layout
   /// flow stays in sync with `createEntryForDate`.
-  List<EntrySection> materializeLayout(
-    JournalLayout? layout,
-    DateTime date,
-  ) {
+  List<EntrySection> materializeLayout(JournalLayout? layout, DateTime date) {
     if (layout == null) return const [];
     var promptSlotIndex = 0;
     int nextPromptSlot() => promptSlotIndex++;
@@ -181,13 +296,50 @@ class JournalRepository extends ChangeNotifier {
             kind: SectionKind.featureBlock,
             blocks: section.blocks.isEmpty
                 ? const []
-                : [
-                    _materializeOne(
-                      section.blocks.first,
-                      date,
-                      nextPromptSlot,
-                    ),
-                  ],
+                : [_materializeOne(section.blocks.first, date, nextPromptSlot)],
+          ),
+          // Header reuses the text-block JSON path (like `text`): one
+          // fresh empty textBlock holds the heading string.
+          SectionKind.header => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.header,
+            blocks: [
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: const TextBlockContent(text: '').toMap(),
+              ),
+            ],
+          ),
+          // Divider is purely visual — carries no blocks.
+          SectionKind.divider => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.divider,
+            blocks: const [],
+          ),
+          // Block + text body: the float block (photo/memory, 0 or 1
+          // template) materialized like `featureBlock`, plus a fresh
+          // empty `textBlock` (like `text`). The widget looks each up by
+          // type, so order is irrelevant.
+          SectionKind.blockTextBody => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.blockTextBody,
+            blocks: [
+              if (section.blocks.isNotEmpty)
+                _materializeOne(section.blocks.first, date, nextPromptSlot),
+              JournalBlockData.create(
+                id: _uuid.v4(),
+                type: BlockType.textBlock,
+                content: const TextBlockContent(text: '').toMap(),
+              ),
+            ],
+          ),
+          // Wanna-dos render the global list off `BlockSettings`; the
+          // section itself is content-free per entry.
+          SectionKind.wannado => EntrySection(
+            id: _uuid.v4(),
+            kind: SectionKind.wannado,
+            blocks: const [],
           ),
         },
     ];

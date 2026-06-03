@@ -12,6 +12,45 @@ coordination live.
   error/success messages. Public methods wrap email sign-in/register,
   password reset, Google, Apple, and sign-out. UI should use this
   repository instead of importing Firebase SDK classes.
+- [subscription_repository.dart](subscription_repository.dart) —
+  `SubscriptionRepository extends ChangeNotifier`. Wraps
+  [SubscriptionService](../services/subscription_service.dart) **and**
+  [SettingsStorageService](../services/settings_storage_service.dart)
+  (constructor: `SubscriptionRepository(service, settings)`). Exposes a
+  single `isPro` getter resolved in three tiers:
+  1. **Debug override** — when `debugForceFree` is on, `isPro` is always
+     `false` (lets developers test the free experience; toggled from
+     Settings → Debug "Simulate free account" via `setDebugForceFree`).
+     This does **not** touch the real RevenueCat subscription — the
+     client SDK has no cancel API, so this is a local mask only.
+  2. **Live entitlement** — `CustomerInfo.entitlements.active` contains
+     `kProEntitlementId` (SDK-cached, so it works offline once the SDK
+     has cached at least once).
+  3. **Offline failsafe** — when we have *no* `CustomerInfo` at all
+     (e.g. a cold start that threw offline), falls back to the persisted
+     `subscription.lastKnownPro` flag. That flag snapshots the **real**
+     entitlement on every customer-info update (`_applyCustomerInfo`),
+     never the debug override, so toggling the override can't corrupt
+     the failsafe.
+  Subscribes to the RevenueCat customer-info update listener in its
+  constructor (mirrors `AuthRepository`'s stream subscription) and
+  removes it in `dispose`. `init()` (called once from `main.dart` after
+  `SubscriptionService.configure`) fetches initial `CustomerInfo` +
+  `Offerings`, **swallowing failures** so an offline launch falls
+  through to the persisted flag; `restore()` re-applies prior purchases.
+  `ensureOfferings()` (re)loads the current offering and returns whether
+  a paywall can be presented — the Pro gate
+  ([pro_gate.dart](../../ui/core/widgets/pro_gate.dart)) calls it to
+  detect "offline / can't buy" before presenting RevenueCat's paywall.
+  `hasOfferings` exposes the same state synchronously. The live
+  entitlement is SDK-cached (not in Hive); only the `lastKnownPro` /
+  `debugForceFree` booleans are persisted (settings box). A purchase
+  made on the `RevenueCatUI` paywall flips `isPro` automatically (no
+  manual `purchasePackage`). UI reads `isPro` for gates (e.g.
+  [LayoutsScreen](../../ui/layouts/view/layouts_screen.dart),
+  [StatRangeSelector](../../ui/statistics/widgets/stat_range_selector.dart))
+  and the
+  [SubscriptionScreen](../../ui/subscription/view/subscription_screen.dart).
 - [journal_repository.dart](journal_repository.dart) — `JournalRepository extends ChangeNotifier`.
   - **Date keying**: `_normalize(d)` strips time-of-day → `DateTime(y, m, d)`;
     `_dateKey(d)` is `_normalize(d).toIso8601String()`. **All public
@@ -40,6 +79,24 @@ coordination live.
         with no selection (`emoji: null` / `conditionId: null`), so an
         untouched entry remains empty per `JournalBlockEmptiness` and
         gets swept at end of day if the user never interacts.
+    - `SectionKind.header` — yields an `EntrySection` whose `blocks`
+      list is exactly one fresh empty `textBlock` (copy of the `text`
+      case — reuses the text JSON path + emptiness classification).
+    - `SectionKind.divider` — yields an `EntrySection` with `blocks:
+      const []` (purely visual; contributes nothing to emptiness).
+    - `SectionKind.blockTextBody` — yields an `EntrySection` whose
+      `blocks` list is `[if (template present) materialized float
+      block, fresh empty textBlock]`. The float block (0 or 1
+      template) materializes like `featureBlock`; the `textBlock` is
+      fresh + empty like `text`. The widget looks each up by type so
+      order is irrelevant.
+    - `SectionKind.wannado` — yields an `EntrySection` with `blocks:
+      const []` (content-free). The section renders the **global**
+      wanna-do list off `BlockSettings` at render time; nothing is
+      materialized into the entry. Like `divider`, contributes nothing
+      to emptiness — so an entry whose only section is wannado is swept
+      at midnight if otherwise untouched (consistent with the
+      global-list design; a wanna-do is not per-entry content).
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.
@@ -47,6 +104,16 @@ coordination live.
     debug menu. Iterates every entry and removes it; notifies once
     if any were deleted. Returns the count. Layouts and settings
     are untouched.
+  - `debugGenerateSampleEntries({days = 400, density = 0.7})` —
+    **debug-only** (GUS-35); backs the Settings → Debug "Generate
+    sample entries" action. Walks the past `days` days, and for ~`density`
+    of them (and only when no entry already exists for that date)
+    writes a self-contained entry: one `blockGrid` section holding a
+    `textBlock` (random word count via `_sampleText`) + a `moodTracker`
+    (random `moodEmojis` pick via `_sampleMood`, ~15% left null so the
+    mood-over-time line shows gaps). Today is skipped (loop starts at
+    `back = 1`). Notifies once if any were created; returns the count.
+    Non-destructive — never overwrites existing entries.
   - `getAllEntries()` — unsorted; sorting is caller's job
     (`JournalEntriesViewModel` and `HomeViewModel.entriesByDay`
     each do their own).
@@ -86,10 +153,16 @@ coordination live.
     an orphan id and silently fall through to "no default" → empty
     entry. This invariant matters; don't refactor it away.
   - `seedDefaultIfEmpty()` — first-launch bootstrap. If the box is
-    empty, creates a single "Default" layout with one `textBlock` and
-    marks it as default. If the box is non-empty but no default is
-    set (e.g. the user deleted the previously-default), adopts the
-    first layout.
+    empty, creates a "Default" layout of kind `LayoutKind.custom`
+    with two sections: a 4-slot `blockGrid` (`rows: 2`, four
+    `textBlock` templates) followed by a full-width `text` section.
+    Marks it as default. **`custom` is deliberate** — it's the only
+    reorderable kind, so users can drag-rearrange the four blocks in
+    their journal entries. `LayoutKind.fixedFourPlusText` looks
+    superficially similar but is structurally locked and would block
+    in-entry drag-drop. If the box is non-empty but no default is set
+    (e.g. the user deleted the previously-default), adopts the first
+    layout.
   - `deleteAllLayouts()` — destructive bulk delete used by the
     debug menu. Deletes every layout, clears the default-id setting,
     then calls `seedDefaultIfEmpty()` so the user is never stranded

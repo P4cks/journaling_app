@@ -18,11 +18,15 @@ directory hosts the pushed screens:
   configuration only. The profile dropdown's "Sign in" row pushes
   `/profile` directly.
 - **Block-settings** (`/block-settings`) — block-type-global
-  configuration inline on one screen. Two sections: **Prompt Block**
-  (the prompt list + the Random Prompts toggle) and **Carousel
+  configuration inline on one screen. Sections: **Prompt Block**
+  (the prompt list + the Random Prompts toggle), **Carousel
   Blocks** (a single global "Show titles above carousels" switch +
-  the custom-carousel definition list with Edit / Delete / Add).
-  Edits are kept as drafts in `BlockSettingsViewModel`; a Cancel /
+  the custom-carousel definition list with Edit / Delete / Add),
+  **Wanna-dos** (the global wanna-do bucket-list editor — add / edit /
+  delete items the wannado carousel section renders across all entries;
+  GUS-8), and **Memory Block**.
+  Built-in field edits are kept as drafts in `BlockSettingsViewModel`;
+  a Cancel /
   Discard / Save dialog runs on leave, mirroring the layout editor.
   No more per-type push-into-sub-screen routes. **No text-block
   config**, **no per-type mood / weather title fields** — text and
@@ -34,6 +38,12 @@ Settings contains:
 1. **Appearance** — expanded by default; theme mode (segmented), surface
    palette grid, secondary/accent color pickers for built-ins, and
    full surface/secondary/accent/text editing for custom slots.
+   **Theming is Pro-gated (GUS-26):** theme mode (light/dark/system)
+   stays free, but for free users `PalettePicker` greys + badges every
+   palette except the active one and the Add-theme tile, presenting the
+   paywall on tap (`PalettePicker.locked` + `onUnlock`, wired to
+   `requirePro` in `_AppearanceSettingsContent`). The active palette
+   stays usable so the app keeps a coherent theme.
 2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
    (defaults to on; flipping it off restores the pre-post-it flat-card
    look without rebuilding any data), followed by a `Wrap` of color
@@ -45,13 +55,40 @@ Settings contains:
    while previewing classic mode.
 3. **Journal templates** — `Manage templates` row that pushes `/layouts`.
 4. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
-5. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
-   surface override, and HSL free-pick for secondary/accent.
+5. **Subscription** — a `SettingsNavTile` (crown icon) that pushes
+   `/subscription`. Wrapped in a `ListenableBuilder` on
+   `subscriptionRepository` so the title flips between "Upgrade to Pro"
+   (free) and "Manage subscription" (Pro). See
+   [../subscription/CLAUDE.md](../subscription/CLAUDE.md).
+6. **Beta testing** — **BETA-ONLY, always visible (including release
+   builds)**: a single "Unlock all days" `SwitchListTile` bound to
+   `debug.unlockAllDays`. It deliberately surfaces the unlock outside
+   the `kDebugMode`-gated Debug section so beta testers can reach it.
+   **Remove this whole section before the 1.0 launch.**
+7. **Debug** — the whole section is **`kDebugMode`-gated** (absent in
+   release builds). In a debug build: `Show debug menu` toggle plus,
+   when on, `unlockAllDays`, `Simulate free account` (a `SwitchListTile`
+   bound to `subscriptionRepository.debugForceFree` / `setDebugForceFree`;
+   masks `isPro` to false locally to test the free experience — it does
+   NOT cancel or touch the real RevenueCat subscription, which has no
+   client cancel API), **Generate sample entries** (GUS-35 — a
+   non-destructive action that fills ~400 past days with random mood +
+   text entries so the statistics charts have data to render), surface
+   override, and HSL free-pick for secondary/accent. (The former GUS-10
+   per-block input-limit tuning tiles were removed when the char-cap
+   scaffold was deleted.)
 
 Block-settings is rendered inline by `BlockSettingsScreen` —
-sections for Text block (char limit), Prompt block (list + strategy),
-Mood tracker (title), Manual weather (title). Edits go into draft
-state in `BlockSettingsViewModel`; the screen prompts Cancel /
+sections: **Prompt Block** (the prompt list + the Random Prompts
+toggle), **Carousel Blocks** (the "Show titles above carousels"
+switch + the custom-carousel definition list), **Wanna-dos** (the
+global wanna-do bucket-list editor; GUS-8), and **Memory Block**. The
+Wanna-dos list writes through `BlockSettings` immediately (not a
+draft). Text blocks have no
+per-type-global settings here — text input is uncapped (the GUS-10
+char-cap scaffold was removed; only the header keeps a fixed 60-char
+cap), so there is no char-limit field. Edits go into
+draft state in `BlockSettingsViewModel`; the screen prompts Cancel /
 Discard / Save on leave. Saves write back to
 [BlockSettings](../../data/services/block_settings.dart).
 

@@ -13,7 +13,10 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   title field; commits on submit / blur, cancels via Escape. The
   parent VM normalizes empty/whitespace → null (date fallback).
 - [make_entry_cta.dart](make_entry_cta.dart) — `MakeEntryCta`. Centered
-  icon + title + subtitle + tonal button. Used when today has no entry.
+  icon + title + subtitle + tonal button. Used when today has no entry
+  (both as a standalone empty-day body and as the pager's trailing
+  today page). `onTap` is nullable — a null renders the button
+  disabled.
 - [no_entry_read_only.dart](no_entry_read_only.dart) — `NoEntryReadOnly`.
   Centered "No entry was made on this day." message for past days
   with no entry.
@@ -42,6 +45,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
      local-journaling-only with no dead end.
   5. **Settings**, **Layouts**, **Block settings** — push the
      corresponding routes.
+  6. **Pro banner** (only when `subscriptionRepository.isPro`;
+     non-clickable) — a `primaryContainer`-tinted `_ProBanner` row
+     (crown icon + "Pro active" / "Journaling App Pro") pinned at the
+     bottom after a divider. `isPro` is read fresh from
+     `AppDependencies` each time the menu opens, so a purchase made
+     elsewhere shows up on next open. Absent entirely for free users.
   Both `onOpened` and `onSelected` call
   `FocusManager.instance.primaryFocus?.unfocus()` so navigating to
   one of the items (which pushes a new route) doesn't leave focus
@@ -54,19 +63,55 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   sheet (no route push, no auto-restoration risk).
 - [calendar_bottom_bar.dart](calendar_bottom_bar.dart) —
   `CalendarBottomBar`. Sticky compact week strip via `TableCalendar`
-  in `CalendarFormat.week`, plus a trailing IconButton that opens
-  the full-month view via
+  in `CalendarFormat.week`, plus a conditional "Today" pill (only
+  shown when `selectedDate` is not today — slides in/out via
+  `AnimatedSwitcher` + horizontal `SizeTransition`), and a trailing
+  IconButton that opens the full-month view via
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
-  (initial 0.6, no title). Collapses to zero height when the
-  keyboard is up (`AnimatedSize` + `viewInsetsOf`).
+  (initial 0.6, no title). Collapses to zero height when the keyboard
+  is up (`viewInsetsOf`).
+
+  **Cell styling** is driven by `CalendarBuilders` (not
+  `CalendarStyle` decorations) so each day can get its own colour:
+    - Days with an entry → rounded-rect border in a per-date palette
+      colour.
+    - Today (no entry) → low-opacity (18%) fill of its own colour.
+    - Today + has entry (not selected) → fill + border.
+    - Selected day → full fill of the day's colour; text uses
+      [contrastOn](../../theme/color_hex.dart) for legibility.
+  Colour comes from `themeSettings.postItPalette` via
+  `_dayPaletteColor(day, palette)`, seeded by `y*10000+m*100+d` so a
+  given date always renders the same colour. When
+  `themeSettings.postItModeEnabled` is false, every cell falls back
+  to `scheme.primary` (geometry unchanged). The week strip and month
+  sheet share `_buildDayCell`. Marker dots are gone — the border
+  carries the "has entry" signal. The month sheet sets
+  `outsideDaysVisible: false` so adjacent-month days are hidden — they
+  rendered as bare greyed numbers with no entry marker, which looked
+  broken when a trailing/leading day had an entry (GUS-36). The week
+  strip keeps all 7 days (no outside-day concept in week format).
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
-  `vm.entries` sorted ascending. Two-way sync with `vm.selectedDate`
+  `vm.pagerDates` sorted ascending (entry dates plus a trailing
+  synthetic today page when today has no entry — GUS-29). Each page
+  resolves its entry via `vm.entryForDate(date)`; a null entry (the
+  today page) renders `MakeEntryCta(onTap: widget.onMakeEntry)`
+  instead of `_SectionsBody`. Two-way sync with `vm.selectedDate`
   — external changes animate the controller; user swipes call
   `vm.setSelectedDate`. Pass `externalLock: true` to forcibly disable
   the horizontal swipe (used by `MainJournalScreen` while a TextField
   is focused — the screen also collapses the AppBar to a single Done
-  action in that state). Each page is a `_SectionsBody` that iterates
+  action in that state). Also accepts the double-tap edit-mode
+  plumbing: `editingBlockId` (propagated down into every `BlockGrid`
+  and `TextSectionWidget`), `onRequestBlockEdit(JournalBlockData)`
+  for grid + feature blocks, and `onRequestTextSectionEdit(JournalBlockData)`
+  for full-width text sections (separate callback so the screen can
+  set `isTextSection: true` on the route push). `_SectionsBody`
+  wires its own `GestureDetector(onDoubleTap)` around `TextSectionWidget`
+  and `featureBlock` tiles; `BlockGrid` does the same for each grid
+  tile. Both detectors are skipped while the tile is already in edit
+  mode so single-taps reach the inner field without doubleTapTimeout
+  latency. Each page is a `_SectionsBody` that iterates
   the entry's `sections` and renders them vertically in a single
   outer `SingleChildScrollView`:
     - `SectionKind.text` → `TextSectionWidget` (full-width, no card).
@@ -84,6 +129,33 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   filled with one tile). Empty feature sections (no template) render
   nothing.
 
+  **`SectionKind.header`** → renders `HeaderSectionWidget` over the
+  section's single `textBlock` (GUS-6). Edits in place (single-tap the
+  field) — no Hero / expanded route, so unlike the `text` case it is
+  not Hero-wrapped. **`SectionKind.divider`** → a padded `Divider`
+  (GUS-7); **renders even though `blocks` is empty** (the
+  blockGrid/featureBlock cases suppress empties, but a divider has no
+  blocks by design).
+
+  **`SectionKind.blockTextBody`** → renders `BlockTextSectionWidget`
+  (GUS-9). `_buildSection` walks `section.blocks`, picking the first
+  `textBlock` and the first `photoBlock`/`memoryBlock` by type (order-
+  independent), and passes them as `textBlock` (required) + `floatBlock`
+  (nullable). Suppressed only if no `textBlock` is present (malformed).
+  Wires `onRequestBlockEdit` (float block) + `onRequestTextSectionEdit`
+  (text → expanded route) the same as the `featureBlock` + `text`
+  cases. Editing is delegated to the expanded route (a `TextField`
+  can't wrap around the inline block), so there is no
+  `editingBlockId`/`textEditing` plumbing for this section.
+
+  **`SectionKind.wannado`** → renders `const WannadoSectionWidget()`
+  (GUS-8). The widget takes **no arguments** and self-fetches the
+  **global** wanna-do list from `AppDependencies.blockSettings`; the
+  `EntrySection` carries no blocks, so `_buildSection` must NOT
+  early-return on empty `section.blocks` (like `divider`). `mode` is
+  ignored — it's a pure-display auto-rotating carousel, identical on
+  editable and read-only days.
+
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled
   slots), `_SectionsBody` returns `SizedBox.shrink()` for that
@@ -91,14 +163,6 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   grid. Text sections are still rendered even when their
   `TextBlockContent` is empty (the user might be about to start
   typing).
-
-## Sentinel: TableCalendar `eventLoader`
-
-The week strip and the month sheet both use the same `_kHasEntry` /
-`_kNoEntries` const-list sentinels. `TableCalendar` only cares about
-list length when deciding whether to paint a dot, so the element value
-is irrelevant — `const Object()` keeps allocation flat. Don't replace
-with per-day lists; doing so would walk the entry set per cell.
 
 ## Gotchas
 
@@ -113,9 +177,42 @@ with per-day lists; doing so would walk the entry set per cell.
   detect keyboard visibility — `viewInsets.bottom > 0` is the
   conventional test. Don't switch to `viewPaddingOf` (that's the
   inverse — system insets like the bottom nav-bar).
+- **`TableCalendar` is keyed on the visible week/month** in both
+  `_WeekStripState` and `_MonthCalendarState`. `table_calendar` 3.2.0's
+  `didUpdateWidget → _updatePage → animateToPage` flow is unreliable
+  when the parent pushes a new `focusedDay` that crosses a week/month
+  boundary — symptoms in the wild were "dragging the journal pager
+  back from May 24 to May 23 lands the strip on June 2033" and
+  "tapping Today moves the journal entry but the week strip doesn't
+  scroll". The fix is `key: ValueKey('week-<Sunday>')` on the week
+  strip and `key: ValueKey('month-<yyyy-mm>')` on the month sheet —
+  Flutter remounts the State (and rebuilds its internal
+  `PageController`) whenever the user's selection crosses a
+  boundary, so `initialPage` is always recomputed from the new
+  `focusedDay`. Inside a week/month the Key stays stable, so taps
+  and internal chevron/swipe navigation animate normally without
+  remounting. `_focusedDay` is also stored as UTC midnight via
+  `_WeekStripState._toUtcMidnight(...)` to match `firstDay`/
+  `lastDay`, but that alone wasn't sufficient — the package
+  normalises focusedDay in its own constructor regardless.
+  `selectedDayPredicate` uses `isSameDay` (y/m/d only) so a UTC
+  `focusedDay` still matches the user's local `widget.selectedDate`.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
+- **`_buildDayCell` reads `themeSettings` inline (no local
+  ListenableBuilder).** Palette / post-it-mode changes propagate via
+  the root-level `ListenableBuilder(listenable: themeSettings)` in
+  [main.dart](../../../main.dart) which rebuilds the whole
+  MaterialApp. If you ever lift this widget out of that tree, add a
+  local listener — otherwise palette edits won't take effect until
+  the next unrelated rebuild.
+- **Per-date colour is seeded by `y*10000 + m*100 + d`, not
+  `day.hashCode`.** `DateTime.hashCode` mixes the time-of-day
+  fields, so two `DateTime` instances for the same calendar date but
+  different times would map to different colours. The cell always
+  receives a normalised `DateTime` from `TableCalendar`, but be
+  defensive: don't switch the seed to `hashCode`.
 - **`JournalPager`'s lock-set keys are block IDs**, not a bool flag.
   If two carousels are expanded simultaneously (mood + manual weather
   on the same day), collapsing one keeps the other's lock in place.
@@ -126,6 +223,24 @@ with per-day lists; doing so would walk the entry set per cell.
   Flutter has the widget tree locked. `JournalPager._onLockChanged`
   mutates the lock set immediately but defers its `setState` with a
   post-frame callback; don't switch it back to synchronous `setState`.
+- **Don't add `unfocus()` to `onPageChanged`.** It was tried once to
+  fix "single tap doesn't raise keyboard after entry switch" but
+  introduced a worse bug: if the user taps a new entry's field during
+  / right after the page settles, the `unfocus()` races the user's
+  `DelayedTapFocus.requestFocus` and the keyboard flashes up + back
+  down. The real underlying cause was the dead-zone bug in the chrome
+  (the FittedBox sized to 160 px, leaving most of the expanded card
+  un-interactive). With each block widget now owning its 12 px
+  padding inside its own gesture wrapper (see `blocks/CLAUDE.md`),
+  taps across the full chrome reach the block's gesture — no
+  page-change unfocus needed.
+- **`onReorderBlockInSection` is forwarded from `MainJournalScreen`
+  to `BlockGrid` for editable entries only.** The pager plumbs a
+  `(sectionId, from, to)` callback that closes over the section id
+  so a single `BlockGrid` can dispatch its reorder back to
+  `MainJournalViewModel.reorderBlockInSection`. Past (read-only)
+  entries pass `null` — long-press in `BlockGrid` is conditional on
+  the callback being non-null, so past entries stay locked.
 
 ## When to update this file
 

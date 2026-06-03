@@ -15,7 +15,11 @@ the same three-part shape:
 
 - [blocks/CLAUDE.md](blocks/CLAUDE.md) — `BlockGrid`, `BlockCard`, the
   `BlockWidget` dispatcher, and one concrete-block subdir per block type
-  ([text_block/](blocks/text_block/), [mood_tracker/](blocks/mood_tracker/)).
+  ([text_block/](blocks/text_block/), [text_section/](blocks/text_section/),
+  [header_section/](blocks/header_section/),
+  [block_text_section/](blocks/block_text_section/),
+  [wannado_section/](blocks/wannado_section/),
+  [mood_tracker/](blocks/mood_tracker/)).
   Shared by the journal pager (main screen) and the layout editor.
 - [core/CLAUDE.md](core/CLAUDE.md) — non-screen-specific widgets and
   helpers used everywhere. `AppDependencies` (DI), `AppIcon`
@@ -40,6 +44,9 @@ the same three-part shape:
 - [profile/CLAUDE.md](profile/CLAUDE.md) — Settings and Block-settings
   screens, plus the widgets the profile dropdown's header reuses
   (`ProfileAuthCard`). No standalone profile screen.
+- [subscription/CLAUDE.md](subscription/CLAUDE.md) — `SubscriptionScreen`:
+  plan status + RevenueCat paywall / Customer Center / restore. Pushed
+  from the Settings "Subscription" tile.
 
 ## Conventions used across the UI
 

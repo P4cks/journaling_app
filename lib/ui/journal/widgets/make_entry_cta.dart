@@ -4,7 +4,8 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 /// Centered call-to-action shown on the main journal screen for days
 /// that don't yet have an entry (today). Tapping fires [onTap] —
-/// typically opens the layout picker.
+/// typically opens the layout picker. A null [onTap] renders the
+/// button disabled.
 class MakeEntryCta extends StatelessWidget {
   const MakeEntryCta({
     super.key,
@@ -14,7 +15,7 @@ class MakeEntryCta extends StatelessWidget {
     this.buttonLabel = 'Make entry',
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String title;
   final String subtitle;
   final String buttonLabel;

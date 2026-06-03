@@ -115,7 +115,7 @@ types:
         index: 2
   SectionKind:
     typeId: 11
-    nextIndex: 3
+    nextIndex: 9
     fields:
       text:
         index: 0
@@ -123,3 +123,11 @@ types:
         index: 1
       featureBlock:
         index: 2
+      header:
+        index: 3
+      divider:
+        index: 4
+      blockTextBody:
+        index: 7
+      wannado:
+        index: 8

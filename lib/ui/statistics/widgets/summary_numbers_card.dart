@@ -70,11 +70,7 @@ class SummaryNumbersCard extends StatelessWidget {
 }
 
 class _Cell extends StatelessWidget {
-  const _Cell({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _Cell({required this.icon, required this.label, required this.value});
 
   final HugeIconData icon;
   final String label;

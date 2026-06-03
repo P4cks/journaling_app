@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
+import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
 
 /// Block-type-global configuration screen.
 ///
@@ -131,15 +138,94 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
                 ),
                 _CustomCarouselList(
                   settings: AppDependencies.of(context).blockSettings,
-                  layoutRepository:
-                      AppDependencies.of(context).layoutRepository,
+                  layoutRepository: AppDependencies.of(
+                    context,
+                  ).layoutRepository,
                   maybeSaveOnLeave: _maybeSaveOnLeave,
+                ),
+              ],
+            ),
+            SettingsSection(
+              label: 'Wanna-dos',
+              children: [
+                _WannadoList(
+                  settings: AppDependencies.of(context).blockSettings,
+                ),
+              ],
+            ),
+            SettingsSection(
+              label: 'Memory Block',
+              children: [
+                _MemoryEligibleTypesPicker(
+                  settings: AppDependencies.of(context).blockSettings,
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Multi-select for the block types that a memory block may snapshot
+/// from. Writes directly to [BlockSettings] (not draft state) — the
+/// `_CustomCarouselList` next door uses the same pattern. The list is
+/// limited to block types whose snapshots actually render in
+/// `MemoryBlockWidget._renderSnapshot`; widening it requires adding
+/// matching render cases.
+class _MemoryEligibleTypesPicker extends StatelessWidget {
+  const _MemoryEligibleTypesPicker({required this.settings});
+
+  final BlockSettings settings;
+
+  /// Block types the user can opt into / out of. Mirrors the switch
+  /// cases supported by `MemoryBlockWidget._renderSnapshot`.
+  static const List<BlockType> _supportedTypes = [
+    BlockType.textBlock,
+    BlockType.moodTracker,
+    BlockType.photoBlock,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) {
+        final selected = settings.memoryEligibleTypes;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Which past blocks can a memory snapshot from?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            for (final type in _supportedTypes)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(type.label),
+                value: selected.contains(type),
+                onChanged: (checked) {
+                  final next = {...selected};
+                  if (checked == true) {
+                    next.add(type);
+                  } else {
+                    next.remove(type);
+                  }
+                  settings.setMemoryEligibleTypes(next);
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                secondary: AppIcon(type.icon),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -171,6 +257,9 @@ class _CustomCarouselList extends StatelessWidget {
   final LayoutRepository layoutRepository;
   final Future<bool> Function() maybeSaveOnLeave;
 
+  // The free-tier cap on *creating* a new custom block is enforced by the
+  // [AddCustomBlockButton] (GUS-34/GUS-40); this just saves any dirty draft
+  // and pushes. `id == null` → new, otherwise edit (never gated).
   Future<void> _navigateToEditor(BuildContext context, String? id) async {
     final canLeave = await maybeSaveOnLeave();
     if (!context.mounted || !canLeave) return;
@@ -230,20 +319,177 @@ class _CustomCarouselList extends StatelessWidget {
                 onEdit: () => _navigateToEditor(context, def.id),
                 onDelete: () => _confirmDelete(context, def),
               ),
+            ProLimitHint(
+              used: defs.length,
+              max: kFreeMaxCustomBlocks,
+              noun: 'custom blocks',
+              subscriptions: AppDependencies.of(context).subscriptionRepository,
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: () => _navigateToEditor(context, null),
-                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
-                  label: const Text('Add custom block'),
+                child: AddCustomBlockButton(
+                  subscriptions: AppDependencies.of(
+                    context,
+                  ).subscriptionRepository,
+                  currentCount: defs.length,
+                  onAddAllowed: () => _navigateToEditor(context, null),
                 ),
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+/// Manages the user's *global* wanna-do list (GUS-8) — a single bucket
+/// list rendered by every `SectionKind.wannado` section as a rotating
+/// carousel. Pure display: items have text only, no done state. Writes
+/// directly to [BlockSettings] (not draft state), mirroring
+/// `_CustomCarouselList` / `_MemoryEligibleTypesPicker`, so additions /
+/// edits / deletes surface in every visible wannado section immediately.
+class _WannadoList extends StatelessWidget {
+  const _WannadoList({required this.settings});
+
+  final BlockSettings settings;
+
+  Future<void> _add(BuildContext context) async {
+    final text = await _showEditDialog(context);
+    if (text == null) return;
+    await settings.addWannado(WannadoItem(id: _uuid.v4(), text: text));
+  }
+
+  Future<void> _edit(BuildContext context, WannadoItem item) async {
+    final text = await _showEditDialog(context, initial: item.text);
+    if (text == null) return;
+    await settings.updateWannado(item.copyWith(text: text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) {
+        final items = settings.wannados;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'A single bucket list shown by every Wanna-dos section. '
+                'Items rotate through one at a time.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            for (final item in items)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(item.text),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit',
+                      icon: AppIcon(HugeIcons.strokeRoundedPencil),
+                      onPressed: () => _edit(context, item),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete',
+                      icon: AppIcon(
+                        HugeIcons.strokeRoundedDelete02,
+                        color: theme.colorScheme.error,
+                      ),
+                      onPressed: () => settings.deleteWannado(item.id),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => _add(context),
+                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+                  label: const Text('Add wanna-do'),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Single-field add/edit dialog for a wanna-do. Returns the trimmed
+/// text, or `null` on cancel / empty.
+Future<String?> _showEditDialog(BuildContext context, {String? initial}) async {
+  final result = await showDialog<String>(
+    context: context,
+    builder: (_) => _WannadoEditDialog(initial: initial),
+  );
+  if (result == null || result.isEmpty) return null;
+  return result;
+}
+
+/// The add/edit dialog content. **Stateful so it owns its
+/// `TextEditingController`** and disposes it in its own `dispose()` —
+/// disposing the controller synchronously right after `showDialog`
+/// returns crashes the TextField as it rebuilds during the dialog's
+/// exit animation ("A TextEditingController was used after being
+/// disposed"), and that thrown exception aborts the frame so a freshly
+/// added wanna-do never paints until a restart.
+class _WannadoEditDialog extends StatefulWidget {
+  const _WannadoEditDialog({this.initial});
+
+  final String? initial;
+
+  @override
+  State<_WannadoEditDialog> createState() => _WannadoEditDialogState();
+}
+
+class _WannadoEditDialogState extends State<_WannadoEditDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial ?? '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop(_controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.initial == null ? 'Add wanna-do' : 'Edit wanna-do'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 80,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          hintText: 'e.g. See the northern lights',
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Save')),
+      ],
     );
   }
 }
@@ -297,7 +543,10 @@ class _CustomDefinitionRow extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onDelete,
-                  icon: AppIcon(HugeIcons.strokeRoundedDelete02, color: errorColor),
+                  icon: AppIcon(
+                    HugeIcons.strokeRoundedDelete02,
+                    color: errorColor,
+                  ),
                   label: Text('Delete', style: TextStyle(color: errorColor)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: errorColor),

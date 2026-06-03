@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/streak_stat_card.dart';
@@ -19,12 +20,14 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   StatisticsViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_viewModel == null) {
       final deps = AppDependencies.of(context);
+      _subscriptions = deps.subscriptionRepository;
       _viewModel = StatisticsViewModel(repository: deps.journalRepository);
       _viewModel!.addListener(_onChanged);
     }
@@ -51,9 +54,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: StatRangeSelector(
-              value: vm.range,
-              onChanged: vm.setRange,
+            child: ListenableBuilder(
+              listenable: _subscriptions!,
+              builder: (context, _) => StatRangeSelector(
+                value: vm.range,
+                onChanged: vm.setRange,
+                subscriptions: _subscriptions!,
+              ),
             ),
           ),
           if (vm.isEmpty)
@@ -74,18 +81,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             SliverToBoxAdapter(child: StreakStatCard(streak: vm.streak)),
             const SliverToBoxAdapter(child: SectionHeader(label: 'Mood')),
             SliverToBoxAdapter(
-              child: MoodDistributionChart(
-                distribution: vm.moodDistribution,
-              ),
+              child: MoodDistributionChart(distribution: vm.moodDistribution),
             ),
             SliverToBoxAdapter(
               child: MoodOverTimeChart(points: vm.moodOverTime),
             ),
-            const SliverToBoxAdapter(
-              child: SectionHeader(label: 'Frequency'),
-            ),
+            const SliverToBoxAdapter(child: SectionHeader(label: 'Frequency')),
             SliverToBoxAdapter(
-              child: EntryFrequencyChart(buckets: vm.entryFrequency),
+              child: EntryFrequencyChart(
+                buckets: vm.entryFrequency,
+                granularity: vm.entryFrequencyGranularity,
+              ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],

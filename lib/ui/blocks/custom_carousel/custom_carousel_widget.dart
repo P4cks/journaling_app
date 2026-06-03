@@ -31,12 +31,20 @@ class CustomCarouselWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
+    this.onDoubleTap,
+    this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+  final VoidCallback? onRequestExitEdit;
+  final VoidCallback? onDoubleTap;
+  final bool editing;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -76,10 +84,8 @@ class CustomCarouselWidget extends StatelessWidget {
             ? null
             : items.firstWhere(
                 (i) => i == selected,
-                orElse: () => CarouselItem(
-                  kind: selected.kind,
-                  value: selected.value,
-                ),
+                orElse: () =>
+                    CarouselItem(kind: selected.kind, value: selected.value),
               );
 
         return CarouselBlockScaffold<CarouselItem>(
@@ -98,6 +104,12 @@ class CustomCarouselWidget extends StatelessWidget {
             ),
           ),
           onInteractionLockChanged: onInteractionLockChanged,
+          onRequestExitEdit: expanded ? null : onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
+          editing: editing || expanded,
+          // Auto-collapse in both hosts. See
+          // mood_tracker_widget.dart for the rationale.
+          autoCollapse: true,
         );
       },
     );

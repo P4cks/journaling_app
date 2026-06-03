@@ -7,7 +7,13 @@ the mood-score scale and range definitions.
 
 - [statistics_view_model.dart](statistics_view_model.dart) — exports
   `StatisticsViewModel` plus the value types `StatRange`,
-  `StatRangeDisplay` extension, `MoodPoint`, `WeekBucket`.
+  `StatRangeDisplay` extension, `MoodPoint`, `FreqBucket`
+  (`bucketStart` + `count`), and `FreqGranularity` (`week`/`month`/
+  `year`). The
+  `StatRangeDisplay` extension carries `label` and `isProOnly` (true for
+  `year` / `all`). The VM is **tier-agnostic** — `isProOnly` is consumed
+  only by the UI gate (`StatRangeSelector`); `setRange` sets any range
+  it's handed.
 
 ## Subscription model
 
@@ -32,7 +38,8 @@ All cached after `_recompute`; getters just return the cached value.
 | `streak`           | `StreakResult`                | repo change (range-independent)  |
 | `moodDistribution` | `Map<String, int>` ordered    | range or repo change             |
 | `moodOverTime`     | `List<MoodPoint>`             | range or repo change             |
-| `entryFrequency`   | `List<WeekBucket>`            | range or repo change             |
+| `entryFrequency`   | `List<FreqBucket>`            | range or repo change             |
+| `entryFrequencyGranularity` | `FreqGranularity`    | range or repo change             |
 | `isEmpty`          | `bool` (totalEntries == 0)    | derived                          |
 
 ## Window semantics

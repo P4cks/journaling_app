@@ -21,11 +21,7 @@ class BlockSlot {
   /// entries can resolve the same definition.
   final String? definitionId;
 
-  const BlockSlot({
-    required this.id,
-    required this.type,
-    this.definitionId,
-  });
+  const BlockSlot({required this.id, required this.type, this.definitionId});
 
   BlockSlot copyWith({
     String? id,
@@ -35,14 +31,14 @@ class BlockSlot {
   }) => BlockSlot(
     id: id ?? this.id,
     type: type ?? this.type,
-    definitionId:
-        clearDefinitionId ? null : (definitionId ?? this.definitionId),
+    definitionId: clearDefinitionId
+        ? null
+        : (definitionId ?? this.definitionId),
   );
 }
 
 BlockSlot _slotFromResult(AddBlockResult result) => switch (result) {
-  AddBlockResultBuiltin(:final type) =>
-    BlockSlot(id: _uuid.v4(), type: type),
+  AddBlockResultBuiltin(:final type) => BlockSlot(id: _uuid.v4(), type: type),
   AddBlockResultCustom(:final definitionId) => BlockSlot(
     id: _uuid.v4(),
     type: BlockType.customCarousel,
@@ -96,8 +92,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
                 BlockSlot(
                   id: template.id,
                   type: template.type,
-                  definitionId:
-                      template.config['definitionId'] as String?,
+                  definitionId: template.config['definitionId'] as String?,
                 ),
             ],
           ),
@@ -143,9 +138,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
           kind: s.kind,
           rows: s.rows,
           slotTypes: [for (final slot in s.slots) slot.type],
-          slotDefinitionIds: [
-            for (final slot in s.slots) slot.definitionId,
-          ],
+          slotDefinitionIds: [for (final slot in s.slots) slot.definitionId],
         ),
     ];
   }
@@ -212,9 +205,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
   void addBlock(AddBlockResult result) {
     final s = _blockOnlySection;
     s.slots = [...s.slots, _slotFromResult(result)];
-    debugPrint(
-      '[LayoutEditorVM] addBlock $result (total=${s.slots.length})',
-    );
+    debugPrint('[LayoutEditorVM] addBlock $result (total=${s.slots.length})');
     notifyListeners();
   }
 
@@ -223,22 +214,20 @@ class LayoutEditorViewModel extends ChangeNotifier {
     final next = [...s.slots]..removeWhere((slot) => slot.id == slotId);
     if (next.length == s.slots.length) return;
     s.slots = next;
-    debugPrint(
-      '[LayoutEditorVM] removeSlot $slotId (total=${s.slots.length})',
-    );
+    debugPrint('[LayoutEditorVM] removeSlot $slotId (total=${s.slots.length})');
     notifyListeners();
   }
 
   void moveSlot(int from, int to) {
     final s = _blockOnlySection;
     if (from < 0 || from >= s.slots.length) return;
-    if (to == from || to == from + 1) return;
-    final adjusted = to > from ? to - 1 : to;
+    if (to < 0 || to >= s.slots.length) return;
+    if (from == to) return;
     final list = [...s.slots];
     final item = list.removeAt(from);
-    list.insert(adjusted, item);
+    list.insert(to, item);
     s.slots = list;
-    debugPrint('[LayoutEditorVM] moveSlot $from -> $to (adjusted=$adjusted)');
+    debugPrint('[LayoutEditorVM] moveSlot $from -> $to');
     notifyListeners();
   }
 
@@ -288,9 +277,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             clearDefinitionId: next.definitionId == null,
           );
           section.slots = updated;
-          debugPrint(
-            '[LayoutEditorVM] replaceSlotType $slotId -> $result',
-          );
+          debugPrint('[LayoutEditorVM] replaceSlotType $slotId -> $result');
           notifyListeners();
           return;
         }
@@ -317,24 +304,31 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // featureBlock — exactly-one-slot section restricted to photo/memory.
+  // featureBlock / blockTextBody — single-slot sections restricted to
+  // photo/memory. Slot semantics are identical (0–1 photo/memory block),
+  // so both kinds share the same setter/clearer.
   // ---------------------------------------------------------------------------
 
-  /// Allowed block types for a feature-block section. The layout editor
-  /// passes this set to `showAddBlockSheet` so the picker only shows
-  /// these types; the VM also defensively validates here.
+  /// Allowed block types for a feature-block / block-text-body section.
+  /// The layout editor passes this set to `showAddBlockSheet` so the
+  /// picker only shows these types; the VM also defensively validates here.
   static const Set<BlockType> featureBlockAllowedTypes = {
     BlockType.photoBlock,
     BlockType.memoryBlock,
   };
 
-  /// Either fills an empty feature-block section, or swaps the type of
-  /// the existing slot. No-op if the section is not a `featureBlock`
-  /// or `type` is not in [featureBlockAllowedTypes].
+  static const Set<SectionKind> _singleBlockSectionKinds = {
+    SectionKind.featureBlock,
+    SectionKind.blockTextBody,
+  };
+
+  /// Either fills an empty feature-block / block-text-body section, or
+  /// swaps the type of the existing slot. No-op if the section is not a
+  /// single-block kind or `type` is not in [featureBlockAllowedTypes].
   void setFeatureBlock(String sectionId, AddBlockResult result) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.featureBlock) return;
-    // Defensive: feature blocks are restricted to built-in photo/memory
+    if (!_singleBlockSectionKinds.contains(section.kind)) return;
+    // Defensive: these sections are restricted to built-in photo/memory
     // types. The Add-Block sheet's `allowedTypes` already filters, but
     // the sealed-result switch keeps that invariant explicit here.
     if (result is! AddBlockResultBuiltin) return;
@@ -342,16 +336,15 @@ class LayoutEditorViewModel extends ChangeNotifier {
     if (!featureBlockAllowedTypes.contains(type)) return;
     if (section.slots.length == 1 && section.slots.first.type == type) return;
     section.slots = [BlockSlot(id: _uuid.v4(), type: type)];
-    debugPrint(
-      '[LayoutEditorVM] setFeatureBlock $sectionId -> $type',
-    );
+    debugPrint('[LayoutEditorVM] setFeatureBlock $sectionId -> $type');
     notifyListeners();
   }
 
-  /// Empties a feature-block section. No-op for non-feature sections.
+  /// Empties a feature-block / block-text-body section. No-op for other
+  /// section kinds.
   void clearFeatureBlock(String sectionId) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.featureBlock) return;
+    if (!_singleBlockSectionKinds.contains(section.kind)) return;
     if (section.slots.isEmpty) return;
     section.slots = const [];
     debugPrint('[LayoutEditorVM] clearFeatureBlock $sectionId');
@@ -405,15 +398,13 @@ class LayoutEditorViewModel extends ChangeNotifier {
   void moveSlotInSection(String sectionId, int from, int to) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (from < 0 || from >= section.slots.length) return;
-    if (to == from || to == from + 1) return;
-    final adjusted = to > from ? to - 1 : to;
+    if (to < 0 || to >= section.slots.length) return;
+    if (from == to) return;
     final list = [...section.slots];
     final item = list.removeAt(from);
-    list.insert(adjusted, item);
+    list.insert(to, item);
     section.slots = list;
-    debugPrint(
-      '[LayoutEditorVM] moveSlotInSection $sectionId $from -> $to',
-    );
+    debugPrint('[LayoutEditorVM] moveSlotInSection $sectionId $from -> $to');
     notifyListeners();
   }
 
@@ -494,11 +485,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             rows: 2, // renderer hint only; the editor always shows a 2x2 frame
             slots: const [],
           ),
-          SectionDraft(
-            id: _uuid.v4(),
-            kind: SectionKind.text,
-            slots: const [],
-          ),
+          SectionDraft(id: _uuid.v4(), kind: SectionKind.text, slots: const []),
         ];
       case LayoutKind.custom:
         return [];

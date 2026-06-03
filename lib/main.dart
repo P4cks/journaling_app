@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
@@ -15,6 +16,7 @@ import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
 import 'package:journaling_app_rewrite/firebase_options.dart';
@@ -58,6 +60,14 @@ void main() async {
   final photoStorage = PhotoStorageService();
   final authRepository = AuthRepository(authService);
 
+  // RevenueCat must be configured before any other Purchases call.
+  await SubscriptionService.configure();
+  final subscriptionRepository = SubscriptionRepository(
+    SubscriptionService(),
+    settingsStorage,
+  );
+  await subscriptionRepository.init();
+
   await layoutRepository.seedDefaultIfEmpty();
 
   runApp(
@@ -71,6 +81,7 @@ void main() async {
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
+      subscriptionRepository: subscriptionRepository,
     ),
   );
 }
@@ -109,6 +120,7 @@ class MyApp extends StatefulWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.subscriptionRepository,
   });
 
   final AuthRepository authRepository;
@@ -120,6 +132,7 @@ class MyApp extends StatefulWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final SubscriptionRepository subscriptionRepository;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -139,6 +152,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.authRepository.dispose();
+    widget.subscriptionRepository.dispose();
     super.dispose();
   }
 
@@ -163,6 +177,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,
+      subscriptionRepository: widget.subscriptionRepository,
       child: ListenableBuilder(
         listenable: widget.themeSettings,
         builder: (context, _) {
@@ -172,6 +187,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
           final textColor = palette.defaultTextColor;
           return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
             title: 'Journaling App',
             themeMode: widget.themeSettings.themeMode,
             theme: buildAppTheme(

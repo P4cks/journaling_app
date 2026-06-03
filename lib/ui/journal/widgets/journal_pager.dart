@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
-import 'package:journaling_app_rewrite/ui/blocks/post_it_block.dart';
+import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
+import 'package:journaling_app_rewrite/ui/blocks/block_text_section/block_text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
+import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 
 /// Horizontal pager over the user's entries (sorted ascending). The
 /// page index is kept in sync with the view-model's `selectedDate`:
@@ -34,10 +40,21 @@ class JournalPager extends StatefulWidget {
     required this.viewModel,
     required this.modeFor,
     this.externalLock = false,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
+    this.onRequestTextSectionEdit,
+    this.onRequestExitEdit,
+    this.onReorderBlockInSection,
+    this.onMakeEntry,
   });
 
   final MainJournalViewModel viewModel;
   final BlockMode Function(JournalEntry entry) modeFor;
+
+  /// Tapped from the trailing synthetic "today" page (rendered when
+  /// today has no entry yet). Routes to the screen's make-entry flow.
+  /// Null disables the CTA page's button. (GUS-29)
+  final VoidCallback? onMakeEntry;
 
   /// When true, the pager disables its horizontal swipe physics even
   /// if no inner carousel is expanded. Used by the screen to lock the
@@ -45,6 +62,34 @@ class JournalPager extends StatefulWidget {
   /// AppBar collapses to a Done button in the same state, so the only
   /// way out of edit mode is the Done tap.
   final bool externalLock;
+
+  /// Id of the block currently in in-place edit mode (when the
+  /// "expand on edit" setting is OFF). Forwarded to every `BlockGrid`
+  /// + `TextSectionWidget` so the matching widget can render the
+  /// edit-mode affordance and become interactive.
+  final String? editingBlockId;
+
+  /// Fired when the user double-taps an editable grid (or feature)
+  /// block. The hosting screen routes it to push the expanded route or
+  /// set `editingBlockId` for in-place editing.
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+
+  /// Fired when the user double-taps a full-width text section. Same
+  /// dispatch contract as [onRequestBlockEdit] but the screen sets
+  /// `isTextSection: true` on the route push so it lays out wider.
+  final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
+
+  /// Fired when a carousel auto-collapses after 1.5 s of inactivity
+  /// in in-place edit mode. The host clears `_editingBlockId` so the
+  /// outline disappears in lock-step.
+  final VoidCallback? onRequestExitEdit;
+
+  /// Fired when the user long-press drags a block inside a
+  /// `SectionKind.blockGrid` section to a new position. The host
+  /// routes it to `MainJournalViewModel.reorderBlockInSection`. Only
+  /// attached for editable entries.
+  final void Function(String sectionId, int from, int to)?
+  onReorderBlockInSection;
 
   @override
   State<JournalPager> createState() => _JournalPagerState();
@@ -126,9 +171,17 @@ class _JournalPagerState extends State<JournalPager> {
       _lockedBlockIds.clear();
       return;
     }
+    final entry = widget.viewModel.entryForDate(
+      widget.viewModel.pagerDates[target],
+    );
+    if (entry == null) {
+      // Synthetic today page — no blocks, so no locks survive.
+      _lockedBlockIds.clear();
+      return;
+    }
 
     final visibleBlockIds = <String>{
-      for (final section in widget.viewModel.entries[target].sections)
+      for (final section in entry.sections)
         for (final block in section.blocks) block.id,
     };
     _lockedBlockIds.removeWhere((id) => !visibleBlockIds.contains(id));
@@ -136,19 +189,23 @@ class _JournalPagerState extends State<JournalPager> {
 
   @override
   Widget build(BuildContext context) {
-    final entries = widget.viewModel.entries;
-    if (entries.isEmpty) return const SizedBox.shrink();
+    final pagerDates = widget.viewModel.pagerDates;
+    if (pagerDates.isEmpty) return const SizedBox.shrink();
     final pagerLocked = _lockedBlockIds.isNotEmpty || widget.externalLock;
     return PageView.builder(
       controller: _controller,
-      itemCount: entries.length,
+      itemCount: pagerDates.length,
       physics: pagerLocked ? const NeverScrollableScrollPhysics() : null,
       onPageChanged: (index) {
         _activeIndex = index;
-        widget.viewModel.setSelectedDate(entries[index].date);
+        widget.viewModel.setSelectedDate(pagerDates[index]);
       },
       itemBuilder: (context, index) {
-        final entry = entries[index];
+        final entry = widget.viewModel.entryForDate(pagerDates[index]);
+        // Trailing synthetic today page — today has no entry yet.
+        if (entry == null) {
+          return MakeEntryCta(onTap: widget.onMakeEntry);
+        }
         final mode = widget.modeFor(entry);
         if (entry.sections.isEmpty) {
           return _EmptyBlocksMessage();
@@ -161,6 +218,19 @@ class _JournalPagerState extends State<JournalPager> {
               : null,
           onJumpToDate: (date) => widget.viewModel.setSelectedDate(date),
           onLockChanged: mode == BlockMode.editable ? _onLockChanged : null,
+          editingBlockId: widget.editingBlockId,
+          onRequestBlockEdit: mode == BlockMode.editable
+              ? widget.onRequestBlockEdit
+              : null,
+          onRequestTextSectionEdit: mode == BlockMode.editable
+              ? widget.onRequestTextSectionEdit
+              : null,
+          onRequestExitEdit: mode == BlockMode.editable
+              ? widget.onRequestExitEdit
+              : null,
+          onReorderBlockInSection: mode == BlockMode.editable
+              ? widget.onReorderBlockInSection
+              : null,
         );
       },
     );
@@ -174,6 +244,11 @@ class _SectionsBody extends StatelessWidget {
     required this.onJumpToDate,
     this.onBlockChanged,
     this.onLockChanged,
+    this.editingBlockId,
+    this.onRequestBlockEdit,
+    this.onRequestTextSectionEdit,
+    this.onRequestExitEdit,
+    this.onReorderBlockInSection,
   });
 
   final List<EntrySection> sections;
@@ -181,6 +256,12 @@ class _SectionsBody extends StatelessWidget {
   final ValueChanged<DateTime> onJumpToDate;
   final ValueChanged<JournalBlockData>? onBlockChanged;
   final void Function(String, bool)? onLockChanged;
+  final String? editingBlockId;
+  final ValueChanged<JournalBlockData>? onRequestBlockEdit;
+  final ValueChanged<JournalBlockData>? onRequestTextSectionEdit;
+  final VoidCallback? onRequestExitEdit;
+  final void Function(String sectionId, int from, int to)?
+  onReorderBlockInSection;
 
   @override
   Widget build(BuildContext context) {
@@ -199,17 +280,34 @@ class _SectionsBody extends StatelessWidget {
         // Text sections are materialized as exactly one textBlock; if
         // somehow malformed, fall back to a placeholder.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
-        return TextSectionWidget(
-          key: ValueKey(section.id),
-          data: section.blocks.first,
-          mode: mode,
-          onChanged: onBlockChanged,
+        final block = section.blocks.first;
+        // Hero-wraps the section so the expanded route can morph from
+        // here. Material is required for the Hero flight (see
+        // BlockGrid's Hero comment). Double-tap is wired by the text
+        // section widget itself via `DelayedTapFocus`.
+        return Hero(
+          tag: blockHeroTag(block.id),
+          child: Material(
+            type: MaterialType.transparency,
+            child: TextSectionWidget(
+              key: ValueKey(section.id),
+              data: block,
+              mode: mode,
+              onChanged: onBlockChanged,
+              onDoubleTap: mode == BlockMode.editable
+                  ? () => onRequestTextSectionEdit?.call(block)
+                  : null,
+            ),
+          ),
         );
       case SectionKind.blockGrid:
         // Suppress empty block-grid sections so a layout that materialized
         // with zero blocks (e.g. a kind-B layout saved with no filled
         // slots) doesn't leave awkward padding in the entry.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
+        // Wire onReorder only in editable mode — past entries stay
+        // read-only with no drag-to-reorder affordance.
+        final reorder = onReorderBlockInSection;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: BlockGrid(
@@ -221,6 +319,12 @@ class _SectionsBody extends StatelessWidget {
             onBlockChanged: onBlockChanged,
             onJumpToDate: onJumpToDate,
             onInteractionLockChanged: onLockChanged,
+            editingBlockId: editingBlockId,
+            onRequestBlockEdit: onRequestBlockEdit,
+            onRequestExitEdit: onRequestExitEdit,
+            onReorder: reorder == null
+                ? null
+                : (from, to) => reorder(section.id, from, to),
           ),
         );
       case SectionKind.featureBlock:
@@ -228,23 +332,94 @@ class _SectionsBody extends StatelessWidget {
         // Suppress empty feature sections (no template) so nothing
         // renders in entries created before the slot was filled.
         if (section.blocks.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: PostItBlock(
-              visuals: section.blocks.first.visuals,
-              child: BlockWidget(
-                key: ValueKey(section.id),
-                data: section.blocks.first,
-                mode: mode,
-                onChanged: onBlockChanged,
-                onJumpToDate: onJumpToDate,
-                onInteractionLockChanged: onLockChanged,
+        final block = section.blocks.first;
+        final canDoubleTap =
+            mode == BlockMode.editable &&
+            onRequestBlockEdit != null &&
+            block.type.usesEditMode;
+        final feature = AspectRatio(
+          aspectRatio: 1,
+          child: Hero(
+            tag: blockHeroTag(block.id),
+            child: Material(
+              // Hero-flight Material ancestor (see block_grid.dart).
+              type: MaterialType.transparency,
+              child: BlockChrome(
+                visuals: block.visuals,
+                child: BlockWidget(
+                  key: ValueKey(section.id),
+                  data: block,
+                  mode: mode,
+                  onChanged: onBlockChanged,
+                  onJumpToDate: onJumpToDate,
+                  onInteractionLockChanged: onLockChanged,
+                  onDoubleTap: canDoubleTap
+                      ? () => onRequestBlockEdit!(block)
+                      : null,
+                ),
               ),
             ),
           ),
         );
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: feature,
+        );
+      case SectionKind.header:
+        // Backed by a single textBlock (like `text`). Edits in place via
+        // the editingBlockId path — no expanded route, so no Hero.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        final block = section.blocks.first;
+        return HeaderSectionWidget(
+          key: ValueKey(section.id),
+          data: block,
+          mode: mode,
+          onChanged: onBlockChanged,
+          editing: editingBlockId == block.id,
+        );
+      case SectionKind.divider:
+        // Purely visual — renders even though `blocks` is empty (unlike
+        // the blockGrid/featureBlock cases which suppress empties).
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Divider(height: 1),
+        );
+      case SectionKind.blockTextBody:
+        // Two blocks: a float block (photo/memory) and a textBlock. Look
+        // each up by type so order is irrelevant. The text block always
+        // exists; the float block is null when none was configured.
+        JournalBlockData? textBlock;
+        JournalBlockData? floatBlock;
+        for (final b in section.blocks) {
+          if (b.type == BlockType.textBlock) {
+            textBlock ??= b;
+          } else if (b.type == BlockType.photoBlock ||
+              b.type == BlockType.memoryBlock) {
+            floatBlock ??= b;
+          }
+        }
+        if (textBlock == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: BlockTextSectionWidget(
+            key: ValueKey(section.id),
+            floatBlock: floatBlock,
+            textBlock: textBlock,
+            mode: mode,
+            onBlockChanged: onBlockChanged,
+            onJumpToDate: onJumpToDate,
+            onLockChanged: onLockChanged,
+            onRequestBlockEdit: onRequestBlockEdit,
+            onRequestTextSectionEdit: onRequestTextSectionEdit,
+          ),
+        );
+      case SectionKind.wannado:
+        // Content-free per entry — renders the *global* wanna-do list
+        // off BlockSettings (grabbed from AppDependencies inside the
+        // widget) as a vertical auto-rotating carousel. Pure display:
+        // identical for editable and read-only days, so `mode` is
+        // intentionally ignored.
+        return const WannadoSectionWidget();
     }
   }
 }

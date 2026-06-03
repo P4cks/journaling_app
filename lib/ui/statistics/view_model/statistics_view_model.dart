@@ -16,6 +16,15 @@ extension StatRangeDisplay on StatRange {
     StatRange.year => 'Year',
     StatRange.all => 'All',
   };
+
+  /// Whether this range is gated behind the `pro` entitlement. Free
+  /// users get `week` / `month`; `year` and `all` (the longer / full
+  /// history views) are Pro-only. The gate is enforced in the UI
+  /// ([StatRangeSelector]); the view-model itself is tier-agnostic.
+  bool get isProOnly => switch (this) {
+    StatRange.week || StatRange.month => false,
+    StatRange.year || StatRange.all => true,
+  };
 }
 
 /// One day's mood point on the time-series chart. `score` is null on
@@ -27,12 +36,19 @@ class MoodPoint {
   final double? score;
 }
 
-/// One ISO-week bucket on the entry-frequency chart.
-class WeekBucket {
-  const WeekBucket({required this.weekStart, required this.count});
+/// Bucketing granularity for the entry-frequency chart. Chosen per
+/// range: `week`/`month` → weekly; `year` → monthly; `all` →
+/// span-dependent (weekly → monthly → yearly) so the bar count stays
+/// readable as the history grows.
+enum FreqGranularity { week, month, year }
 
-  /// Monday of the week (local midnight).
-  final DateTime weekStart;
+/// One bucket on the entry-frequency chart. [bucketStart] is the local
+/// midnight of the bucket's first day (Monday for weekly, the 1st for
+/// monthly, Jan 1 for yearly).
+class FreqBucket {
+  const FreqBucket({required this.bucketStart, required this.count});
+
+  final DateTime bucketStart;
   final int count;
 }
 
@@ -79,8 +95,11 @@ class StatisticsViewModel extends ChangeNotifier {
   List<MoodPoint> _moodOverTime = const [];
   List<MoodPoint> get moodOverTime => _moodOverTime;
 
-  List<WeekBucket> _entryFrequency = const [];
-  List<WeekBucket> get entryFrequency => _entryFrequency;
+  List<FreqBucket> _entryFrequency = const [];
+  List<FreqBucket> get entryFrequency => _entryFrequency;
+
+  FreqGranularity _entryFrequencyGranularity = FreqGranularity.week;
+  FreqGranularity get entryFrequencyGranularity => _entryFrequencyGranularity;
 
   bool get isEmpty => _totalEntries == 0;
 
@@ -113,42 +132,58 @@ class StatisticsViewModel extends ChangeNotifier {
 
     _totalEntries = inRange.length;
     _totalWords = inRange.fold(0, (sum, e) => sum + _wordCountFor(e));
-    _totalMoodEntries = inRange
-        .where((e) => _firstMoodEmoji(e) != null)
-        .length;
+    _totalMoodEntries = inRange.where((e) => _firstMoodEmoji(e) != null).length;
 
     _moodDistribution = _computeMoodDistribution(inRange);
     _moodOverTime = window == null
         ? _computeMoodOverTimeUnbounded(inRange)
         : _computeMoodOverTime(inRange, window);
+
+    _entryFrequencyGranularity = _granularityFor(_range, inRange, today);
     _entryFrequency = window == null
-        ? _computeEntryFrequencyUnbounded(inRange)
-        : _computeEntryFrequency(inRange, window);
+        ? _computeEntryFrequencyUnbounded(inRange, _entryFrequencyGranularity)
+        : _computeEntryFrequency(inRange, window, _entryFrequencyGranularity);
+  }
+
+  /// Picks the entry-frequency bucket size. `week`/`month` ranges keep
+  /// weekly bars; `year` switches to monthly (12 bars); `all` scales
+  /// the granularity to the data span so the bar count stays in a
+  /// readable ~12–26 range.
+  FreqGranularity _granularityFor(
+    StatRange r,
+    List<JournalEntry> entries,
+    DateTime today,
+  ) {
+    switch (r) {
+      case StatRange.week:
+      case StatRange.month:
+        return FreqGranularity.week;
+      case StatRange.year:
+        return FreqGranularity.month;
+      case StatRange.all:
+        if (entries.isEmpty) return FreqGranularity.week;
+        var earliest = _normalize(entries.first.date);
+        for (final e in entries) {
+          final d = _normalize(e.date);
+          if (d.isBefore(earliest)) earliest = d;
+        }
+        final spanDays = today.difference(earliest).inDays;
+        if (spanDays <= 183) return FreqGranularity.week; // ≤ ~6 months
+        if (spanDays <= 1095) return FreqGranularity.month; // ≤ ~3 years
+        return FreqGranularity.year;
+    }
   }
 
   /// Returns the inclusive [start, end] window for [r], or `null` for
   /// `StatRange.all` (caller treats null as "no filter").
-  _DateWindow? _windowFor(
-    StatRange r,
-    DateTime today,
-    List<JournalEntry> all,
-  ) {
+  _DateWindow? _windowFor(StatRange r, DateTime today, List<JournalEntry> all) {
     switch (r) {
       case StatRange.week:
-        return _DateWindow(
-          start: _addDays(today, -6),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -6), end: today);
       case StatRange.month:
-        return _DateWindow(
-          start: _addDays(today, -29),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -29), end: today);
       case StatRange.year:
-        return _DateWindow(
-          start: _addDays(today, -364),
-          end: today,
-        );
+        return _DateWindow(start: _addDays(today, -364), end: today);
       case StatRange.all:
         return null;
     }
@@ -179,10 +214,7 @@ class StatisticsViewModel extends ChangeNotifier {
     while (!cursor.isAfter(window.end)) {
       final emoji = byDay[cursor];
       points.add(
-        MoodPoint(
-          day: cursor,
-          score: emoji == null ? null : _moodScore(emoji),
-        ),
+        MoodPoint(day: cursor, score: emoji == null ? null : _moodScore(emoji)),
       );
       cursor = _addDays(cursor, 1);
     }
@@ -207,63 +239,86 @@ class StatisticsViewModel extends ChangeNotifier {
     while (!cursor.isAfter(latest)) {
       final emoji = byDay[cursor];
       points.add(
-        MoodPoint(
-          day: cursor,
-          score: emoji == null ? null : _moodScore(emoji),
-        ),
+        MoodPoint(day: cursor, score: emoji == null ? null : _moodScore(emoji)),
       );
       cursor = _addDays(cursor, 1);
     }
     return points;
   }
 
-  List<WeekBucket> _computeEntryFrequency(
+  List<FreqBucket> _computeEntryFrequency(
     List<JournalEntry> entries,
     _DateWindow window,
+    FreqGranularity g,
   ) {
     final counts = <DateTime, int>{};
-    final start = _weekStart(window.start);
-    final end = _weekStart(window.end);
-    var cursor = start;
+    final end = _bucketStart(window.end, g);
+    var cursor = _bucketStart(window.start, g);
     while (!cursor.isAfter(end)) {
       counts[cursor] = 0;
-      cursor = _addDays(cursor, 7);
+      cursor = _advance(cursor, g);
     }
     for (final entry in entries) {
-      final ws = _weekStart(entry.date);
-      if (counts.containsKey(ws)) {
-        counts[ws] = counts[ws]! + 1;
+      final bs = _bucketStart(entry.date, g);
+      if (counts.containsKey(bs)) {
+        counts[bs] = counts[bs]! + 1;
       }
     }
     final sorted = counts.keys.toList()..sort();
     return [
-      for (final w in sorted) WeekBucket(weekStart: w, count: counts[w]!),
+      for (final b in sorted) FreqBucket(bucketStart: b, count: counts[b]!),
     ];
   }
 
-  List<WeekBucket> _computeEntryFrequencyUnbounded(
+  List<FreqBucket> _computeEntryFrequencyUnbounded(
     List<JournalEntry> entries,
+    FreqGranularity g,
   ) {
     if (entries.isEmpty) return const [];
     final counts = <DateTime, int>{};
     DateTime? earliest;
     DateTime? latest;
     for (final entry in entries) {
-      final ws = _weekStart(entry.date);
-      counts[ws] = (counts[ws] ?? 0) + 1;
-      earliest = earliest == null || ws.isBefore(earliest) ? ws : earliest;
-      latest = latest == null || ws.isAfter(latest) ? ws : latest;
+      final bs = _bucketStart(entry.date, g);
+      counts[bs] = (counts[bs] ?? 0) + 1;
+      earliest = earliest == null || bs.isBefore(earliest) ? bs : earliest;
+      latest = latest == null || bs.isAfter(latest) ? bs : latest;
     }
     if (earliest == null || latest == null) return const [];
     var cursor = earliest;
     while (!cursor.isAfter(latest)) {
       counts.putIfAbsent(cursor, () => 0);
-      cursor = _addDays(cursor, 7);
+      cursor = _advance(cursor, g);
     }
     final sorted = counts.keys.toList()..sort();
     return [
-      for (final w in sorted) WeekBucket(weekStart: w, count: counts[w]!),
+      for (final b in sorted) FreqBucket(bucketStart: b, count: counts[b]!),
     ];
+  }
+
+  /// First day of the bucket containing [d] at granularity [g]: Monday
+  /// for weekly, the 1st for monthly, Jan 1 for yearly.
+  DateTime _bucketStart(DateTime d, FreqGranularity g) {
+    switch (g) {
+      case FreqGranularity.week:
+        return _weekStart(d);
+      case FreqGranularity.month:
+        return DateTime(d.year, d.month, 1);
+      case FreqGranularity.year:
+        return DateTime(d.year, 1, 1);
+    }
+  }
+
+  /// Next bucket start after [d] at granularity [g].
+  DateTime _advance(DateTime d, FreqGranularity g) {
+    switch (g) {
+      case FreqGranularity.week:
+        return _addDays(d, 7);
+      case FreqGranularity.month:
+        return DateTime(d.year, d.month + 1, 1);
+      case FreqGranularity.year:
+        return DateTime(d.year + 1, 1, 1);
+    }
   }
 
   /// Subjective valence scale: positive ≈ 4–5, neutral ≈ 2.5–3, negative ≈ 0–1.

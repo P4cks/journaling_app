@@ -1,8 +1,11 @@
 # lib/ui/blocks/todo_block — Todo block widget
 
-One `BlockType.todoBlock` block. Renders a scrollable checklist inside
-the 1×1 cell. Content shape: `{"items": [{"id": "...", "text": "...",
-"done": true}]}` (the `done` key is omitted when false). Typed wrapper:
+One `BlockType.todoBlock` block. Renders a checklist inside the 1×1
+cell — in the grid, items that exceed the cell height are clipped
+(matching the text block's bounded behaviour); in the expanded route
+the list scrolls. Content shape:
+`{"items": [{"id": "...", "text": "...", "done": true}]}` (the
+`done` key is omitted when false). Typed wrapper:
 [TodoBlockContent](../../../data/model/block_content/todo_block_content.dart).
 
 ## Files
@@ -14,13 +17,26 @@ the 1×1 cell. Content shape: `{"items": [{"id": "...", "text": "...",
 
 ## Modes
 
-- `BlockMode.readOnly` — scrollable `ListView` of bullet rows: small
-  bubble (filled when done) + the item text (struck-through + dimmed
-  when done). Empty list → "No todos" italic placeholder.
-- `BlockMode.editable` — same list, but each row swaps the read-only
-  text for a single-line `TextField` and gains a tiny ✕ button on the
-  right. Tapping the bubble toggles done. Below the list, an inline
-  "+ Add item" affordance appends a fresh empty `TodoItem`.
+- `BlockMode.readOnly` — `Column` of bullet rows: small bubble (filled
+  when done) + the item text (struck-through + dimmed when done). Each
+  row's text is `maxLines: 1` + `overflow: TextOverflow.ellipsis`.
+  Empty list → "No todos" italic placeholder. In the grid the Column
+  is wrapped in `ClipRect` so excess rows clip to the cell; in the
+  **expanded route** (`expanded == true`) it's wrapped in a
+  `SingleChildScrollView` so every item is reachable.
+- `BlockMode.editable` — `Column` of rows, each a single-line
+  `TextField` plus a tiny ✕ button. Tapping the bubble toggles done.
+  In the grid the rows sit inside a `ClipRect`; when `expanded` they
+  sit inside a `SingleChildScrollView`. The "+ Add item" InkWell lives
+  OUTSIDE that wrapper at the natural bottom of the outer Column so it
+  stays visible even when items overflow.
+  **Char input is uncapped** (the GUS-10 per-item char cap + counter
+  was removed). The only remaining cap is the **item count**:
+  `kTodoMaxItems` = 8, a plain local constant in
+  `todo_block_widget.dart` (a count, not a char cap; UI-enforced, no
+  Hive bump). `_add` no-ops at the cap; the "Add item" control greys
+  out and an `n/max tasks` label sits to its right (turning
+  `error`-coloured at the cap).
 
 ## Implementation details
 

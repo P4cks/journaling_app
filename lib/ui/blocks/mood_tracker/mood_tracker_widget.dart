@@ -12,12 +12,20 @@ class MoodTrackerWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onInteractionLockChanged,
+    this.onRequestExitEdit,
+    this.onDoubleTap,
+    this.editing = false,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
   final BlockMode mode;
   final ValueChanged<JournalBlockData>? onChanged;
   final void Function(String blockId, bool locked)? onInteractionLockChanged;
+  final VoidCallback? onRequestExitEdit;
+  final VoidCallback? onDoubleTap;
+  final bool editing;
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +44,16 @@ class MoodTrackerWidget extends StatelessWidget {
           data.copyWith(content: MoodBlockContent(emoji: emoji).toMap()),
         ),
         onInteractionLockChanged: onInteractionLockChanged,
+        onRequestExitEdit: expanded ? null : onRequestExitEdit,
+        onDoubleTap: onDoubleTap,
+        editing: editing || expanded,
+        // Auto-collapse in both grid and expanded mode. In the
+        // expanded route the carousel collapses to the centred glyph
+        // after 1.5 s of inactivity (matching the grid behavior); the
+        // user re-engages by tapping it. The route itself stays open
+        // — `onRequestExitEdit` is null in expanded mode so the
+        // collapse-timer only flips the picker visually.
+        autoCollapse: true,
       ),
     );
   }

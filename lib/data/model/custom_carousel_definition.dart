@@ -24,12 +24,14 @@ class CustomCarouselDefinition {
     required this.items,
   });
 
-  CustomCarouselDefinition copyWith({String? title, List<CarouselItem>? items}) =>
-      CustomCarouselDefinition(
-        id: id,
-        title: title ?? this.title,
-        items: items ?? this.items,
-      );
+  CustomCarouselDefinition copyWith({
+    String? title,
+    List<CarouselItem>? items,
+  }) => CustomCarouselDefinition(
+    id: id,
+    title: title ?? this.title,
+    items: items ?? this.items,
+  );
 
   factory CustomCarouselDefinition.fromMap(Map<String, dynamic> map) {
     final rawItems = map['items'];

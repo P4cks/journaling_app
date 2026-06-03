@@ -37,7 +37,7 @@ pushes these screens.
   - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
     layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
 - [block_settings_screen.dart](block_settings_screen.dart) — public
-  `BlockSettingsScreen` (`StatefulWidget`). Two top-level
+  `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
     1. **Prompt Block** — embeds `PromptBlockSettings(vm)`.
     2. **Carousel Blocks** — a single `SwitchListTile`
@@ -45,6 +45,19 @@ pushes these screens.
        `vm.carouselTitlesEnabled`, followed by the inlined
        `_CustomCarouselList` (per-definition Edit / Delete rows + an
        "Add custom block" button at the bottom).
+    3. **Wanna-dos** (GUS-8) — the inlined `_WannadoList` over the
+       **global** wanna-do bucket list. Subscribes to `BlockSettings`
+       directly via `ListenableBuilder` (NOT the VM — wanna-do edits
+       write through `BlockSettings` immediately, not as drafts). Each
+       item is a `ListTile` with Edit / Delete `IconButton`s; an "Add
+       wanna-do" `OutlinedButton` sits at the bottom. Add / edit open a
+       top-level `_showEditDialog` (an `AlertDialog` with a maxLength-80
+       `TextField` returning trimmed text); `_add` mints a
+       `WannadoItem(id: _uuid.v4(), text: …)`, `_edit` calls
+       `item.copyWith(text: …)`. The list is the same one the wannado
+       carousel section renders in entries — edits reflect everywhere
+       immediately. The module-level `_uuid = Uuid()` backs new ids.
+    4. **Memory Block** — its existing settings.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors
   `LayoutEditorScreen`'s Cancel / Discard / Save dialog. The save
@@ -65,7 +78,12 @@ pushes these screens.
     showing the confirm dialog ("Used in N layouts — existing
     entries keep their pick…"). Before pushing the editor route
     the parent's `_maybeSaveOnLeave` runs so a dirty built-in
-    draft isn't silently buried under another screen.
+    draft isn't silently buried under another screen. The "Add
+    custom block" affordance is the shared `AddCustomBlockButton`
+    (see [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md)),
+    with a `ProLimitHint` above it — both gate new-block creation at
+    `kFreeMaxCustomBlocks` for free users (GUS-40). `_navigateToEditor`
+    no longer gates; the button owns the paywall-at-cap.
   - Private `_CustomDefinitionRow` renders the per-definition body
     (title label + item count + Edit / Delete actions).
 
@@ -75,17 +93,20 @@ pushes these screens.
 |-----------------------------|-------------------------|------------------------------------|
 | `SettingsSection` "Appearance" | `themeSettings`      | mode selector + palette strip      |
 | `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
-| "Theme" + `PalettePicker` | `themeSettings` | horizontal Graphite/user-theme strip |
+| "Theme" + `PalettePicker` | `themeSettings` + `subscriptionRepository` | horizontal Graphite/user-theme strip; Pro-gated (GUS-26) |
 | `showThemeEditorSheet`    | —                       | add/edit user themes                |
 | `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
 | `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
-| `SettingsSection` "Debug" | `debugSettings`         | debug rows render only when enabled |
+| `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
+| `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
 | `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
+| `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
+| `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count SnackBar |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
 
@@ -98,13 +119,37 @@ pushes these screens.
   `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
   + show a SnackBar with the deleted count. The layouts variant
   surfaces "default restored" because the repository re-seeds.
+- `_generateSampleEntries(context)` — debug (GUS-35); no confirm
+  (non-destructive) — calls `JournalRepository.debugGenerateSampleEntries`
+  and SnackBars the created count. Lets you populate the statistics
+  charts with ~400 days of random mood + text data.
+
+## Debug menu visibility (GUS-10 follow-up)
+
+The entire Settings → "Debug" `SettingsSection` is wrapped in a
+collection-`if (kDebugMode)` (from `package:flutter/foundation.dart`),
+so in release builds it — including the "Show debug menu" toggle — is
+absent from the tree and a production user can never reach the
+destructive actions, the "simulate free account" override, or the
+color overrides. Inside a debug build the existing `debugMenuVisible`
+toggle still gates the detailed rows.
+
+The former per-block input-limit tuning tiles (`_DebugLimitTile`, the
+italic caption, the `BlockInputLimits` scaffold) were **removed** —
+text blocks/sections/prompt answers/todo items are now uncapped; only
+the header keeps a fixed 60-char cap.
 
 ## Private widgets
 
 - `_AppearanceSettingsContent` — owns the Appearance section's live
   `ThemeSettings` listener, mode selector, palette strip, and add/edit/delete
   custom-theme callbacks. `SettingsScreen` only decides where the section sits
-  in the list.
+  in the list. Takes a `SubscriptionRepository` (passed from
+  `AppDependencies`) and listens to it alongside `ThemeSettings` via
+  `Listenable.merge`, so the palette strip un-greys immediately after a
+  purchase. Passes `locked: !isPro` + `onUnlock: () =>
+  requirePro(subscriptions, context:)` into `PalettePicker` (GUS-26).
+  Theme mode stays free.
 - `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
   for user themes; edits name, surface tint, secondary, accent, and text
   colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.

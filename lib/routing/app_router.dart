@@ -11,6 +11,7 @@ import 'package:journaling_app_rewrite/ui/profile/view/block_settings_screen.dar
 import 'package:journaling_app_rewrite/ui/profile/view/custom_block_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/subscription/view/subscription_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
@@ -58,6 +59,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
+      path: Routes.subscription,
+      name: RouteNames.subscription,
+      builder: (context, state) => const SubscriptionScreen(),
+    ),
+    GoRoute(
       path: Routes.layouts,
       name: RouteNames.layouts,
       builder: (context, state) => const LayoutsScreen(),
@@ -66,7 +72,8 @@ final GoRouter appRouter = GoRouter(
           path: 'new',
           name: RouteNames.newLayout,
           builder: (context, state) {
-            final raw = state.uri.queryParameters[Routes.newLayoutKindQueryParam];
+            final raw =
+                state.uri.queryParameters[Routes.newLayoutKindQueryParam];
             final kind = LayoutKind.values.firstWhere(
               (k) => k.name == raw,
               orElse: () => LayoutKind.blockOnly,
@@ -95,9 +102,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: Routes.editCustomBlock,
       name: RouteNames.editCustomBlock,
-      builder: (context, state) => CustomBlockEditorScreen(
-        definitionId: state.pathParameters['id'],
-      ),
+      builder: (context, state) =>
+          CustomBlockEditorScreen(definitionId: state.pathParameters['id']),
     ),
   ],
 );

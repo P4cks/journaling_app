@@ -394,6 +394,14 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         return SectionKind.blockGrid;
       case 2:
         return SectionKind.featureBlock;
+      case 3:
+        return SectionKind.header;
+      case 4:
+        return SectionKind.divider;
+      case 7:
+        return SectionKind.blockTextBody;
+      case 8:
+        return SectionKind.wannado;
       default:
         return SectionKind.text;
     }
@@ -408,6 +416,14 @@ class SectionKindAdapter extends TypeAdapter<SectionKind> {
         writer.writeByte(1);
       case SectionKind.featureBlock:
         writer.writeByte(2);
+      case SectionKind.header:
+        writer.writeByte(3);
+      case SectionKind.divider:
+        writer.writeByte(4);
+      case SectionKind.blockTextBody:
+        writer.writeByte(7);
+      case SectionKind.wannado:
+        writer.writeByte(8);
     }
   }
 

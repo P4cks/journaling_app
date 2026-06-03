@@ -3,21 +3,21 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_kind_picker_sheet.dart';
 
 String _layoutSummary(JournalLayout layout) {
   switch (layout.kind) {
     case LayoutKind.blockOnly:
-      final n = layout.sections.fold<int>(
-        0,
-        (acc, s) => acc + s.blocks.length,
-      );
+      final n = layout.sections.fold<int>(0, (acc, s) => acc + s.blocks.length);
       return '$n block${n == 1 ? '' : 's'}';
     case LayoutKind.fixedFourPlusText:
       return '4 blocks + text';
@@ -40,6 +40,7 @@ class LayoutsScreen extends StatefulWidget {
 
 class _LayoutsScreenState extends State<LayoutsScreen> {
   LayoutsViewModel? _viewModel;
+  SubscriptionRepository? _subscriptions;
 
   @override
   void didChangeDependencies() {
@@ -48,6 +49,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
       final deps = AppDependencies.of(context);
       _viewModel = LayoutsViewModel(repository: deps.layoutRepository);
       _viewModel!.addListener(_onChanged);
+      _subscriptions = deps.subscriptionRepository;
     }
   }
 
@@ -72,6 +74,17 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
   }
 
   Future<void> _openNewLayoutFlow() async {
+    final vm = _viewModel;
+    final subs = _subscriptions;
+    if (vm == null || subs == null) return;
+    // Free users keep their one (seeded) layout; creating a second requires
+    // the `pro` entitlement (BACKLOG #90, GUS-40). `requirePro`
+    // short-circuits when already Pro and otherwise presents the paywall.
+    if (vm.layouts.length >= kFreeMaxLayouts &&
+        !await requirePro(subs, context: context)) {
+      return;
+    }
+    if (!mounted) return;
     final kind = await showLayoutKindPickerSheet(context);
     if (!mounted || kind == null) return;
     await context.push(Routes.newLayoutFor(kind));
@@ -82,76 +95,121 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
   @override
   Widget build(BuildContext context) {
     final vm = _viewModel;
-    if (vm == null) return const Scaffold();
+    final subs = _subscriptions;
+    if (vm == null || subs == null) return const Scaffold();
 
-    final layouts = vm.layouts;
-    final scheme = Theme.of(context).colorScheme;
+    // Listen to the subscription repo so the limit hint + FAB lock state
+    // update live after a purchase/restore (GUS-40).
+    return ListenableBuilder(
+      listenable: subs,
+      builder: (context, _) {
+        final layouts = vm.layouts;
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
+        final atLimit = !subs.isPro && layouts.length >= kFreeMaxLayouts;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Layouts')),
-      body: layouts.isEmpty
-          ? Center(
-              child: Text(
-                'No layouts yet. Tap + to create one.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).disabledColor,
+        final Widget list = layouts.isEmpty
+            ? Center(
+                child: Text(
+                  'No layouts yet. Tap + to create one.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.disabledColor,
+                  ),
+                ),
+              )
+            : ListView.builder(
+                itemCount: layouts.length,
+                itemBuilder: (context, index) {
+                  final layout = layouts[index];
+                  final isDefault = layout.id == vm.defaultLayoutId;
+                  return Dismissible(
+                    key: ValueKey(layout.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      color: scheme.errorContainer,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: AppIcon(
+                        HugeIcons.strokeRoundedDelete02,
+                        color: scheme.onErrorContainer,
+                      ),
+                    ),
+                    onDismissed: (_) => vm.delete(layout.id),
+                    child: ListTile(
+                      leading: _LayoutIconBadge(
+                        iconName: layout.iconName,
+                        isDefault: isDefault,
+                      ),
+                      title: Text(layout.name),
+                      subtitle: Text(_layoutSummary(layout)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isDefault)
+                            const LayoutDefaultChip()
+                          else
+                            TextButton.icon(
+                              icon: AppIcon(
+                                HugeIcons.strokeRoundedStar,
+                                size: 16,
+                              ),
+                              label: const Text('Set default'),
+                              onPressed: () => vm.setDefault(layout.id),
+                            ),
+                          const SizedBox(width: 4),
+                          AppIcon(HugeIcons.strokeRoundedArrowRight01),
+                          const SizedBox(width: 8),
+                        ],
+                      ),
+                      onTap: () => _openEditor(layout.id),
+                    ),
+                  );
+                },
+              );
+
+        return Scaffold(
+          appBar: AppBar(title: const Text('Layouts')),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Renders nothing for Pro users; for free users it shows
+              // "1 of 1 layouts used" → "layouts limit reached — Upgrade".
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: ProLimitHint(
+                  used: layouts.length,
+                  max: kFreeMaxLayouts,
+                  noun: 'layouts',
+                  subscriptions: subs,
                 ),
               ),
-            )
-          : ListView.builder(
-              itemCount: layouts.length,
-              itemBuilder: (context, index) {
-                final layout = layouts[index];
-                final isDefault = layout.id == vm.defaultLayoutId;
-                return Dismissible(
-                  key: ValueKey(layout.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: scheme.errorContainer,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: AppIcon(
-                      HugeIcons.strokeRoundedDelete02,
-                      color: scheme.onErrorContainer,
-                    ),
-                  ),
-                  onDismissed: (_) => vm.delete(layout.id),
-                  child: ListTile(
-                    leading: _LayoutIconBadge(
-                      iconName: layout.iconName,
-                      isDefault: isDefault,
-                    ),
-                    title: Text(layout.name),
-                    subtitle: Text(_layoutSummary(layout)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: AppIcon(
-                            HugeIcons.strokeRoundedStar,
-                            color: isDefault ? scheme.primary : null,
-                          ),
-                          tooltip: isDefault
-                              ? 'Default layout'
-                              : 'Set as default',
-                          onPressed: isDefault
-                              ? null
-                              : () => vm.setDefault(layout.id),
-                        ),
-                        AppIcon(HugeIcons.strokeRoundedArrowRight01),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
-                    onTap: () => _openEditor(layout.id),
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openNewLayoutFlow,
-        tooltip: 'New layout',
-        child: AppIcon(HugeIcons.strokeRoundedPlusSign),
-      ),
+              Expanded(child: list),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _openNewLayoutFlow,
+            tooltip: atLimit ? 'Pro — unlimited layouts' : 'New layout',
+            backgroundColor: atLimit ? scheme.surfaceContainerHighest : null,
+            foregroundColor: atLimit ? theme.disabledColor : null,
+            child: atLimit
+                ? Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AppIcon(
+                        HugeIcons.strokeRoundedPlusSign,
+                        color: theme.disabledColor,
+                      ),
+                      const Positioned(
+                        top: -4,
+                        right: -4,
+                        child: ProLockBadge(compact: true),
+                      ),
+                    ],
+                  )
+                : AppIcon(HugeIcons.strokeRoundedPlusSign),
+          ),
+        );
+      },
     );
   }
 }
