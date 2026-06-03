@@ -12,12 +12,15 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 /// unlimited blocks. (BACKLOG #92)
 const int kFreeMaxBlocksPerLayout = 6;
 
-/// Section kinds free users may add. `featureBlock` is Pro-only, so the
-/// add-section sheet greys + badges it and presents the paywall on tap.
-/// (GUS-19)
+/// Section kinds free users may add. `featureBlock` (GUS-19) and
+/// `blockTextBody` (GUS-9) are Pro-only — being absent from this set,
+/// the add-section sheet greys + badges them and presents the paywall
+/// on tap.
 const Set<SectionKind> kFreeSectionKinds = {
   SectionKind.text,
   SectionKind.blockGrid,
+  SectionKind.header,
+  SectionKind.divider,
 };
 
 /// Free-tier cap on sections in a `custom` (customizable) layout. The

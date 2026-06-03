@@ -9,7 +9,8 @@ surfaces; verify both after structural changes.
 Full-width text content lives in its own widget — [text_section/](text_section/)
 — used by the section-aware journal pager for `SectionKind.text`
 sections and stylistically distinct from the `text_block` 1×1 tile
-that lives in block-grid sections.
+that lives in block-grid sections. A single-line heading variant lives
+in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 
 ## Files
 
@@ -168,6 +169,33 @@ that lives in block-grid sections.
   action on a tap inside the route. Text sections render the text
   directly on the blur — no card chrome.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
+- [header_section/header_section_widget.dart](header_section/header_section_widget.dart) —
+  `HeaderSectionWidget`. Single-line heading for `SectionKind.header`
+  (GUS-6). Shares `TextContentControllerMixin` with the text block /
+  section but renders a bold one-liner with no expanded route / Hero.
+  See [header_section/CLAUDE.md](header_section/CLAUDE.md).
+- [block_text_section/block_text_section_widget.dart](block_text_section/block_text_section_widget.dart) —
+  `BlockTextSectionWidget`. Renders a `SectionKind.blockTextBody`
+  section (GUS-9): a photo/memory block floated top-left with text
+  wrapping around it. **Both modes** use the same `Text.rich` +
+  `WidgetSpan(alignment: PlaceholderAlignment.top)` float-wrap (zero
+  new dependency); the float block is sized to a real grid tile
+  (`(maxWidth-44)/2`). In editable mode the wrap is wrapped in a
+  translucent tap that opens the expanded text editor (a `TextField`
+  can't live in a `WidgetSpan`). Takes the two blocks separately
+  (`floatBlock` nullable, `textBlock` required). See
+  [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
+- [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
+  `WannadoSectionWidget`. Renders a `SectionKind.wannado` section
+  (GUS-8, PRO): a **vertical auto-rotating carousel** over the user's
+  **global** wanna-do list (`BlockSettings.wannados`, grabbed from
+  `AppDependencies` inside the widget, wrapped in a `ListenableBuilder`).
+  **Pure display** — no per-item done/checkbox state; `mode` is ignored
+  (identical on editable + read-only days). A `Timer.periodic` advances
+  one item every 4 s; the user can also swipe vertically (a manual swipe
+  restarts the timer). Loops via a large virtual base page +
+  `index % items.length`. Takes no arguments. See
+  [wannado_section/CLAUDE.md](wannado_section/CLAUDE.md).
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —

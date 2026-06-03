@@ -37,7 +37,7 @@ pushes these screens.
   - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
     layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
 - [block_settings_screen.dart](block_settings_screen.dart) — public
-  `BlockSettingsScreen` (`StatefulWidget`). Two top-level
+  `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
     1. **Prompt Block** — embeds `PromptBlockSettings(vm)`.
     2. **Carousel Blocks** — a single `SwitchListTile`
@@ -45,6 +45,19 @@ pushes these screens.
        `vm.carouselTitlesEnabled`, followed by the inlined
        `_CustomCarouselList` (per-definition Edit / Delete rows + an
        "Add custom block" button at the bottom).
+    3. **Wanna-dos** (GUS-8) — the inlined `_WannadoList` over the
+       **global** wanna-do bucket list. Subscribes to `BlockSettings`
+       directly via `ListenableBuilder` (NOT the VM — wanna-do edits
+       write through `BlockSettings` immediately, not as drafts). Each
+       item is a `ListTile` with Edit / Delete `IconButton`s; an "Add
+       wanna-do" `OutlinedButton` sits at the bottom. Add / edit open a
+       top-level `_showEditDialog` (an `AlertDialog` with a maxLength-80
+       `TextField` returning trimmed text); `_add` mints a
+       `WannadoItem(id: _uuid.v4(), text: …)`, `_edit` calls
+       `item.copyWith(text: …)`. The list is the same one the wannado
+       carousel section renders in entries — edits reflect everywhere
+       immediately. The module-level `_uuid = Uuid()` backs new ids.
+    4. **Memory Block** — its existing settings.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors
   `LayoutEditorScreen`'s Cancel / Discard / Save dialog. The save

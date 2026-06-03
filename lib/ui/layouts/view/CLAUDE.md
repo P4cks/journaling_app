@@ -101,6 +101,29 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       the X-remove calls `vm.clearFeatureBlock`. `_EmptyAddBlockCell`
       is no longer used by `_FixedFourPlusTextBody` (which now uses
       `BlockGrid.onAddBlock`) — feature-block is the only caller.
+    - `header` → `_HeaderSectionPreview` — a `HeaderSectionWidget` in
+      `BlockMode.readOnly` over an empty `TextBlockContent` (mirrors
+      `_TextSectionPreview`; shows the italic "Heading" placeholder).
+      No add affordance — the heading text is entered per-entry. (GUS-6)
+    - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
+    - `blockTextBody` → `_BlockTextSectionBody` — a `Row` of the
+      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`, same
+      slot machinery as `_FeatureBlockSectionBody`) left of a read-only
+      `_TextSectionPreview`, hinting the materialized entry's float
+      arrangement. The block is sized to exactly one tile of a 2-column
+      `BlockGrid` — `((maxWidth - 44) / 2).clamp(120, 220)` via a
+      `LayoutBuilder` hoisted ABOVE the padding (so `maxWidth` is the
+      full section width) — matching a "normal" grid block rather than
+      a fixed 120px square or the old `* 0.42` proportion. The picker uses
+      `showAddBlockSheet(allowedTypes: featureBlockAllowedTypes)` →
+      `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
+      (both generalized to accept this kind). The text block is entered
+      per-entry (not an editor slot). (GUS-9)
+    - `wannado` → a `WannadoSectionWidget` preview (the same widget the
+      journal pager renders). It self-fetches the **global** wanna-do
+      list off `AppDependencies.blockSettings` and rotates live in the
+      editor. No add affordance — items are managed in Block settings,
+      not per-section. (GUS-8)
 
 ## Gotchas
 

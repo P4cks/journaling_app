@@ -129,6 +129,30 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   filled with one tile). Empty feature sections (no template) render
   nothing.
 
+  **`SectionKind.header`** → renders `HeaderSectionWidget` over the
+  section's single `textBlock` (GUS-6). Edits in place (single-tap the
+  field) — no Hero / expanded route, so unlike the `text` case it is
+  not Hero-wrapped. **`SectionKind.divider`** → a padded `Divider`
+  (GUS-7); **renders even though `blocks` is empty** (the
+  blockGrid/featureBlock cases suppress empties, but a divider has no
+  blocks by design).
+
+  **`SectionKind.blockTextBody`** → renders `BlockTextSectionWidget`
+  (GUS-9). `_buildSection` walks `section.blocks`, picking the first
+  `textBlock` and the first `photoBlock`/`memoryBlock` by type (order-
+  independent), and passes them as `textBlock` (required) + `floatBlock`
+  (nullable). Suppressed only if no `textBlock` is present (malformed).
+  Wires `onRequestBlockEdit` (float block) + `onRequestTextSectionEdit`
+  / `textEditing` (text) the same as the `featureBlock` + `text` cases.
+
+  **`SectionKind.wannado`** → renders `const WannadoSectionWidget()`
+  (GUS-8). The widget takes **no arguments** and self-fetches the
+  **global** wanna-do list from `AppDependencies.blockSettings`; the
+  `EntrySection` carries no blocks, so `_buildSection` must NOT
+  early-return on empty `section.blocks` (like `divider`). `mode` is
+  ignored — it's a pure-display auto-rotating carousel, identical on
+  editable and read-only days.
+
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled
   slots), `_SectionsBody` returns `SizedBox.shrink()` for that

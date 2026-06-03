@@ -304,24 +304,31 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // featureBlock — exactly-one-slot section restricted to photo/memory.
+  // featureBlock / blockTextBody — single-slot sections restricted to
+  // photo/memory. Slot semantics are identical (0–1 photo/memory block),
+  // so both kinds share the same setter/clearer.
   // ---------------------------------------------------------------------------
 
-  /// Allowed block types for a feature-block section. The layout editor
-  /// passes this set to `showAddBlockSheet` so the picker only shows
-  /// these types; the VM also defensively validates here.
+  /// Allowed block types for a feature-block / block-text-body section.
+  /// The layout editor passes this set to `showAddBlockSheet` so the
+  /// picker only shows these types; the VM also defensively validates here.
   static const Set<BlockType> featureBlockAllowedTypes = {
     BlockType.photoBlock,
     BlockType.memoryBlock,
   };
 
-  /// Either fills an empty feature-block section, or swaps the type of
-  /// the existing slot. No-op if the section is not a `featureBlock`
-  /// or `type` is not in [featureBlockAllowedTypes].
+  static const Set<SectionKind> _singleBlockSectionKinds = {
+    SectionKind.featureBlock,
+    SectionKind.blockTextBody,
+  };
+
+  /// Either fills an empty feature-block / block-text-body section, or
+  /// swaps the type of the existing slot. No-op if the section is not a
+  /// single-block kind or `type` is not in [featureBlockAllowedTypes].
   void setFeatureBlock(String sectionId, AddBlockResult result) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.featureBlock) return;
-    // Defensive: feature blocks are restricted to built-in photo/memory
+    if (!_singleBlockSectionKinds.contains(section.kind)) return;
+    // Defensive: these sections are restricted to built-in photo/memory
     // types. The Add-Block sheet's `allowedTypes` already filters, but
     // the sealed-result switch keeps that invariant explicit here.
     if (result is! AddBlockResultBuiltin) return;
@@ -333,10 +340,11 @@ class LayoutEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Empties a feature-block section. No-op for non-feature sections.
+  /// Empties a feature-block / block-text-body section. No-op for other
+  /// section kinds.
   void clearFeatureBlock(String sectionId) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.featureBlock) return;
+    if (!_singleBlockSectionKinds.contains(section.kind)) return;
     if (section.slots.isEmpty) return;
     section.slots = const [];
     debugPrint('[LayoutEditorVM] clearFeatureBlock $sectionId');

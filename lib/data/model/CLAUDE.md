@@ -24,12 +24,38 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   existing text JSON path and char-limit enforcement. For
   `SectionKind.featureBlock` the blocks list contains exactly one
   materialized block (a `photoBlock` or `memoryBlock`) rendered at
-  2×2 (full body width, square).
-- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock }`.
+  2×2 (full body width, square). For `SectionKind.header` the blocks
+  list is exactly one `textBlock` (same trick as `text`); for
+  `SectionKind.divider` the blocks list is **empty** (purely visual).
+  For `SectionKind.blockTextBody` the blocks list holds **two** blocks:
+  a float block (`photoBlock` or `memoryBlock`, may be absent) and a
+  `textBlock`; the widget looks each up by type, so order is irrelevant.
+  For `SectionKind.wannado` the blocks list is **empty** — the section
+  renders the global wanna-do list off `BlockSettings`, carrying no
+  per-entry content.
+- [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody, wannado }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
   `featureBlock` is a single-tile 2×2 section; the layout editor
   restricts the block type to `photoBlock` or `memoryBlock` (defended
-  by `LayoutEditorViewModel.featureBlockAllowedTypes`).
+  by `LayoutEditorViewModel.featureBlockAllowedTypes`). `header` (GUS-6,
+  FREE) is a single-line heading backed by one `textBlock` (reuses the
+  text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
+  visual rule carrying **no** blocks — it renders even with an empty
+  `blocks` list. `blockTextBody` (GUS-9, PRO) floats a photo/memory
+  block top-left with text wrapping around it (magazine `float: left`);
+  the layout template stores only the float block (0 or 1, like
+  `featureBlock`) and the `textBlock` is materialized fresh (always
+  starts empty, like `text`). `wannado` (GUS-8, PRO) renders the user's
+  **global** wanna-do list (a single bucket list on
+  [BlockSettings](../services/block_settings.dart), see
+  [wannado_item.dart](wannado_item.dart)) as a vertical auto-rotating
+  carousel. **Pure display, content-free per entry** — `blocks` is
+  always empty; the list never round-trips through the layout/entry.
+  - **Hive byte note:** the `hive_ce` generator assigns *content-stable*
+    enum byte ids, NOT the enum index — `blockTextBody` is byte 7 and
+    `wannado` is byte 8 (bytes 5/6 are unused). Don't hand-edit the
+    generated adapter to "fix" the gap; re-run `build_runner` and let
+    the generator own the ids.
 - [layout_kind.dart](layout_kind.dart) — `enum LayoutKind { blockOnly, fixedFourPlusText, custom }`.
   Picked by the user at layout-creation time; drives the layout editor's
   UX. **Append-only.**
@@ -135,6 +161,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   (layout slots) and from `CustomCarouselBlockContent`. Pure JSON
   serialization; nothing Hive-adapter-y because the values live in the
   schema-free `settings` box, not in the layouts / entries box.
+- [wannado_item.dart](wannado_item.dart) — `WannadoItem` (`id`, `text`).
+  One entry in the user's **global** wanna-do bucket list (GUS-8), held
+  by [BlockSettings](../services/block_settings.dart) and rendered by
+  every `SectionKind.wannado` section. **Pure display — no `done` /
+  checkbox state**; a wanna-do is an aspiration the carousel surfaces,
+  not a per-entry to-do. Pure JSON (`fromMap`/`toMap`/`copyWith`), lives
+  in the schema-free `settings` box, so no Hive adapter. Mirrors the
+  `CustomCarouselDefinition` storage pattern.
 
 ## Implementation details
 

@@ -114,6 +114,14 @@ rather than a raw `BlockType`. Internally `_slotFromResult` /
 additionally rejects non-built-in results because feature blocks
 are restricted to photo / memory.
 
+`setFeatureBlock` / `clearFeatureBlock` operate on **both**
+`SectionKind.featureBlock` and `SectionKind.blockTextBody` (the set
+`_singleBlockSectionKinds`) — slot semantics are identical (0–1
+photo/memory block), so the block-text-body editor reuses them. The
+`blockTextBody` section's `textBlock` is **not** an editor slot; it's
+materialized fresh by `JournalRepository.materializeLayout`, so it
+never appears in `SectionDraft.slots`.
+
 `blockOnly` (operates on the single implicit section):
 - `addBlock(result)` — append a fresh `BlockSlot`.
 - `removeSlot(slotId)` — remove by id. No-op if not found.

@@ -52,7 +52,9 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     (`true`/`false`; absent → default `true`),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
-    carousels yet), `block.expandOnEdit` (`true`/`false`; absent →
+    carousels yet), `block.wannado.items` (JSON-encoded list of
+    `WannadoItem`s — the global wanna-do bucket list rendered by
+    `SectionKind.wannado` sections; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
     default `true`; gates the expanded-block overlay vs in-place
     edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
     absent → default `false`; developer affordance that adds a Done
@@ -164,6 +166,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Caller owns id generation and uniqueness validation. Persisted as
     a JSON list; orphan-tolerant (delete doesn't cascade into layouts
     / entries — the widget renders a "deleted block" placeholder).
+  - `wannados` (`List<WannadoItem>`) — the user's **global** wanna-do
+    bucket list (GUS-8), rendered by every `SectionKind.wannado`
+    section as a rotating carousel. `addWannado`, `updateWannado`,
+    `deleteWannado` mutate (each notifies). **No toggle / done state**
+    — items are pure display (text only). Caller owns id generation.
+    Persisted as a JSON list (`block.wannado.items`); mirrors the
+    `customCarousels` storage pattern exactly.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so

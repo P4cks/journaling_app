@@ -17,7 +17,9 @@ import 'package:journaling_app_rewrite/ui/blocks/block_grid.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -610,6 +612,10 @@ class _SectionCard extends StatelessWidget {
       SectionKind.blockGrid => ('Block grid', 'block grid'),
       SectionKind.text => ('Text section', 'text section'),
       SectionKind.featureBlock => ('Feature block', 'feature block'),
+      SectionKind.header => ('Header', 'header'),
+      SectionKind.divider => ('Divider', 'divider'),
+      SectionKind.blockTextBody => ('Block + text', 'block + text'),
+      SectionKind.wannado => ('Wanna-dos', 'wanna-dos'),
     };
 
     return Container(
@@ -682,6 +688,25 @@ class _SectionCard extends StatelessWidget {
             SectionKind.featureBlock => _FeatureBlockSectionBody(
               vm: vm,
               sectionIndex: index,
+            ),
+            SectionKind.header => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: _HeaderSectionPreview(),
+            ),
+            SectionKind.divider => const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Divider(height: 1),
+            ),
+            SectionKind.blockTextBody => _BlockTextSectionBody(
+              vm: vm,
+              sectionIndex: index,
+            ),
+            // Content-free per entry — previews the *global* wanna-do
+            // list (rotating carousel). No per-section add affordance;
+            // items are managed in Block settings.
+            SectionKind.wannado => const Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: WannadoSectionWidget(),
             ),
           },
         ],
@@ -787,6 +812,68 @@ class _FeatureBlockSectionBody extends StatelessWidget {
   }
 }
 
+/// Editor body for a `blockTextBody` section: the float-block picker
+/// (photo/memory, identical slot machinery to `_FeatureBlockSectionBody`)
+/// laid out left of a read-only text preview, hinting the magazine
+/// float arrangement a materialized entry will show.
+class _BlockTextSectionBody extends StatelessWidget {
+  const _BlockTextSectionBody({required this.vm, required this.sectionIndex});
+
+  final LayoutEditorViewModel vm;
+  final int sectionIndex;
+
+  Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showAddBlockSheet(
+      context,
+      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
+      title: isSwap ? 'Swap block' : 'Choose block',
+    );
+    if (picked == null) return;
+    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final section = vm.sections[sectionIndex];
+    final sectionId = section.id;
+    final slots = section.slots;
+
+    // Size the float block to exactly one tile of a 2-column BlockGrid so
+    // the editor preview matches a "normal" block. The grid reserves 16px
+    // left + 16px right padding + 12px inter-column spacing, so a single
+    // tile is (fullWidth - 44) / 2. LayoutBuilder sits ABOVE the padding so
+    // `maxWidth` is the full section width (a LayoutBuilder placed directly
+    // as a Row child would get unbounded width).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final blockSize = ((constraints.maxWidth - 44) / 2).clamp(120.0, 220.0);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: blockSize,
+                height: blockSize,
+                child: slots.isEmpty
+                    ? _EmptyAddBlockCell(onTap: () => _pickType(context))
+                    : _FilledCell(
+                        slot: slots.first,
+                        onSwapType: () => _pickType(context, isSwap: true),
+                        onRemove: () => vm.clearFeatureBlock(sectionId),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: _TextSectionPreview()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Read-only preview of a text section — uses the same
 /// `TextSectionWidget` the materialized entry renders. Backed by a
 /// fresh empty `TextBlockContent` so the widget shows its
@@ -799,6 +886,22 @@ class _TextSectionPreview extends StatelessWidget {
     return TextSectionWidget(
       data: JournalBlockData.create(
         id: 'layout-editor-text-preview',
+        type: BlockType.textBlock,
+        content: const TextBlockContent(text: '').toMap(),
+      ),
+      mode: BlockMode.readOnly,
+    );
+  }
+}
+
+class _HeaderSectionPreview extends StatelessWidget {
+  const _HeaderSectionPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return HeaderSectionWidget(
+      data: JournalBlockData.create(
+        id: 'layout-editor-header-preview',
         type: BlockType.textBlock,
         content: const TextBlockContent(text: '').toMap(),
       ),
