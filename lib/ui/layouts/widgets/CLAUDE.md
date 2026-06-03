@@ -12,21 +12,41 @@ sheet is a stateless top-level function returning the user's pick or
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   (the shared scaffold owns the drag handle, the title row, and the
-  `DraggableScrollableSheet` chrome). Body:
-  a 2-column grid of scaled-down built-in block previews
-  (`BlockWidget` in `BlockMode.readOnly` with `sampleData`), iterating
-  `BlockType.values` minus `_hiddenBlockTypes`. Bottom (when
-  `allowedTypes == null`): a **Custom blocks** section listing every
-  `BlockSettings.customCarousels` definition as its own tile (live
-  `CustomCarouselWidget` preview pointing at the registry), plus an
-  "Add custom block" `OutlinedButton` that pops the sheet and pushes
-  `Routes.newCustomBlock` so the editor stacks on the layout editor.
+  `DraggableScrollableSheet` chrome). The body is the **stateful**
+  `_AddBlockSheetBody` (was stateless before GUS-20/GUS-24), top → bottom:
+  - **Search field** (`_SearchField`) — a rounded `TextField` with a
+    leading search glyph and a trailing clear button (shown via a
+    `ValueListenableBuilder` on the controller once non-empty). Live
+    filters the active tab's cells: built-in cells match on
+    `BlockType.label` / `description`, custom cells on the definition
+    `title`. Query is stored trimmed + lower-cased; empty ⇒ no filter.
+    When a tab has no matches, `_NoMatchesHint` renders in place of the
+    grid. (GUS-20)
+  - **Tab switcher** — a 2-segment `SegmentedButton<_BlockTab>`
+    (**Default** / **Custom**), shown only when `allowedTypes == null`.
+    The two sections render **one-at-a-time** by tab (not stacked as
+    before). (GUS-24)
+  - **Default tab** (`_buildBuiltinGrid`): a 2-column grid of
+    scaled-down built-in block previews (`BlockWidget` in
+    `BlockMode.readOnly` with `sampleData`), iterating `BlockType.values`
+    minus `_hiddenBlockTypes`.
+  - **Custom tab** (`_buildCustomSection`, only when
+    `allowedTypes == null`): every `BlockSettings.customCarousels`
+    definition as its own tile (live `CustomCarouselWidget` preview
+    pointing at the registry), the `ProLimitHint`, plus an
+    "Add custom block" `OutlinedButton` that pops the sheet and pushes
+    `Routes.newCustomBlock` so the editor stacks on the layout editor.
+    The button captures `Navigator` + `GoRouter` before its `await`
+    and re-checks the State's `mounted` (lint-clean across the paywall
+    async gap).
+
   Subscribes to `BlockSettings` via `ListenableBuilder`, so a
-  definition saved in the editor appears in the section without
+  definition saved in the editor appears in the Custom tab without
   re-opening the sheet. `_hiddenBlockTypes` excludes `locationBlock`
   (WIP) and `customCarousel` (surfaces only via the per-definition
   tiles). Pass `allowedTypes` to restrict to a subset (used by
-  feature-block sections — also hides the custom section since feature
+  feature-block sections — this hides BOTH the tab switcher and the
+  custom section, leaving just the search field + built-in grid; feature
   blocks must be photo/memory). The `title` defaults to "Add block".
   - **Pro gating (GUS-19).** Reads `subscriptionRepository` via
     `AppDependencies`. For free users, built-in cells whose

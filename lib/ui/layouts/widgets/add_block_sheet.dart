@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -50,18 +51,25 @@ class AddBlockResultCustom extends AddBlockResult {
 
 /// Half-screen modal sheet that lets the user pick a block to add.
 ///
-/// Top: a 2-column grid of built-in `BlockType`s rendered with their
-/// sample preview. Bottom (only when [allowedTypes] is null): a
-/// "Custom blocks" section with one tile per
-/// `BlockSettings.customCarousels` entry plus an "Add custom block"
-/// button that pushes the editor screen — on save the sheet rebuilds
-/// via a `ListenableBuilder` on `BlockSettings`, so the new
-/// definition appears without a re-open.
+/// Layout (top → bottom):
+/// - A search field that filters the visible cells by `BlockType.label`
+///   / `description` (and custom-definition title) live as the user
+///   types. (GUS-20)
+/// - When [allowedTypes] is null: a 2-segment `SegmentedButton` tab
+///   switcher between **Default** (built-in `BlockType`s) and **Custom**
+///   (the user's saved custom-carousel definitions). (GUS-24) The
+///   built-in grid and the custom section render one-at-a-time based on
+///   the active tab rather than stacked.
+/// - The active tab's content: built-in cells in a 2-column grid, or the
+///   custom-definition cells plus an "Add custom block" button that
+///   pushes the editor screen — on save the sheet rebuilds via a
+///   `ListenableBuilder` on `BlockSettings`, so the new definition
+///   appears without a re-open.
 ///
 /// Pass [allowedTypes] to restrict to a subset (e.g.
 /// `{photoBlock, memoryBlock}` for feature-block sections). When set,
-/// the custom-blocks section is hidden — feature blocks can't be
-/// custom carousels.
+/// the tab switcher and custom section are hidden — feature blocks can't
+/// be custom carousels — leaving just the search field + built-in grid.
 Future<AddBlockResult?> showAddBlockSheet(
   BuildContext context, {
   Set<BlockType>? allowedTypes,
@@ -76,128 +84,293 @@ Future<AddBlockResult?> showAddBlockSheet(
   );
 }
 
-class _AddBlockSheetBody extends StatelessWidget {
+/// Which of the two tabs the sheet is currently showing. Only relevant
+/// when the custom section is visible (`allowedTypes == null`).
+enum _BlockTab { defaults, custom }
+
+class _AddBlockSheetBody extends StatefulWidget {
   const _AddBlockSheetBody({required this.allowedTypes});
 
   final Set<BlockType>? allowedTypes;
 
   @override
+  State<_AddBlockSheetBody> createState() => _AddBlockSheetBodyState();
+}
+
+class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
+  final TextEditingController _searchController = TextEditingController();
+
+  /// Lower-cased, trimmed search query. Empty means "no filter".
+  String _query = '';
+  _BlockTab _tab = _BlockTab.defaults;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final next = _searchController.text.trim().toLowerCase();
+    if (next != _query) setState(() => _query = next);
+  }
+
+  /// True when [haystacks] should be shown for the current [_query].
+  bool _matches(List<String> haystacks) {
+    if (_query.isEmpty) return true;
+    return haystacks.any((h) => h.toLowerCase().contains(_query));
+  }
+
+  bool get _showCustomSection => widget.allowedTypes == null;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final deps = AppDependencies.of(context);
     final settings = deps.blockSettings;
     final subscriptions = deps.subscriptionRepository;
-    final isPro = subscriptions.isPro;
-    final visibleTypes = BlockType.values
-        .where((t) => !_hiddenBlockTypes.contains(t))
-        .where((t) => allowedTypes == null || allowedTypes!.contains(t))
-        .toList(growable: false);
-    final showCustomSection = allowedTypes == null;
 
     return ListenableBuilder(
       listenable: settings,
       builder: (context, _) {
-        final customs = settings.customCarousels;
+        final isPro = subscriptions.isPro;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
-                ),
-                itemCount: visibleTypes.length,
-                itemBuilder: (gridCtx, i) => _BuiltinCell(
-                  type: visibleTypes[i],
-                  locked: !isPro && visibleTypes[i].isProOnly,
-                  subscriptions: subscriptions,
-                ),
-              ),
+              child: _SearchField(controller: _searchController),
             ),
-            if (showCustomSection) ...[
+            if (_showCustomSection)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Custom blocks',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: SegmentedButton<_BlockTab>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _BlockTab.defaults,
+                      label: Text('Default'),
+                    ),
+                    ButtonSegment(
+                      value: _BlockTab.custom,
+                      label: Text('Custom'),
+                    ),
+                  ],
+                  selected: {_tab},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (sel) =>
+                      setState(() => _tab = sel.first),
                 ),
               ),
-              if (customs.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Text(
-                    "You haven't defined any custom carousel blocks yet.",
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.72,
-                        ),
-                    itemCount: customs.length,
-                    itemBuilder: (gridCtx, i) => _CustomCell(
-                      definition: customs[i],
-                      // Already-created custom blocks are always usable —
-                      // the Pro cap applies to *creating* a new one, gated
-                      // on the "Add custom block" button below. (GUS-34)
-                      locked: false,
-                      subscriptions: subscriptions,
-                    ),
-                  ),
-                ),
-              ProLimitHint(
-                used: customs.length,
-                max: kFreeMaxCustomBlocks,
-                noun: 'custom blocks',
+            if (!_showCustomSection || _tab == _BlockTab.defaults)
+              _buildBuiltinGrid(subscriptions: subscriptions, isPro: isPro)
+            else
+              _buildCustomSection(
+                settings: settings,
                 subscriptions: subscriptions,
+                isPro: isPro,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    // Free users may create up to `kFreeMaxCustomBlocks`
-                    // custom blocks; creating a further one presents the
-                    // paywall on tap. (GUS-34)
-                    if (!isPro &&
-                        customs.length >= kFreeMaxCustomBlocks) {
-                      if (!await requirePro(subscriptions, context: context)) {
-                        return;
-                      }
-                      if (!context.mounted) return;
-                    }
-                    // Pop the sheet first so the editor pushes onto
-                    // the layout-editor screen, not the sheet.
-                    Navigator.of(context).pop();
-                    context.push(Routes.newCustomBlock);
-                  },
-                  icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
-                  label: const Text('Add custom block'),
-                ),
-              ),
-            ],
           ],
         );
       },
+    );
+  }
+
+  Widget _buildBuiltinGrid({
+    required SubscriptionRepository subscriptions,
+    required bool isPro,
+  }) {
+    final allowed = widget.allowedTypes;
+    final visibleTypes = BlockType.values
+        .where((t) => !_hiddenBlockTypes.contains(t))
+        .where((t) => allowed == null || allowed.contains(t))
+        .where((t) => _matches([t.label, t.description]))
+        .toList(growable: false);
+
+    if (visibleTypes.isEmpty) {
+      return const _NoMatchesHint();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.72,
+        ),
+        itemCount: visibleTypes.length,
+        itemBuilder: (gridCtx, i) => _BuiltinCell(
+          type: visibleTypes[i],
+          locked: !isPro && visibleTypes[i].isProOnly,
+          subscriptions: subscriptions,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomSection({
+    required BlockSettings settings,
+    required SubscriptionRepository subscriptions,
+    required bool isPro,
+  }) {
+    final theme = Theme.of(context);
+    final allCustoms = settings.customCarousels;
+    final customs = allCustoms
+        .where((d) => _matches([d.title]))
+        .toList(growable: false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (allCustoms.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              "You haven't defined any custom carousel blocks yet.",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else if (customs.isEmpty)
+          const _NoMatchesHint()
+        else
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.72,
+              ),
+              itemCount: customs.length,
+              itemBuilder: (gridCtx, i) => _CustomCell(
+                definition: customs[i],
+                // Already-created custom blocks are always usable —
+                // the Pro cap applies to *creating* a new one, gated
+                // on the "Add custom block" button below. (GUS-34)
+                locked: false,
+                subscriptions: subscriptions,
+              ),
+            ),
+          ),
+        ProLimitHint(
+          used: allCustoms.length,
+          max: kFreeMaxCustomBlocks,
+          noun: 'custom blocks',
+          subscriptions: subscriptions,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              // Capture navigation handles before any await so we don't
+              // touch `context` across the async gap (lint-clean; we
+              // re-check `mounted` after the paywall returns).
+              final navigator = Navigator.of(context);
+              final router = GoRouter.of(context);
+              // Free users may create up to `kFreeMaxCustomBlocks`
+              // custom blocks; creating a further one presents the
+              // paywall on tap. (GUS-34)
+              if (!isPro && allCustoms.length >= kFreeMaxCustomBlocks) {
+                if (!await requirePro(subscriptions, context: context)) {
+                  return;
+                }
+                if (!mounted) return;
+              }
+              // Pop the sheet first so the editor pushes onto
+              // the layout-editor screen, not the sheet.
+              navigator.pop();
+              router.push(Routes.newCustomBlock);
+            },
+            icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+            label: const Text('Add custom block'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Rounded search input used at the top of the add-block sheet. Shows a
+/// leading search glyph and a trailing clear button once non-empty.
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: controller,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search blocks',
+        isDense: true,
+        prefixIcon: AppIcon(
+          HugeIcons.strokeRoundedSearch01,
+          size: 20,
+          color: scheme.onSurfaceVariant,
+        ),
+        // Rebuild the suffix as the text changes so the clear button
+        // appears / disappears with content.
+        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              tooltip: 'Clear',
+              icon: AppIcon(
+                HugeIcons.strokeRoundedCancel01,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+              onPressed: controller.clear,
+            );
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty-state caption shown when the active tab has no cells matching
+/// the current search query.
+class _NoMatchesHint extends StatelessWidget {
+  const _NoMatchesHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Text(
+        'No blocks match your search.',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
