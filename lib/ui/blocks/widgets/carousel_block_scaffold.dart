@@ -172,15 +172,29 @@ class _CarouselBlockScaffoldState<T> extends State<CarouselBlockScaffold<T>> {
   }
 
   Widget _buildCollapsed(BuildContext context, T? value) {
-    if (value == null) return const _CarouselEmptyPlaceholder();
-    return Center(child: widget.itemBuilder(context, value, true));
+    if (value != null) {
+      return Center(child: widget.itemBuilder(context, value, true));
+    }
+    // Empty state. In an editable entry, preview the carousel "unfocused"
+    // — the first option dimmed — so the tile reads as something you can
+    // engage rather than a dead em-dash (GUS-39). Read-only past entries
+    // keep the em-dash: a faint option there would look like a selection
+    // that was never actually made.
+    if (widget.mode == BlockMode.readOnly || widget.options.isEmpty) {
+      return const _CarouselEmptyPlaceholder();
+    }
+    return Center(
+      child: Opacity(
+        opacity: 0.4,
+        child: widget.itemBuilder(context, widget.options.first, false),
+      ),
+    );
   }
 }
 
-/// Dimmed em-dash shown when a carousel has no selection yet. Shared
-/// by every block that delegates to [CarouselBlockScaffold]; kept
-/// private so callers go through the scaffold rather than reaching in
-/// directly.
+/// Dimmed em-dash shown when a carousel has no selection and no options
+/// to preview (or in a read-only past entry). Kept private so callers go
+/// through the scaffold rather than reaching in directly.
 class _CarouselEmptyPlaceholder extends StatelessWidget {
   const _CarouselEmptyPlaceholder();
 

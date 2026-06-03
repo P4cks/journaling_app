@@ -230,6 +230,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final customs = allCustoms
         .where((d) => _matches([d.title]))
         .toList(growable: false);
+    final atCustomLimit = !isPro && allCustoms.length >= kFreeMaxCustomBlocks;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -278,6 +279,12 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           child: OutlinedButton.icon(
+            // Greyed + crown-badged at the cap so it reads as locked,
+            // matching the layouts FAB and the editor's add-block
+            // button. Tapping still presents the paywall. (GUS-40)
+            style: atCustomLimit
+                ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)
+                : null,
             onPressed: () async {
               // Capture navigation handles before any await so we don't
               // touch `context` across the async gap (lint-clean; we
@@ -287,7 +294,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               // Free users may create up to `kFreeMaxCustomBlocks`
               // custom blocks; creating a further one presents the
               // paywall on tap. (GUS-34)
-              if (!isPro && allCustoms.length >= kFreeMaxCustomBlocks) {
+              if (atCustomLimit) {
                 if (!await requirePro(subscriptions, context: context)) {
                   return;
                 }
@@ -298,7 +305,22 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               navigator.pop();
               router.push(Routes.newCustomBlock);
             },
-            icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
+            icon: atCustomLimit
+                ? Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AppIcon(
+                        HugeIcons.strokeRoundedPlusSign,
+                        color: theme.disabledColor,
+                      ),
+                      const Positioned(
+                        top: -6,
+                        right: -6,
+                        child: ProLockBadge(compact: true),
+                      ),
+                    ],
+                  )
+                : AppIcon(HugeIcons.strokeRoundedPlusSign),
             label: const Text('Add custom block'),
           ),
         ),

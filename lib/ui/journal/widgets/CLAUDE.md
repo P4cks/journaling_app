@@ -85,7 +85,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `themeSettings.postItModeEnabled` is false, every cell falls back
   to `scheme.primary` (geometry unchanged). The week strip and month
   sheet share `_buildDayCell`. Marker dots are gone — the border
-  carries the "has entry" signal.
+  carries the "has entry" signal. The month sheet sets
+  `outsideDaysVisible: false` so adjacent-month days are hidden — they
+  rendered as bare greyed numbers with no entry marker, which looked
+  broken when a trailing/leading day had an entry (GUS-36). The week
+  strip keeps all 7 days (no outside-day concept in week format).
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
   `vm.pagerDates` sorted ascending (entry dates plus a trailing

@@ -134,22 +134,6 @@ Widget _buildDayCell({
   );
 }
 
-Widget _buildOutsideCell(BuildContext context, DateTime day) {
-  final theme = Theme.of(context);
-  final scheme = theme.colorScheme;
-  final base = theme.textTheme.bodyMedium ?? const TextStyle();
-  return Container(
-    margin: _kCellMargin,
-    alignment: Alignment.center,
-    child: Text(
-      '${day.day}',
-      style: base.copyWith(
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-      ),
-    ),
-  );
-}
-
 class _Bar extends StatelessWidget {
   const _Bar({
     required this.selectedDate,
@@ -484,10 +468,13 @@ class _MonthCalendarState extends State<_MonthCalendar> {
               isSelected: true,
               hasEntry: _hasEntry(day),
             ),
-            outsideBuilder: (ctx, day, _) => _buildOutsideCell(ctx, day),
           ),
           calendarStyle: CalendarStyle(
             cellMargin: _kCellMargin,
+            // Hide adjacent-month days. They rendered as bare greyed
+            // numbers without entry markers, which looked broken when a
+            // trailing/leading day actually had an entry (GUS-36).
+            outsideDaysVisible: false,
             defaultTextStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
             weekendTextStyle: (theme.textTheme.bodyMedium ?? const TextStyle())
                 .copyWith(color: scheme.onSurfaceVariant),

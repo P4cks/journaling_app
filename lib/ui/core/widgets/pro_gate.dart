@@ -29,6 +29,10 @@ const int kFreeMaxSectionsCustom = 3;
 /// (GUS-34)
 const int kFreeMaxCustomBlocks = 1;
 
+/// Free-tier cap on saved layouts. Free users keep their one seeded
+/// layout; creating a second presents the paywall. (BACKLOG #90, GUS-40)
+const int kFreeMaxLayouts = 1;
+
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;
 /// `false` when they cancel, are offline, or the paywall errors.

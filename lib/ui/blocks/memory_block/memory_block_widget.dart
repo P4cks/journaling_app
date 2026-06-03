@@ -203,11 +203,14 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
                         color: theme.colorScheme.primary,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Navigate to that day',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          'Navigate to that day',
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
