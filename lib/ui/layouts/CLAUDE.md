@@ -168,11 +168,20 @@ how layouts materialize).
     `isProOnly` derives from `kProOnlyBlockTypes` = `{weatherApi,
     quoteBlock}` (GUS-34) — every other built-in block is now FREE.
     Custom-carousel cells are no longer blanket-locked; instead creating
-    a new custom block is capped at `kFreeMaxCustomBlocks` (1) — the "Add
-    custom block" button (add-block sheet *and* `block_settings_screen`)
-    calls `requirePro` at the cap, with a `ProLimitHint` above it. The
+    a new custom block is capped at `kFreeMaxCustomBlocks` (1) — the shared
+    `AddCustomBlockButton` (add-block sheet *and* `block_settings_screen`)
+    calls `requirePro` at the cap, with a `ProLimitHint` above it. At the
+    cap the button renders greyed with a `ProLockBadge(compact: true)`
+    overlay (GUS-40). The
     add-section sheet still gates the **Feature block** tile
     (`featureBlock ∉ kFreeSectionKinds`); text + block-grid stay free.
+  - **GUS-40 — free users capped at `kFreeMaxLayouts` (1) saved layout.**
+    `LayoutsScreen._openNewLayoutFlow` calls `requirePro` at the cap; the
+    list shows a `ProLimitHint` ("1 of 1 layouts used") at the top and the
+    new-layout FAB renders greyed with a `ProLockBadge(compact: true)`
+    overlay when locked. The screen wraps its body/FAB in a
+    `ListenableBuilder` over `subscriptionRepository` so the lock clears
+    live on purchase.
   See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
   [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).
 - **`LayoutsScreen` refreshes its VM manually on push-pop** because

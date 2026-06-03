@@ -13,8 +13,16 @@ text block and the full-width text section.
   carousel block (mood, manual weather, custom carousel). Owns the
   `BlockWithTitle` wrap (callers pass the resolved title with the
   `carouselTitlesEnabled` gate already applied — `null` collapses the
-  row), `BlockMode.readOnly` rendering (centred glyph, or a private
-  em-dash placeholder when the selection is null), and `BlockMode.editable`
+  row), and the collapsed/empty rendering. **Empty state (no selection):**
+  in `BlockMode.editable` it previews the carousel exactly as it looks
+  once tapped — the same non-interactive `PageView` peek (centre page +
+  neighbours peeking, `viewportFraction` 0.42) via the private
+  `_UnfocusedCarouselPreview` — but with EVERY page "unfocused" (scaled
+  to 0.6 + 45% opacity), so none is highlighted big and it reads as
+  "nothing picked yet" ("unfocused carousel", GUS-39); in
+  `BlockMode.readOnly` (or when `options` is empty) it falls back to the
+  private em-dash `_CarouselEmptyPlaceholder`. With a selection it centres
+  the glyph. `BlockMode.editable`
   delegation to `CollapsibleCarouselBlock<T>` with the
   `AnimatedScale + AnimatedOpacity` focus animation wrapped around the
   caller's raw glyph. Caller responsibilities: compute the title,
@@ -102,7 +110,10 @@ text block and the full-width text section.
   - `itemBuilder(ctx, option, isSelected)` — carousel page.
   - `collapsedBuilder(ctx, selected)` — collapsed view; should render
     a placeholder when `selected == null`.
-  - `onSelected(T)` — called on page change.
+  - `onSelected(T)` — called on page change, AND once on engaging an
+    unselected carousel (commits the centred middle option so a plain
+    tap registers a value without a swipe — `jumpToPage` doesn't fire
+    `onPageChanged`).
   - `onInteractionLockChanged(blockId, locked)` — lifted to
     `JournalPager` to disable the outer horizontal date-swipe while
     expanded.
@@ -142,10 +153,11 @@ text block and the full-width text section.
 - **`AnimatedSwitcher` uses two distinct `ValueKey`s** (`'carousel-collapsed'`
   / `'carousel-expanded'`) so the cross-fade kicks in. Don't drop the
   KeyedSubtree wrappers.
-- **`_initialIndex` defaults to 0 when `selected` is null or unknown.**
-  Newly-materialized mood/weather blocks have no selection yet, so the
-  carousel opens at index 0 (the first option in the list) on first
-  engage.
+- **`_initialIndex` defaults to the MIDDLE option when `selected` is null
+  or unknown.** Newly-materialized mood/weather blocks have no selection
+  yet, so the carousel opens centred on the middle option on first engage
+  — this matches `_UnfocusedCarouselPreview` (which also centres on the
+  middle), so tapping to expand doesn't visibly jump to index 0.
 
 ## When to update this file
 

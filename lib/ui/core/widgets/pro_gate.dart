@@ -29,6 +29,10 @@ const int kFreeMaxSectionsCustom = 3;
 /// (GUS-34)
 const int kFreeMaxCustomBlocks = 1;
 
+/// Free-tier cap on saved layouts. Free users keep their one seeded
+/// layout; creating a second presents the paywall. (BACKLOG #90, GUS-40)
+const int kFreeMaxLayouts = 1;
+
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;
 /// `false` when they cancel, are offline, or the paywall errors.
@@ -149,6 +153,60 @@ class ProLockBadge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Add custom block" button shared by the add-block sheet and the Block
+/// Settings screen. Greyed + crown-badged at the free cap
+/// ([kFreeMaxCustomBlocks]); tapping at the cap presents the paywall and
+/// only invokes [onAddAllowed] on a successful upgrade. Below the cap it
+/// calls [onAddAllowed] directly. Callers own the navigation. (GUS-40)
+class AddCustomBlockButton extends StatelessWidget {
+  const AddCustomBlockButton({
+    super.key,
+    required this.subscriptions,
+    required this.currentCount,
+    required this.onAddAllowed,
+  });
+
+  final SubscriptionRepository subscriptions;
+  final int currentCount;
+  final VoidCallback onAddAllowed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final atLimit =
+        !subscriptions.isPro && currentCount >= kFreeMaxCustomBlocks;
+    return OutlinedButton.icon(
+      style: atLimit
+          ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)
+          : null,
+      onPressed: () async {
+        if (atLimit) {
+          if (!await requirePro(subscriptions, context: context)) return;
+          if (!context.mounted) return;
+        }
+        onAddAllowed();
+      },
+      icon: atLimit
+          ? Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedPlusSign,
+                  color: theme.disabledColor,
+                ),
+                const Positioned(
+                  top: -6,
+                  right: -6,
+                  child: ProLockBadge(compact: true),
+                ),
+              ],
+            )
+          : AppIcon(HugeIcons.strokeRoundedPlusSign),
+      label: const Text('Add custom block'),
     );
   }
 }

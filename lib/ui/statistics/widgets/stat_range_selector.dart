@@ -32,6 +32,11 @@ class StatRangeSelector extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(
+          // Fixed width + isExpanded so the dropdown menu is wide enough
+          // for the "Year"/"All" + Pro-badge rows. DropdownButton forces
+          // the menu to the button's width, so a content-sized button
+          // (just the bare label) clipped the badge in free mode (GUS-38).
+          width: 180,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             border: Border.all(color: scheme.outlineVariant),
@@ -40,6 +45,7 @@ class StatRangeSelector extends StatelessWidget {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<StatRange>(
               value: value,
+              isExpanded: true,
               borderRadius: BorderRadius.circular(12),
               onChanged: (selected) => _onSelected(context, selected),
               // Button face always shows the bare label (never a badge —
@@ -58,7 +64,9 @@ class StatRangeSelector extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(r.label),
+                        Flexible(
+                          child: Text(r.label, overflow: TextOverflow.ellipsis),
+                        ),
                         if (r.isProOnly && !isPro) ...[
                           const SizedBox(width: 8),
                           const ProLockBadge(),

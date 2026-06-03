@@ -199,15 +199,18 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
                     children: [
                       AppIcon(
                         HugeIcons.strokeRoundedArrowRight01,
-                        size: 16,
+                        size: 14,
                         color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Navigate to that day',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'View day',
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

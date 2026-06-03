@@ -56,12 +56,21 @@ for how they fit together; this file is per-file notes.
   caption for a counted cap: "`used` of `max` `noun` used" below the cap,
   a tappable "limit reached — Upgrade to Pro" row (calls `requirePro`) at
   the cap, and `SizedBox.shrink()` for Pro users (GUS-33). Surfaced in the
-  block-only + custom layout editor bodies and the add-block sheet's
-  custom section.
+  block-only + custom layout editor bodies, the add-block sheet's
+  custom section, the layouts list (layouts cap, GUS-40), and the
+  Block Settings custom-carousel list.
+  `AddCustomBlockButton({subscriptions, currentCount, onAddAllowed})` —
+  shared "Add custom block" `OutlinedButton.icon`. Greyed +
+  `ProLockBadge(compact:)`-overlaid at the `kFreeMaxCustomBlocks` cap;
+  tapping at the cap presents the paywall and only invokes `onAddAllowed`
+  on a successful upgrade, below the cap it calls it directly. Used by the
+  add-block sheet's custom section and `block_settings_screen`'s
+  custom-carousel list so both add paths gate identically (GUS-40).
   **Free-tier caps (all in this file):** `kFreeMaxBlocksPerLayout = 6`
   (blocks in a `blockOnly` layout, BACKLOG #92); `kFreeMaxSectionsCustom
   = 3` (sections in a `custom` layout, GUS-32); `kFreeMaxCustomBlocks = 1`
-  (user-defined custom carousel blocks, GUS-34); `const Set<SectionKind>
+  (user-defined custom carousel blocks, GUS-34); `kFreeMaxLayouts = 1`
+  (saved layouts, BACKLOG #90 / GUS-40); `const Set<SectionKind>
   kFreeSectionKinds = {text, blockGrid}` — section kinds free users may
   add; `featureBlock` is Pro (GUS-19), so the add-section sheet greys +
   badges it. (Built-in block gating is keyed off `BlockType.isProOnly` /

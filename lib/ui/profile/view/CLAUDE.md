@@ -65,7 +65,12 @@ pushes these screens.
     showing the confirm dialog ("Used in N layouts — existing
     entries keep their pick…"). Before pushing the editor route
     the parent's `_maybeSaveOnLeave` runs so a dirty built-in
-    draft isn't silently buried under another screen.
+    draft isn't silently buried under another screen. The "Add
+    custom block" affordance is the shared `AddCustomBlockButton`
+    (see [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md)),
+    with a `ProLimitHint` above it — both gate new-block creation at
+    `kFreeMaxCustomBlocks` for free users (GUS-40). `_navigateToEditor`
+    no longer gates; the button owns the paywall-at-cap.
   - Private `_CustomDefinitionRow` renders the per-definition body
     (title label + item count + Edit / Delete actions).
 

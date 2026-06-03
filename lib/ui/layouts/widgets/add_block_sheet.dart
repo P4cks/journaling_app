@@ -176,7 +176,6 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               _buildCustomSection(
                 settings: settings,
                 subscriptions: subscriptions,
-                isPro: isPro,
               ),
           ],
         );
@@ -223,7 +222,6 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
   Widget _buildCustomSection({
     required BlockSettings settings,
     required SubscriptionRepository subscriptions,
-    required bool isPro,
   }) {
     final theme = Theme.of(context);
     final allCustoms = settings.customCarousels;
@@ -277,29 +275,15 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-          child: OutlinedButton.icon(
-            onPressed: () async {
-              // Capture navigation handles before any await so we don't
-              // touch `context` across the async gap (lint-clean; we
-              // re-check `mounted` after the paywall returns).
-              final navigator = Navigator.of(context);
-              final router = GoRouter.of(context);
-              // Free users may create up to `kFreeMaxCustomBlocks`
-              // custom blocks; creating a further one presents the
-              // paywall on tap. (GUS-34)
-              if (!isPro && allCustoms.length >= kFreeMaxCustomBlocks) {
-                if (!await requirePro(subscriptions, context: context)) {
-                  return;
-                }
-                if (!mounted) return;
-              }
-              // Pop the sheet first so the editor pushes onto
-              // the layout-editor screen, not the sheet.
-              navigator.pop();
-              router.push(Routes.newCustomBlock);
+          child: AddCustomBlockButton(
+            subscriptions: subscriptions,
+            currentCount: allCustoms.length,
+            onAddAllowed: () {
+              // Pop the sheet first so the editor pushes onto the
+              // layout-editor screen, not the sheet.
+              Navigator.of(context).pop();
+              GoRouter.of(context).push(Routes.newCustomBlock);
             },
-            icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
-            label: const Text('Add custom block'),
           ),
         ),
       ],
