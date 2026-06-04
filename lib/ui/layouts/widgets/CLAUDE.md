@@ -8,7 +8,10 @@ sheet is a stateless top-level function returning the user's pick or
 
 - [add_block_sheet.dart](add_block_sheet.dart) —
   `Future<AddBlockResult?> showAddBlockSheet(context, {allowedTypes, title})`
-  + sealed `AddBlockResult` (`AddBlockResultBuiltin` / `AddBlockResultCustom`).
+  + sealed `AddBlockResult` (`AddBlockResultBuiltin` /
+  `AddBlockResultCustom` / `AddBlockResultHabit`). The habit variant
+  carries the picked `HabitDefinition.id` and resolves to a
+  `(type: habitTracker, definitionId: …)` slot in the editor VM.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   (the shared scaffold owns the drag handle, the title row, and the
@@ -22,10 +25,10 @@ sheet is a stateless top-level function returning the user's pick or
     `title`. Query is stored trimmed + lower-cased; empty ⇒ no filter.
     When a tab has no matches, `_NoMatchesHint` renders in place of the
     grid. (GUS-20)
-  - **Tab switcher** — a 2-segment `SegmentedButton<_BlockTab>`
-    (**Default** / **Custom**), shown only when `allowedTypes == null`.
-    The two sections render **one-at-a-time** by tab (not stacked as
-    before). (GUS-24)
+  - **Tab switcher** — a 3-segment `SegmentedButton<_BlockTab>`
+    (**Default** / **Custom** / **Habits**), shown only when
+    `allowedTypes == null`. The sections render **one-at-a-time** by
+    tab (not stacked as before). (GUS-24, +Habits GUS-13)
   - **Default tab** (`_buildBuiltinGrid`): a 2-column grid of
     scaled-down built-in block previews (`BlockWidget` in
     `BlockMode.readOnly` with `sampleData`), iterating `BlockType.values`
@@ -40,11 +43,17 @@ sheet is a stateless top-level function returning the user's pick or
     and re-checks the State's `mounted` (lint-clean across the paywall
     async gap).
 
+  - **Habits tab** (`_buildHabitSection`, only when
+    `allowedTypes == null`): every `BlockSettings.habits` definition as
+    its own `_HabitCell` preview, plus an "Add habit"
+    `AddCustomBlockButton(label: 'Add habit')` that pops the sheet and
+    pushes `Routes.newHabitBlock`. Tiles return `AddBlockResultHabit(id)`.
+
   Subscribes to `BlockSettings` via `ListenableBuilder`, so a
-  definition saved in the editor appears in the Custom tab without
-  re-opening the sheet. `_hiddenBlockTypes` excludes `locationBlock`
-  (WIP) and `customCarousel` (surfaces only via the per-definition
-  tiles). Pass `allowedTypes` to restrict to a subset (used by
+  definition saved in the editor appears in the Custom / Habits tab
+  without re-opening the sheet. `_hiddenBlockTypes` excludes
+  `locationBlock` (WIP), `customCarousel`, and `habitTracker` (the last
+  two surface only via their per-definition tiles). Pass `allowedTypes` to restrict to a subset (used by
   feature-block sections — this hides BOTH the tab switcher and the
   custom section, leaving just the search field + built-in grid; feature
   blocks must be photo/memory). The `title` defaults to "Add block".
@@ -64,7 +73,11 @@ sheet is a stateless top-level function returning the user's pick or
     dims + a compact `ProLockBadge`)** rather than being filtered out.
     Tapping a locked cell routes through the shared `_pickBlock` helper:
     it calls `requirePro` and pops with the selection only on a
-    successful purchase; unlocked cells pop immediately.
+    successful purchase; unlocked cells pop immediately. The
+    "Add custom block" / "Add habit" buttons share ONE custom-block
+    budget — the `currentCount` passed to `AddCustomBlockButton` /
+    `ProLimitHint` is `customCarousels.length + habits.length`, capped
+    at `kFreeMaxCustomBlocks`.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions})`. Seven-tile sheet (Text

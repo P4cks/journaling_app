@@ -15,10 +15,11 @@ class BlockSlot {
   final String id;
   final BlockType type;
 
-  /// Non-null only when [type] is `BlockType.customCarousel` — points at
-  /// a `CustomCarouselDefinition` in the BlockSettings registry. Threaded
-  /// through `BlockTemplate.configJson` at save time so materialized
-  /// entries can resolve the same definition.
+  /// Non-null only when [type] is `BlockType.customCarousel` (points at a
+  /// `CustomCarouselDefinition`) or `BlockType.habitTracker` (points at a
+  /// `HabitDefinition`) in the BlockSettings registry. Threaded through
+  /// `BlockTemplate.configJson` at save time so materialized entries can
+  /// resolve the same definition.
   final String? definitionId;
 
   const BlockSlot({required this.id, required this.type, this.definitionId});
@@ -44,6 +45,11 @@ BlockSlot _slotFromResult(AddBlockResult result) => switch (result) {
     type: BlockType.customCarousel,
     definitionId: definitionId,
   ),
+  AddBlockResultHabit(:final definitionId) => BlockSlot(
+    id: _uuid.v4(),
+    type: BlockType.habitTracker,
+    definitionId: definitionId,
+  ),
 };
 
 ({BlockType type, String? definitionId}) _typeAndDefIdFromResult(
@@ -52,6 +58,10 @@ BlockSlot _slotFromResult(AddBlockResult result) => switch (result) {
   AddBlockResultBuiltin(:final type) => (type: type, definitionId: null),
   AddBlockResultCustom(:final definitionId) => (
     type: BlockType.customCarousel,
+    definitionId: definitionId,
+  ),
+  AddBlockResultHabit(:final definitionId) => (
+    type: BlockType.habitTracker,
     definitionId: definitionId,
   ),
 };

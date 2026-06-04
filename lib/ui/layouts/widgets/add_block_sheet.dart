@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
+import 'package:journaling_app_rewrite/data/model/habit_definition.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
@@ -23,21 +25,25 @@ import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
-/// `locationBlock` is still WIP. `customCarousel` is excluded from the
-/// built-in grid because user-defined carousel "types" surface as their
-/// own per-definition tiles in the custom-blocks section below — there's
-/// no abstract "Custom carousel" tile that would make sense without an
-/// id to attach.
+/// `locationBlock` is still WIP. `customCarousel` and `habitTracker` are
+/// excluded from the built-in grid because user-defined carousel / habit
+/// "types" surface as their own per-definition tiles in the custom-blocks
+/// and habit sections below — there's no abstract tile that would make
+/// sense without an id to attach.
 const _hiddenBlockTypes = <BlockType>{
   BlockType.locationBlock,
   BlockType.customCarousel,
+  BlockType.habitTracker,
 };
 
 /// Discriminated return type for [showAddBlockSheet]:
 /// - [AddBlockResultBuiltin] — user picked a built-in `BlockType`.
 /// - [AddBlockResultCustom] — user picked one of their saved
 ///   custom-carousel definitions; the layout editor stores
-///   `definitionId` on the slot.
+///   `definitionId` on the slot (a `customCarousel` block).
+/// - [AddBlockResultHabit] — user picked one of their saved habit
+///   definitions; the layout editor stores `definitionId` on the slot
+///   (a `habitTracker` block).
 sealed class AddBlockResult {
   const AddBlockResult();
 }
@@ -49,6 +55,11 @@ class AddBlockResultBuiltin extends AddBlockResult {
 
 class AddBlockResultCustom extends AddBlockResult {
   const AddBlockResultCustom(this.definitionId);
+  final String definitionId;
+}
+
+class AddBlockResultHabit extends AddBlockResult {
+  const AddBlockResultHabit(this.definitionId);
   final String definitionId;
 }
 
@@ -87,9 +98,9 @@ Future<AddBlockResult?> showAddBlockSheet(
   );
 }
 
-/// Which of the two tabs the sheet is currently showing. Only relevant
-/// when the custom section is visible (`allowedTypes == null`).
-enum _BlockTab { defaults, custom }
+/// Which tab the sheet is currently showing. Only relevant when the
+/// custom section is visible (`allowedTypes == null`).
+enum _BlockTab { defaults, custom, habits }
 
 class _AddBlockSheetBody extends StatefulWidget {
   const _AddBlockSheetBody({required this.allowedTypes});
@@ -163,6 +174,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                       value: _BlockTab.custom,
                       label: Text('Custom'),
                     ),
+                    ButtonSegment(
+                      value: _BlockTab.habits,
+                      label: Text('Habits'),
+                    ),
                   ],
                   selected: {_tab},
                   showSelectedIcon: false,
@@ -171,8 +186,13 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               ),
             if (!_showCustomSection || _tab == _BlockTab.defaults)
               _buildBuiltinGrid(subscriptions: subscriptions, isPro: isPro)
-            else
+            else if (_tab == _BlockTab.custom)
               _buildCustomSection(
+                settings: settings,
+                subscriptions: subscriptions,
+              )
+            else
+              _buildHabitSection(
                 settings: settings,
                 subscriptions: subscriptions,
               ),
@@ -227,6 +247,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final customs = allCustoms
         .where((d) => _matches([d.title]))
         .toList(growable: false);
+    // The free cap counts carousels + habits together against one
+    // "custom block" budget (GUS-13 / GUS-40), so the hint/add button
+    // here reflect the combined total.
+    final customBlockCount = allCustoms.length + settings.habits.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +291,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
             ),
           ),
         ProLimitHint(
-          used: allCustoms.length,
+          used: customBlockCount,
           max: kFreeMaxCustomBlocks,
           noun: 'custom blocks',
           subscriptions: subscriptions,
@@ -276,12 +300,83 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           child: AddCustomBlockButton(
             subscriptions: subscriptions,
-            currentCount: allCustoms.length,
+            currentCount: customBlockCount,
             onAddAllowed: () {
               // Pop the sheet first so the editor pushes onto the
               // layout-editor screen, not the sheet.
               Navigator.of(context).pop();
               GoRouter.of(context).push(Routes.newCustomBlock);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHabitSection({
+    required BlockSettings settings,
+    required SubscriptionRepository subscriptions,
+  }) {
+    final theme = Theme.of(context);
+    final allHabits = settings.habits;
+    final habits = allHabits
+        .where((d) => _matches([d.title]))
+        .toList(growable: false);
+    // Carousels + habits share the one free "custom block" budget.
+    final customBlockCount = settings.customCarousels.length + allHabits.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (allHabits.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              "You haven't defined any habit blocks yet.",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else if (habits.isEmpty)
+          const _NoMatchesHint()
+        else
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.72,
+              ),
+              itemCount: habits.length,
+              itemBuilder: (gridCtx, i) => _HabitCell(
+                definition: habits[i],
+                locked: false,
+                subscriptions: subscriptions,
+              ),
+            ),
+          ),
+        ProLimitHint(
+          used: customBlockCount,
+          max: kFreeMaxCustomBlocks,
+          noun: 'custom blocks',
+          subscriptions: subscriptions,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          child: AddCustomBlockButton(
+            subscriptions: subscriptions,
+            currentCount: customBlockCount,
+            label: 'Add habit',
+            onAddAllowed: () {
+              // Pop the sheet first so the editor pushes onto the
+              // layout-editor screen, not the sheet.
+              Navigator.of(context).pop();
+              GoRouter.of(context).push(Routes.newHabitBlock);
             },
           ),
         ),
@@ -544,6 +639,71 @@ class _CustomCell extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '${definition.items.length} item${definition.items.length == 1 ? '' : 's'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: locked
+                  ? theme.disabledColor
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HabitCell extends StatelessWidget {
+  const _HabitCell({
+    required this.definition,
+    required this.locked,
+    required this.subscriptions,
+  });
+
+  final HabitDefinition definition;
+  final bool locked;
+  final SubscriptionRepository subscriptions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Sample data points at this definition (uncompleted) so the
+    // preview renders the habit's empty checkbox + title + icon (the
+    // widget reads the definition from BlockSettings live).
+    final data = JournalBlockData.create(
+      id: 'preview-${definition.id}',
+      type: BlockType.habitTracker,
+      content: HabitBlockContent(definitionId: definition.id).toMap(),
+    );
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _pickBlock(
+        context: context,
+        locked: locked,
+        subscriptions: subscriptions,
+        result: AddBlockResultHabit(definition.id),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PreviewTile(
+            locked: locked,
+            visuals: _previewVisuals(context, definition.id),
+            child: BlockWidget(data: data, mode: BlockMode.readOnly),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            definition.title.isEmpty ? 'Untitled' : definition.title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: locked ? theme.disabledColor : null,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Daily habit',
             style: theme.textTheme.bodySmall?.copyWith(
               color: locked
                   ? theme.disabledColor

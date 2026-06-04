@@ -1,5 +1,6 @@
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
@@ -48,6 +49,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Location';
       case BlockType.customCarousel:
         return 'Custom carousel';
+      case BlockType.habitTracker:
+        return 'Habit';
     }
   }
 
@@ -75,6 +78,8 @@ extension BlockTypeDisplay on BlockType {
         return HugeIcons.strokeRoundedMapPin;
       case BlockType.customCarousel:
         return HugeIcons.strokeRoundedGrid;
+      case BlockType.habitTracker:
+        return HugeIcons.strokeRoundedCheckmarkCircle02;
     }
   }
 
@@ -102,6 +107,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Long-press the map to drop a pin.';
       case BlockType.customCarousel:
         return 'A carousel of your own icons or emojis.';
+      case BlockType.habitTracker:
+        return 'Cross off a daily habit and build a streak.';
     }
   }
 
@@ -210,6 +217,15 @@ extension BlockTypeDisplay on BlockType {
             selected: CarouselItem(kind: CarouselItemKind.emoji, value: '⚡'),
           ).toMap(),
         );
+      case BlockType.habitTracker:
+        // No definitionId — the widget renders a generic checked
+        // preview. Real tiles in the Add Block sheet override this
+        // with a per-definition preview (handled in add_block_sheet.dart).
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const HabitBlockContent(completed: true).toMap(),
+        );
     }
   }
 
@@ -227,6 +243,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.moodTracker:
       case BlockType.weatherManual:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.memoryBlock:
@@ -260,6 +277,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.moodTracker:
       case BlockType.weatherManual:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
       case BlockType.locationBlock:
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
@@ -290,6 +308,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.moodTracker:
       case BlockType.weatherManual:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.memoryBlock:

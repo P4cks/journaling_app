@@ -28,7 +28,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
 class BlockSlot {
   final String id;
   final BlockType type;
-  final String? definitionId; // non-null only for customCarousel slots
+  final String? definitionId; // non-null for customCarousel + habitTracker slots
 }
 class SectionDraft {
   final String id;
@@ -40,8 +40,8 @@ class SectionDraft {
 
 `definitionId` is threaded into `BlockTemplate.configJson` at save
 time (`{"definitionId": "..."}`) and pulled back out on load, so
-custom-carousel slots round-trip correctly through Hive without a
-schema bump.
+custom-carousel **and habit-tracker** slots round-trip correctly
+through Hive without a schema bump.
 
 The editor needs **stable per-slot and per-section identities** so
 reorder/remove can target the right tile or section. `BlockSlot` is
@@ -110,7 +110,9 @@ All slot-creating methods (`addBlock`, `addBlockInFixedFour`,
 `AddBlockResult` (the discriminated return of `showAddBlockSheet`)
 rather than a raw `BlockType`. Internally `_slotFromResult` /
 `_typeAndDefIdFromResult` decode the result into a slot
-(`BlockType` + optional `definitionId`). `setFeatureBlock`
+(`BlockType` + optional `definitionId`) — `AddBlockResultCustom` →
+`(customCarousel, id)`, `AddBlockResultHabit` → `(habitTracker, id)`.
+`setFeatureBlock`
 additionally rejects non-built-in results because feature blocks
 are restricted to photo / memory.
 

@@ -36,6 +36,17 @@ pushes these screens.
     no strict grapheme-cluster validation).
   - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
     layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
+- [habit_editor_screen.dart](habit_editor_screen.dart) — public
+  `HabitEditorScreen({String? definitionId})` (GUS-13). Create (`null`
+  id) or edit (existing id) a `HabitDefinition` (title + single icon).
+  Same draft + Cancel/Discard/Save-on-leave `PopScope` shape as the
+  custom-block editor but simpler: a title `TextField` (maxLength 40,
+  `errorText: vm.titleError`) + one icon-picker `InkWell` row (48×48
+  preview via `carouselIconFor`; `HugeIcons.strokeRoundedAdd01` when
+  unset). Constructs `HabitEditorViewModel` in `didChangeDependencies`.
+  Pushed via `/habit-block/new` or `/habit-block/edit/:id` from the
+  add-block sheet's Habits tab and the Block Settings "Habit Blocks"
+  section. Top-level `_showIconPicker` mirrors the custom-block editor's.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
@@ -45,7 +56,18 @@ pushes these screens.
        `vm.carouselTitlesEnabled`, followed by the inlined
        `_CustomCarouselList` (per-definition Edit / Delete rows + an
        "Add custom block" button at the bottom).
-    3. **Wanna-dos** (GUS-8) — the inlined `_WannadoList` over the
+    3. **Habit Blocks** (GUS-13) — the inlined `_HabitList` over
+       `BlockSettings.habits`. Subscribes to `BlockSettings` directly
+       via `ListenableBuilder` (like `_CustomCarouselList`). Per-
+       definition `_HabitDefinitionRow` (icon + title + Edit / Delete)
+       + an "Add habit" `AddCustomBlockButton(label: 'Add habit')` with
+       a `ProLimitHint` above it. Edit pushes `/habit-block/edit/<id>`;
+       Delete confirms ("existing entries keep their logged checks").
+       The custom-block budget is **shared** — `currentCount` is
+       `habits.length + customCarousels.length` against
+       `kFreeMaxCustomBlocks` (so `_CustomCarouselList` counts habits
+       too, and vice-versa).
+    4. **Wanna-dos** (GUS-8) — the inlined `_WannadoList` over the
        **global** wanna-do bucket list. Subscribes to `BlockSettings`
        directly via `ListenableBuilder` (NOT the VM — wanna-do edits
        write through `BlockSettings` immediately, not as drafts). Each
@@ -57,7 +79,7 @@ pushes these screens.
        `item.copyWith(text: …)`. The list is the same one the wannado
        carousel section renders in entries — edits reflect everywhere
        immediately. The module-level `_uuid = Uuid()` backs new ids.
-    4. **Memory Block** — its existing settings.
+    5. **Memory Block** — its existing settings.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors
   `LayoutEditorScreen`'s Cancel / Discard / Save dialog. The save
@@ -86,6 +108,14 @@ pushes these screens.
     no longer gates; the button owns the paywall-at-cap.
   - Private `_CustomDefinitionRow` renders the per-definition body
     (title label + item count + Edit / Delete actions).
+  - Private `_HabitList` mirrors `_CustomCarouselList` for the Habit
+    Blocks section: subscribes to `BlockSettings` directly, renders a
+    stack of `_HabitDefinitionRow`s, the shared `AddCustomBlockButton`
+    (`label: 'Add habit'`) + `ProLimitHint` gating new habits at the
+    **shared** `kFreeMaxCustomBlocks` budget. Edit pushes
+    `/habit-block/edit/<id>` after the parent's `_maybeSaveOnLeave`.
+  - Private `_HabitDefinitionRow` renders the per-definition body
+    (icon + title + Edit / Delete actions).
 
 ## SettingsScreen composition
 

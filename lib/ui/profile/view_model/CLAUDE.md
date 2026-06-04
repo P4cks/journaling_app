@@ -25,6 +25,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     `titleError == null && itemsError == null`.
   - `save()` writes via `addCustomCarousel` or `updateCustomCarousel`
     based on `_isNew`.
+- [habit_editor_view_model.dart](habit_editor_view_model.dart) —
+  `HabitEditorViewModel extends ChangeNotifier` (GUS-13). Backs
+  `HabitEditorScreen`. Simpler sibling of the custom-block editor VM:
+  - `titleController` (`TextEditingController`) + `_iconName`
+    (`String?`) drafts; snapshot on construct, re-snapshot after
+    `save()`. `setIconName(name)` updates the icon draft + notifies.
+  - `titleError` — empty title ('Add a title') OR case-insensitive
+    conflict with another `HabitDefinition` in the registry ('A habit
+    with this title already exists'). `canSave` is `titleError == null`
+    — the **icon is optional** (unlike carousel items, which require ≥2).
+  - `save()` builds `HabitDefinition(id, title, iconName: _iconName ??
+    '')` and writes via `addHabit` or `updateHabit` based on `_isNew`.
+  - `dispose` removes the controller listener + disposes the controller.
 
 ## BlockSettingsViewModel
 

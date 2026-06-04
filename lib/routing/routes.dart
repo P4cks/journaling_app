@@ -16,6 +16,8 @@ class Routes {
   static const blockSettings = '/block-settings';
   static const newCustomBlock = '/custom-block/new';
   static const editCustomBlock = '/custom-block/edit/:id';
+  static const newHabitBlock = '/habit-block/new';
+  static const editHabitBlock = '/habit-block/edit/:id';
   static const subscription = '/subscription';
 
   /// Query-parameter name on `/layouts/new` carrying the chosen
@@ -33,6 +35,8 @@ class Routes {
   static String editLayoutFor(String id) => '/layouts/edit/$id';
 
   static String editCustomBlockFor(String id) => '/custom-block/edit/$id';
+
+  static String editHabitBlockFor(String id) => '/habit-block/edit/$id';
 
   static String newLayoutFor(LayoutKind kind) =>
       '$newLayout?$newLayoutKindQueryParam=${kind.name}';
@@ -53,5 +57,7 @@ class RouteNames {
   static const blockSettings = 'blockSettings';
   static const newCustomBlock = 'newCustomBlock';
   static const editCustomBlock = 'editCustomBlock';
+  static const newHabitBlock = 'newHabitBlock';
+  static const editHabitBlock = 'editHabitBlock';
   static const subscription = 'subscription';
 }

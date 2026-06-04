@@ -30,6 +30,10 @@ every screen has access to repositories without per-route plumbing.
     custom-carousel definition)
   - `/custom-block/edit/:id` → `CustomBlockEditorScreen(definitionId:
     parsed)` (edit an existing definition)
+  - `/habit-block/new` → `HabitEditorScreen()` (create a new
+    habit definition — GUS-13)
+  - `/habit-block/edit/:id` → `HabitEditorScreen(definitionId: parsed)`
+    (edit an existing habit definition)
 
   `initialLocation: Routes.home` so cold start lands on the merged
   main screen.
@@ -41,6 +45,7 @@ every screen has access to repositories without per-route plumbing.
     expects exactly this shape.
   - `Routes.editLayoutFor(String id)` builds `/layouts/edit/<id>`.
   - `Routes.editCustomBlockFor(String id)` builds `/custom-block/edit/<id>`.
+  - `Routes.editHabitBlockFor(String id)` builds `/habit-block/edit/<id>`.
 
 ## Implementation details
 

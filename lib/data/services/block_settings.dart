@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
+import 'package:journaling_app_rewrite/data/model/habit_definition.dart';
 import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 
@@ -49,6 +50,7 @@ class BlockSettings extends ChangeNotifier {
   PromptStrategy _promptStrategy = PromptStrategy.random;
   bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
+  List<HabitDefinition> _habits = const [];
   List<WannadoItem> _wannados = const [];
 
   /// Block types that the memory block is allowed to snapshot from.
@@ -77,6 +79,12 @@ class BlockSettings extends ChangeNotifier {
   List<CustomCarouselDefinition> get customCarousels =>
       List.unmodifiable(_customCarousels);
 
+  /// The user's habit definitions (name + icon). Each
+  /// `BlockType.habitTracker` block references one of these by id;
+  /// editing a definition propagates live to every block. Mutate via
+  /// [addHabit] / [updateHabit] / [deleteHabit].
+  List<HabitDefinition> get habits => List.unmodifiable(_habits);
+
   /// The user's **global** wanna-do / bucket list. Rendered by every
   /// `SectionKind.wannado` section (pure display — no per-item done
   /// state). Mutating it via [addWannado] / [updateWannado] /
@@ -95,6 +103,13 @@ class BlockSettings extends ChangeNotifier {
 
   CustomCarouselDefinition? findCustomCarousel(String id) {
     for (final def in _customCarousels) {
+      if (def.id == id) return def;
+    }
+    return null;
+  }
+
+  HabitDefinition? findHabit(String id) {
+    for (final def in _habits) {
       if (def.id == id) return def;
     }
     return null;
@@ -142,6 +157,20 @@ class BlockSettings extends ChangeNotifier {
         // Corrupt JSON — fall back to empty.
       }
     }
+    final habitsRaw = _storage.getBlockHabitDefinitionsJson();
+    if (habitsRaw != null && habitsRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(habitsRaw);
+        if (decoded is List) {
+          _habits = [
+            for (final raw in decoded)
+              if (raw is Map<String, dynamic>) HabitDefinition.fromMap(raw),
+          ];
+        }
+      } catch (_) {
+        // Corrupt JSON — fall back to empty.
+      }
+    }
     final wannadosRaw = _storage.getBlockWannadosJson();
     if (wannadosRaw != null && wannadosRaw.isNotEmpty) {
       try {
@@ -181,6 +210,13 @@ class BlockSettings extends ChangeNotifier {
         ? null
         : jsonEncode([for (final def in _customCarousels) def.toMap()]);
     await _storage.setBlockCustomCarouselDefinitionsJson(json);
+  }
+
+  Future<void> _persistHabits() async {
+    final json = _habits.isEmpty
+        ? null
+        : jsonEncode([for (final def in _habits) def.toMap()]);
+    await _storage.setBlockHabitDefinitionsJson(json);
   }
 
   Future<void> _persistWannados() async {
@@ -273,6 +309,44 @@ class BlockSettings extends ChangeNotifier {
     _customCarousels = next;
     await _persistCustomCarousels();
     debugPrint('[BlockSettings] deleteCustomCarousel id=$id');
+    notifyListeners();
+  }
+
+  /// Append a new habit definition to the registry. The caller owns the
+  /// id (uuid) and any title-uniqueness checks — `BlockSettings` just
+  /// persists and notifies.
+  Future<void> addHabit(HabitDefinition definition) async {
+    _habits = [..._habits, definition];
+    await _persistHabits();
+    debugPrint(
+      '[BlockSettings] addHabit id=${definition.id} title="${definition.title}"',
+    );
+    notifyListeners();
+  }
+
+  /// Replace a habit definition by id. No-op when id is not found.
+  Future<void> updateHabit(HabitDefinition definition) async {
+    final next = [..._habits];
+    final i = next.indexWhere((d) => d.id == definition.id);
+    if (i < 0) return;
+    next[i] = definition;
+    _habits = next;
+    await _persistHabits();
+    debugPrint(
+      '[BlockSettings] updateHabit id=${definition.id} title="${definition.title}"',
+    );
+    notifyListeners();
+  }
+
+  /// Remove a habit definition by id. Existing layouts / entries that
+  /// reference it are left untouched — the widget renders a deleted
+  /// placeholder when the lookup fails.
+  Future<void> deleteHabit(String id) async {
+    final next = [..._habits]..removeWhere((d) => d.id == id);
+    if (next.length == _habits.length) return;
+    _habits = next;
+    await _persistHabits();
+    debugPrint('[BlockSettings] deleteHabit id=$id');
     notifyListeners();
   }
 

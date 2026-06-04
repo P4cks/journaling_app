@@ -85,7 +85,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
   entries on disk. Adding a new variant requires (a) a wrapper in
@@ -127,7 +127,8 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   extension methods:
   - `BlockType.isUserInteractive` — whether the block's content comes
     from explicit user action. User-interactive blocks (text, mood,
-    weatherManual, prompt, todo, photo, location) keep an entry alive;
+    weatherManual, prompt, todo, photo, location, customCarousel,
+    habitTracker) keep an entry alive;
     auto-seeded blocks (quote, memory, weatherApi) populate themselves
     from APIs / repo state and must NOT keep an otherwise-untouched
     entry alive. **Every new `BlockType` MUST be classified here** —
@@ -161,6 +162,17 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   (layout slots) and from `CustomCarouselBlockContent`. Pure JSON
   serialization; nothing Hive-adapter-y because the values live in the
   schema-free `settings` box, not in the layouts / entries box.
+- [habit_definition.dart](habit_definition.dart) — `HabitDefinition`
+  (`id`, `title`, `iconName`). The shared "type" for a
+  `BlockType.habitTracker` block (GUS-13), living in the `BlockSettings`
+  registry and referenced by id from `BlockTemplate.configJson` (layout
+  slots) and from `HabitBlockContent`. `iconName` is a name from the
+  shared `kCarouselIcons` catalogue (resolved via `carouselIconFor`;
+  unknown → question-mark fallback). Pure JSON
+  (`fromMap`/`toMap`/`copyWith`), lives in the schema-free `settings`
+  box, so no Hive adapter. Mirrors the `CustomCarouselDefinition`
+  storage pattern; orphan-tolerant (delete leaves a "Deleted block"
+  placeholder).
 - [wannado_item.dart](wannado_item.dart) — `WannadoItem` (`id`, `text`).
   One entry in the user's **global** wanna-do bucket list (GUS-8), held
   by [BlockSettings](../services/block_settings.dart) and rendered by
