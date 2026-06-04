@@ -39,8 +39,12 @@ flows full-width beneath it. This is done by **measuring**, NOT by a
   grid tile.
 - `_buildFloatWrap` lays the text out with a `TextPainter` at the
   **narrow beside-width** (`contentWidth - blockSize - 12`) and calls
-  `getPositionForOffset(Offset(0, blockSize + 8))` to find the
-  character offset where the text passes the block's bottom. Because
+  `getPositionForOffset(Offset(0, blockSize))` to find the character
+  offset where the text passes the block's bottom (GUS-43: the split
+  height is the block's own height `blockSize`, NOT `blockSize +
+  _bottomGap` — the `_bottomGap` is padding *below* the block, so
+  including it pushed the split one line too far and left a line of
+  beside-text dangling level with the block's bottom margin). Because
   `x == 0`, that offset always snaps to the **start of a line**, so the
   split lands on a clean line boundary. The text is then split:
   - `beside` → rendered in a `Row` next to the block (`Expanded` text).

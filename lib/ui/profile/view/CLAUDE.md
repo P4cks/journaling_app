@@ -45,18 +45,29 @@ pushes these screens.
        `vm.carouselTitlesEnabled`, followed by the inlined
        `_CustomCarouselList` (per-definition Edit / Delete rows + an
        "Add custom block" button at the bottom).
-    3. **Wanna-dos** (GUS-8) — the inlined `_WannadoList` over the
+    3. **Wanna-dos** (GUS-8, PRO) — the inlined `_WannadoList` over the
        **global** wanna-do bucket list. Subscribes to `BlockSettings`
-       directly via `ListenableBuilder` (NOT the VM — wanna-do edits
-       write through `BlockSettings` immediately, not as drafts). Each
-       item is a `ListTile` with Edit / Delete `IconButton`s; an "Add
-       wanna-do" `OutlinedButton` sits at the bottom. Add / edit open a
-       top-level `_showEditDialog` (an `AlertDialog` with a maxLength-80
-       `TextField` returning trimmed text); `_add` mints a
-       `WannadoItem(id: _uuid.v4(), text: …)`, `_edit` calls
+       **and** `SubscriptionRepository` via
+       `ListenableBuilder(Listenable.merge([...]))` (NOT the VM —
+       wanna-do edits write through `BlockSettings` immediately, not as
+       drafts; the subscription listener un-locks live on purchase).
+       Each item is a `ListTile` with Edit / Delete `IconButton`s; an
+       "Add wanna-do" button (`_AddWannadoButton`) sits at the bottom.
+       Add / edit open a top-level `_showEditDialog` (an `AlertDialog`
+       with a maxLength-80 `TextField` returning trimmed text); `_add`
+       mints a `WannadoItem(id: _uuid.v4(), text: …)`, `_edit` calls
        `item.copyWith(text: …)`. The list is the same one the wannado
        carousel section renders in entries — edits reflect everywhere
        immediately. The module-level `_uuid = Uuid()` backs new ids.
+       - **Downgrade locking (GUS-41).** When `!subscriptions.isPro`
+         (`locked`) the existing items stay **visible** (old entries'
+         wannado sections must keep rendering them) but management is
+         disabled: item titles grey, the Edit / Delete `IconButton`s go
+         `onPressed: null` (greyed/disabled), a `ProLockBadge` sits next
+         to the caption, and `_AddWannadoButton` greys + overlays a
+         compact `ProLockBadge` and presents the paywall on tap
+         (`requirePro`), only adding on a successful upgrade. Mirrors
+         `AddCustomBlockButton`'s gating shape.
     4. **Memory Block** — its existing settings.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors

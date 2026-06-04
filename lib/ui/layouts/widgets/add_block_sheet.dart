@@ -175,6 +175,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               _buildCustomSection(
                 settings: settings,
                 subscriptions: subscriptions,
+                isPro: isPro,
               ),
           ],
         );
@@ -221,9 +222,22 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
   Widget _buildCustomSection({
     required BlockSettings settings,
     required SubscriptionRepository subscriptions,
+    required bool isPro,
   }) {
     final theme = Theme.of(context);
     final allCustoms = settings.customCarousels;
+    // GUS-41: a free user may add only the first `kFreeMaxCustomBlocks`
+    // custom-carousel definitions to a layout; every later one greys +
+    // badges and routes through the paywall on tap (same flow as a
+    // Pro-locked built-in). The lock is keyed on the definition's
+    // position in the *full* list so the locked set stays stable while
+    // searching. Old entries that already reference a now-locked
+    // definition keep rendering it — this only gates *adding* to layouts.
+    final lockedIds = <String>{
+      if (!isPro)
+        for (var i = kFreeMaxCustomBlocks; i < allCustoms.length; i++)
+          allCustoms[i].id,
+    };
     final customs = allCustoms
         .where((d) => _matches([d.title]))
         .toList(growable: false);
@@ -258,10 +272,12 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               itemCount: customs.length,
               itemBuilder: (gridCtx, i) => _CustomCell(
                 definition: customs[i],
-                // Already-created custom blocks are always usable —
-                // the Pro cap applies to *creating* a new one, gated
-                // on the "Add custom block" button below. (GUS-34)
-                locked: false,
+                // Creating a new custom block is capped by the "Add
+                // custom block" button below (GUS-34). Adding an
+                // *existing* one to a layout is free for the first
+                // `kFreeMaxCustomBlocks`; later definitions are
+                // Pro-locked for free users (GUS-41).
+                locked: lockedIds.contains(customs[i].id),
                 subscriptions: subscriptions,
               ),
             ),
