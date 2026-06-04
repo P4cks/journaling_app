@@ -28,11 +28,30 @@ elif [ -d "$HOME/flutter/bin" ]; then
 fi
 
 if [ -z "$FLUTTER_CMD" ]; then
-  echo "Error: Flutter not found in PATH or common locations"
-  echo "Checked: PATH, ~/.fvm/default/bin, ~/flutter/bin"
-  echo "Current PATH=$PATH"
-  echo "HOME=$HOME"
-  exit 127
+  echo "Flutter not found. Attempting to install via Homebrew..."
+
+  # Check for Homebrew
+  BREW_CMD=""
+  if command -v brew &> /dev/null; then
+    BREW_CMD="brew"
+  elif [ -d "/Users/local/Homebrew/bin" ]; then
+    BREW_CMD="/Users/local/Homebrew/bin/brew"
+  fi
+
+  if [ -n "$BREW_CMD" ]; then
+    echo "Installing Flutter with $BREW_CMD..."
+    $BREW_CMD install flutter || {
+      echo "Failed to install Flutter via Homebrew"
+      exit 127
+    }
+    FLUTTER_CMD="flutter"
+  else
+    echo "Error: Flutter and Homebrew not found"
+    echo "Checked: PATH, ~/.fvm/default/bin, ~/flutter/bin, brew"
+    echo "Current PATH=$PATH"
+    echo "HOME=$HOME"
+    exit 127
+  fi
 fi
 
 # Use the found flutter command
