@@ -199,7 +199,7 @@ class BlockTextSectionWidget extends StatelessWidget {
       textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: besideWidth);
     final split = painter
-        .getPositionForOffset(Offset(0, blockSize + _bottomGap))
+        .getPositionForOffset(Offset(0, blockSize))
         .offset;
     painter.dispose();
 
