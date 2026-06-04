@@ -3,6 +3,8 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:hugeicons/hugeicons.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
+import 'package:journaling_app_rewrite/data/model/block_type.dart';
+import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
@@ -291,4 +293,43 @@ class ProLimitHint extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Checks if a layout contains Pro-only features. Returns `true` if the
+/// layout has any sections or blocks that require a Pro subscription.
+/// Called when a user has downgraded from Pro to Free to detect layouts
+/// that can no longer be edited. (GUS-41)
+///
+/// A layout is considered Pro-only if it contains:
+/// - `featureBlock`, `blockTextBody`, or `wannado` sections
+/// - Pro-only block types (`weatherApi`, `quoteBlock`)
+/// - More than 1 custom carousel block
+bool layoutHasProOnlyFeatures(JournalLayout layout) {
+  // Check sections
+  for (final section in layout.sections) {
+    if (section.kind == SectionKind.featureBlock ||
+        section.kind == SectionKind.blockTextBody ||
+        section.kind == SectionKind.wannado) {
+      return true;
+    }
+
+    // Check blocks in section
+    int customCarouselCount = 0;
+    for (final block in section.blocks) {
+      // Check for Pro-only built-in block types
+      if (block.type == BlockType.weatherApi || block.type == BlockType.quoteBlock) {
+        return true;
+      }
+
+      // Count custom carousel blocks to detect > 1
+      if (block.type == BlockType.customCarousel) {
+        customCarouselCount++;
+        if (customCarouselCount > 1) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }

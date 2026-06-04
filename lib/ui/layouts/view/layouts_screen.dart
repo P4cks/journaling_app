@@ -65,12 +65,72 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
   }
 
   Future<void> _openEditor(String? layoutId) async {
+    final vm = _viewModel;
+    final subs = _subscriptions;
+
+    // GUS-41: Gate pro-only layouts when user has downgraded to free
+    if (layoutId != null && vm != null && subs != null) {
+      final layoutIndex = vm.layouts.indexWhere((l) => l.id == layoutId);
+      if (layoutIndex >= 0) {
+        final layout = vm.layouts[layoutIndex];
+        if (!subs.isPro && layoutHasProOnlyFeatures(layout)) {
+          if (!mounted) return;
+          await _showProLayoutLockedDialog(layout);
+          return;
+        }
+      }
+    }
+
     final path = layoutId == null
         ? Routes.newLayout
         : Routes.editLayoutFor(layoutId);
     await context.push(path);
     if (!mounted) return;
     _viewModel?.refresh();
+  }
+
+  Future<void> _showProLayoutLockedDialog(JournalLayout layout) async {
+    if (!mounted) return;
+    final subs = _subscriptions;
+    if (subs == null) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pro Layout'),
+        content: const Text(
+          'This layout uses Pro features. You need to upgrade to Pro to edit it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'delete'),
+            child: const Text('Delete Layout'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, 'upgrade'),
+            child: const Text('Upgrade to Pro'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    switch (result) {
+      case 'delete':
+        _viewModel?.delete(layout.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Layout deleted')),
+        );
+      case 'upgrade':
+        await requirePro(subs, context: context);
+      default:
+        break;
+    }
   }
 
   Future<void> _openNewLayoutFlow() async {
