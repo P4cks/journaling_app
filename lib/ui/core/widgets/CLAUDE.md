@@ -13,7 +13,9 @@ for how they fit together; this file is per-file notes.
   we don't currently do at runtime) would re-trigger dependants.
   Exposes the repositories + settings objects listed in
   [../CLAUDE.md](../CLAUDE.md), including `SubscriptionRepository`
-  (read by the Settings tile and the Layouts Pro gate).
+  (read by the Settings tile and the Layouts Pro gate) and
+  `StreakRewardSettings` (GUS-22 — read by the Statistics reward card /
+  AppBar badge and the add-block / add-section gating seams).
 - [app_icon.dart](app_icon.dart) — `AppIcon` + `HugeIconData` typedef.
   Wraps the `hugeicons` package's `HugeIcon` widget; pulls `size` and
   `color` from the surrounding `IconTheme` when unset. The free

@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dar
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
+import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
@@ -138,6 +139,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final deps = AppDependencies.of(context);
     final settings = deps.blockSettings;
     final subscriptions = deps.subscriptionRepository;
+    final rewards = deps.streakRewardSettings;
 
     return ListenableBuilder(
       listenable: settings,
@@ -170,7 +172,11 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 ),
               ),
             if (!_showCustomSection || _tab == _BlockTab.defaults)
-              _buildBuiltinGrid(subscriptions: subscriptions, isPro: isPro)
+              _buildBuiltinGrid(
+                subscriptions: subscriptions,
+                isPro: isPro,
+                rewards: rewards,
+              )
             else
               _buildCustomSection(
                 settings: settings,
@@ -185,6 +191,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
   Widget _buildBuiltinGrid({
     required SubscriptionRepository subscriptions,
     required bool isPro,
+    required StreakRewardSettings rewards,
   }) {
     final allowed = widget.allowedTypes;
     final visibleTypes = BlockType.values
@@ -211,7 +218,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
         itemCount: visibleTypes.length,
         itemBuilder: (gridCtx, i) => _BuiltinCell(
           type: visibleTypes[i],
-          locked: !isPro && visibleTypes[i].isProOnly,
+          locked:
+              !isPro &&
+              visibleTypes[i].isProOnly &&
+              !rewards.isBlockUnlocked(visibleTypes[i]),
           subscriptions: subscriptions,
         ),
       ),

@@ -11,7 +11,8 @@ statistics/
 ├── view/         StatisticsScreen — Scaffold + range selector + cards in a CustomScrollView
 ├── view_model/   StatisticsViewModel — subscribes to JournalRepository, computes aggregates
 └── widgets/      StatRangeSelector, SummaryNumbersCard, MoodDistributionChart,
-                  MoodOverTimeChart, EntryFrequencyChart, StatsEmptyState
+                  MoodOverTimeChart, EntryFrequencyChart, StatsEmptyState,
+                  StreakRewardCard, showClaimRewardSheet
 ```
 
 ## Behaviour
@@ -33,6 +34,15 @@ statistics/
     time-series charts.
 - Streak card is **range-independent** — `computeStreak` always
   considers all entries (it's a lifetime stat).
+- **Streak reward (GUS-22).** Directly below the `StreakStatCard` sits
+  `StreakRewardCard`, wrapped in a `ListenableBuilder` over
+  `StreakRewardSettings` so claiming updates the page live. It renders
+  only when `rewards.isRewardUnclaimed(vm.streak)` (lifetime-best ≥ 7
+  and the one token unspent) — otherwise it collapses to
+  `SizedBox.shrink()`. Its "Claim your reward" button opens
+  `showClaimRewardSheet`, which lists the still-locked Pro blocks +
+  sections; picking one permanently unlocks it and clears the card +
+  the AppBar badge on the journal screen.
 - Mood distribution is a vertical bar per emoji in `moodEmojis` order
   (stable X-axis regardless of which moods were picked).
 - Mood-over-time is a line chart with score 0–5. Days with no mood

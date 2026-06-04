@@ -15,7 +15,8 @@ Scaffold
 ├── AppBar
 │   ├── title: JournalTitle (editable title + date subtitle)
 │   └── actions: normal: Change-layout (editable + hasEntry),
-│                        Statistics icon (push /statistics),
+│                        Statistics icon (push /statistics; dot Badge when
+│                          a streak reward is unclaimed — GUS-22),
 │                        ProfileMenuButton (popup with streak/auth + items)
 │                editing: Done (unfocus)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand

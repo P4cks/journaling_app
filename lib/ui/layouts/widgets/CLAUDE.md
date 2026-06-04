@@ -65,9 +65,16 @@ sheet is a stateless top-level function returning the user's pick or
     Tapping a locked cell routes through the shared `_pickBlock` helper:
     it calls `requirePro` and pops with the selection only on a
     successful purchase; unlocked cells pop immediately.
+  - **Streak-reward bypass (GUS-22).** The built-in cell lock is
+    `!isPro && type.isProOnly && !rewards.isBlockUnlocked(type)` —
+    `rewards` is read from `AppDependencies` and threaded into
+    `_buildBuiltinGrid`. A Pro block the user spent their one streak-
+    reward token on renders ungated/addable for a free user (the other
+    Pro block stays locked). Count caps are unaffected.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
-  SubscriptionRepository subscriptions})`. Seven-tile sheet (Text
+  SubscriptionRepository subscriptions, required StreakRewardSettings
+  rewards})`. Seven-tile sheet (Text
   section / Block grid / Header / Divider / Feature block / Block +
   text / Wanna-dos), each rendered via the private `_SectionTile` (with
   a `locked` flag). Header (GUS-6) and Divider (GUS-7) are always free.
@@ -85,6 +92,11 @@ sheet is a stateless top-level function returning the user's pick or
     purchase. Text + block-grid + header + divider are always free. The
     Wanna-dos tile description points the user to manage the list in
     Block settings (the section itself has no per-section add affordance).
+  - **Streak-reward bypass (GUS-22).** Each of the three Pro locks
+    (`featureLocked` / `blockTextLocked` / `wannadoLocked`) also ANDs
+    `&& !rewards.isSectionUnlocked(kind)`, so a section the user already
+    spent their streak-reward token on renders ungated/addable for a
+    free user. The caller passes `rewards` from `AppDependencies`.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
   `Future<String?> showLayoutIconPicker(context, {selected})`.
   Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)

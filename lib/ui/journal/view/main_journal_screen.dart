@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
+import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
@@ -219,7 +220,8 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final vm = _viewModel;
     if (vm == null) return const Scaffold();
 
-    final debug = AppDependencies.of(context).debugSettings;
+    final deps = AppDependencies.of(context);
+    final debug = deps.debugSettings;
 
     return ListenableBuilder(
       listenable: debug,
@@ -270,10 +272,29 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                       ),
                     ),
                   ),
-                IconButton(
-                  tooltip: 'Statistics',
-                  onPressed: _openStatistics,
-                  icon: AppIcon(HugeIcons.strokeRoundedChartBarLine),
+                ListenableBuilder(
+                  listenable: Listenable.merge([
+                    deps.journalRepository,
+                    deps.streakRewardSettings,
+                  ]),
+                  builder: (context, _) {
+                    final streak = computeStreak(
+                      deps.journalRepository.getAllEntries(),
+                    );
+                    final unclaimed = deps.streakRewardSettings
+                        .isRewardUnclaimed(streak);
+                    final button = IconButton(
+                      tooltip: 'Statistics',
+                      onPressed: _openStatistics,
+                      icon: AppIcon(HugeIcons.strokeRoundedChartBarLine),
+                    );
+                    if (!unclaimed) return button;
+                    return Badge(
+                      alignment: Alignment.topRight,
+                      offset: const Offset(-6, 6),
+                      child: button,
+                    );
+                  },
                 ),
                 const ProfileMenuButton(),
               ];

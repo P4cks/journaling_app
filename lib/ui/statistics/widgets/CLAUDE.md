@@ -45,6 +45,24 @@ See [../CLAUDE.md](../CLAUDE.md) for how these compose into the screen.
 - [stats_empty_state.dart](stats_empty_state.dart) — `StatsEmptyState`.
   Reused for the page-level empty state and per-chart inline empty
   state (`compact: true`).
+- [streak_reward_card.dart](streak_reward_card.dart) — `StreakRewardCard`
+  (`{required StreakResult streak, required StreakRewardSettings
+  rewards}`). The GUS-22 celebratory card. Returns `SizedBox.shrink()`
+  unless `rewards.isRewardUnclaimed(streak)`. Styled like
+  `StreakStatCard` (`surfaceContainerHigh` + `outlineVariant`, radius
+  14); gift icon + "7-day streak reward!" title + a "Claim your reward"
+  `FilledButton.icon` that calls `showClaimRewardSheet`.
+- [claim_reward_sheet.dart](claim_reward_sheet.dart) —
+  `Future<void> showClaimRewardSheet(context, {required
+  StreakRewardSettings rewards})`. Built on the shared
+  [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart).
+  Lists the still-locked Pro blocks (`kProOnlyBlockTypes` minus
+  already-unlocked, via `BlockTypeDisplay.icon/label/description`) and
+  the 3 Pro sections (`featureBlock` / `blockTextBody` / `wannado`,
+  with label/icon/description **inlined to match `add_section_sheet`'s
+  `_SectionTile` copy** — keep the two in sync). Tapping a tile awaits
+  `rewards.claimBlock` / `claimSection` and pops. The claim methods
+  guard the one-token spend, so a double-open can't over-claim.
 
 ## Card shell duplication
 

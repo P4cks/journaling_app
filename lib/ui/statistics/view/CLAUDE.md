@@ -8,7 +8,8 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   (StatefulWidget). Standard VM-binding pattern (see
   [ui/CLAUDE.md](../../CLAUDE.md)). Also stashes
   `deps.subscriptionRepository` in `didChangeDependencies` so the
-  range-selector's Pro gate can read live `isPro`.
+  range-selector's Pro gate can read live `isPro`, and
+  `deps.streakRewardSettings` for the streak-reward card.
 
 ## Composition
 
@@ -21,6 +22,7 @@ Scaffold
           ├── if (vm.isEmpty) SliverFillRemaining: StatsEmptyState
           └── else: SummaryNumbersCard
                     + SectionHeader("Streak") + StreakStatCard
+                    + ListenableBuilder(_rewards) → StreakRewardCard
                     + SectionHeader("Mood") + MoodDistributionChart + MoodOverTimeChart
                     + SectionHeader("Frequency") + EntryFrequencyChart
                     + trailing safe-area spacer

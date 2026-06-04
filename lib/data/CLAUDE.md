@@ -45,6 +45,13 @@ Read order if you're new: `model/` → `services/` → `repositories/`.
   `JournalRepository.materializeLayout` at entry creation and edited
   from Profile → Block settings. (Text input is uncapped — the former
   char-limit field was removed.)
+- `StreakRewardSettings` is a `ChangeNotifier` holding the GUS-22
+  one-time streak-reward state (which Pro block / section the user spent
+  their token on). It notifies on each `claimBlock` / `claimSection`.
+  The Statistics reward card + journal AppBar badge subscribe via
+  `ListenableBuilder`; the add-block / add-section sheets read it to
+  bypass a single Pro item's lock. See
+  [services/streak_reward_settings.dart](services/streak_reward_settings.dart).
 - `LayoutRepository` is **not** a `ChangeNotifier`. Layout edits are
   rare and happen on the Layouts screen, which refreshes its VM
   manually when a pushed editor pops. If you start needing cross-screen

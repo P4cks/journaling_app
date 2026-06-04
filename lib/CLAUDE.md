@@ -110,7 +110,7 @@ Feature backlog now lives in Linear (workspace **GustoJournalingApp**, team pref
   2. Try `Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)` and create either `FirebaseAuthService` or `DisabledAuthService`.
   3. `Hive.initFlutter()` then `Hive.registerAdapters()` (do **not** also call `Hive.init('.')` — root CLAUDE.md gotcha)
   4. Open the three boxes (`journalEntries_v5`, `journalLayouts_v4`, `settings`)
-  5. Construct services → `LayoutRepository` → `BlockSettings` → `ThemeSettings` → `JournalRepository` (consumes `BlockSettings` for prompts and `ThemeSettings` for the post-it palette) → `DebugSettings` / `NavigationGuard`
+  5. Construct services → `LayoutRepository` → `BlockSettings` → `ThemeSettings` → `StreakRewardSettings` (GUS-22 one-time streak reward, backed by the settings box) → `JournalRepository` (consumes `BlockSettings` for prompts and `ThemeSettings` for the post-it palette) → `DebugSettings` / `NavigationGuard`
   6. `await SubscriptionService.configure()` (must precede any other Purchases call) → construct `SubscriptionRepository(SubscriptionService(), settingsStorage)` (the settings service backs the offline `lastKnownPro` failsafe + the `debugForceFree` override) → `await subscriptionRepository.init()` (fetch initial RevenueCat customer info + offerings, swallowing failures so an offline launch falls through to the persisted flag)
   7. `layoutRepository.seedDefaultIfEmpty()` so the very first launch has a default layout
   8. `runApp(MyApp(...))`
