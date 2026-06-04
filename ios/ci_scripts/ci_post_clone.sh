@@ -28,28 +28,37 @@ elif [ -d "$HOME/flutter/bin" ]; then
 fi
 
 if [ -z "$FLUTTER_CMD" ]; then
-  echo "Flutter not found. Attempting to install via Homebrew..."
+  echo "Flutter not found. Downloading from official source..."
 
-  # Check for Homebrew
-  BREW_CMD=""
-  if command -v brew &> /dev/null; then
-    BREW_CMD="brew"
-  elif [ -d "/Users/local/Homebrew/bin" ]; then
-    BREW_CMD="/Users/local/Homebrew/bin/brew"
+  # Download and extract Flutter SDK
+  FLUTTER_INSTALL_DIR="$HOME/flutter"
+  mkdir -p "$FLUTTER_INSTALL_DIR"
+
+  # Detect macOS architecture
+  ARCH=$(uname -m)
+  if [ "$ARCH" = "arm64" ]; then
+    FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64.zip"
+  else
+    FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_x64.zip"
   fi
 
-  if [ -n "$BREW_CMD" ]; then
-    echo "Installing Flutter with $BREW_CMD..."
-    $BREW_CMD install flutter || {
-      echo "Failed to install Flutter via Homebrew"
-      exit 127
-    }
-    FLUTTER_CMD="flutter"
-  else
-    echo "Error: Flutter and Homebrew not found"
-    echo "Checked: PATH, ~/.fvm/default/bin, ~/flutter/bin, brew"
-    echo "Current PATH=$PATH"
-    echo "HOME=$HOME"
+  echo "Downloading Flutter for $ARCH from $FLUTTER_URL..."
+  curl -L -o /tmp/flutter.zip "$FLUTTER_URL" || {
+    echo "Failed to download Flutter"
+    exit 127
+  }
+
+  echo "Extracting Flutter..."
+  unzip -q -o /tmp/flutter.zip -d "$HOME" || {
+    echo "Failed to extract Flutter"
+    exit 127
+  }
+
+  rm /tmp/flutter.zip
+  FLUTTER_CMD="$HOME/flutter/bin/flutter"
+
+  if [ ! -f "$FLUTTER_CMD" ]; then
+    echo "Error: Flutter binary not found after extraction"
     exit 127
   fi
 fi
