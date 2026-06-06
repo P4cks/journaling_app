@@ -10,7 +10,9 @@ Typed wrapper:
 
 - [prompt_block_widget.dart](prompt_block_widget.dart) —
   `PromptBlockWidget`. Stateful (owns its `TextEditingController` and
-  a one-shot auto-picker flag).
+  a one-shot auto-picker flag). Takes an `expanded` bool (default
+  `false`, threaded from `BlockWidget`) controlling grid-vs-expanded
+  answer scroll.
 - [prompt_picker_sheet.dart](prompt_picker_sheet.dart) —
   `Future<String?> showPromptPickerSheet(context, {prompts, selected})`.
   Modal bottom sheet listing the configured prompts plus a "Type
@@ -76,16 +78,20 @@ The widget reads the prompt from `widget.data.content`. It only reads
 
 - `BlockMode.readOnly` — prompt label on top (primary-colored,
   semibold), then the user's answer or "Not answered yet" italic
-  placeholder. No picker, no long-press.
+  placeholder. The answer `Text` sits in a `LayoutBuilder` and is
+  truncated with computed `maxLines` + `overflow: TextOverflow.ellipsis`
+  to fit the fixed cell (same recipe as the text block). No picker, no
+  long-press.
 - `BlockMode.editable` — prompt label + pencil button on top, then a
   multi-line `TextField` that fills the remaining vertical space
   (`Expanded` + `expands: true`). Picker auto-opens on empty-prompt
   first build; tapping the pencil re-opens it. Same per-keystroke
-  save pattern as the text block. The answer field is capped at
-  `BlockInputLimits.of(debug).promptChars` (default
-  `kPromptAnswerMaxChars` = 280, debug-overridable) with a **visible**
-  `current/limit` counter (`buildCharCounter()`), wrapped in
-  `ListenableBuilder(listenable: debugSettings)` for live tuning.
+  save pattern as the text block. The answer field is **uncapped** (no
+  `maxLength`, no enforcement, no counter — the GUS-10 char-cap
+  scaffold was removed). `scrollPhysics` is
+  `expanded ? ClampingScrollPhysics() : NeverScrollableScrollPhysics()`
+  so the grid clips and the expanded route scrolls through the full
+  answer.
 
 ## Gotchas
 

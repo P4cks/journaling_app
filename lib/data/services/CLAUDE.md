@@ -68,20 +68,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     cold start can still honour an existing subscription — written by
     `SubscriptionRepository` on every customer-info update),
     `subscription.debugForceFree` (`true`/`false`; absent → `false`;
-    debug "simulate free account" override),
-    `debug.limit.textBlock` / `debug.limit.textSection` /
-    `debug.limit.prompt` / `debug.limit.todoItem` /
-    `debug.limit.todoMaxItems` (int stored as its string form; absent →
-    use the hard-coded default in
-    [block_input_limits.dart](../../ui/blocks/widgets/block_input_limits.dart);
-    debug-only per-block input-limit overrides, deleted when reset to
-    default — accessed via the `_getInt`/`_setInt` helper pair). If you
-    add another, give it a namespaced key and add a typed accessor pair. Abandoned legacy keys
-    (`block.mood.title`, `block.weather.title`, `block.text.charLimit`)
-    are intentionally not read by the service anymore and may still
-    be present on existing users' disks; per the pre-1.0
-    backwards-compatibility policy in the root `CLAUDE.md` we do not
-    migrate them.
+    debug "simulate free account" override).
+    If you add another, give it a namespaced key and add a typed
+    accessor pair. Abandoned legacy keys (`block.mood.title`,
+    `block.weather.title`, `block.text.charLimit`, and the former
+    `debug.limit.*` per-block input-limit overrides — all removed when
+    the GUS-10 char-cap scaffold was deleted) are intentionally not
+    read by the service anymore and may still be present on existing
+    users' disks; per the pre-1.0 backwards-compatibility policy in the
+    root `CLAUDE.md` we do not migrate them.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
   Stores debug-facing switches via `SettingsStorageService`:
   - `debugMenuVisible` gates whether the Settings screen renders the
@@ -97,15 +92,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - `showExpandedBlockDoneButton` (default `false`) — developer-only
     affordance that overlays a Done button on the expanded route.
     Lives in the Settings → Debug section.
-  - Per-block input-limit overrides (GUS-10 rework):
+  - The per-block input-limit overrides (GUS-10:
     `textBlockCharLimit`, `textSectionCharLimit`, `promptCharLimit`,
-    `todoItemCharLimit`, `todoMaxItems` — all **nullable ints**
-    (`null` = use the hard-coded default in `BlockInputLimits`). Same
-    snapshot→guard→persist→`notifyListeners` setter pattern. Tuned from
-    the Settings → Debug section so we can find good caps before baking
-    them into the defaults; blocks resolve the effective value via
-    `BlockInputLimits.of(debugSettings)` and listen to this notifier
-    for live updates.
+    `todoItemCharLimit`, `todoMaxItems`) have been **removed** along
+    with the `BlockInputLimits` scaffold — text blocks/sections are
+    now uncapped (only the header keeps a fixed 60-char cap).
 - [photo_storage_service.dart](photo_storage_service.dart) — `PhotoStorageService`.
   Copies `image_picker` results into `<app-docs>/photos/<uuid>.<ext>`
   and exposes:
@@ -247,9 +238,14 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   `SubscriptionService`. The **only** class that imports
   `purchases_flutter` (RevenueCat). Static `configure()` calls
   `Purchases.configure(...)` exactly once (from `main.dart`, before any
-  other Purchases call) with a platform-selected key — currently the
-  Test Store key `test_…` for both platforms (TODO: `appl_`/`goog_`
-  for production). Instance methods wrap `getCustomerInfo`,
+  other Purchases call) with a **build-mode-aware** key (`_apiKey`
+  getter): non-release builds (debug/profile) use the Test Store key
+  `test_…`; release builds use the platform-specific production key
+  (`appl_…` on iOS, `_googleApiKey` on Android). The Android production
+  key is **still a placeholder** (currently aliased to the Apple key) —
+  RevenueCat rejects an `appl_` key on Android, so a real `goog_…` key
+  must be set before the first Play Store release. Instance methods wrap
+  `getCustomerInfo`,
   `getOfferings`, `restorePurchases`, add/remove customer-info listener,
   and `logIn`/`logOut` (the last two unused until auth↔subscription
   linking is enabled). Also exports `kProEntitlementId = 'pro'` — the

@@ -187,6 +187,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
           final textColor = palette.defaultTextColor;
           return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
             title: 'Journaling App',
             themeMode: widget.themeSettings.themeMode,
             theme: buildAppTheme(

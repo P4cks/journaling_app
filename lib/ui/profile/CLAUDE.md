@@ -60,19 +60,23 @@ Settings contains:
    `subscriptionRepository` so the title flips between "Upgrade to Pro"
    (free) and "Manage subscription" (Pro). See
    [../subscription/CLAUDE.md](../subscription/CLAUDE.md).
-6. **Debug** — `Show debug menu` toggle plus, when on, `unlockAllDays`,
-   `Simulate free account` (a `SwitchListTile` bound to
-   `subscriptionRepository.debugForceFree` / `setDebugForceFree`; masks
-   `isPro` to false locally to test the free experience — it does NOT
-   cancel or touch the real RevenueCat subscription, which has no client
-   cancel API), **per-block input-limit tuning** (GUS-10 — 5
-   `_DebugLimitTile`s that override the `BlockInputLimits` defaults for
-   text / text-section / prompt char caps + todo chars-per-item + todo
-   max-items, with a note to bake tuned values back into the defaults),
-   **Generate sample entries** (GUS-35 — a non-destructive action that
-   fills ~400 past days with random mood + text entries so the
-   statistics charts have data to render), surface override, and HSL
-   free-pick for secondary/accent.
+6. **Beta testing** — **BETA-ONLY, always visible (including release
+   builds)**: a single "Unlock all days" `SwitchListTile` bound to
+   `debug.unlockAllDays`. It deliberately surfaces the unlock outside
+   the `kDebugMode`-gated Debug section so beta testers can reach it.
+   **Remove this whole section before the 1.0 launch.**
+7. **Debug** — the whole section is **`kDebugMode`-gated** (absent in
+   release builds). In a debug build: `Show debug menu` toggle plus,
+   when on, `unlockAllDays`, `Simulate free account` (a `SwitchListTile`
+   bound to `subscriptionRepository.debugForceFree` / `setDebugForceFree`;
+   masks `isPro` to false locally to test the free experience — it does
+   NOT cancel or touch the real RevenueCat subscription, which has no
+   client cancel API), **Generate sample entries** (GUS-35 — a
+   non-destructive action that fills ~400 past days with random mood +
+   text entries so the statistics charts have data to render), surface
+   override, and HSL free-pick for secondary/accent. (The former GUS-10
+   per-block input-limit tuning tiles were removed when the char-cap
+   scaffold was deleted.)
 
 Block-settings is rendered inline by `BlockSettingsScreen` —
 sections: **Prompt Block** (the prompt list + the Random Prompts
@@ -81,9 +85,9 @@ switch + the custom-carousel definition list), **Wanna-dos** (the
 global wanna-do bucket-list editor; GUS-8), and **Memory Block**. The
 Wanna-dos list writes through `BlockSettings` immediately (not a
 draft). Text blocks have no
-per-type-global settings here — the per-block character cap is a
-runtime concern resolved via `BlockInputLimits` (tunable in the Debug
-menu, see item 6 above), not a block-settings field. Edits go into
+per-type-global settings here — text input is uncapped (the GUS-10
+char-cap scaffold was removed; only the header keeps a fixed 60-char
+cap), so there is no char-limit field. Edits go into
 draft state in `BlockSettingsViewModel`; the screen prompts Cancel /
 Discard / Save on leave. Saves write back to
 [BlockSettings](../../data/services/block_settings.dart).

@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
-import 'package:journaling_app_rewrite/ui/blocks/widgets/block_input_limits.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -88,270 +88,166 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            // BETA-ONLY: surfaces "Unlock all days" outside the
+            // kDebugMode-gated Debug section so beta testers can reach
+            // it in release builds. Remove this whole section before
+            // the 1.0 launch.
             SettingsSection(
-              label: "Debug",
+              label: "Beta testing",
               children: [
-                Padding(
-                  padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
-                  child: SwitchListTile(
-                    secondary: AppIcon(HugeIcons.strokeRoundedBug01),
-                    title: const Text('Show debug menu'),
-                    value: debug.debugMenuVisible,
-                    onChanged: debug.setDebugMenuVisible,
+                SwitchListTile(
+                  secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
+                  title: const Text('Unlock all days'),
+                  subtitle: const Text(
+                    'Select and edit any past or future day',
                   ),
+                  value: debug.unlockAllDays,
+                  onChanged: debug.setUnlockAllDays,
                 ),
-                if (debug.debugMenuVisible) ...[
-                  SwitchListTile(
-                    secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
-                    title: const Text('Unlock all days'),
-                    subtitle: const Text(
-                      'Select and edit any past or future day',
-                    ),
-                    value: debug.unlockAllDays,
-                    onChanged: debug.setUnlockAllDays,
-                  ),
-                  SwitchListTile(
-                    secondary: AppIcon(
-                      HugeIcons.strokeRoundedCheckmarkCircle02,
-                    ),
-                    title: const Text('Show Done on expanded blocks'),
-                    subtitle: const Text(
-                      'Developer affordance — expanded blocks normally dismiss by tapping the backdrop.',
-                    ),
-                    value: debug.showExpandedBlockDoneButton,
-                    onChanged: debug.setShowExpandedBlockDoneButton,
-                  ),
-                  ListenableBuilder(
-                    listenable: deps.subscriptionRepository,
-                    builder: (context, _) {
-                      final subs = deps.subscriptionRepository;
-                      return SwitchListTile(
-                        secondary: AppIcon(HugeIcons.strokeRoundedCrown),
-                        title: const Text('Simulate free account'),
-                        subtitle: const Text(
-                          'Ignore your Pro entitlement to test the free '
-                          'experience. Does not cancel or affect your real '
-                          'subscription.',
-                        ),
-                        value: subs.debugForceFree,
-                        onChanged: subs.setDebugForceFree,
-                      );
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Text(
-                      'Input-limit tuning — these override the per-block '
-                      'character caps for testing. Once you settle on good '
-                      'values, hard-code them into BlockInputLimits defaults '
-                      'and drop the debug overrides.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  _DebugLimitTile(
-                    title: 'Text block char limit',
-                    value: debug.textBlockCharLimit,
-                    defaultValue: kTextBlockMaxChars,
-                    onChanged: debug.setTextBlockCharLimit,
-                  ),
-                  _DebugLimitTile(
-                    title: 'Text section char limit',
-                    value: debug.textSectionCharLimit,
-                    defaultValue: kTextSectionMaxChars,
-                    onChanged: debug.setTextSectionCharLimit,
-                  ),
-                  _DebugLimitTile(
-                    title: 'Prompt answer char limit',
-                    value: debug.promptCharLimit,
-                    defaultValue: kPromptAnswerMaxChars,
-                    onChanged: debug.setPromptCharLimit,
-                  ),
-                  _DebugLimitTile(
-                    title: 'Todo item char limit',
-                    value: debug.todoItemCharLimit,
-                    defaultValue: kTodoItemMaxChars,
-                    onChanged: debug.setTodoItemCharLimit,
-                  ),
-                  _DebugLimitTile(
-                    title: 'Todo max items',
-                    value: debug.todoMaxItems,
-                    defaultValue: kTodoMaxItems,
-                    onChanged: debug.setTodoMaxItems,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedPaintBucket,
-                    title: 'Override surface color',
-                    dialogTitle: 'Override surface',
-                    colorBuilder: (context) =>
-                        theme.debugSurfaceOverride ??
-                        Theme.of(context).colorScheme.surface,
-                    subtitleBuilder: () => theme.debugSurfaceOverride == null
-                        ? 'Using palette default'
-                        : 'Overridden — clear to restore',
-                    outlinedBuilder: () => theme.debugSurfaceOverride == null,
-                    onChange: theme.setDebugSurfaceOverride,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedColorPicker,
-                    title: 'Free-pick secondary (HSL)',
-                    dialogTitle: 'Free-pick secondary',
-                    colorBuilder: (_) => theme.effectiveSecondary,
-                    subtitleBuilder: () => 'Bypass curated swatches',
-                    onChange: theme.setSecondaryOverride,
-                  ),
-                  _DebugColorPickerTile(
-                    theme: theme,
-                    icon: HugeIcons.strokeRoundedColorPicker,
-                    title: 'Free-pick accent (HSL)',
-                    dialogTitle: 'Free-pick accent',
-                    colorBuilder: (_) => theme.effectiveAccent,
-                    subtitleBuilder: () => 'Bypass curated swatches',
-                    onChange: theme.setAccentOverride,
-                  ),
-                  Builder(
-                    builder: (context) {
-                      final errorColor = Theme.of(context).colorScheme.error;
-                      final primaryColor = Theme.of(
-                        context,
-                      ).colorScheme.primary;
-                      return Column(
-                        children: [
-                          ListTile(
-                            leading: AppIcon(
-                              HugeIcons.strokeRoundedDatabaseAdd,
-                              color: primaryColor,
-                            ),
-                            title: const Text('Generate sample entries'),
-                            subtitle: const Text(
-                              'Fill ~400 past days with random moods + text '
-                              'to populate the statistics charts.',
-                            ),
-                            onTap: () => _generateSampleEntries(context),
-                          ),
-                          ListTile(
-                            leading: AppIcon(
-                              HugeIcons.strokeRoundedDelete02,
-                              color: errorColor,
-                            ),
-                            title: Text(
-                              'Delete all entries',
-                              style: TextStyle(color: errorColor),
-                            ),
-                            subtitle: const Text(
-                              'Wipe every journal entry. Cannot be undone.',
-                            ),
-                            onTap: () => _confirmAndDeleteAllEntries(context),
-                          ),
-                          ListTile(
-                            leading: AppIcon(
-                              HugeIcons.strokeRoundedDelete02,
-                              color: errorColor,
-                            ),
-                            title: Text(
-                              'Delete all layouts',
-                              style: TextStyle(color: errorColor),
-                            ),
-                            subtitle: const Text(
-                              'Wipe every layout. A fresh default is recreated.',
-                            ),
-                            onTap: () => _confirmAndDeleteAllLayouts(context),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
               ],
             ),
+            if (kDebugMode)
+              SettingsSection(
+                label: "Debug",
+                children: [
+                  Padding(
+                    padding: EdgeInsetsGeometry.fromLTRB(0, 0, 0, 30),
+                    child: SwitchListTile(
+                      secondary: AppIcon(HugeIcons.strokeRoundedBug01),
+                      title: const Text('Show debug menu'),
+                      value: debug.debugMenuVisible,
+                      onChanged: debug.setDebugMenuVisible,
+                    ),
+                  ),
+                  if (debug.debugMenuVisible) ...[
+                    SwitchListTile(
+                      secondary: AppIcon(HugeIcons.strokeRoundedSquareUnlock01),
+                      title: const Text('Unlock all days'),
+                      subtitle: const Text(
+                        'Select and edit any past or future day',
+                      ),
+                      value: debug.unlockAllDays,
+                      onChanged: debug.setUnlockAllDays,
+                    ),
+                    SwitchListTile(
+                      secondary: AppIcon(
+                        HugeIcons.strokeRoundedCheckmarkCircle02,
+                      ),
+                      title: const Text('Show Done on expanded blocks'),
+                      subtitle: const Text(
+                        'Developer affordance — expanded blocks normally dismiss by tapping the backdrop.',
+                      ),
+                      value: debug.showExpandedBlockDoneButton,
+                      onChanged: debug.setShowExpandedBlockDoneButton,
+                    ),
+                    ListenableBuilder(
+                      listenable: deps.subscriptionRepository,
+                      builder: (context, _) {
+                        final subs = deps.subscriptionRepository;
+                        return SwitchListTile(
+                          secondary: AppIcon(HugeIcons.strokeRoundedCrown),
+                          title: const Text('Simulate free account'),
+                          subtitle: const Text(
+                            'Ignore your Pro entitlement to test the free '
+                            'experience. Does not cancel or affect your real '
+                            'subscription.',
+                          ),
+                          value: subs.debugForceFree,
+                          onChanged: subs.setDebugForceFree,
+                        );
+                      },
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedPaintBucket,
+                      title: 'Override surface color',
+                      dialogTitle: 'Override surface',
+                      colorBuilder: (context) =>
+                          theme.debugSurfaceOverride ??
+                          Theme.of(context).colorScheme.surface,
+                      subtitleBuilder: () => theme.debugSurfaceOverride == null
+                          ? 'Using palette default'
+                          : 'Overridden — clear to restore',
+                      outlinedBuilder: () => theme.debugSurfaceOverride == null,
+                      onChange: theme.setDebugSurfaceOverride,
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedColorPicker,
+                      title: 'Free-pick secondary (HSL)',
+                      dialogTitle: 'Free-pick secondary',
+                      colorBuilder: (_) => theme.effectiveSecondary,
+                      subtitleBuilder: () => 'Bypass curated swatches',
+                      onChange: theme.setSecondaryOverride,
+                    ),
+                    _DebugColorPickerTile(
+                      theme: theme,
+                      icon: HugeIcons.strokeRoundedColorPicker,
+                      title: 'Free-pick accent (HSL)',
+                      dialogTitle: 'Free-pick accent',
+                      colorBuilder: (_) => theme.effectiveAccent,
+                      subtitleBuilder: () => 'Bypass curated swatches',
+                      onChange: theme.setAccentOverride,
+                    ),
+                    Builder(
+                      builder: (context) {
+                        final errorColor = Theme.of(context).colorScheme.error;
+                        final primaryColor = Theme.of(
+                          context,
+                        ).colorScheme.primary;
+                        return Column(
+                          children: [
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDatabaseAdd,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Generate sample entries'),
+                              subtitle: const Text(
+                                'Fill ~400 past days with random moods + text '
+                                'to populate the statistics charts.',
+                              ),
+                              onTap: () => _generateSampleEntries(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Delete all entries',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every journal entry. Cannot be undone.',
+                              ),
+                              onTap: () => _confirmAndDeleteAllEntries(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Delete all layouts',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every layout. A fresh default is recreated.',
+                              ),
+                              onTap: () => _confirmAndDeleteAllLayouts(context),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
           ],
         ),
       ),
     );
-  }
-}
-
-/// Debug-menu row for one per-block input limit. Shows the effective
-/// value (override or default), opens a numeric editor on tap, and
-/// offers "Reset to default" (clears the override → `null`).
-class _DebugLimitTile extends StatelessWidget {
-  const _DebugLimitTile({
-    required this.title,
-    required this.value,
-    required this.defaultValue,
-    required this.onChanged,
-  });
-
-  final String title;
-  final int? value;
-  final int defaultValue;
-  final ValueChanged<int?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final effective = value ?? defaultValue;
-    final overridden = value != null;
-    return ListTile(
-      leading: AppIcon(HugeIcons.strokeRoundedTextFont),
-      title: Text(title),
-      subtitle: Text(
-        overridden
-            ? 'Override: $effective (default $defaultValue)'
-            : 'Default: $defaultValue',
-      ),
-      trailing: Text(
-        '$effective',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-      onTap: () => _edit(context),
-    );
-  }
-
-  Future<void> _edit(BuildContext context) async {
-    final controller = TextEditingController(text: '${value ?? defaultValue}');
-    final result = await showDialog<int?>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Limit',
-            helperText: 'Default: $defaultValue',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Sentinel: negative => reset to default (override null).
-              Navigator.of(dialogContext).pop(-1);
-            },
-            child: const Text('Reset to default'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(null),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = int.tryParse(controller.text.trim());
-              Navigator.of(
-                dialogContext,
-              ).pop(parsed == null || parsed <= 0 ? null : parsed);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (result == null) return; // dismissed / cancel / invalid
-    onChanged(result < 0 ? null : result);
   }
 }
 

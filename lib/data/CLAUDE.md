@@ -40,10 +40,11 @@ Read order if you're new: `model/` → `services/` → `repositories/`.
   notify on every setter. The root `MaterialApp` and several screens
   rebuild via `ListenableBuilder` against them.
 - `BlockSettings` is a `ChangeNotifier` holding block-type-global
-  configuration (prompt list + strategy, optional text-block char
-  limit). Read by `JournalRepository.materializeLayout` at entry
-  creation, by `TextBlockWidget` at render time, and edited from
-  Profile → Block settings.
+  configuration (prompt list + strategy, carousel titles, custom
+  carousels, wanna-dos, memory eligible types). Read by
+  `JournalRepository.materializeLayout` at entry creation and edited
+  from Profile → Block settings. (Text input is uncapped — the former
+  char-limit field was removed.)
 - `LayoutRepository` is **not** a `ChangeNotifier`. Layout edits are
   rare and happen on the Layouts screen, which refreshes its VM
   manually when a pushed editor pops. If you start needing cross-screen

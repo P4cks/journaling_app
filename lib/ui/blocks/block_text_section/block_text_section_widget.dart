@@ -180,24 +180,47 @@ class BlockTextSectionWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [blockChild, Text(displayText, style: textStyle)],
+          children: [
+            blockChild,
+            Text(displayText, style: textStyle),
+          ],
         ),
       );
     }
 
-    // Find the character offset where the text passes the block's bottom
-    // (laid out at the narrow beside-width). `getPositionForOffset` at
-    // x=0 snaps to the start of the line at that height, so the split
-    // always lands on a line boundary — the lines above stay beside the
-    // block, the rest flow full-width below.
+    // Split the text into the lines that sit beside the block and the
+    // remainder that flows full-width beneath it (laid out at the narrow
+    // beside-width). Keep every line whose *top* is still above the
+    // block's bottom edge in the beside column; the first line that
+    // begins at or below the block's bottom starts the full-width
+    // remainder.
+    //
+    // Walking the line metrics is deliberate. `getPositionForOffset(
+    // Offset(0, blockSize))` alone returns the line *containing*
+    // y=blockSize, which pushes a line whose top is still beside the
+    // block (e.g. top 140 px, block 150 px tall) into the below region —
+    // leaving the space to its right unused. That off-by-one was the
+    // reported bug ("the last line is always rendered underneath the
+    // block even if there's still space to the right"). Splitting at the
+    // first line whose top is >= blockSize keeps that straddling line
+    // beside. `getPositionForOffset` at x=0 snaps to the start of the
+    // line at that height, so the split lands on a clean line boundary.
     final painter = TextPainter(
       text: TextSpan(text: displayText, style: textStyle),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: besideWidth);
-    final split = painter
-        .getPositionForOffset(Offset(0, blockSize + _bottomGap))
-        .offset;
+    int split = displayText.length;
+    double lineTop = 0;
+    for (final line in painter.computeLineMetrics()) {
+      if (lineTop >= blockSize) {
+        split = painter
+            .getPositionForOffset(Offset(0, lineTop + line.height / 2))
+            .offset;
+        break;
+      }
+      lineTop += line.height;
+    }
     painter.dispose();
 
     final beside = displayText.substring(0, split);
