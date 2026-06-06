@@ -39,12 +39,18 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md))
     for tab switches that `PopScope` can't see.
   - Both paths share `_maybeSaveOnLeave`: if `vm.isDirty` is true the
-    handler shows an `AlertDialog` with Cancel / Discard / Save:
-    - Discard returns true → caller (pop or tab switch) proceeds.
-    - Save calls `vm.save()` and returns true. If the name is blank
-      (`!vm.canSave`), shows a SnackBar and returns false (stay on
-      screen).
-    - Cancel returns false.
+    handler **validates the name first, then prompts**. It computes
+    `canSave` (name non-blank and `!nameConflict`) before building the
+    `AlertDialog`, so the dialog adapts:
+    - Saveable → a Cancel / Discard / Save dialog, body "Save your
+      changes to this layout before leaving?". Save calls `vm.save()`
+      and returns true. Discard returns true → caller proceeds. Cancel
+      returns false.
+    - Not saveable (blank or duplicate name) → fires an error `showToast`
+      ("Add a name to save" / "A layout with this name already exists")
+      and **returns false with no dialog** — the user stays on the editor
+      to fix the name. There's no "discard from the unsaveable state"
+      prompt.
   - **Back button** (`_handlePop`): on `canLeave == true`, calls
     `context.pop()` regardless of dirty state — back is an explicit
     "leave this screen".

@@ -4,6 +4,7 @@ import 'package:journaling_app_rewrite/data/repositories/subscription_repository
 import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/claim_reward_sheet.dart';
 
 /// Celebratory card shown on the Statistics screen when the user has
@@ -31,10 +32,10 @@ class StreakRewardCard extends StatelessWidget {
   Future<void> _claimAsPro(BuildContext context) async {
     await rewards.claimAsPro();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Streak block + Quote block unlocked!'),
-        ),
+      showToast(
+        context,
+        'Streak block + Quote block unlocked!',
+        kind: ToastKind.success,
       );
     }
   }

@@ -22,6 +22,7 @@ import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widge
 import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
@@ -122,6 +123,23 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   Future<bool> _maybeSaveOnLeave() async {
     final vm = _viewModel;
     if (vm == null || !vm.isDirty) return true;
+
+    // Validate the name first. If the layout can't be saved (no name, or a
+    // duplicate), surface why with a toast and keep the user on the editor
+    // so they can fix it — there's nothing to "save" and no leave prompt.
+    final nameEmpty = vm.nameController.text.trim().isEmpty;
+    final canSave = !nameEmpty && !vm.nameConflict;
+    if (!canSave) {
+      showToast(
+        context,
+        nameEmpty
+            ? 'Add a name to save'
+            : 'A layout with this name already exists',
+        kind: ToastKind.error,
+      );
+      return false;
+    }
+
     final choice = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -148,20 +166,6 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       case 'discard':
         return true;
       case 'save':
-        if (vm.nameController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
-          return false;
-        }
-        if (vm.nameConflict) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A layout with this name already exists'),
-            ),
-          );
-          return false;
-        }
         await vm.save();
         return true;
       default:

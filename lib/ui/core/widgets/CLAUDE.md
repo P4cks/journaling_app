@@ -27,6 +27,22 @@ for how they fit together; this file is per-file notes.
   their parameters cleanly. The streak card now drives the flame's
   active vs. dim state via the `color` prop (dimmed via
   `withValues(alpha: 0.55)`) instead of swapping a fill glyph.
+- [app_toast.dart](app_toast.dart) — `showToast(context, message,
+  {kind = ToastKind.info, duration})` + `enum ToastKind {info, success,
+  error}` (GUS-49). The app's single transient-notification primitive —
+  replaces the scattered raw `SnackBar`s. Built on
+  `ScaffoldMessenger`/`SnackBar` (so native queueing, swipe-to-dismiss
+  and lifecycle still apply) but the visible body is a transparent,
+  zero-elevation SnackBar wrapping `_ToastPill`: a themed rounded pill,
+  right-aligned, that **flies in from the right** via a `SlideTransition`
+  (`Offset(1,0) → 0`) + fade on mount, and **flies back out to the right**
+  by reversing that same animation on a `Timer` `_kToastExitDuration`
+  before the messenger auto-dismisses (so the visible exit is ours, not
+  the messenger's default downward slide). `kind` drives only the leading
+  icon + its accent colour, all pulled from `colorScheme` (never
+  hard-coded). `clearSnackBars()` runs first so toasts don't stack.
+  Confirmation dialogs (Delete? / Sign out?) are intentionally **not**
+  routed through this — only one-way informational messages are.
 - [section_header.dart](section_header.dart) — `SectionHeader`.
   Accent-tinted titleSmall label used by Settings and the entries list.
 - [settings_section.dart](settings_section.dart) — `SettingsSection`.
@@ -43,10 +59,10 @@ for how they fit together; this file is per-file notes.
   through, so paywall-on-tap behaviour stays consistent. **Offline
   handling**: before presenting it calls `subscriptions.ensureOfferings()`;
   if no offering can be loaded (typically offline, so we can't sell Pro)
-  it surfaces a "you're offline" SnackBar (when a `context` is passed)
-  and returns `false` instead of showing a broken/empty paywall.
+  it surfaces a "you're offline" toast (`showToast`, when a `context` is
+  passed) and returns `false` instead of showing a broken/empty paywall.
   `PlatformException` and `PaywallResult.error` are likewise caught and
-  reported via SnackBar. **Pass `context` from every call site** so the
+  reported via toast. **Pass `context` from every call site** so the
   user gets that feedback; without it the gate still fails closed,
   just silently.
   `ProLockBadge({compact})` — crown badge marking a locked affordance:

@@ -56,7 +56,7 @@ See [../CLAUDE.md](../CLAUDE.md) for how these compose into the screen.
   one Pro block or section of your choice" for free) + a "Claim your
   reward" `FilledButton.icon`. The button **branches on Pro status**:
   free users open `showClaimRewardSheet` (pick a Pro item); Pro users
-  call `rewards.claimAsPro()` directly and show a confirmation SnackBar.
+  call `rewards.claimAsPro()` directly and show a confirmation toast.
   Both paths unlock the Streak block for everyone.
 - [claim_reward_sheet.dart](claim_reward_sheet.dart) —
   `Future<void> showClaimRewardSheet(context, {required

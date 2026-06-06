@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/habit_editor_view_model.dart';
 
@@ -78,8 +79,10 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
         return true;
       case 'save':
         if (!vm.canSave) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(vm.titleError ?? 'Cannot save')),
+          showToast(
+            context,
+            vm.titleError ?? 'Cannot save',
+            kind: ToastKind.error,
           );
           return false;
         }
