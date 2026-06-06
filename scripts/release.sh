@@ -83,7 +83,7 @@ trap restore_branch EXIT
 info "Switching to $SRC_BRANCH ..."
 run git checkout "$SRC_BRANCH"
 if [ "$pull" -eq 1 ]; then
-  info "Pulling $SRC_BRANCH…"
+  info "Pulling $SRC_BRANCH ..."
   run git pull --ff-only origin "$SRC_BRANCH"
 fi
 
@@ -121,22 +121,22 @@ if [ -n "$bump" ]; then
 fi
 
 # --- merge main into release/stage ---
-info "Switching to $DST_BRANCH…"
+info "Switching to $DST_BRANCH ..."
 run git checkout "$DST_BRANCH"
 if [ "$pull" -eq 1 ]; then
-  info "Pulling $DST_BRANCH…"
+  info "Pulling $DST_BRANCH ..."
   run git pull --ff-only origin "$DST_BRANCH"
 fi
-info "Merging $SRC_BRANCH into $DST_BRANCH…"
+info "Merging $SRC_BRANCH into $DST_BRANCH ..."
 run git merge --no-ff "$SRC_BRANCH" -m "merge: $SRC_BRANCH into $DST_BRANCH"
 
 # --- push (opt-in) ---
 if [ "$push" -eq 1 ]; then
   if [ -n "$bump" ]; then
-    info "Pushing $SRC_BRANCH…"
+    info "Pushing $SRC_BRANCH ..."
     run git push origin "$SRC_BRANCH"
   fi
-  info "Pushing $DST_BRANCH…"
+  info "Pushing $DST_BRANCH ..."
   run git push origin "$DST_BRANCH"
 else
   warn "Not pushing (pass --push to push $DST_BRANCH${bump:+ and $SRC_BRANCH})."
