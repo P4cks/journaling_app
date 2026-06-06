@@ -7,9 +7,10 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 
-/// Renders a `SectionKind.blockTextBody` section: a photo/memory block
-/// floated top-left with text wrapping around it (magazine `float:
-/// left`) and then full-width beneath — a genuine multi-line float.
+/// Renders a `SectionKind.blockTextBody` section: a single block of any
+/// type (GUS-46) floated top-left with text wrapping around it (magazine
+/// `float: left`) and then full-width beneath — a genuine multi-line
+/// float.
 ///
 /// **Display** measures how many lines fit beside the block (via a
 /// `TextPainter` at the narrow beside-width) and splits the text in
@@ -24,9 +25,11 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 /// reflows the text awkwardly on blur, so a tap on the text opens the
 /// expanded editor directly (where the text gets the full width).
 ///
-/// The two blocks are passed in separately and looked up by the caller
-/// by type, so their order inside `EntrySection.blocks` is irrelevant.
-/// [floatBlock] is null when the layout template carried no float block.
+/// The two blocks are passed in separately; the caller (journal pager)
+/// resolves them by materialization order — the body text is always the
+/// last block, the float (if any) is the first — because the float may
+/// itself be a `textBlock` now (GUS-46), making a type-based lookup
+/// ambiguous. [floatBlock] is null when the layout carried no float.
 class BlockTextSectionWidget extends StatelessWidget {
   const BlockTextSectionWidget({
     super.key,
@@ -40,7 +43,8 @@ class BlockTextSectionWidget extends StatelessWidget {
     this.onRequestTextSectionEdit,
   });
 
-  /// The floated photo/memory block, or null when none was configured.
+  /// The floated block (any type — GUS-46), or null when none was
+  /// configured.
   final JournalBlockData? floatBlock;
 
   /// The wrapping text block (always present; reuses `TextBlockContent`).

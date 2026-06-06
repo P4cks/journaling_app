@@ -98,7 +98,11 @@ Same gate as before the merge. Used for two decisions:
   VM, which adds the new entry to its `entries` list; the screen
   rebuilds with the pager pointing at the new entry.
 - `_showChangeLayoutSheet()` — opens the picker → confirm dialog →
-  `vm.applyLayout`. Destructive; always confirms.
+  `vm.applyLayout`. Destructive; always confirms. When no layouts exist
+  it shows a "No layouts configured" toast (`showToast`,
+  `ToastKind.info`) and returns without opening the picker (GUS-47) —
+  otherwise the picker would silently no-op (`showLayoutPickerSheet`
+  returns null on an empty list).
 - `_openStatistics()` — `context.push(Routes.statistics)`. Back
   returns to `MainJournalScreen` on the same selected date. The
   former `_openEntries` pushed `/entries`; that route still works

@@ -23,8 +23,9 @@ false). Typed wrapper:
   catalogue). Big `_HabitCheckBubble` toggles `completed` on tap in
   editable mode; `_StreakBadge` (flame + count) shows only when the
   streak is > 0; `_SevenDayStrip` (read-only 7-day history, GUS-51) shows
-  whenever the block has a real definition. Orphan / preview handling
-  lives here (`_DeletedPlaceholder`).
+  whenever the block has a real definition. The badge and strip sit on
+  **one Row, streak to the left of the strip** (GUS-53), beneath the
+  bubble. Orphan / preview handling lives here (`_DeletedPlaceholder`).
 
 ## Streak rule & 7-day strip
 
@@ -50,6 +51,8 @@ It is **display-only** — anchored on the block's *entry* date (not the
 real "today"), so an older entry shows that entry's surrounding week. The
 big bubble stays the sole toggle, so the strip never writes across
 entries. Wrapped in a `FittedBox(scaleDown)` to fit narrow grid cells.
+The strip and the `_StreakBadge` share a single `Row` (badge first when
+streak > 0, then strip) — GUS-53.
 
 ## Modes
 
