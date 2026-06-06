@@ -196,6 +196,15 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final allowed = widget.allowedTypes;
     final visibleTypes = BlockType.values
         .where((t) => !_hiddenBlockTypes.contains(t))
+        // The streak block is a milestone reward, not a Pro purchase:
+        // hide it entirely until the user has claimed it (everyone earns
+        // it at the 7-day streak — see StreakRewardSettings). Once
+        // unlocked it's free to add for both free and Pro users.
+        .where(
+          (t) =>
+              t != BlockType.streakBlock ||
+              rewards.isBlockUnlocked(BlockType.streakBlock),
+        )
         .where((t) => allowed == null || allowed.contains(t))
         .where((t) => _matches([t.label, t.description]))
         .toList(growable: false);

@@ -85,10 +85,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             SliverToBoxAdapter(child: StreakStatCard(streak: vm.streak)),
             SliverToBoxAdapter(
               child: ListenableBuilder(
-                listenable: _rewards!,
+                listenable: Listenable.merge([_rewards!, _subscriptions!]),
                 builder: (context, _) => StreakRewardCard(
                   streak: vm.streak,
                   rewards: _rewards!,
+                  subscriptions: _subscriptions!,
                 ),
               ),
             ),

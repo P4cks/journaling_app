@@ -36,13 +36,22 @@ statistics/
   considers all entries (it's a lifetime stat).
 - **Streak reward (GUS-22).** Directly below the `StreakStatCard` sits
   `StreakRewardCard`, wrapped in a `ListenableBuilder` over
-  `StreakRewardSettings` so claiming updates the page live. It renders
-  only when `rewards.isRewardUnclaimed(vm.streak)` (lifetime-best ≥ 7
-  and the one token unspent) — otherwise it collapses to
-  `SizedBox.shrink()`. Its "Claim your reward" button opens
-  `showClaimRewardSheet`, which lists the still-locked Pro blocks +
-  sections; picking one permanently unlocks it and clears the card +
-  the AppBar badge on the journal screen.
+  `Listenable.merge([rewards, subscriptions])` so claiming **and** a
+  Pro-status change update the page live. It renders only when
+  `rewards.isRewardUnclaimed(vm.streak)` (lifetime-best ≥ 7 and the one
+  token unspent) — otherwise it collapses to `SizedBox.shrink()`. Every
+  claim unlocks the new **Streak block** for everyone. The "Claim your
+  reward" button **branches on Pro status**:
+  - **Free users** → opens `showClaimRewardSheet`, which lists the
+    still-locked Pro blocks + sections; picking one additionally unlocks
+    it permanently.
+  - **Pro users** → claims directly via `rewards.claimAsPro()` (no
+    picker — they own everything) and shows a confirmation SnackBar; they
+    also get the Quote block as downgrade insurance.
+
+  Either way the card disappears and the AppBar badge on the journal
+  screen clears. The card takes both `StreakRewardSettings` and
+  `SubscriptionRepository`.
 - Mood distribution is a vertical bar per emoji in `moodEmojis` order
   (stable X-axis regardless of which moods were picked).
 - Mood-over-time is a line chart with score 0–5. Days with no mood

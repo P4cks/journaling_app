@@ -60,7 +60,7 @@ void main() {
     expect(settings.claimedCount, 1);
   });
 
-  test('claimBlock persists, notifies once, and unlocks', () async {
+  test('claimBlock unlocks the picked block + the streak block', () async {
     final settings = StreakRewardSettings(storage);
     var notifications = 0;
     settings.addListener(() => notifications++);
@@ -68,18 +68,21 @@ void main() {
     await settings.claimBlock(BlockType.quoteBlock);
 
     expect(settings.isBlockUnlocked(BlockType.quoteBlock), isTrue);
+    // Everyone earns the streak block on any claim.
+    expect(settings.isBlockUnlocked(BlockType.streakBlock), isTrue);
     expect(notifications, 1);
     expect(
       storage.getStreakRewardBlocksJson(),
-      jsonEncode([BlockType.quoteBlock.name]),
+      jsonEncode([BlockType.quoteBlock.name, BlockType.streakBlock.name]),
     );
 
-    // A fresh instance over the same storage re-reads the unlock.
+    // A fresh instance over the same storage re-reads the unlocks.
     final reloaded = StreakRewardSettings(storage);
     expect(reloaded.isBlockUnlocked(BlockType.quoteBlock), isTrue);
+    expect(reloaded.isBlockUnlocked(BlockType.streakBlock), isTrue);
   });
 
-  test('claimSection persists, notifies once, and unlocks', () async {
+  test('claimSection unlocks the picked section + the streak block', () async {
     final settings = StreakRewardSettings(storage);
     var notifications = 0;
     settings.addListener(() => notifications++);
@@ -87,11 +90,38 @@ void main() {
     await settings.claimSection(SectionKind.featureBlock);
 
     expect(settings.isSectionUnlocked(SectionKind.featureBlock), isTrue);
+    expect(settings.isBlockUnlocked(BlockType.streakBlock), isTrue);
     expect(notifications, 1);
     expect(
       storage.getStreakRewardSectionsJson(),
       jsonEncode([SectionKind.featureBlock.name]),
     );
+    expect(
+      storage.getStreakRewardBlocksJson(),
+      jsonEncode([BlockType.streakBlock.name]),
+    );
+  });
+
+  test('claimAsPro unlocks the streak block + the quote block', () async {
+    final settings = StreakRewardSettings(storage);
+    var notifications = 0;
+    settings.addListener(() => notifications++);
+
+    await settings.claimAsPro();
+
+    expect(settings.isBlockUnlocked(BlockType.streakBlock), isTrue);
+    // Downgrade insurance: a Pro user also keeps the quote block.
+    expect(settings.isBlockUnlocked(BlockType.quoteBlock), isTrue);
+    expect(notifications, 1);
+    expect(
+      storage.getStreakRewardBlocksJson(),
+      jsonEncode([BlockType.streakBlock.name, BlockType.quoteBlock.name]),
+    );
+
+    // Second claim of any kind is a no-op (one token).
+    await settings.claimBlock(BlockType.weatherApi);
+    expect(settings.isBlockUnlocked(BlockType.weatherApi), isFalse);
+    expect(notifications, 1);
   });
 
   test('only one token: a second claim is a no-op', () async {
@@ -103,8 +133,10 @@ void main() {
     await settings.claimBlock(BlockType.weatherApi);
     await settings.claimSection(SectionKind.wannado);
 
-    expect(settings.claimedCount, 1);
+    // quoteBlock + streakBlock from the first (only) claim.
+    expect(settings.claimedCount, 2);
     expect(settings.isBlockUnlocked(BlockType.quoteBlock), isTrue);
+    expect(settings.isBlockUnlocked(BlockType.streakBlock), isTrue);
     expect(settings.isBlockUnlocked(BlockType.weatherApi), isFalse);
     expect(settings.isSectionUnlocked(SectionKind.wannado), isFalse);
     expect(notifications, 1);

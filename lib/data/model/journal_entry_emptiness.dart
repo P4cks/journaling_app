@@ -44,6 +44,10 @@ extension BlockTypeInteraction on BlockType {
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
+      // Streak block seeds itself from repository state — it is not
+      // user-interactive, so it must not keep an otherwise-empty entry
+      // alive past the midnight sweep.
+      case BlockType.streakBlock:
         return false;
     }
   }
@@ -70,6 +74,8 @@ extension BlockTypeInteraction on BlockType {
 /// - `customCarousel` — no `selected` item picked yet. The
 ///   `definitionId` orphaning case (definition deleted) still counts
 ///   as empty: the user can't interact with a missing definition.
+/// - `streakBlock` — never empty (it always renders the live streak);
+///   non-interactive, so this classification never keeps an entry alive.
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -100,6 +106,10 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !LocationBlockContent.fromMap(content).hasPin;
       case BlockType.customCarousel:
         return CustomCarouselBlockContent.fromMap(content).selected == null;
+      case BlockType.streakBlock:
+        // Always renders a live streak (even 0). Never "empty" — but it
+        // is non-interactive, so this never keeps an entry alive anyway.
+        return false;
     }
   }
 }

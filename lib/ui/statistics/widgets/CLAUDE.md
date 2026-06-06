@@ -47,11 +47,17 @@ See [../CLAUDE.md](../CLAUDE.md) for how these compose into the screen.
   state (`compact: true`).
 - [streak_reward_card.dart](streak_reward_card.dart) — `StreakRewardCard`
   (`{required StreakResult streak, required StreakRewardSettings
-  rewards}`). The GUS-22 celebratory card. Returns `SizedBox.shrink()`
-  unless `rewards.isRewardUnclaimed(streak)`. Styled like
-  `StreakStatCard` (`surfaceContainerHigh` + `outlineVariant`, radius
-  14); gift icon + "7-day streak reward!" title + a "Claim your reward"
-  `FilledButton.icon` that calls `showClaimRewardSheet`.
+  rewards, required SubscriptionRepository subscriptions}`). The GUS-22
+  celebratory card. Returns `SizedBox.shrink()` unless
+  `rewards.isRewardUnclaimed(streak)`. Styled like `StreakStatCard`
+  (`surfaceContainerHigh` + `outlineVariant`, radius 14); gift icon +
+  "7-day streak reward!" title + a blurb that **branches on
+  `subscriptions.isPro`** ("plus a Quote block to keep" for Pro vs "plus
+  one Pro block or section of your choice" for free) + a "Claim your
+  reward" `FilledButton.icon`. The button **branches on Pro status**:
+  free users open `showClaimRewardSheet` (pick a Pro item); Pro users
+  call `rewards.claimAsPro()` directly and show a confirmation SnackBar.
+  Both paths unlock the Streak block for everyone.
 - [claim_reward_sheet.dart](claim_reward_sheet.dart) —
   `Future<void> showClaimRewardSheet(context, {required
   StreakRewardSettings rewards})`. Built on the shared

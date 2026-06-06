@@ -48,6 +48,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Location';
       case BlockType.customCarousel:
         return 'Custom carousel';
+      case BlockType.streakBlock:
+        return 'Streak';
     }
   }
 
@@ -75,6 +77,8 @@ extension BlockTypeDisplay on BlockType {
         return HugeIcons.strokeRoundedMapPin;
       case BlockType.customCarousel:
         return HugeIcons.strokeRoundedGrid;
+      case BlockType.streakBlock:
+        return HugeIcons.strokeRoundedFire;
     }
   }
 
@@ -102,6 +106,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Long-press the map to drop a pin.';
       case BlockType.customCarousel:
         return 'A carousel of your own icons or emojis.';
+      case BlockType.streakBlock:
+        return 'Shows your current streak and your best.';
     }
   }
 
@@ -210,6 +216,11 @@ extension BlockTypeDisplay on BlockType {
             selected: CarouselItem(kind: CarouselItemKind.emoji, value: '⚡'),
           ).toMap(),
         );
+      case BlockType.streakBlock:
+        // No per-entry content — the widget reads the live streak off
+        // the repository. The preview renders whatever the user's real
+        // streak is.
+        return JournalBlockData.create(id: id, type: this, content: const {});
     }
   }
 
@@ -232,6 +243,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.memoryBlock:
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
+      case BlockType.streakBlock:
         return true;
     }
   }
@@ -263,6 +275,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.locationBlock:
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
+      case BlockType.streakBlock:
         return false;
     }
   }
@@ -295,6 +308,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.memoryBlock:
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
+      case BlockType.streakBlock:
         return false;
     }
   }

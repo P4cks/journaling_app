@@ -71,6 +71,13 @@ sheet is a stateless top-level function returning the user's pick or
     `_buildBuiltinGrid`. A Pro block the user spent their one streak-
     reward token on renders ungated/addable for a free user (the other
     Pro block stays locked). Count caps are unaffected.
+  - **Streak block visibility (GUS-22).** The new `BlockType.streakBlock`
+    is **hidden entirely** from the built-in grid (a `.where(...)` filter
+    in `_buildBuiltinGrid`) until `rewards.isBlockUnlocked(streakBlock)` —
+    it's a milestone reward, not a Pro purchase, so it's not shown greyed
+    with a paywall like Pro blocks. Everyone earns it at the 7-day streak;
+    once unlocked it's free to add for both free and Pro users (it's NOT
+    in `kProOnlyBlockTypes`).
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions, required StreakRewardSettings

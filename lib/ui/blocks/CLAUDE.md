@@ -122,11 +122,11 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 
   with `label`, `icon` (HugeIcons stroke-rounded; typed `HugeIconData`), `description`, and `sampleData(id:)`.
   Also exposes three getters used by the double-tap engage flow:
-  - `usesEditMode` — true for every block that has an interactive
-    surface: text / prompt / todo, the three carousel types, photo /
-    location / memory. False only for pure-display blocks (quote,
-    weather-api), which the grid still skips the double-tap detector
-    for.
+  - `usesEditMode` — **true for every block type.** Interactive blocks
+    (text / prompt / todo, the three carousel types, photo / location /
+    memory) open their edit surface; pure-display blocks (quote,
+    weather-api, streak) still expand on double-tap so the user can read
+    them larger, with no editing affordance inside the route.
   - `isActionBlock` — true for photo + memory. When the "expand on
     edit" setting is OFF, `MainJournalScreen._requestBlockEdit` fires
     `firePhotoBlockAction` / `fireMemoryBlockAction` immediately on
@@ -214,6 +214,17 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   `CollapsibleCarouselBlock<CarouselItem>` over its items, or a
   "Deleted block" placeholder when the lookup fails. See
   [custom_carousel/CLAUDE.md](custom_carousel/CLAUDE.md).
+- [streak_block/streak_block_widget.dart](streak_block/streak_block_widget.dart) —
+  `StreakBlockWidget` (GUS-22). Display-only tile showing the streak
+  **as of its own entry's date** large with the **best streak up to that
+  date** small beneath. Carries no per-entry content — self-locates its
+  hosting entry by `data.id` in `JournalRepository.getAllEntries` (via
+  `AppDependencies`) to scope `computeStreak` to `date <= entry.date`,
+  inside a `ListenableBuilder`, so each day reads its own streak (and it
+  refreshes the instant a new entry lands). Falls back to the live,
+  today-anchored streak when the block isn't in a saved entry (layout
+  preview). Unlocked at the 7-day milestone for everyone (free + Pro) via
+  `StreakRewardSettings`. See [streak_block/CLAUDE.md](streak_block/CLAUDE.md).
 
 ---
 
