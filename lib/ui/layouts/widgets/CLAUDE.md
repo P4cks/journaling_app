@@ -59,12 +59,23 @@ sheet is a stateless top-level function returning the user's pick or
     harmless.
   - **Pro gating (GUS-19).** Reads `subscriptionRepository` via
     `AppDependencies`. For free users, built-in cells whose
-    `BlockType.isProOnly` is true (everything except text + mood) and
-    every custom-carousel cell render **greyed (`_PreviewTile`
-    dims + a compact `ProLockBadge`)** rather than being filtered out.
-    Tapping a locked cell routes through the shared `_pickBlock` helper:
-    it calls `requirePro` and pops with the selection only on a
-    successful purchase; unlocked cells pop immediately.
+    `BlockType.isProOnly` is true (everything except text + mood)
+    render **greyed (`_PreviewTile` dims + a compact `ProLockBadge`)**
+    rather than being filtered out. Tapping a locked cell routes
+    through the shared `_pickBlock` helper: it calls `requirePro` and
+    pops with the selection only on a successful purchase; unlocked
+    cells pop immediately.
+  - **Custom-carousel locking (GUS-41).** `_buildCustomSection`
+    computes a `lockedIds` set: for free users every custom-carousel
+    definition **past the first `kFreeMaxCustomBlocks` (1)** by
+    position in the *full* `settings.customCarousels` list is locked
+    (greyed `_CustomCell` + badge, paywall-on-tap via `_pickBlock`).
+    The lock is keyed on the definition's index in the full list (not
+    the search-filtered list) so the free/locked split stays stable
+    while searching. This mirrors the layout-editor gate
+    (`layoutHasProOnlyFeatures` treats >1 custom carousel as Pro). Old
+    entries that already reference a now-locked definition keep
+    rendering it — only *adding to a layout* is gated.
 - [add_section_sheet.dart](add_section_sheet.dart) —
   `Future<SectionKind?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions})`. Seven-tile sheet (Text
