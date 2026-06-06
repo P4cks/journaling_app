@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -89,10 +90,10 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         return true;
       case 'save':
         if (!vm.canSave) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fix the highlighted fields before saving'),
-            ),
+          showToast(
+            context,
+            'Fix the highlighted fields before saving',
+            kind: ToastKind.error,
           );
           return false;
         }

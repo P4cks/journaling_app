@@ -3,6 +3,7 @@ import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 
 /// Subscription hub reached from Settings → Subscription. Shows the current
 /// plan and routes purchases through the RevenueCat paywall + Customer Center.
@@ -43,9 +44,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         (subs.isPro
             ? 'Purchases restored — Journaling App Pro is active.'
             : 'No previous purchases found.');
-    ScaffoldMessenger.of(
+    showToast(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+      message,
+      kind: subs.errorMessage != null ? ToastKind.error : ToastKind.info,
+    );
   }
 
   @override

@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 
 /// Free-tier cap on blocks in a single `blockOnly` layout. Pro unlocks
 /// unlimited blocks. (BACKLOG #92)
@@ -100,9 +101,7 @@ Future<bool> requirePro(
 }
 
 void _showProUnavailable(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
-  );
+  showToast(context, message, kind: ToastKind.error);
 }
 
 /// Crown badge marking a Pro-locked affordance. Pair it with a greyed

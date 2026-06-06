@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/custom_block_editor_view_model.dart';
@@ -79,10 +80,10 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
         return true;
       case 'save':
         if (!vm.canSave) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(vm.titleError ?? vm.itemsError ?? 'Cannot save'),
-            ),
+          showToast(
+            context,
+            vm.titleError ?? vm.itemsError ?? 'Cannot save',
+            kind: ToastKind.error,
           );
           return false;
         }

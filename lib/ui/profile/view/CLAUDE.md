@@ -83,7 +83,7 @@ pushes these screens.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors
   `LayoutEditorScreen`'s Cancel / Discard / Save dialog. The save
-  dialog surfaces a SnackBar ("Fix the highlighted fields before
+  dialog surfaces a toast ("Fix the highlighted fields before
   saving") and stays on the screen when `vm.canSave` is false
   (currently never — no validation gates). Text blocks have no
   per-type-global settings, and predefined carousel titles (mood,
@@ -136,10 +136,10 @@ pushes these screens.
 | `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
 | `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
 | `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
-| `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count SnackBar |
+| `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count toast |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
-| `ListTile` "Reset streak reward" | —             | GUS-22; non-destructive (no confirm); calls `StreakRewardSettings.reset()` so the milestone is claimable again; count SnackBar |
+| `ListTile` "Reset streak reward" | —             | GUS-22; non-destructive (no confirm); calls `StreakRewardSettings.reset()` so the milestone is claimable again; count toast |
 | `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `streakRewardSettings.reset()` in one shot |
 
 ## Top-level helpers (settings_screen.dart)
@@ -149,20 +149,20 @@ pushes these screens.
   confirm. Used by the two "Delete all …" debug actions.
 - `_confirmAndDeleteAllEntries(context)` /
   `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
-  + show a SnackBar with the deleted count. The layouts variant
+  + show a toast with the deleted count. The layouts variant
   surfaces "default restored" because the repository re-seeds.
 - `_generateSampleEntries(context)` — debug (GUS-35); no confirm
   (non-destructive) — calls `JournalRepository.debugGenerateSampleEntries`
-  and SnackBars the created count. Lets you populate the statistics
+  and toasts the created count. Lets you populate the statistics
   charts with ~400 days of random mood + text data.
 - `_resetStreakReward(context)` — debug (GUS-22); no confirm
   (non-destructive to journal content) — calls
   `streakRewardSettings.reset()` so the 7-day milestone is claimable
-  again, then SnackBars. Lets you re-test the claim flow.
+  again, then toasts. Lets you re-test the claim flow.
 - `_confirmAndResetEverything(context)` — debug (GUS-22); destructive,
   confirm-gated — `deleteAllEntries` + `deleteAllLayouts` (re-seeds
   default) + `streakRewardSettings.reset()`, then a combined-count
-  SnackBar. The "nuke all test data" button.
+  toast. The "nuke all test data" button.
 
 ## Debug menu visibility (GUS-10 follow-up)
 

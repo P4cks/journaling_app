@@ -23,7 +23,7 @@ subscription/
     `RevenueCatUI.presentCustomerCenter()` (cancel / refund / plan
     change flows).
   - Always: a "Restore purchases" `TextButton` →
-    `subscriptionRepository.restore()`, with a SnackBar reporting the
+    `subscriptionRepository.restore()`, with a toast reporting the
     result.
   - Loading spinner + `errorMessage` surfaced from the repository.
 

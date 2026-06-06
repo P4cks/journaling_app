@@ -72,9 +72,10 @@ class HabitTrackerWidget extends StatelessWidget {
             : (carouselIconFor(definition.iconName)?.icon ??
                   HugeIcons.strokeRoundedCheckmarkCircle02);
 
-        final streak = defId == null
-            ? 0
-            : _computeStreak(repo, defId, content.completed);
+        final stats = defId == null
+            ? null
+            : _computeStats(repo, defId, content.completed);
+        final streak = stats?.streak ?? 0;
 
         final interactive = mode != BlockMode.readOnly && onChanged != null;
 
@@ -106,6 +107,13 @@ class HabitTrackerWidget extends StatelessWidget {
                     const SizedBox(height: 8),
                     _StreakBadge(count: streak),
                   ],
+                  if (stats != null) ...[
+                    const SizedBox(height: 8),
+                    _SevenDayStrip(
+                      completedDays: stats.completedDays,
+                      anchor: stats.anchor,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -115,15 +123,17 @@ class HabitTrackerWidget extends StatelessWidget {
     );
   }
 
-  /// Count of consecutive completed days for this habit definition,
-  /// ending at this block's own entry date (inclusive when today is
-  /// crossed off; otherwise the run ending the day before — so the
-  /// streak still shows momentum the user is about to lose).
+  /// Single scan over every entry, yielding both the set of days this
+  /// habit was crossed off and this block's anchor day, then the derived
+  /// streak. The streak counts consecutive completed days ending at the
+  /// anchor (inclusive when the anchor is crossed off; otherwise the run
+  /// ending the day before — so it still shows momentum about to be lost).
+  /// Both the streak badge and the 7-day strip read from this one scan.
   ///
   /// `liveCompleted` is this block's in-hand `completed` value, used to
   /// reflect an unsaved toggle for the anchor day before storage catches
   /// up.
-  int _computeStreak(
+  _HabitStats _computeStats(
     JournalRepository repo,
     String defId,
     bool liveCompleted,
@@ -162,7 +172,96 @@ class HabitTrackerWidget extends StatelessWidget {
       streak++;
       cursor = DateTime(cursor.year, cursor.month, cursor.day - 1);
     }
-    return streak;
+    return _HabitStats(
+      streak: streak,
+      completedDays: completedDays,
+      anchor: anchor,
+    );
+  }
+}
+
+/// Result of the one entry scan in [HabitTrackerWidget._computeStats]:
+/// the derived [streak], the set of normalized days the habit was crossed
+/// off ([completedDays]), and this block's [anchor] day. The strip and the
+/// streak badge both consume this so the entry walk happens only once.
+class _HabitStats {
+  const _HabitStats({
+    required this.streak,
+    required this.completedDays,
+    required this.anchor,
+  });
+
+  final int streak;
+  final Set<DateTime> completedDays;
+  final DateTime anchor;
+}
+
+/// Read-only strip of the 7 days ending on (and including) the block's
+/// [anchor] day, oldest → newest. A day is ticked when it is in
+/// [completedDays]. Display only — the big bubble is the sole toggle, so
+/// the strip never writes across entries. Scaled down to fit narrow grid
+/// cells via [FittedBox].
+class _SevenDayStrip extends StatelessWidget {
+  const _SevenDayStrip({required this.completedDays, required this.anchor});
+
+  final Set<DateTime> completedDays;
+  final DateTime anchor;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = [
+      for (var i = 6; i >= 0; i--)
+        DateTime(anchor.year, anchor.month, anchor.day - i),
+    ];
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < days.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            _DayDot(checked: completedDays.contains(days[i])),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One day indicator in the [_SevenDayStrip]: a small filled tick when
+/// checked, a faint bordered circle when not.
+class _DayDot extends StatelessWidget {
+  const _DayDot({required this.checked});
+
+  final bool checked;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    const size = 14.0;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: checked ? scheme.primary : Colors.transparent,
+        border: Border.all(
+          color: checked
+              ? scheme.primary
+              : scheme.outline.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: checked
+          ? Center(
+              child: AppIcon(
+                HugeIcons.strokeRoundedTick01,
+                size: size * 0.6,
+                color: scheme.onPrimary,
+              ),
+            )
+          : null,
+    );
   }
 }
 
