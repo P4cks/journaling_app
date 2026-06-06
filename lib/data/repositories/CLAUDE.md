@@ -87,9 +87,12 @@ coordination live.
     - `SectionKind.blockTextBody` — yields an `EntrySection` whose
       `blocks` list is `[if (template present) materialized float
       block, fresh empty textBlock]`. The float block (0 or 1
-      template) materializes like `featureBlock`; the `textBlock` is
-      fresh + empty like `text`. The widget looks each up by type so
-      order is irrelevant.
+      template) can be **any** `BlockType` (GUS-46) and materializes
+      like `featureBlock` (custom/habit floats carry their
+      `definitionId` through `_materializeOne`); the `textBlock` is
+      fresh + empty like `text` and **always appended last**. The pager
+      keys off this order (body = `blocks.last`), not block type, so a
+      float that is itself a `textBlock` stays unambiguous.
     - `SectionKind.wannado` — yields an `EntrySection` with `blocks:
       const []` (content-free). The section renders the **global**
       wanna-do list off `BlockSettings` at render time; nothing is

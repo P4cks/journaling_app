@@ -107,18 +107,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       No add affordance — the heading text is entered per-entry. (GUS-6)
     - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
     - `blockTextBody` → `_BlockTextSectionBody` — a `Row` of the
-      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`, same
-      slot machinery as `_FeatureBlockSectionBody`) left of a read-only
-      `_TextSectionPreview`, hinting the materialized entry's float
-      arrangement. The block is sized to exactly one tile of a 2-column
-      `BlockGrid` — `((maxWidth - 44) / 2).clamp(120, 220)` via a
-      `LayoutBuilder` hoisted ABOVE the padding (so `maxWidth` is the
+      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`) left of a
+      read-only `_TextSectionPreview`, hinting the materialized entry's
+      float arrangement. The block is sized to exactly one tile of a
+      2-column `BlockGrid` — `((maxWidth - 44) / 2).clamp(120, 220)` via
+      a `LayoutBuilder` hoisted ABOVE the padding (so `maxWidth` is the
       full section width) — matching a "normal" grid block rather than
-      a fixed 120px square or the old `* 0.42` proportion. The picker uses
-      `showAddBlockSheet(allowedTypes: featureBlockAllowedTypes)` →
-      `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
-      (both generalized to accept this kind). The text block is entered
-      per-entry (not an editor slot). (GUS-9)
+      a fixed 120px square or the old `* 0.42` proportion. The picker
+      uses the **general** `showAddBlockSheet(context)` (any built-in /
+      custom / habit block — GUS-46, was photo/memory only) →
+      `vm.setBlockTextFloatBlock` (accepts any `AddBlockResult`, unlike
+      `setFeatureBlock`); the X-remove calls `vm.clearFeatureBlock` (still
+      shared with `featureBlock`). The text block is entered per-entry
+      (not an editor slot). (GUS-9)
     - `wannado` → a `WannadoSectionWidget` preview (the same widget the
       journal pager renders). It self-fetches the **global** wanna-do
       list off `AppDependencies.blockSettings` and rotates live in the

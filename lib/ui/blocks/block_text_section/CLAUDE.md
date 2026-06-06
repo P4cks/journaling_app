@@ -1,8 +1,9 @@
 # lib/ui/blocks/block_text_section — Block + text body section
 
 The widget for `SectionKind.blockTextBody` sections (GUS-9, PRO): a
-photo/memory block floated top-left with text wrapping to its right and
-then full-width beneath it — the magazine `float: left` look.
+single block of **any type** (GUS-46 — was photo/memory only) floated
+top-left with text wrapping to its right and then full-width beneath it
+— the magazine `float: left` look.
 
 ## Files
 
@@ -14,15 +15,20 @@ then full-width beneath it — the magazine `float: left` look.
 ## Content shape
 
 The `EntrySection` carries **two** blocks:
-- a **float block** — a `photoBlock` or `memoryBlock` (or none), the
-  same single-slot machinery as `featureBlock`. Stored in the layout
-  template (0 or 1 `BlockTemplate`).
+- a **float block** — **any** `BlockType` (or none) (GUS-46; was
+  photo/memory only). Single-slot machinery (0 or 1 `BlockTemplate` in
+  the layout template), but the slot now carries a `definitionId` for
+  custom-carousel / habit floats just like a grid slot.
 - a **text block** — a `textBlock` reusing `TextBlockContent`,
   materialized fresh + empty (like a `text` section).
 
 The widget receives the two blocks **separately** (`floatBlock`
-nullable, `textBlock` required); the journal pager looks each up by
-type, so their order inside `EntrySection.blocks` is irrelevant.
+nullable, `textBlock` required). The journal pager keys off
+**materialization order**, not block type: the body textBlock is always
+appended *last* by `materializeLayout`, so the float (when present) is
+`blocks.first` and the body is `blocks.last`. Type-based lookup was
+abandoned because a float that is itself a `textBlock` would be
+ambiguous against the body text.
 
 ## Display — the multi-line float
 
