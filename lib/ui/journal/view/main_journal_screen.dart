@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/calendar_bottom_bar.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/journal_pager.dart';
@@ -175,9 +176,14 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final vm = _viewModel;
     if (vm == null) return;
     FocusManager.instance.primaryFocus?.unfocus();
+    final layouts = vm.getAvailableLayouts();
+    if (layouts.isEmpty) {
+      showToast(context, 'No layouts configured', kind: ToastKind.info);
+      return;
+    }
     final selected = await showLayoutPickerSheet(
       context,
-      layouts: vm.getAvailableLayouts(),
+      layouts: layouts,
       defaultLayoutId: vm.defaultLayoutId,
     );
     if (selected == null || !mounted) return;
