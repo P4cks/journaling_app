@@ -139,6 +139,8 @@ pushes these screens.
 | `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count SnackBar |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
+| `ListTile` "Reset streak reward" | —             | GUS-22; non-destructive (no confirm); calls `StreakRewardSettings.reset()` so the milestone is claimable again; count SnackBar |
+| `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `streakRewardSettings.reset()` in one shot |
 
 ## Top-level helpers (settings_screen.dart)
 
@@ -153,6 +155,14 @@ pushes these screens.
   (non-destructive) — calls `JournalRepository.debugGenerateSampleEntries`
   and SnackBars the created count. Lets you populate the statistics
   charts with ~400 days of random mood + text data.
+- `_resetStreakReward(context)` — debug (GUS-22); no confirm
+  (non-destructive to journal content) — calls
+  `streakRewardSettings.reset()` so the 7-day milestone is claimable
+  again, then SnackBars. Lets you re-test the claim flow.
+- `_confirmAndResetEverything(context)` — debug (GUS-22); destructive,
+  confirm-gated — `deleteAllEntries` + `deleteAllLayouts` (re-seeds
+  default) + `streakRewardSettings.reset()`, then a combined-count
+  SnackBar. The "nuke all test data" button.
 
 ## Debug menu visibility (GUS-10 follow-up)
 

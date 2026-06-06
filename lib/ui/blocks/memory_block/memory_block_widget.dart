@@ -311,6 +311,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.locationBlock:
       case BlockType.customCarousel:
       case BlockType.habitTracker:
+      case BlockType.streakBlock:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }

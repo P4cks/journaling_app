@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -19,14 +20,21 @@ import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 Future<SectionKind?> showAddSectionSheet(
   BuildContext context, {
   required SubscriptionRepository subscriptions,
+  required StreakRewardSettings rewards,
 }) {
   final isPro = subscriptions.isPro;
   final featureLocked =
-      !isPro && !kFreeSectionKinds.contains(SectionKind.featureBlock);
+      !isPro &&
+      !kFreeSectionKinds.contains(SectionKind.featureBlock) &&
+      !rewards.isSectionUnlocked(SectionKind.featureBlock);
   final blockTextLocked =
-      !isPro && !kFreeSectionKinds.contains(SectionKind.blockTextBody);
+      !isPro &&
+      !kFreeSectionKinds.contains(SectionKind.blockTextBody) &&
+      !rewards.isSectionUnlocked(SectionKind.blockTextBody);
   final wannadoLocked =
-      !isPro && !kFreeSectionKinds.contains(SectionKind.wannado);
+      !isPro &&
+      !kFreeSectionKinds.contains(SectionKind.wannado) &&
+      !rewards.isSectionUnlocked(SectionKind.wannado);
 
   return showDraggableSheet<SectionKind>(
     context,

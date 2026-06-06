@@ -175,6 +175,17 @@ how layouts materialize).
     overlay (GUS-40). The
     add-section sheet still gates the **Feature block** tile
     (`featureBlock ∉ kFreeSectionKinds`); text + block-grid stay free.
+  - **GUS-22 — streak-reward unlock bypasses a single Pro item's lock.**
+    Both the add-block and add-section sheets read
+    `AppDependencies.streakRewardSettings`. A Pro block's cell lock
+    becomes `!isPro && type.isProOnly && !rewards.isBlockUnlocked(type)`;
+    each Pro section lock ANDs `&& !rewards.isSectionUnlocked(kind)`. So
+    the one Pro block **or** section the user spent their 7-day streak
+    reward token on renders ungated/addable for a free user — every
+    other Pro item stays locked. The **count caps** (`kFreeMax*`) are
+    intentionally untouched; the reward unlocks *availability* of a
+    specific item, not the free-tier quotas. `_CustomBody._addSection`
+    passes `rewards:` through to `showAddSectionSheet`.
   - **GUS-40 — free users capped at `kFreeMaxLayouts` (1) saved layout.**
     `LayoutsScreen._openNewLayoutFlow` calls `requirePro` at the cap; the
     list shows a `ProLimitHint` ("1 of 1 layouts used") at the top and the

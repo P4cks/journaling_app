@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widge
 import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/quote_block/quote_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/streak_block/streak_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_block/text_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/todo_block/todo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_api/weather_api_widget.dart';
@@ -175,6 +176,12 @@ class BlockWidget extends StatelessWidget {
           onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,
+        );
+      case BlockType.streakBlock:
+        return StreakBlockWidget(
+          data: data,
+          mode: mode,
+          onDoubleTap: onDoubleTap,
         );
     }
   }

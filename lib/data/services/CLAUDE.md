@@ -68,7 +68,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     cold start can still honour an existing subscription — written by
     `SubscriptionRepository` on every customer-info update),
     `subscription.debugForceFree` (`true`/`false`; absent → `false`;
-    debug "simulate free account" override).
+    debug "simulate free account" override),
+    `streak.reward.unlockedBlocks` (JSON list of `BlockType.name`s the
+    user spent their streak-reward token on; absent → none),
+    `streak.reward.unlockedSections` (JSON list of `SectionKind.name`s
+    unlocked the same way; absent → none — see
+    [streak_reward_settings.dart](streak_reward_settings.dart)).
     If you add another, give it a namespaced key and add a typed
     accessor pair. Abandoned legacy keys (`block.mood.title`,
     `block.weather.title`, `block.text.charLimit`, and the former
@@ -225,6 +230,43 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   - `current` starts from today (or yesterday if today has no entry),
     so the streak doesn't break until the user misses a full day.
   - Pass `now` in tests; defaults to `DateTime.now()`.
+- [streak_reward_settings.dart](streak_reward_settings.dart) —
+  `StreakRewardSettings extends ChangeNotifier` + top-level
+  `kStreakRewardMilestone = 7`. Backs the GUS-22 one-time streak reward.
+  When the user's **lifetime-best** streak (`StreakResult.longest`)
+  reaches 7 they earn **one** reward. **Every claim path unlocks the new
+  display-only `BlockType.streakBlock` for everyone (free + Pro)** — the
+  "new block everyone gets". On top of that:
+  - **Free users** also spend the token on one Pro block **or** Pro
+    section to unlock it permanently (the picker).
+  - **Pro users** also get `BlockType.quoteBlock` automatically (no
+    picker — they own everything; the quote block is downgrade insurance
+    if they later drop to free).
+  - State is two `Set`s (`_unlockedBlocks`, `_unlockedSections`),
+    persisted as the two `streak.reward.*` JSON-list keys above (decoded
+    by enum `.name`, tolerating unknown/corrupt → skip).
+  - "Claimed" is **derived**: `claimedCount = unlockedBlocks.length +
+    unlockedSections.length`; every claim path unlocks ≥1 block (always
+    the streak block), so `claimedCount > 0` ⇒ spent. No separate
+    `claimed` flag.
+  - `isRewardUnclaimed(StreakResult) => streak.longest >= 7 &&
+    claimedCount == 0` — the single source of truth for both UI
+    surfaces (Statistics reward card + AppBar badge).
+  - Three claim methods, each **guarding `if (claimedCount > 0)
+    return;`** (one token), then persist + notify:
+    - `claimBlock(type)` — free path: unlocks `type` + `streakBlock`.
+    - `claimSection(kind)` — free path: unlocks `kind` (section) +
+      `streakBlock` (block).
+    - `claimAsPro()` — Pro path: unlocks `streakBlock` + `quoteBlock`.
+    - `reset()` — debug-only: clears both sets + deletes both keys +
+      notifies, so the milestone is claimable again (Settings → Debug →
+      "Reset streak reward" / "Reset everything"). No-op when empty.
+  - Read by the Statistics reward card + claim sheet, the journal
+    AppBar badge, the add-block sheet (hides `streakBlock` until
+    unlocked) and the add-block / add-section gating seams (a
+    reward-unlocked Pro item bypasses its lock — count caps are
+    unaffected). Constructed in `main.dart`, exposed via
+    `AppDependencies`.
 - [auth_service.dart](auth_service.dart) — `AuthService` interface,
   `AuthFailure`, and `DisabledAuthService`. The disabled service is used
   when Firebase options are missing or initialization fails so the app

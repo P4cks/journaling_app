@@ -14,4 +14,5 @@ enum BlockType {
   locationBlock,
   customCarousel,
   habitTracker,
+  streakBlock,
 }

@@ -24,6 +24,8 @@ class SettingsStorageService {
   static const _blockMemoryEligibleTypesKey = 'block.memory.eligibleTypes';
   static const _subscriptionLastKnownProKey = 'subscription.lastKnownPro';
   static const _subscriptionDebugForceFreeKey = 'subscription.debugForceFree';
+  static const _streakRewardBlocksKey = 'streak.reward.unlockedBlocks';
+  static const _streakRewardSectionsKey = 'streak.reward.unlockedSections';
   // Debug-only per-block input-limit overrides. Absent → use the
   // hard-coded default in BlockInputLimits. Stored as the int's string
   // form; deleted when cleared back to default.
@@ -185,6 +187,24 @@ class SettingsStorageService {
 
   Future<void> setSubscriptionDebugForceFree(bool value) =>
       _box.put(_subscriptionDebugForceFreeKey, value.toString());
+
+  /// JSON-encoded list of `BlockType.name` strings the user has
+  /// permanently unlocked via a streak reward. `null`/absent → none.
+  String? getStreakRewardBlocksJson() => _box.get(_streakRewardBlocksKey);
+
+  Future<void> setStreakRewardBlocksJson(String? json) =>
+      (json == null || json.isEmpty)
+      ? _box.delete(_streakRewardBlocksKey)
+      : _box.put(_streakRewardBlocksKey, json);
+
+  /// JSON-encoded list of `SectionKind.name` strings the user has
+  /// permanently unlocked via a streak reward. `null`/absent → none.
+  String? getStreakRewardSectionsJson() => _box.get(_streakRewardSectionsKey);
+
+  Future<void> setStreakRewardSectionsJson(String? json) =>
+      (json == null || json.isEmpty)
+      ? _box.delete(_streakRewardSectionsKey)
+      : _box.put(_streakRewardSectionsKey, json);
 
   int? _getInt(String key) {
     final raw = _box.get(key);
