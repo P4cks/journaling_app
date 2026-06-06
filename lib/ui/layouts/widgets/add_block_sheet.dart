@@ -72,12 +72,15 @@ class AddBlockResultHabit extends AddBlockResult {
 ///   types. (GUS-20)
 /// - When [allowedTypes] is null: a 2-segment `SegmentedButton` tab
 ///   switcher between **Default** (built-in `BlockType`s) and **Custom**
-///   (the user's saved custom-carousel definitions). (GUS-24) The
-///   built-in grid and the custom section render one-at-a-time based on
-///   the active tab rather than stacked.
+///   (the user's saved custom-carousel *and* habit definitions — GUS-52
+///   folded the former Habits tab into Custom). (GUS-24) The built-in
+///   grid and the custom section render one-at-a-time based on the active
+///   tab rather than stacked.
 /// - The active tab's content: built-in cells in a 2-column grid, or the
-///   custom-definition cells plus an "Add custom block" button that
-///   pushes the editor screen — on save the sheet rebuilds via a
+///   custom-carousel + habit definition cells plus a single
+///   "Add custom block" button that, after the free-cap/paywall check,
+///   asks which kind to create (custom carousel or habit) before pushing
+///   the matching editor screen — on save the sheet rebuilds via a
 ///   `ListenableBuilder` on `BlockSettings`, so the new definition
 ///   appears without a re-open.
 ///
@@ -100,8 +103,9 @@ Future<AddBlockResult?> showAddBlockSheet(
 }
 
 /// Which tab the sheet is currently showing. Only relevant when the
-/// custom section is visible (`allowedTypes == null`).
-enum _BlockTab { defaults, custom, habits }
+/// custom section is visible (`allowedTypes == null`). The Custom tab
+/// holds both custom-carousel and habit definitions (GUS-52).
+enum _BlockTab { defaults, custom }
 
 class _AddBlockSheetBody extends StatefulWidget {
   const _AddBlockSheetBody({required this.allowedTypes});
@@ -176,10 +180,6 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                       value: _BlockTab.custom,
                       label: Text('Custom'),
                     ),
-                    ButtonSegment(
-                      value: _BlockTab.habits,
-                      label: Text('Habits'),
-                    ),
                   ],
                   selected: {_tab},
                   showSelectedIcon: false,
@@ -192,16 +192,11 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 isPro: isPro,
                 rewards: rewards,
               )
-            else if (_tab == _BlockTab.custom)
+            else
               _buildCustomSection(
                 settings: settings,
                 subscriptions: subscriptions,
                 isPro: isPro,
-              )
-            else
-              _buildHabitSection(
-                settings: settings,
-                subscriptions: subscriptions,
               ),
           ],
         );
@@ -258,6 +253,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     );
   }
 
+  /// The Custom tab: custom-carousel definitions AND habit definitions
+  /// (GUS-52 folded the former separate Habits tab in here), the shared
+  /// custom-block Pro hint, and a single "Add custom block" button that
+  /// asks which kind to create.
   Widget _buildCustomSection({
     required BlockSettings settings,
     required SubscriptionRepository subscriptions,
@@ -265,6 +264,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
   }) {
     final theme = Theme.of(context);
     final allCustoms = settings.customCarousels;
+    final allHabits = settings.habits;
     // GUS-41: a free user may add only the first `kFreeMaxCustomBlocks`
     // custom-carousel definitions to a layout; every later one greys +
     // badges and routes through the paywall on tap (same flow as a
@@ -280,51 +280,80 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final customs = allCustoms
         .where((d) => _matches([d.title]))
         .toList(growable: false);
+    final habits = allHabits
+        .where((d) => _matches([d.title]))
+        .toList(growable: false);
     // The free cap counts carousels + habits together against one
     // "custom block" budget (GUS-13 / GUS-40), so the hint/add button
     // here reflect the combined total.
-    final customBlockCount = allCustoms.length + settings.habits.length;
+    final customBlockCount = allCustoms.length + allHabits.length;
+
+    final nothingDefined = allCustoms.isEmpty && allHabits.isEmpty;
+    final nothingMatches =
+        !nothingDefined && customs.isEmpty && habits.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (allCustoms.isEmpty)
+        if (nothingDefined)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Text(
-              "You haven't defined any custom carousel blocks yet.",
+              "You haven't defined any custom blocks yet.",
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           )
-        else if (customs.isEmpty)
+        else if (nothingMatches)
           const _NoMatchesHint()
-        else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.72,
-              ),
-              itemCount: customs.length,
-              itemBuilder: (gridCtx, i) => _CustomCell(
-                definition: customs[i],
-                // Creating a new custom block is capped by the "Add
-                // custom block" button below (GUS-34). Adding an
-                // *existing* one to a layout is free for the first
-                // `kFreeMaxCustomBlocks`; later definitions are
-                // Pro-locked for free users (GUS-41).
-                locked: lockedIds.contains(customs[i].id),
-                subscriptions: subscriptions,
+        else ...[
+          if (customs.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.72,
+                ),
+                itemCount: customs.length,
+                itemBuilder: (gridCtx, i) => _CustomCell(
+                  definition: customs[i],
+                  // Creating a new custom block is capped by the "Add
+                  // custom block" button below (GUS-34). Adding an
+                  // *existing* one to a layout is free for the first
+                  // `kFreeMaxCustomBlocks`; later definitions are
+                  // Pro-locked for free users (GUS-41).
+                  locked: lockedIds.contains(customs[i].id),
+                  subscriptions: subscriptions,
+                ),
               ),
             ),
-          ),
+          if (habits.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.72,
+                ),
+                itemCount: habits.length,
+                itemBuilder: (gridCtx, i) => _HabitCell(
+                  definition: habits[i],
+                  locked: false,
+                  subscriptions: subscriptions,
+                ),
+              ),
+            ),
+        ],
         ProLimitHint(
           used: customBlockCount,
           max: kFreeMaxCustomBlocks,
@@ -336,87 +365,63 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
           child: AddCustomBlockButton(
             subscriptions: subscriptions,
             currentCount: customBlockCount,
-            onAddAllowed: () {
-              // Pop the sheet first so the editor pushes onto the
-              // layout-editor screen, not the sheet.
-              Navigator.of(context).pop();
-              GoRouter.of(context).push(Routes.newCustomBlock);
-            },
+            onAddAllowed: _promptNewCustomBlockKind,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHabitSection({
-    required BlockSettings settings,
-    required SubscriptionRepository subscriptions,
-  }) {
-    final theme = Theme.of(context);
-    final allHabits = settings.habits;
-    final habits = allHabits
-        .where((d) => _matches([d.title]))
-        .toList(growable: false);
-    // Carousels + habits share the one free "custom block" budget.
-    final customBlockCount = settings.customCarousels.length + allHabits.length;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (allHabits.isEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(
-              "You haven't defined any habit blocks yet.",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+  /// After the free-cap / paywall check in [AddCustomBlockButton], ask
+  /// the user which kind of custom block to create, then pop the sheet
+  /// and push the matching editor route. Dismissing the chooser leaves
+  /// the add-block sheet open. (GUS-52)
+  Future<void> _promptNewCustomBlockKind() async {
+    final navigator = Navigator.of(context);
+    final router = GoRouter.of(context);
+    final route = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetCtx) {
+        final theme = Theme.of(sheetCtx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'What do you want to add?',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          )
-        else if (habits.isEmpty)
-          const _NoMatchesHint()
-        else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.72,
+              ListTile(
+                leading: AppIcon(BlockType.customCarousel.icon),
+                title: const Text('Custom carousel'),
+                subtitle: Text(BlockType.customCarousel.description),
+                onTap: () =>
+                    Navigator.of(sheetCtx).pop(Routes.newCustomBlock),
               ),
-              itemCount: habits.length,
-              itemBuilder: (gridCtx, i) => _HabitCell(
-                definition: habits[i],
-                locked: false,
-                subscriptions: subscriptions,
+              ListTile(
+                leading: AppIcon(BlockType.habitTracker.icon),
+                title: const Text('Habit'),
+                subtitle: Text(BlockType.habitTracker.description),
+                onTap: () => Navigator.of(sheetCtx).pop(Routes.newHabitBlock),
               ),
-            ),
+            ],
           ),
-        ProLimitHint(
-          used: customBlockCount,
-          max: kFreeMaxCustomBlocks,
-          noun: 'custom blocks',
-          subscriptions: subscriptions,
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-          child: AddCustomBlockButton(
-            subscriptions: subscriptions,
-            currentCount: customBlockCount,
-            label: 'Add habit',
-            onAddAllowed: () {
-              // Pop the sheet first so the editor pushes onto the
-              // layout-editor screen, not the sheet.
-              Navigator.of(context).pop();
-              GoRouter.of(context).push(Routes.newHabitBlock);
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
+    if (route == null || !mounted) return;
+    // Pop the add-block sheet first so the editor pushes onto the
+    // layout-editor screen, not the sheet.
+    navigator.pop();
+    router.push(route);
   }
 }
 

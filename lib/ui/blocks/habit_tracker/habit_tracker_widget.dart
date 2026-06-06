@@ -103,15 +103,20 @@ class HabitTrackerWidget extends StatelessWidget {
                     icon: iconData,
                     size: 56,
                   ),
-                  if (streak > 0) ...[
-                    const SizedBox(height: 8),
-                    _StreakBadge(count: streak),
-                  ],
                   if (stats != null) ...[
                     const SizedBox(height: 8),
-                    _SevenDayStrip(
-                      completedDays: stats.completedDays,
-                      anchor: stats.anchor,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (streak > 0) ...[
+                          _StreakBadge(count: streak),
+                          const SizedBox(width: 8),
+                        ],
+                        _SevenDayStrip(
+                          completedDays: stats.completedDays,
+                          anchor: stats.anchor,
+                        ),
+                      ],
                     ),
                   ],
                 ],
