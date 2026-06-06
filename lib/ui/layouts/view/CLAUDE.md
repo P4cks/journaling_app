@@ -39,12 +39,18 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md))
     for tab switches that `PopScope` can't see.
   - Both paths share `_maybeSaveOnLeave`: if `vm.isDirty` is true the
-    handler shows an `AlertDialog` with Cancel / Discard / Save:
-    - Discard returns true → caller (pop or tab switch) proceeds.
-    - Save calls `vm.save()` and returns true. If the name is blank
-      (`!vm.canSave`), shows a SnackBar and returns false (stay on
-      screen).
-    - Cancel returns false.
+    handler **validates the name first, then prompts**. It computes
+    `canSave` (name non-blank and `!nameConflict`) before building the
+    `AlertDialog`, so the dialog adapts:
+    - Saveable → a Cancel / Discard / Save dialog, body "Save your
+      changes to this layout before leaving?". Save calls `vm.save()`
+      and returns true. Discard returns true → caller proceeds. Cancel
+      returns false.
+    - Not saveable (blank or duplicate name) → fires an error `showToast`
+      ("Add a name to save" / "A layout with this name already exists")
+      and **returns false with no dialog** — the user stays on the editor
+      to fix the name. There's no "discard from the unsaveable state"
+      prompt.
   - **Back button** (`_handlePop`): on `canLeave == true`, calls
     `context.pop()` regardless of dirty state — back is an explicit
     "leave this screen".
@@ -107,18 +113,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       No add affordance — the heading text is entered per-entry. (GUS-6)
     - `divider` → a plain padded `Divider`. No add affordance. (GUS-7)
     - `blockTextBody` → `_BlockTextSectionBody` — a `Row` of the
-      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`, same
-      slot machinery as `_FeatureBlockSectionBody`) left of a read-only
-      `_TextSectionPreview`, hinting the materialized entry's float
-      arrangement. The block is sized to exactly one tile of a 2-column
-      `BlockGrid` — `((maxWidth - 44) / 2).clamp(120, 220)` via a
-      `LayoutBuilder` hoisted ABOVE the padding (so `maxWidth` is the
+      float-block picker (`_EmptyAddBlockCell` / `_FilledCell`) left of a
+      read-only `_TextSectionPreview`, hinting the materialized entry's
+      float arrangement. The block is sized to exactly one tile of a
+      2-column `BlockGrid` — `((maxWidth - 44) / 2).clamp(120, 220)` via
+      a `LayoutBuilder` hoisted ABOVE the padding (so `maxWidth` is the
       full section width) — matching a "normal" grid block rather than
-      a fixed 120px square or the old `* 0.42` proportion. The picker uses
-      `showAddBlockSheet(allowedTypes: featureBlockAllowedTypes)` →
-      `vm.setFeatureBlock`; the X-remove calls `vm.clearFeatureBlock`
-      (both generalized to accept this kind). The text block is entered
-      per-entry (not an editor slot). (GUS-9)
+      a fixed 120px square or the old `* 0.42` proportion. The picker
+      uses the **general** `showAddBlockSheet(context)` (any built-in /
+      custom / habit block — GUS-46, was photo/memory only) →
+      `vm.setBlockTextFloatBlock` (accepts any `AddBlockResult`, unlike
+      `setFeatureBlock`); the X-remove calls `vm.clearFeatureBlock` (still
+      shared with `featureBlock`). The text block is entered per-entry
+      (not an editor slot). (GUS-9)
     - `wannado` → a `WannadoSectionWidget` preview (the same widget the
       journal pager renders). It self-fetches the **global** wanna-do
       list off `AppDependencies.blockSettings` and rotates live in the

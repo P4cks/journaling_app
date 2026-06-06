@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/repositories/subscription_repository
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
@@ -123,9 +124,7 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
     switch (result) {
       case 'delete':
         _viewModel?.delete(layout.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Layout deleted')),
-        );
+        showToast(context, 'Layout deleted', kind: ToastKind.success);
       case 'upgrade':
         await requirePro(subs, context: context);
       default:

@@ -25,32 +25,33 @@ sheet is a stateless top-level function returning the user's pick or
     `title`. Query is stored trimmed + lower-cased; empty ⇒ no filter.
     When a tab has no matches, `_NoMatchesHint` renders in place of the
     grid. (GUS-20)
-  - **Tab switcher** — a 3-segment `SegmentedButton<_BlockTab>`
-    (**Default** / **Custom** / **Habits**), shown only when
-    `allowedTypes == null`. The sections render **one-at-a-time** by
-    tab (not stacked as before). (GUS-24, +Habits GUS-13)
+  - **Tab switcher** — a 2-segment `SegmentedButton<_BlockTab>`
+    (**Default** / **Custom**), shown only when `allowedTypes == null`.
+    The sections render **one-at-a-time** by tab (not stacked). GUS-52
+    folded the former separate **Habits** tab into Custom. (GUS-24)
   - **Default tab** (`_buildBuiltinGrid`): a 2-column grid of
     scaled-down built-in block previews (`BlockWidget` in
     `BlockMode.readOnly` with `sampleData`), iterating `BlockType.values`
     minus `_hiddenBlockTypes`.
   - **Custom tab** (`_buildCustomSection`, only when
-    `allowedTypes == null`): every `BlockSettings.customCarousels`
-    definition as its own tile (live `CustomCarouselWidget` preview
-    pointing at the registry), the `ProLimitHint`, plus an
-    "Add custom block" `OutlinedButton` that pops the sheet and pushes
-    `Routes.newCustomBlock` so the editor stacks on the layout editor.
-    The button captures `Navigator` + `GoRouter` before its `await`
-    and re-checks the State's `mounted` (lint-clean across the paywall
-    async gap).
-
-  - **Habits tab** (`_buildHabitSection`, only when
-    `allowedTypes == null`): every `BlockSettings.habits` definition as
-    its own `_HabitCell` preview, plus an "Add habit"
-    `AddCustomBlockButton(label: 'Add habit')` that pops the sheet and
-    pushes `Routes.newHabitBlock`. Tiles return `AddBlockResultHabit(id)`.
+    `allowedTypes == null`): both kinds of user-defined block (GUS-52) —
+    every `BlockSettings.customCarousels` definition as a `_CustomCell`
+    (live preview, GUS-41 lock on definitions past the free cap) **and**
+    every `BlockSettings.habits` definition as a `_HabitCell` (returns
+    `AddBlockResultHabit(id)`), each in its own 2-column grid. Below them
+    the shared `ProLimitHint` and a **single** "Add custom block"
+    `AddCustomBlockButton`. After the button's free-cap/paywall check,
+    `_promptNewCustomBlockKind` opens a small `showModalBottomSheet`
+    chooser ("Custom carousel" / "Habit"); on a pick it pops the
+    add-block sheet and pushes `Routes.newCustomBlock` /
+    `Routes.newHabitBlock`, dismissing the chooser leaves the sheet open.
+    It captures `Navigator` + `GoRouter` before the `await` and
+    re-checks `mounted` (lint-clean across the async gap). The combined
+    empty state reads "You haven't defined any custom blocks yet."; an
+    empty search across both lists shows `_NoMatchesHint`.
 
   Subscribes to `BlockSettings` via `ListenableBuilder`, so a
-  definition saved in the editor appears in the Custom / Habits tab
+  definition saved in the editor appears in the Custom tab
   without re-opening the sheet. `_hiddenBlockTypes` excludes
   `locationBlock` (WIP), `customCarousel`, and `habitTracker` (the last
   two surface only via their per-definition tiles). Pass `allowedTypes` to restrict to a subset (used by
@@ -73,11 +74,11 @@ sheet is a stateless top-level function returning the user's pick or
     dims + a compact `ProLockBadge`)** rather than being filtered out.
     Tapping a locked cell routes through the shared `_pickBlock` helper:
     it calls `requirePro` and pops with the selection only on a
-    successful purchase; unlocked cells pop immediately. The
-    "Add custom block" / "Add habit" buttons share ONE custom-block
-    budget — the `currentCount` passed to `AddCustomBlockButton` /
-    `ProLimitHint` is `customCarousels.length + habits.length`, capped
-    at `kFreeMaxCustomBlocks`.
+    successful purchase; unlocked cells pop immediately. The single
+    "Add custom block" button covers both carousels and habits, so its
+    `currentCount` (and the `ProLimitHint`) is
+    `customCarousels.length + habits.length`, capped at
+    `kFreeMaxCustomBlocks`.
   - **Streak-reward bypass (GUS-22).** The built-in cell lock is
     `!isPro && type.isProOnly && !rewards.isBlockUnlocked(type)` —
     `rewards` is read from `AppDependencies` and threaded into

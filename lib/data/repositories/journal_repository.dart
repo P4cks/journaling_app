@@ -318,10 +318,11 @@ class JournalRepository extends ChangeNotifier {
             kind: SectionKind.divider,
             blocks: const [],
           ),
-          // Block + text body: the float block (photo/memory, 0 or 1
-          // template) materialized like `featureBlock`, plus a fresh
-          // empty `textBlock` (like `text`). The widget looks each up by
-          // type, so order is irrelevant.
+          // Block + text body: the float block (any type — GUS-46 — 0 or
+          // 1 template) materialized like `featureBlock`, plus a fresh
+          // empty `textBlock` (like `text`) appended LAST. The pager keys
+          // off this order (body = last block), so the float may itself
+          // be a textBlock without ambiguity.
           SectionKind.blockTextBody => EntrySection(
             id: _uuid.v4(),
             kind: SectionKind.blockTextBody,

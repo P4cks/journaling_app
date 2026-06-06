@@ -106,23 +106,24 @@ Name validation:
   ("A layout with this name already exists") when this fires.
 
 All slot-creating methods (`addBlock`, `addBlockInFixedFour`,
-`addBlockInSection`, `replaceSlotType`, `setFeatureBlock`) take an
-`AddBlockResult` (the discriminated return of `showAddBlockSheet`)
-rather than a raw `BlockType`. Internally `_slotFromResult` /
-`_typeAndDefIdFromResult` decode the result into a slot
-(`BlockType` + optional `definitionId`) — `AddBlockResultCustom` →
+`addBlockInSection`, `replaceSlotType`, `setFeatureBlock`,
+`setBlockTextFloatBlock`) take an `AddBlockResult` (the discriminated
+return of `showAddBlockSheet`) rather than a raw `BlockType`. Internally
+`_slotFromResult` / `_typeAndDefIdFromResult` decode the result into a
+slot (`BlockType` + optional `definitionId`) — `AddBlockResultCustom` →
 `(customCarousel, id)`, `AddBlockResultHabit` → `(habitTracker, id)`.
-`setFeatureBlock`
-additionally rejects non-built-in results because feature blocks
-are restricted to photo / memory.
+`setFeatureBlock` additionally rejects non-built-in results because
+feature blocks are restricted to photo / memory.
 
-`setFeatureBlock` / `clearFeatureBlock` operate on **both**
-`SectionKind.featureBlock` and `SectionKind.blockTextBody` (the set
-`_singleBlockSectionKinds`) — slot semantics are identical (0–1
-photo/memory block), so the block-text-body editor reuses them. The
-`blockTextBody` section's `textBlock` is **not** an editor slot; it's
-materialized fresh by `JournalRepository.materializeLayout`, so it
-never appears in `SectionDraft.slots`.
+`setFeatureBlock` fills/swaps a `SectionKind.featureBlock` slot
+(photo/memory only). `setBlockTextFloatBlock` fills/swaps a
+`SectionKind.blockTextBody` float slot and accepts **any** block type
+(GUS-46) — built-in, custom, or habit — via `_slotFromResult`.
+`clearFeatureBlock` empties **both** kinds (the set
+`_singleBlockSectionKinds`). The `blockTextBody` section's body
+`textBlock` is **not** an editor slot; it's materialized fresh by
+`JournalRepository.materializeLayout`, so it never appears in
+`SectionDraft.slots`.
 
 `blockOnly` (operates on the single implicit section):
 - `addBlock(result)` — append a fresh `BlockSlot`.

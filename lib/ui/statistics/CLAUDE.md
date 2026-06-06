@@ -46,7 +46,7 @@ statistics/
     still-locked Pro blocks + sections; picking one additionally unlocks
     it permanently.
   - **Pro users** → claims directly via `rewards.claimAsPro()` (no
-    picker — they own everything) and shows a confirmation SnackBar; they
+    picker — they own everything) and shows a confirmation toast; they
     also get the Quote block as downgrade insurance.
 
   Either way the card disappears and the AppBar badge on the journal

@@ -22,6 +22,7 @@ import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widge
 import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
@@ -122,6 +123,23 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
   Future<bool> _maybeSaveOnLeave() async {
     final vm = _viewModel;
     if (vm == null || !vm.isDirty) return true;
+
+    // Validate the name first. If the layout can't be saved (no name, or a
+    // duplicate), surface why with a toast and keep the user on the editor
+    // so they can fix it — there's nothing to "save" and no leave prompt.
+    final nameEmpty = vm.nameController.text.trim().isEmpty;
+    final canSave = !nameEmpty && !vm.nameConflict;
+    if (!canSave) {
+      showToast(
+        context,
+        nameEmpty
+            ? 'Add a name to save'
+            : 'A layout with this name already exists',
+        kind: ToastKind.error,
+      );
+      return false;
+    }
+
     final choice = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -148,20 +166,6 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       case 'discard':
         return true;
       case 'save':
-        if (vm.nameController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Add a name to save')));
-          return false;
-        }
-        if (vm.nameConflict) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A layout with this name already exists'),
-            ),
-          );
-          return false;
-        }
         await vm.save();
         return true;
       default:
@@ -812,9 +816,9 @@ class _FeatureBlockSectionBody extends StatelessWidget {
 }
 
 /// Editor body for a `blockTextBody` section: the float-block picker
-/// (photo/memory, identical slot machinery to `_FeatureBlockSectionBody`)
-/// laid out left of a read-only text preview, hinting the magazine
-/// float arrangement a materialized entry will show.
+/// (any block type — GUS-46 — via the general add-block sheet) laid out
+/// left of a read-only text preview, hinting the magazine float
+/// arrangement a materialized entry will show.
 class _BlockTextSectionBody extends StatelessWidget {
   const _BlockTextSectionBody({required this.vm, required this.sectionIndex});
 
@@ -823,13 +827,15 @@ class _BlockTextSectionBody extends StatelessWidget {
 
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
+    // Any block type is a valid float here (GUS-46) — use the general
+    // add-block sheet (built-in + custom + habit tabs), not the
+    // photo/memory-restricted feature-block picker.
     final picked = await showAddBlockSheet(
       context,
-      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
       title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+    vm.setBlockTextFloatBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override

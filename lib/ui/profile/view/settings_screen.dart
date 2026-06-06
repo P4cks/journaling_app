@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_nav_tile.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
@@ -400,15 +401,12 @@ Future<void> _confirmAndDeleteAllEntries(BuildContext context) async {
     context,
   ).journalRepository.deleteAllEntries();
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        deleted == 0
-            ? 'No entries to delete'
-            : 'Deleted $deleted entr${deleted == 1 ? 'y' : 'ies'}',
-      ),
-      duration: const Duration(seconds: 2),
-    ),
+  showToast(
+    context,
+    deleted == 0
+        ? 'No entries to delete'
+        : 'Deleted $deleted entr${deleted == 1 ? 'y' : 'ies'}',
+    kind: ToastKind.success,
   );
 }
 
@@ -420,15 +418,12 @@ Future<void> _generateSampleEntries(BuildContext context) async {
     context,
   ).journalRepository.debugGenerateSampleEntries();
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        created == 0
-            ? 'No entries created (those days already have entries)'
-            : 'Generated $created sample entr${created == 1 ? 'y' : 'ies'}',
-      ),
-      duration: const Duration(seconds: 2),
-    ),
+  showToast(
+    context,
+    created == 0
+        ? 'No entries created (those days already have entries)'
+        : 'Generated $created sample entr${created == 1 ? 'y' : 'ies'}',
+    kind: ToastKind.success,
   );
 }
 
@@ -445,15 +440,12 @@ Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
     context,
   ).layoutRepository.deleteAllLayouts();
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        deleted == 0
-            ? 'No layouts to delete'
-            : 'Deleted $deleted layout${deleted == 1 ? '' : 's'}; default restored',
-      ),
-      duration: const Duration(seconds: 2),
-    ),
+  showToast(
+    context,
+    deleted == 0
+        ? 'No layouts to delete'
+        : 'Deleted $deleted layout${deleted == 1 ? '' : 's'}; default restored',
+    kind: ToastKind.success,
   );
 }
 
@@ -464,11 +456,10 @@ Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
 Future<void> _resetStreakReward(BuildContext context) async {
   await AppDependencies.of(context).streakRewardSettings.reset();
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Streak reward reset — claim it again from Statistics'),
-      duration: Duration(seconds: 2),
-    ),
+  showToast(
+    context,
+    'Streak reward reset — claim it again from Statistics',
+    kind: ToastKind.success,
   );
 }
 
@@ -491,15 +482,12 @@ Future<void> _confirmAndResetEverything(BuildContext context) async {
   final deletedLayouts = await deps.layoutRepository.deleteAllLayouts();
   await deps.streakRewardSettings.reset();
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        'Reset: $deletedEntries entr${deletedEntries == 1 ? 'y' : 'ies'}, '
-        '$deletedLayouts layout${deletedLayouts == 1 ? '' : 's'}, '
-        'and the streak reward',
-      ),
-      duration: const Duration(seconds: 3),
-    ),
+  showToast(
+    context,
+    'Reset: $deletedEntries entr${deletedEntries == 1 ? 'y' : 'ies'}, '
+    '$deletedLayouts layout${deletedLayouts == 1 ? '' : 's'}, '
+    'and the streak reward',
+    kind: ToastKind.success,
   );
 }
 

@@ -56,7 +56,8 @@ journal/
   a full month view. Collapses to zero height when the keyboard is up.
 - **Layout change** is destructive (replaces the entry's sections
   list, re-materializing from the new layout). Confirmed via a dialog
-  before applying.
+  before applying. If no layouts exist, a "No layouts configured" toast
+  is shown instead of opening the picker (GUS-47).
 - **Swipe semantics** — left/right between adjacent pager pages
   (existing entries plus the trailing today page when today is empty).
   Skips empty *past* days. Selecting an empty past day in the calendar

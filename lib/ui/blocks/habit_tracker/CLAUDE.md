@@ -22,22 +22,37 @@ false). Typed wrapper:
   for title (`BlockWithTitle`) + icon (`carouselIconFor`, shared
   catalogue). Big `_HabitCheckBubble` toggles `completed` on tap in
   editable mode; `_StreakBadge` (flame + count) shows only when the
-  streak is > 0. Orphan / preview handling lives here (`_DeletedPlaceholder`).
+  streak is > 0; `_SevenDayStrip` (read-only 7-day history, GUS-51) shows
+  whenever the block has a real definition. The badge and strip sit on
+  **one Row, streak to the left of the strip** (GUS-53), beneath the
+  bubble. Orphan / preview handling lives here (`_DeletedPlaceholder`).
 
-## Streak rule
+## Streak rule & 7-day strip
 
-`_computeStreak` walks `JournalRepository.getAllEntries()` once,
+`_computeStats` walks `JournalRepository.getAllEntries()` **once**,
 building the set of normalized dates on which any habit block with this
 `definitionId` is `completed`, while simultaneously locating this
 block's own entry date by matching `block.id == data.id` (block ids are
 globally-unique uuids). The in-hand `completed` value overrides the
 anchor day's membership so an unsaved toggle is reflected immediately.
+It returns a `_HabitStats` (streak + the `completedDays` set + the
+`anchor`) so both the streak badge and the 7-day strip read from that
+single scan — do not add a second pass.
 
 The streak = consecutive completed days ending at the anchor date when
 today is crossed off, otherwise the run ending the day before (so the
 user still sees the streak they're about to lose). Day stepping uses
 `DateTime(y, m, d - 1)` (not `Duration(days: 1)`) to stay correct across
 DST boundaries — the membership set is keyed on normalized midnights.
+
+`_SevenDayStrip` renders the 7 days `[anchor-6 … anchor]` (oldest →
+newest), one `_DayDot` each, ticked when the day is in `completedDays`.
+It is **display-only** — anchored on the block's *entry* date (not the
+real "today"), so an older entry shows that entry's surrounding week. The
+big bubble stays the sole toggle, so the strip never writes across
+entries. Wrapped in a `FittedBox(scaleDown)` to fit narrow grid cells.
+The strip and the `_StreakBadge` share a single `Row` (badge first when
+streak > 0, then strip) — GUS-53.
 
 ## Modes
 
@@ -73,5 +88,7 @@ DST boundaries — the membership set is keyed on normalized midnights.
 ## When to update this file
 
 - The streak rule changes (anchor semantics, gap tolerance).
+- The 7-day strip's window or anchor semantics change, or it gains
+  interactivity (currently read-only).
 - A new orphan / preview branch is added.
 - The habit gains configurable fields beyond title + icon.

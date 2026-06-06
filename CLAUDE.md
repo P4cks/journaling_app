@@ -77,6 +77,17 @@ Work is tracked in Linear: workspace **GustoJournalingApp**, team prefix `GUS-` 
 - When you start implementing an issue, move it to **In Progress**; when the branch/PR is up, move it to **In Review**; on merge (with the user's agreement), move it to **Done**.
 - Reference the issue id in commit messages and PR titles so they link back, e.g. `feat: gate theming to Pro (GUS-26)`.
 
+## Check your branch / worktree before editing
+
+**Before making any changes, confirm you are on the intended branch and in
+the intended worktree.** Run `git branch --show-current` and `git worktree
+list` first. This repo uses multiple `.claude/worktrees/*` worktrees, so it
+is easy to start editing files that belong to a different working tree than
+the one you think you're in. We have been burned by changes landing directly
+on `main` instead of a feature branch — never commit feature work to `main`.
+If you find uncommitted work already sitting on `main`, create a new feature
+branch, move the changes there, commit, and open a PR back to `main`.
+
 ## Backwards-compatibility policy (pre-1.0)
 
 We are not yet 1.0. **Pre-existing users' Hive data is not load-bearing.** Removing a settings key, dropping a `BlockSettings` field, retiring a `BlockType`, or otherwise narrowing a persisted shape does **not** require a migration step or a read-fallback. Leave abandoned `settings` box keys on disk (they are harmless single strings) and stop reading them in code.
