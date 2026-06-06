@@ -51,6 +51,13 @@ Rule of thumb: if the change preserves the wire-level shape (new
 field with a default, or expanding an enum at the END), no bump is
 needed; otherwise bump.
 
+Example: `BlockType.habitTracker` (GUS-13) was **appended to the end**
+of the enum and `build_runner` re-ran — index-safe, so the box names
+stayed at `journalEntries_v6` / `journalLayouts_v6`. The per-entry
+habit content (`definitionId` + `completed`) lives in the untyped
+`JournalBlockData.contentJson` map, not in a generated adapter field,
+so it needed no schema work at all.
+
 The current box names are documented in [data/services/CLAUDE.md](../data/services/CLAUDE.md).
 Update both files when bumping.
 

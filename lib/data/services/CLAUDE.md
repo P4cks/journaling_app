@@ -52,7 +52,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     (`true`/`false`; absent → default `true`),
     `block.customCarousel.definitions` (JSON-encoded list of
     `CustomCarouselDefinition`s; absent means no user-defined
-    carousels yet), `block.wannado.items` (JSON-encoded list of
+    carousels yet), `block.habit.definitions` (JSON-encoded list of
+    `HabitDefinition`s — the user-defined habit "types" (title + icon)
+    referenced by `BlockType.habitTracker` blocks; absent means no
+    user-defined habits yet; mirrors the custom-carousel storage pair),
+    `block.wannado.items` (JSON-encoded list of
     `WannadoItem`s — the global wanna-do bucket list rendered by
     `SectionKind.wannado` sections; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
     default `true`; gates the expanded-block overlay vs in-place
@@ -157,6 +161,17 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     Caller owns id generation and uniqueness validation. Persisted as
     a JSON list; orphan-tolerant (delete doesn't cascade into layouts
     / entries — the widget renders a "deleted block" placeholder).
+  - `habits` (`List<HabitDefinition>`) — registry of user-defined
+    habit "types" (title + icon, each icon a `kCarouselIcons` name),
+    referenced by `BlockType.habitTracker` blocks via `definitionId`.
+    `addHabit`, `updateHabit`, `deleteHabit`, and `findHabit` mutate /
+    look up (each mutator notifies + `debugPrint`s). Caller owns id
+    generation and uniqueness validation. Persisted as a JSON list
+    (`block.habit.definitions`); orphan-tolerant — delete doesn't
+    cascade into layouts / entries; the widget renders a "deleted
+    block" placeholder. Mirrors the `customCarousels` pattern exactly.
+    Free/Pro split is by *combined count* with `customCarousels`
+    against `kFreeMaxCustomBlocks`, not a blanket flag.
   - `wannados` (`List<WannadoItem>`) — the user's **global** wanna-do
     bucket list (GUS-8), rendered by every `SectionKind.wannado`
     section as a rotating carousel. `addWannado`, `updateWannado`,

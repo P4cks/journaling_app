@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
@@ -399,6 +400,17 @@ class JournalRepository extends ChangeNotifier {
           id: _uuid.v4(),
           type: type,
           content: CustomCarouselBlockContent(definitionId: defId).toMap(),
+          visuals: visuals,
+        );
+      case BlockType.habitTracker:
+        // Carry the layout slot's definitionId through to the entry so
+        // the widget can resolve the registry at render time. Not
+        // completed yet — the user taps the checkbox to cross it off.
+        final defId = template.config['definitionId'] as String?;
+        return JournalBlockData.create(
+          id: _uuid.v4(),
+          type: type,
+          content: HabitBlockContent(definitionId: defId).toMap(),
           visuals: visuals,
         );
       case BlockType.moodTracker:

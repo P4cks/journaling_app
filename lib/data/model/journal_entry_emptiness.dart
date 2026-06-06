@@ -1,4 +1,5 @@
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
@@ -40,6 +41,7 @@ extension BlockTypeInteraction on BlockType {
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
         return true;
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
@@ -70,6 +72,8 @@ extension BlockTypeInteraction on BlockType {
 /// - `customCarousel` — no `selected` item picked yet. The
 ///   `definitionId` orphaning case (definition deleted) still counts
 ///   as empty: the user can't interact with a missing definition.
+/// - `habitTracker` — not crossed off yet (`completed == false`). The
+///   orphaned-definition case is also empty (nothing to interact with).
 ///
 /// Unknown block types are conservatively treated as **non-empty** so we never
 /// accidentally sweep something we don't yet understand.
@@ -100,6 +104,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !LocationBlockContent.fromMap(content).hasPin;
       case BlockType.customCarousel:
         return CustomCarouselBlockContent.fromMap(content).selected == null;
+      case BlockType.habitTracker:
+        return !HabitBlockContent.fromMap(content).completed;
     }
   }
 }

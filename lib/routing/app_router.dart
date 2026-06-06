@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart
 import 'package:journaling_app_rewrite/ui/layouts/view/layouts_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/block_settings_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/custom_block_editor_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/habit_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
 import 'package:journaling_app_rewrite/ui/subscription/view/subscription_screen.dart';
@@ -104,6 +105,17 @@ final GoRouter appRouter = GoRouter(
       name: RouteNames.editCustomBlock,
       builder: (context, state) =>
           CustomBlockEditorScreen(definitionId: state.pathParameters['id']),
+    ),
+    GoRoute(
+      path: Routes.newHabitBlock,
+      name: RouteNames.newHabitBlock,
+      builder: (context, state) => const HabitEditorScreen(),
+    ),
+    GoRoute(
+      path: Routes.editHabitBlock,
+      name: RouteNames.editHabitBlock,
+      builder: (context, state) =>
+          HabitEditorScreen(definitionId: state.pathParameters['id']),
     ),
   ],
 );

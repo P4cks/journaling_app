@@ -36,6 +36,17 @@ pushes these screens.
     no strict grapheme-cluster validation).
   - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
     layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
+- [habit_editor_screen.dart](habit_editor_screen.dart) — public
+  `HabitEditorScreen({String? definitionId})` (GUS-13). Create (`null`
+  id) or edit (existing id) a `HabitDefinition` (title + single icon).
+  Same draft + Cancel/Discard/Save-on-leave `PopScope` shape as the
+  custom-block editor but simpler: a title `TextField` (maxLength 40,
+  `errorText: vm.titleError`) + one icon-picker `InkWell` row (48×48
+  preview via `carouselIconFor`; `HugeIcons.strokeRoundedAdd01` when
+  unset). Constructs `HabitEditorViewModel` in `didChangeDependencies`.
+  Pushed via `/habit-block/new` or `/habit-block/edit/:id` from the
+  add-block sheet's Habits tab and the Block Settings "Habit Blocks"
+  section. Top-level `_showIconPicker` mirrors the custom-block editor's.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
@@ -97,6 +108,14 @@ pushes these screens.
     no longer gates; the button owns the paywall-at-cap.
   - Private `_CustomDefinitionRow` renders the per-definition body
     (title label + item count + Edit / Delete actions).
+  - Private `_HabitList` mirrors `_CustomCarouselList` for the Habit
+    Blocks section: subscribes to `BlockSettings` directly, renders a
+    stack of `_HabitDefinitionRow`s, the shared `AddCustomBlockButton`
+    (`label: 'Add habit'`) + `ProLimitHint` gating new habits at the
+    **shared** `kFreeMaxCustomBlocks` budget. Edit pushes
+    `/habit-block/edit/<id>` after the parent's `_maybeSaveOnLeave`.
+  - Private `_HabitDefinitionRow` renders the per-definition body
+    (icon + title + Edit / Delete actions).
 
 ## SettingsScreen composition
 

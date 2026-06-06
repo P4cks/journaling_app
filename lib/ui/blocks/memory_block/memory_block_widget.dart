@@ -310,6 +310,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.weatherApi:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }

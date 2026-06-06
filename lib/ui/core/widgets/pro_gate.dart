@@ -173,11 +173,17 @@ class AddCustomBlockButton extends StatelessWidget {
     required this.subscriptions,
     required this.currentCount,
     required this.onAddAllowed,
+    this.label = 'Add custom block',
   });
 
   final SubscriptionRepository subscriptions;
   final int currentCount;
   final VoidCallback onAddAllowed;
+
+  /// Button caption. Defaults to "Add custom block"; habit add paths
+  /// pass "Add habit". The free cap ([kFreeMaxCustomBlocks]) counts
+  /// carousels + habits together regardless.
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +217,7 @@ class AddCustomBlockButton extends StatelessWidget {
               ],
             )
           : AppIcon(HugeIcons.strokeRoundedPlusSign),
-      label: const Text('Add custom block'),
+      label: Text(label),
     );
   }
 }
