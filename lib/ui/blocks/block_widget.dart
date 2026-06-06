@@ -3,6 +3,7 @@ import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/custom_carousel_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/habit_tracker/habit_tracker_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/location_block/location_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/memory_block/memory_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/mood_tracker/mood_tracker_widget.dart';
@@ -163,6 +164,15 @@ class BlockWidget extends StatelessWidget {
           onChanged: onChanged,
           onInteractionLockChanged: onInteractionLockChanged,
           onRequestExitEdit: onRequestExitEdit,
+          onDoubleTap: onDoubleTap,
+          editing: editing,
+          expanded: expanded,
+        );
+      case BlockType.habitTracker:
+        return HabitTrackerWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
           onDoubleTap: onDoubleTap,
           editing: editing,
           expanded: expanded,

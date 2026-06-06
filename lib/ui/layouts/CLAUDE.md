@@ -193,6 +193,19 @@ how layouts materialize).
     overlay when locked. The screen wraps its body/FAB in a
     `ListenableBuilder` over `subscriptionRepository` so the lock clears
     live on purchase.
+  - **GUS-41 — Pro-only layouts lock when a user downgrades.**
+    `layoutHasProOnlyFeatures(layout)` (in `pro_gate.dart`) flags any
+    layout with a `featureBlock` / `blockTextBody` / `wannado` section,
+    a `weatherApi` / `quoteBlock` block, or >1 custom-carousel block.
+    `LayoutsScreen._openEditor` runs it for free users and, when true,
+    shows `_showProLayoutLockedDialog` (Cancel / Delete layout / Upgrade
+    to Pro) **instead of** opening the editor — never auto-deletes. The
+    add-block sheet's custom section greys + badges every custom-carousel
+    definition past the first (`kFreeMaxCustomBlocks`) for free users
+    (see [widgets/CLAUDE.md](widgets/CLAUDE.md)), and the Block-Settings
+    wanna-do list locks management for free users (see
+    [../profile/view/CLAUDE.md](../profile/view/CLAUDE.md)). Old entries
+    keep rendering every block/section — only editing/adding is gated.
   See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
   [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).
 - **`LayoutsScreen` refreshes its VM manually on push-pop** because

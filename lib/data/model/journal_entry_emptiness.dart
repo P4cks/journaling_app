@@ -1,4 +1,5 @@
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/location_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
@@ -40,6 +41,7 @@ extension BlockTypeInteraction on BlockType {
       case BlockType.photoBlock:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
+      case BlockType.habitTracker:
         return true;
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
@@ -74,6 +76,8 @@ extension BlockTypeInteraction on BlockType {
 /// - `customCarousel` — no `selected` item picked yet. The
 ///   `definitionId` orphaning case (definition deleted) still counts
 ///   as empty: the user can't interact with a missing definition.
+/// - `habitTracker` — not crossed off yet (`completed == false`). The
+///   orphaned-definition case is also empty (nothing to interact with).
 /// - `streakBlock` — never empty (it always renders the live streak);
 ///   non-interactive, so this classification never keeps an entry alive.
 ///
@@ -106,6 +110,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !LocationBlockContent.fromMap(content).hasPin;
       case BlockType.customCarousel:
         return CustomCarouselBlockContent.fromMap(content).selected == null;
+      case BlockType.habitTracker:
+        return !HabitBlockContent.fromMap(content).completed;
       case BlockType.streakBlock:
         // Always renders a live streak (even 0). Never "empty" — but it
         // is non-interactive, so this never keeps an entry alive anyway.

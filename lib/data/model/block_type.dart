@@ -13,5 +13,6 @@ enum BlockType {
   // entries on disk.
   locationBlock,
   customCarousel,
+  habitTracker,
   streakBlock,
 }

@@ -31,7 +31,7 @@ types:
         index: 4
   BlockType:
     typeId: 2
-    nextIndex: 12
+    nextIndex: 13
     fields:
       textBlock:
         index: 0
@@ -55,8 +55,10 @@ types:
         index: 9
       customCarousel:
         index: 10
-      streakBlock:
+      habitTracker:
         index: 11
+      streakBlock:
+        index: 12
   JournalLayout:
     typeId: 4
     nextIndex: 6

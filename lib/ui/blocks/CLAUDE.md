@@ -124,9 +124,9 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   Also exposes three getters used by the double-tap engage flow:
   - `usesEditMode` — **true for every block type.** Interactive blocks
     (text / prompt / todo, the three carousel types, photo / location /
-    memory) open their edit surface; pure-display blocks (quote,
-    weather-api, streak) still expand on double-tap so the user can read
-    them larger, with no editing affordance inside the route.
+    memory, habit tracker) open their edit surface; pure-display blocks
+    (quote, weather-api, streak) still expand on double-tap so the user
+    can read them larger, with no editing affordance inside the route.
   - `isActionBlock` — true for photo + memory. When the "expand on
     edit" setting is OFF, `MainJournalScreen._requestBlockEdit` fires
     `firePhotoBlockAction` / `fireMemoryBlockAction` immediately on
@@ -140,8 +140,10 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
     (currently `{weatherApi, quoteBlock}`); edit that set to change the
     free/Pro split — every other built-in block is free (GUS-34).
-    `customCarousel` is deliberately NOT in the set: custom blocks are
-    gated by *count* (`kFreeMaxCustomBlocks`, 1 free) not a blanket flag.
+    `customCarousel` and `habitTracker` are deliberately NOT in the
+    set: custom blocks are gated by *combined count*
+    (`kFreeMaxCustomBlocks`, 1 free across carousels + habits) not a
+    blanket flag.
     Read by the add-block sheet to grey + badge locked cells and present
     the paywall on tap (GUS-19/GUS-34). Pure UI gate — the
     repository/materializer never consult it.
@@ -214,6 +216,14 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   `CollapsibleCarouselBlock<CarouselItem>` over its items, or a
   "Deleted block" placeholder when the lookup fails. See
   [custom_carousel/CLAUDE.md](custom_carousel/CLAUDE.md).
+- [habit_tracker/habit_tracker_widget.dart](habit_tracker/habit_tracker_widget.dart) —
+  `HabitTrackerWidget` (GUS-13). Resolves `definitionId` against the
+  `BlockSettings.habits` registry; renders a big check bubble (toggles
+  the per-day `completed` flag) + the definition's icon/title + a
+  flame streak badge when the derived streak > 0, or a "Deleted block"
+  placeholder when the lookup fails. The streak is computed by scanning
+  `JournalRepository.getAllEntries()` — never stored. See
+  [habit_tracker/CLAUDE.md](habit_tracker/CLAUDE.md).
 - [streak_block/streak_block_widget.dart](streak_block/streak_block_widget.dart) —
   `StreakBlockWidget` (GUS-22). Display-only tile showing the streak
   **as of its own entry's date** large with the **best streak up to that

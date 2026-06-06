@@ -75,6 +75,16 @@ block content.
   (`selected == null` → empty). The shared `CarouselItem` /
   `CarouselItemKind` types live in
   [data/model/carousel_item.dart](../carousel_item.dart).
+- [habit_block_content.dart](habit_block_content.dart) — `HabitBlockContent { String? definitionId; bool completed }`.
+  Map shape: `{"definitionId": "uuid", "completed": true}` (`definitionId`
+  omitted when null; `completed` omitted when false — matches the
+  `TodoItem` falsey-omit style). `definitionId` resolves to a
+  [HabitDefinition](../habit_definition.dart) in the `BlockSettings`
+  registry; missing/orphan → widget shows a deleted placeholder.
+  `completed` is the per-day cross-off flag; the **streak** is derived
+  by the widget from all entries, never stored. Used by
+  `HabitTrackerWidget` and `JournalBlockEmptiness` (`!completed` → empty;
+  habit is user-interactive so an unchecked habit gets the entry swept).
 
 ## Implementation details
 
