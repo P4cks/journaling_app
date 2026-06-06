@@ -138,10 +138,12 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   blocks by design).
 
   **`SectionKind.blockTextBody`** → renders `BlockTextSectionWidget`
-  (GUS-9). `_buildSection` walks `section.blocks`, picking the first
-  `textBlock` and the first `photoBlock`/`memoryBlock` by type (order-
-  independent), and passes them as `textBlock` (required) + `floatBlock`
-  (nullable). Suppressed only if no `textBlock` is present (malformed).
+  (GUS-9). The float can be **any** block type now (GUS-46), so
+  `_buildSection` keys off materialization **order** instead of type:
+  the body text is always `section.blocks.last`, and the float (when
+  present) is `section.blocks.first` (`blocks.length > 1`). Type-based
+  lookup was dropped because a float that is itself a `textBlock` would
+  collide with the body. Suppressed only when `section.blocks` is empty.
   Wires `onRequestBlockEdit` (float block) + `onRequestTextSectionEdit`
   (text → expanded route) the same as the `featureBlock` + `text`
   cases. Editing is delegated to the expanded route (a `TextField`

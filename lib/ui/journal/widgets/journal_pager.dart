@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/entry_section.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -385,20 +384,17 @@ class _SectionsBody extends StatelessWidget {
           child: Divider(height: 1),
         );
       case SectionKind.blockTextBody:
-        // Two blocks: a float block (photo/memory) and a textBlock. Look
-        // each up by type so order is irrelevant. The text block always
-        // exists; the float block is null when none was configured.
-        JournalBlockData? textBlock;
-        JournalBlockData? floatBlock;
-        for (final b in section.blocks) {
-          if (b.type == BlockType.textBlock) {
-            textBlock ??= b;
-          } else if (b.type == BlockType.photoBlock ||
-              b.type == BlockType.memoryBlock) {
-            floatBlock ??= b;
-          }
-        }
-        if (textBlock == null) return const SizedBox.shrink();
+        // Materialized as `[if float present: floatBlock, bodyTextBlock]`
+        // — the body textBlock is always appended last, so the float
+        // (when present) is the block before it. The float can be ANY
+        // block type now (GUS-46), so we key off materialization order
+        // rather than block type: a float that is itself a textBlock
+        // would be ambiguous under a type-based lookup.
+        if (section.blocks.isEmpty) return const SizedBox.shrink();
+        final textBlock = section.blocks.last;
+        final floatBlock = section.blocks.length > 1
+            ? section.blocks.first
+            : null;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: BlockTextSectionWidget(

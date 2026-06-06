@@ -350,6 +350,29 @@ class LayoutEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Either fills an empty `blockTextBody` section's float slot, or swaps
+  /// the type of the existing slot. Accepts ANY block type (GUS-46) —
+  /// built-in, custom carousel, or habit — via [_slotFromResult], unlike
+  /// [setFeatureBlock] which restricts feature-block sections to
+  /// photo/memory. No-op if the section is not a `blockTextBody` section.
+  void setBlockTextFloatBlock(String sectionId, AddBlockResult result) {
+    final section = _sections.firstWhere((s) => s.id == sectionId);
+    if (section.kind != SectionKind.blockTextBody) return;
+    final slot = _slotFromResult(result);
+    // Swap-in-place no-op guard: skip when the same type + definition is
+    // already set (a fresh slot id would otherwise churn `isDirty`).
+    if (section.slots.length == 1 &&
+        section.slots.first.type == slot.type &&
+        section.slots.first.definitionId == slot.definitionId) {
+      return;
+    }
+    section.slots = [slot];
+    debugPrint(
+      '[LayoutEditorVM] setBlockTextFloatBlock $sectionId -> ${slot.type}',
+    );
+    notifyListeners();
+  }
+
   /// Empties a feature-block / block-text-body section. No-op for other
   /// section kinds.
   void clearFeatureBlock(String sectionId) {

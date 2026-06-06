@@ -816,9 +816,9 @@ class _FeatureBlockSectionBody extends StatelessWidget {
 }
 
 /// Editor body for a `blockTextBody` section: the float-block picker
-/// (photo/memory, identical slot machinery to `_FeatureBlockSectionBody`)
-/// laid out left of a read-only text preview, hinting the magazine
-/// float arrangement a materialized entry will show.
+/// (any block type — GUS-46 — via the general add-block sheet) laid out
+/// left of a read-only text preview, hinting the magazine float
+/// arrangement a materialized entry will show.
 class _BlockTextSectionBody extends StatelessWidget {
   const _BlockTextSectionBody({required this.vm, required this.sectionIndex});
 
@@ -827,13 +827,15 @@ class _BlockTextSectionBody extends StatelessWidget {
 
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
+    // Any block type is a valid float here (GUS-46) — use the general
+    // add-block sheet (built-in + custom + habit tabs), not the
+    // photo/memory-restricted feature-block picker.
     final picked = await showAddBlockSheet(
       context,
-      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
       title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+    vm.setBlockTextFloatBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override

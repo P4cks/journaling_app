@@ -178,16 +178,17 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   See [header_section/CLAUDE.md](header_section/CLAUDE.md).
 - [block_text_section/block_text_section_widget.dart](block_text_section/block_text_section_widget.dart) —
   `BlockTextSectionWidget`. Renders a `SectionKind.blockTextBody`
-  section (GUS-9): a photo/memory block floated top-left with text
-  wrapping around it over **multiple** lines (a `TextPainter` measures
-  how much fits beside the block, then splits the text into a `Row`
-  beside it + full-width remainder below — NOT a `Text.rich`
+  section (GUS-9): a block of **any type** (GUS-46) floated top-left
+  with text wrapping around it over **multiple** lines (a `TextPainter`
+  measures how much fits beside the block, then splits the text into a
+  `Row` beside it + full-width remainder below — NOT a `Text.rich`
   `WidgetSpan`, which only wraps the first line). The float block is
   sized to a real grid tile (`(maxWidth-44)/2`). In editable mode a
   tap on the text opens the expanded route (editing is delegated — a
   `TextField` can't wrap around the inline block). Takes the two
-  blocks separately (`floatBlock` nullable, `textBlock` required). See
-  [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
+  blocks separately (`floatBlock` nullable, `textBlock` required); the
+  pager resolves them by materialization order (body = last block), not
+  type. See [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
   `WannadoSectionWidget`. Renders a `SectionKind.wannado` section
   (GUS-8, PRO): a **vertical auto-rotating carousel** over the user's
