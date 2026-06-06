@@ -80,7 +80,7 @@ restore_branch() { git checkout --quiet "$start_branch" 2>/dev/null || true; }
 trap restore_branch EXIT
 
 # --- get the bump commit onto main (if requested) ---
-info "Switching to $SRC_BRANCH…"
+info "Switching to $SRC_BRANCH ..."
 run git checkout "$SRC_BRANCH"
 if [ "$pull" -eq 1 ]; then
   info "Pulling $SRC_BRANCH…"
