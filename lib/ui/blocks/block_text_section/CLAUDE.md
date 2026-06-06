@@ -38,17 +38,29 @@ flows full-width beneath it. This is done by **measuring**, NOT by a
   reintroduce the old `* 0.42` proportional size; it did NOT match a
   grid tile.
 - `_buildFloatWrap` lays the text out with a `TextPainter` at the
-  **narrow beside-width** (`contentWidth - blockSize - 12`) and calls
-  `getPositionForOffset(Offset(0, blockSize))` to find the character
-  offset where the text passes the block's bottom (GUS-43: the split
-  height is the block's own height `blockSize`, NOT `blockSize +
-  _bottomGap` — the `_bottomGap` is padding *below* the block, so
-  including it pushed the split one line too far and left a line of
-  beside-text dangling level with the block's bottom margin). Because
-  `x == 0`, that offset always snaps to the **start of a line**, so the
-  split lands on a clean line boundary. The text is then split:
+  **narrow beside-width** (`contentWidth - blockSize - 12`) and walks
+  `painter.computeLineMetrics()`, accumulating each line's height, to
+  find the first line whose **top** is `>= blockSize` (the block's own
+  height; `_bottomGap` is padding *below* the block and deliberately
+  excluded). That line — and everything after it — flows full-width
+  below; the lines before it stay beside the block. The split character
+  offset is read via `getPositionForOffset(Offset(0, lineTop +
+  height/2))`; because `x == 0` it snaps to the **start of that line**,
+  so the split lands on a clean line boundary. The text is then split:
   - `beside` → rendered in a `Row` next to the block (`Expanded` text).
   - `below` → rendered full-width underneath the `Row`.
+  - **Why walk line metrics instead of one `getPositionForOffset(
+    Offset(0, blockSize))`?** (GUS-43, two rounds.) That single call
+    returns the line *containing* `y = blockSize`. A line whose top is
+    still beside the block but whose bottom dips past it (e.g. top
+    140 px, block 150 px) gets pushed into the below region — wasting
+    the space to its right. That was the reported bug ("the last line
+    is always rendered underneath the block even if there's still space
+    to the right"). Tweaking the offset (`blockSize` vs `blockSize +
+    _bottomGap`) doesn't help: both land *inside* that straddling line.
+    The line-metrics walk splits on the first line whose **top** clears
+    the block, keeping the straddling line beside. Don't collapse it
+    back to a single `getPositionForOffset`.
 - Guard: when `besideWidth < 48` (block ≈ as wide as the section, e.g.
   a very narrow viewport) it falls back to stacking the block above
   full-width text instead of cramming text into a sliver.
@@ -95,6 +107,14 @@ same way (double-tap only when editable && `usesEditMode`).
   …))`.** Using a non-zero `x` would snap to the *end* of the line at
   that height and could split mid-line, leaving a ragged seam between
   the beside text and the below text. Keep `x == 0`.
+- **The beside/below boundary is chosen by walking
+  `computeLineMetrics()`, not by a single `getPositionForOffset(
+  Offset(0, blockSize))`.** The single call returns the line
+  *containing* `blockSize` and pushes a line whose top is still beside
+  the block into the below region (GUS-43 bug: last beside line dropped
+  underneath despite room to its right). Split on the first line whose
+  **top** is `>= blockSize`. Don't "simplify" it back to one
+  `getPositionForOffset` call.
 - **Editing is delegated, not in place.** A `TextField` can't flow
   around the inline block, and the stable in-place layout (block-left +
   narrow field-right) reflows the text on blur. So the widget is
