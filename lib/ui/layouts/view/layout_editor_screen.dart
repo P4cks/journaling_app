@@ -521,6 +521,7 @@ class _CustomBody extends StatelessWidget {
     final picked = await showAddSectionSheet(
       context,
       subscriptions: subscriptions,
+      rewards: AppDependencies.of(context).streakRewardSettings,
     );
     if (picked == null) return;
     vm.addSection(picked);

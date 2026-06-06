@@ -126,6 +126,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.customCarousel;
       case 11:
         return BlockType.habitTracker;
+      case 12:
+        return BlockType.streakBlock;
       default:
         return BlockType.textBlock;
     }
@@ -158,6 +160,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(10);
       case BlockType.habitTracker:
         writer.writeByte(11);
+      case BlockType.streakBlock:
+        writer.writeByte(12);
     }
   }
 

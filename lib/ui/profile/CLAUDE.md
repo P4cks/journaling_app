@@ -74,9 +74,12 @@ Settings contains:
    client cancel API), **Generate sample entries** (GUS-35 — a
    non-destructive action that fills ~400 past days with random mood +
    text entries so the statistics charts have data to render), surface
-   override, and HSL free-pick for secondary/accent. (The former GUS-10
-   per-block input-limit tuning tiles were removed when the char-cap
-   scaffold was deleted.)
+   override, HSL free-pick for secondary/accent, **Reset streak reward**
+   (GUS-22 — non-destructive; calls `StreakRewardSettings.reset()` so the
+   7-day milestone is claimable again for testing) and **Reset everything**
+   (destructive, confirm-gated — wipes all entries + layouts and resets the
+   streak reward in one shot). (The former GUS-10 per-block input-limit
+   tuning tiles were removed when the char-cap scaffold was deleted.)
 
 Block-settings is rendered inline by `BlockSettingsScreen` —
 sections: **Prompt Block** (the prompt list + the Random Prompts

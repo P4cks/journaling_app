@@ -45,6 +45,12 @@ journal/
   corresponding screens). The Statistics icon replaced the former
   Entries icon; `/entries` is still reachable by URL but no AppBar
   action links to it.
+  - **Streak-reward dot (GUS-22).** The Statistics action is wrapped in
+    a `ListenableBuilder` over `Listenable.merge([journalRepository,
+    streakRewardSettings])` that recomputes `computeStreak(...)` and, when
+    `streakRewardSettings.isRewardUnclaimed(streak)`, wraps the icon in a
+    `Badge` (a small dot). Merging both notifiers means the dot clears
+    the instant the reward is claimed on the Statistics screen.
 - **Bottom calendar bar** — `CalendarBottomBar`. Sticky compact week
   strip; the trailing month-icon opens a draggable bottom sheet with
   a full month view. Collapses to zero height when the keyboard is up.

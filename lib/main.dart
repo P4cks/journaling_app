@@ -16,6 +16,7 @@ import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
@@ -48,6 +49,7 @@ void main() async {
   final layoutRepository = LayoutRepository(layoutStorage, settingsStorage);
   final blockSettings = BlockSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
+  final streakRewardSettings = StreakRewardSettings(settingsStorage);
   final journalRepository = JournalRepository(
     entryStorage,
     layoutRepository,
@@ -78,6 +80,7 @@ void main() async {
       debugSettings: debugSettings,
       themeSettings: themeSettings,
       blockSettings: blockSettings,
+      streakRewardSettings: streakRewardSettings,
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
@@ -117,6 +120,7 @@ class MyApp extends StatefulWidget {
     required this.debugSettings,
     required this.themeSettings,
     required this.blockSettings,
+    required this.streakRewardSettings,
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
@@ -129,6 +133,7 @@ class MyApp extends StatefulWidget {
   final DebugSettings debugSettings;
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
+  final StreakRewardSettings streakRewardSettings;
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
@@ -174,6 +179,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugSettings: widget.debugSettings,
       themeSettings: widget.themeSettings,
       blockSettings: widget.blockSettings,
+      streakRewardSettings: widget.streakRewardSettings,
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,

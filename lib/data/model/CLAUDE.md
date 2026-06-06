@@ -85,11 +85,17 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
-  entries on disk. Adding a new variant requires (a) a wrapper in
-  `block_content/`, (b) a widget under `lib/ui/blocks/<type>/`,
+  entries on disk. `streakBlock` (GUS-22, last) is the display-only
+  current/best-streak tile unlocked at the 7-day milestone for everyone
+  (free + Pro); it carries **no per-entry content** (reads `computeStreak`
+  live), so its wrapper step is satisfied by an empty `const {}` content
+  map rather than a `block_content/` class.
+  Adding a new variant requires (a) a wrapper in
+  `block_content/` (unless content-free, like `streakBlock`),
+  (b) a widget under `lib/ui/blocks/<type>/`,
   (c) cases in [block_widget.dart](../../ui/blocks/block_widget.dart),
   [block_type_display.dart](../../ui/blocks/block_type_display.dart),
   [journal_entry_emptiness.dart](journal_entry_emptiness.dart) — both
@@ -129,9 +135,11 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
     from explicit user action. User-interactive blocks (text, mood,
     weatherManual, prompt, todo, photo, location, customCarousel,
     habitTracker) keep an entry alive;
-    auto-seeded blocks (quote, memory, weatherApi) populate themselves
-    from APIs / repo state and must NOT keep an otherwise-untouched
-    entry alive. **Every new `BlockType` MUST be classified here** —
+    auto-seeded blocks (quote, memory, weatherApi, streakBlock) populate
+    themselves from APIs / repo state and must NOT keep an
+    otherwise-untouched entry alive (`streakBlock` reads the live streak —
+    a streak-only entry is genuinely empty and stays sweepable).
+    **Every new `BlockType` MUST be classified here** —
     see the doc comment for the rule of thumb.
   - `JournalBlockData.isEmpty` — per-type emptiness; unknown types are
     conservatively treated as **non-empty** so we never sweep something

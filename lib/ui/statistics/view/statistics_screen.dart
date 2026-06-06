@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/streak_stat_card.dart';
@@ -9,6 +10,7 @@ import 'package:journaling_app_rewrite/ui/statistics/widgets/mood_distribution_c
 import 'package:journaling_app_rewrite/ui/statistics/widgets/mood_over_time_chart.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/stat_range_selector.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/stats_empty_state.dart';
+import 'package:journaling_app_rewrite/ui/statistics/widgets/streak_reward_card.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/summary_numbers_card.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   StatisticsViewModel? _viewModel;
   SubscriptionRepository? _subscriptions;
+  StreakRewardSettings? _rewards;
 
   @override
   void didChangeDependencies() {
@@ -28,6 +31,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (_viewModel == null) {
       final deps = AppDependencies.of(context);
       _subscriptions = deps.subscriptionRepository;
+      _rewards = deps.streakRewardSettings;
       _viewModel = StatisticsViewModel(repository: deps.journalRepository);
       _viewModel!.addListener(_onChanged);
     }
@@ -79,6 +83,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SliverToBoxAdapter(child: SectionHeader(label: 'Streak')),
             SliverToBoxAdapter(child: StreakStatCard(streak: vm.streak)),
+            SliverToBoxAdapter(
+              child: ListenableBuilder(
+                listenable: Listenable.merge([_rewards!, _subscriptions!]),
+                builder: (context, _) => StreakRewardCard(
+                  streak: vm.streak,
+                  rewards: _rewards!,
+                  subscriptions: _subscriptions!,
+                ),
+              ),
+            ),
             const SliverToBoxAdapter(child: SectionHeader(label: 'Mood')),
             SliverToBoxAdapter(
               child: MoodDistributionChart(distribution: vm.moodDistribution),

@@ -15,8 +15,8 @@ screen-specific.
   `AppDependencies extends InheritedWidget`. The DI root. Holds
   `AuthRepository`, `JournalRepository`, `LayoutRepository`,
   `SubscriptionRepository`, `DebugSettings`, `ThemeSettings`,
-  `BlockSettings`, `QuoteService`, `WeatherService`, and
-  `PhotoStorageService`. Accessed via
+  `BlockSettings`, `StreakRewardSettings`, `QuoteService`,
+  `WeatherService`, and `PhotoStorageService`. Accessed via
   `AppDependencies.of(context)`. The static accessor `assert`s that
   an ancestor exists — failing fast in development is better than
   mysterious nulls.

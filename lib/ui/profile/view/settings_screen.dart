@@ -237,6 +237,33 @@ class SettingsScreen extends StatelessWidget {
                               ),
                               onTap: () => _confirmAndDeleteAllLayouts(context),
                             ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedGift,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Reset streak reward'),
+                              subtitle: const Text(
+                                'Clear the claimed reward so the 7-day '
+                                'milestone is claimable again.',
+                              ),
+                              onTap: () => _resetStreakReward(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
+                                HugeIcons.strokeRoundedRefresh,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Reset everything',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe all entries + layouts and reset the '
+                                'streak reward. Cannot be undone.',
+                              ),
+                              onTap: () => _confirmAndResetEverything(context),
+                            ),
                           ],
                         );
                       },
@@ -426,6 +453,52 @@ Future<void> _confirmAndDeleteAllLayouts(BuildContext context) async {
             : 'Deleted $deleted layout${deleted == 1 ? '' : 's'}; default restored',
       ),
       duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+/// Debug action: clear the streak-reward state so the 7-day milestone
+/// becomes claimable again (re-test the reward flow). Non-destructive to
+/// journal content — only resets the reward's "claimed" derivation +
+/// unlocked-item gating, so no confirm dialog.
+Future<void> _resetStreakReward(BuildContext context) async {
+  await AppDependencies.of(context).streakRewardSettings.reset();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Streak reward reset — claim it again from Statistics'),
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
+/// Debug action: nuke all test data in one shot — every entry, every
+/// layout (a fresh default is re-seeded), and the streak-reward state.
+/// Destructive: behind a confirm dialog.
+Future<void> _confirmAndResetEverything(BuildContext context) async {
+  final ok = await _confirmDestructive(
+    context,
+    title: 'Reset everything?',
+    message:
+        'This deletes every journal entry and every layout (a fresh '
+        '"Default" layout is recreated) and resets the streak reward. This '
+        'cannot be undone.',
+    confirmLabel: 'Reset everything',
+  );
+  if (!ok || !context.mounted) return;
+  final deps = AppDependencies.of(context);
+  final deletedEntries = await deps.journalRepository.deleteAllEntries();
+  final deletedLayouts = await deps.layoutRepository.deleteAllLayouts();
+  await deps.streakRewardSettings.reset();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        'Reset: $deletedEntries entr${deletedEntries == 1 ? 'y' : 'ies'}, '
+        '$deletedLayouts layout${deletedLayouts == 1 ? '' : 's'}, '
+        'and the streak reward',
+      ),
+      duration: const Duration(seconds: 3),
     ),
   );
 }
