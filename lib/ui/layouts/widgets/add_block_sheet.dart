@@ -190,7 +190,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
               _buildCustomSection(
                 settings: settings,
                 subscriptions: subscriptions,
-
+                isPro: isPro,
               )
             else
               _buildHabitSection(
@@ -198,7 +198,6 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 subscriptions: subscriptions,
 
               ),
-            isPro: isPro,
           ],
         );
       },
