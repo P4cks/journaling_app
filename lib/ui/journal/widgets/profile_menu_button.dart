@@ -140,14 +140,14 @@ class ProfileMenuButton extends StatelessWidget {
               value: 'layouts',
               child: _MenuRow(
                 icon: HugeIcons.strokeRoundedGrid,
-                label: 'Layouts',
+                label: 'Manage Layouts',
               ),
             ),
             PopupMenuItem<String>(
               value: 'block-settings',
               child: _MenuRow(
                 icon: HugeIcons.strokeRoundedFilterHorizontal,
-                label: 'Block settings',
+                label: 'Manage Blocks',
               ),
             ),
             if (isPro) ...[
