@@ -4,7 +4,7 @@ One `BlockType.memoryBlock` block. Surfaces a single, locked-in
 memory: a random non-empty block from a past entry, displayed in
 miniature with a "from <date>" caption and tap-to-navigate. Content
 shape:
-`{"sourceEntryDate": "yyyy-MM-dd", "sourceBlockId": "...", "sourceType": "textBlock|moodTracker", "snapshotJson": "..."}`.
+`{"sourceEntryDate": "yyyy-MM-dd", "sourceBlockId": "...", "sourceType": "textBlock|moodTracker|photoBlock|promptBlock", "snapshotJson": "..."}`.
 Typed wrapper:
 [MemoryBlockContent](../../../data/model/block_content/memory_block_content.dart).
 
@@ -18,9 +18,14 @@ Typed wrapper:
 
 - **First build with unseeded content** → asks
   [`JournalRepository.pickRandomEligibleBlock`](../../../data/repositories/journal_repository.dart)
-  for a non-empty block of one of the *eligible* types (currently
-  `textBlock`, `moodTracker`, and `photoBlock`) from any entry
-  strictly before today. Self-referential memory blocks are excluded
+  for a non-empty block of one of the *eligible* types from any entry
+  strictly before today. The eligible set is user-configurable in
+  Block-settings → Memory; the selectable list is
+  `_MemoryEligibleTypesPicker._supportedTypes` (`textBlock`,
+  `moodTracker`, `photoBlock`, `promptBlock`), and `textBlock` /
+  `moodTracker` / `photoBlock` are on by default (`promptBlock` opt-in
+  — see `BlockSettings.defaultMemoryEligibleTypes`).
+  Self-referential memory blocks are excluded
   by the eligibility set, not by id. Photos from 2×2 feature-section
   photo blocks are eligible too — they snapshot the same way (path
   + JSON content) and render in this 1×1 tile as a cropped thumbnail.
@@ -40,6 +45,8 @@ Typed wrapper:
 - **Body** — switches on `sourceType`:
   - `textBlock` → scrollable `Text` with the snapshot's text.
   - `moodTracker` → large centred emoji.
+  - `promptBlock` → scrollable column: the prompt question (italic,
+    muted) above the user's answer text.
   - `photoBlock` → `Image.file(path)` clipped with a rounded corner,
     filling the tile with `BoxFit.cover`. Missing-path / read-failure
     falls through an `errorBuilder` to a dimmed italic "Photo missing"
@@ -60,9 +67,10 @@ wrapper on the decoded map.
 
 ## Gotchas
 
-- **Don't widen `_eligibleTypes` without updating `_renderSnapshot`.**
-  Adding a new type to the set without a matching `switch` case results
-  in the fallback "Memory" being shown — confusing.
+- **Don't widen `_MemoryEligibleTypesPicker._supportedTypes` without
+  updating `_renderSnapshot`.** Adding a new selectable type without a
+  matching `switch` case results in the fallback "Memory" being shown —
+  confusing.
 - **Eligibility uses `JournalBlockEmptiness`** so e.g. an empty text
   block from a past entry never surfaces as a memory.
 - **`MemoryBlockContent.isSeeded`** is the emptiness check, which means

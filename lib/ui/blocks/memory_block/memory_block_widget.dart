@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/memory_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/mood_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
@@ -270,6 +271,26 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
         return Center(
           child: Text(emoji ?? '—', style: const TextStyle(fontSize: 48)),
         );
+      case BlockType.promptBlock:
+        final prompt = PromptBlockContent.fromMap(decoded);
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (prompt.prompt.isNotEmpty) ...[
+                Text(
+                  prompt.prompt,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+              Text(prompt.answer, style: theme.textTheme.bodySmall),
+            ],
+          ),
+        );
       case BlockType.photoBlock:
         final path = PhotoBlockContent.fromMap(decoded).photoPath;
         if (path == null || path.isEmpty) {
@@ -299,11 +320,11 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
             ),
           ),
         );
-      // Other types aren't currently picked (see `_eligibleTypes`).
-      // Render a generic placeholder if the eligibility set is widened
-      // later but this widget hasn't been updated.
+      // Other types aren't currently picked (see the Block-settings
+      // Memory picker's `_supportedTypes`). Render a generic
+      // placeholder if the eligibility set is widened later but this
+      // widget hasn't been updated.
       case BlockType.weatherManual:
-      case BlockType.promptBlock:
       case BlockType.todoBlock:
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
