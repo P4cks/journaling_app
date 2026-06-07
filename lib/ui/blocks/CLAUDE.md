@@ -17,9 +17,12 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [chrome/block_chrome.dart](chrome/block_chrome.dart) — `BlockChrome`,
   replaces the old `post_it_block.dart` and the `PostItBlock` class.
   Pure-theming chrome — wraps any block content in the rounded card
-  with rotation / offset / palette colour driven by
-  `themeSettings.postItModeEnabled`. **No animation, gesture, or
-  interaction logic is gated on the post-it flag** — that's the
+  with rotation / offset / palette colour, each driven by its own
+  independent toggle (`themeSettings.blockRotationEnabled` /
+  `.blockOffsetEnabled` / `.blockColorEnabled`; GUS-58 split the
+  former single `postItModeEnabled` master). Each effect applies
+  separately; all three off → flat card. **No animation, gesture, or
+  interaction logic is gated on these flags** — that's the
   central rewrite invariant. Renders a 2 px accent outline ONLY when
   `host == BlockHostKind.grid && isEditing`; the expanded route reads
   `host: expanded` so the outline is suppressed (the blurred backdrop
@@ -259,8 +262,8 @@ animations affect the grid's RenderBoxes or insertion-index math:
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.
-  Skipped when `postItModeEnabled` is false (classic mode stays
-  still).
+  Runs regardless of the post-it toggles — the mount animation is a
+  structural affordance, not a theme decoration.
 - **Delete**: when `didUpdateWidget` notices a block id has gone
   missing, the tile's last-known `Rect` is snapshotted into a
   `_PendingDelete` and rendered as an overlay ghost above the grid.

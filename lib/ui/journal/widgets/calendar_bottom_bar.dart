@@ -75,7 +75,7 @@ Color _cellColor(
   ThemeSettings themeSettings,
   ColorScheme scheme,
 ) {
-  if (!themeSettings.postItModeEnabled) return scheme.primary;
+  if (!themeSettings.blockColorEnabled) return scheme.primary;
   return _dayPaletteColor(day, themeSettings.postItPalette) ?? scheme.primary;
 }
 
