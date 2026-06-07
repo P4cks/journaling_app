@@ -23,19 +23,19 @@ pushes these screens.
   (`null` id) or edit (existing id) a `CustomCarouselDefinition`.
   Same draft + Cancel/Discard/Save-on-leave shape as the layout
   editor and the block-settings screen. Body: title `TextField` +
-  `ReorderableListView` of items + "Add emoji" / "Add icon"
-  outlined buttons. Pushed via `/custom-block/new` or
-  `/custom-block/edit/:id` — no UI entry point yet (lands with the
-  Add-Block sheet integration and Block Settings sections in the
-  next commits).
+  `ReorderableListView` of items + a single "Add item" outlined
+  button. Pushed via `/custom-block/new` or `/custom-block/edit/:id`.
   - Private `_ItemRow` — `Card` with leading preview (`Text` for
     emoji / `AppIcon` for icon), label, kind subtitle, X-remove,
     and a `ReorderableDragStartListener` drag handle.
-  - Private `_AddEmojiDialog` — single-line `TextField` with a
-    cancel / add pair. Length-capped at 16 chars (sanity bound;
-    no strict grapheme-cluster validation).
-  - Top-level `_showIconPicker` — modal sheet over `kCarouselIcons`,
-    layout mirrors [layout_icon_picker.dart](../../layouts/widgets/layout_icon_picker.dart).
+  - `_addItem` — opens the shared
+    [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
+    with `allowEmoji: true` over `kCarouselIcons`; an emoji pick
+    becomes `CarouselItem.emoji(...)`, an icon pick
+    `CarouselItem.icon(...)` (GUS-44). Replaced the former separate
+    "Add emoji" (typed into an `_AddEmojiDialog` `TextField`) and
+    "Add icon" buttons — both that dialog and the local icon-picker
+    sheet are gone.
 - [habit_editor_screen.dart](habit_editor_screen.dart) — public
   `HabitEditorScreen({String? definitionId})` (GUS-13). Create (`null`
   id) or edit (existing id) a `HabitDefinition` (title + single icon).
@@ -46,7 +46,12 @@ pushes these screens.
   unset). Constructs `HabitEditorViewModel` in `didChangeDependencies`.
   Pushed via `/habit-block/new` or `/habit-block/edit/:id` from the
   add-block sheet's Habits tab and the Block Settings "Habit Blocks"
-  section. Top-level `_showIconPicker` mirrors the custom-block editor's.
+  section. `_pickIcon` opens the shared
+  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
+  (icon-only — `allowEmoji` defaults false) over `kCarouselIcons`,
+  passing `selectedIconName: vm.iconName`, and writes back the picked
+  `PickerIconResult.name` (GUS-44; the former local `_showIconPicker`
+  sheet is gone).
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
