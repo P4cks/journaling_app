@@ -184,7 +184,7 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
                 itemCount: vm.items.length,
-                onReorder: vm.moveItem,
+                onReorderItem: vm.moveItem,
                 itemBuilder: (context, index) {
                   final item = vm.items[index];
                   return _ItemRow(
