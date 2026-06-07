@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_c
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_emoji_picker.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/habit_editor_view_model.dart';
 
 /// Create / edit a `HabitDefinition`. Mirrors `CustomBlockEditorScreen`'s
@@ -103,9 +104,17 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
   Future<void> _pickIcon() async {
     final vm = _viewModel;
     if (vm == null) return;
-    final iconName = await _showIconPicker(context);
-    if (iconName == null) return;
-    vm.setIconName(iconName);
+    final result = await showIconEmojiPicker(
+      context,
+      title: 'Pick an icon',
+      selectedIconName: vm.iconName,
+      icons: [
+        for (final i in kCarouselIcons)
+          PickerIcon(name: i.name, icon: i.icon, label: i.label),
+      ],
+    );
+    if (result is! PickerIconResult) return;
+    vm.setIconName(result.name);
   }
 
   @override
@@ -209,77 +218,6 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
             ),
             const SizedBox(height: 32),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Modal-sheet picker over the curated [kCarouselIcons]. Returns the
-/// chosen icon's stable `name`, or `null` on dismiss. Mirrors the
-/// custom-block editor's icon picker.
-Future<String?> _showIconPicker(BuildContext context) {
-  return showModalBottomSheet<String>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Pick an icon',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
-                  for (final icon in kCarouselIcons)
-                    _PickerTile(
-                      icon: icon,
-                      onTap: () => Navigator.of(sheetContext).pop(icon.name),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _PickerTile extends StatelessWidget {
-  const _PickerTile({required this.icon, required this.onTap});
-
-  final CarouselIcon icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: icon.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          alignment: Alignment.center,
-          child: AppIcon(icon.icon, size: 28),
         ),
       ),
     );

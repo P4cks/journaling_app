@@ -111,16 +111,15 @@ class CustomBlockEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// `ReorderableListView` semantics: when moving forward, `newIndex`
-  /// arrives one past the source slot (because the source isn't
-  /// removed first). Adjust here, not at the call site.
+  /// Wired to `ReorderableListView.onReorderItem`, which already
+  /// adjusts `newIndex` for the removed source item — so this is a
+  /// plain `removeAt + insert` with no further translation.
   void moveItem(int oldIndex, int newIndex) {
     if (oldIndex < 0 || oldIndex >= _items.length) return;
-    final adjusted = newIndex > oldIndex ? newIndex - 1 : newIndex;
-    if (adjusted == oldIndex) return;
+    if (newIndex == oldIndex) return;
     final list = [..._items];
     final item = list.removeAt(oldIndex);
-    list.insert(adjusted, item);
+    list.insert(newIndex, item);
     _items = list;
     notifyListeners();
   }

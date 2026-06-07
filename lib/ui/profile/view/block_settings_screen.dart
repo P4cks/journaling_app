@@ -201,6 +201,7 @@ class _MemoryEligibleTypesPicker extends StatelessWidget {
     BlockType.textBlock,
     BlockType.moodTracker,
     BlockType.photoBlock,
+    BlockType.promptBlock,
   ];
 
   @override
