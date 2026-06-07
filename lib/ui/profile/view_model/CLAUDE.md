@@ -15,9 +15,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     (`List<CarouselItem>`) drafts; snapshot on construct, re-snapshot
     after `save()`.
   - `addItem`, `removeItemAt`, `moveItem` mutate the draft list.
-    `moveItem` adjusts for `ReorderableListView`'s "newIndex one past
-    source when moving forward" semantics so callers can pass the
-    raw indices.
+    `moveItem` is a plain `removeAt + insert` — it's wired to
+    `ReorderableListView.onReorderItem` (NOT the deprecated
+    `onReorder`), which hands over a `newIndex` already adjusted for
+    the removed source item, so no manual `newIndex > oldIndex`
+    correction is needed.
   - `titleError` — empty title OR case-insensitive title conflict
     with another definition in the registry. Always blocks save when
     empty; the error shows inline from first open so the requirement
