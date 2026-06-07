@@ -422,6 +422,7 @@ class JournalRepository extends ChangeNotifier {
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
       case BlockType.photoBlock:
+      case BlockType.videoBlock:
       case BlockType.locationBlock:
       case BlockType.streakBlock:
         return JournalBlockData.create(

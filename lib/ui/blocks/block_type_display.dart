@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/quote_block_cont
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/video_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
@@ -22,6 +23,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 const Set<BlockType> kProOnlyBlockTypes = {
   BlockType.weatherApi, // "Weather (live)"
   BlockType.quoteBlock, // "Quote of the day"
+  BlockType.videoBlock, // "Video" (GUS-16)
 };
 
 extension BlockTypeDisplay on BlockType {
@@ -53,6 +55,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Habit';
       case BlockType.streakBlock:
         return 'Streak';
+      case BlockType.videoBlock:
+        return 'Video';
     }
   }
 
@@ -84,6 +88,8 @@ extension BlockTypeDisplay on BlockType {
         return HugeIcons.strokeRoundedCheckmarkCircle02;
       case BlockType.streakBlock:
         return HugeIcons.strokeRoundedFire;
+      case BlockType.videoBlock:
+        return HugeIcons.strokeRoundedVideo01;
     }
   }
 
@@ -115,6 +121,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Cross off a daily habit and build a streak.';
       case BlockType.streakBlock:
         return 'Shows your current streak and your best.';
+      case BlockType.videoBlock:
+        return 'Record a short video message or pick one from your library.';
     }
   }
 
@@ -237,6 +245,14 @@ extension BlockTypeDisplay on BlockType {
         // the repository. The preview renders whatever the user's real
         // streak is.
         return JournalBlockData.create(id: id, type: this, content: const {});
+      case BlockType.videoBlock:
+        // No real file path in the preview — the widget renders its
+        // empty-state affordance instead.
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const VideoBlockContent().toMap(),
+        );
     }
   }
 
@@ -261,6 +277,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
       case BlockType.streakBlock:
+      case BlockType.videoBlock:
         return true;
     }
   }
@@ -282,6 +299,7 @@ extension BlockTypeDisplay on BlockType {
     switch (this) {
       case BlockType.photoBlock:
       case BlockType.memoryBlock:
+      case BlockType.videoBlock:
         return true;
       case BlockType.textBlock:
       case BlockType.promptBlock:
@@ -328,6 +346,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
       case BlockType.streakBlock:
+      case BlockType.videoBlock:
         return false;
     }
   }

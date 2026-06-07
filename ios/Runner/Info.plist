@@ -4,6 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Record a short video message for your journal entry.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Capture audio while recording a video message for your journal entry.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Attach photos and videos from your library to your journal entries.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

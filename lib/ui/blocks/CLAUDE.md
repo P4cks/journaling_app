@@ -127,19 +127,20 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
     memory, habit tracker) open their edit surface; pure-display blocks
     (quote, weather-api, streak) still expand on double-tap so the user
     can read them larger, with no editing affordance inside the route.
-  - `isActionBlock` — true for photo + memory. When the "expand on
-    edit" setting is OFF, `MainJournalScreen._requestBlockEdit` fires
-    `firePhotoBlockAction` / `fireMemoryBlockAction` immediately on
-    double-tap instead of setting `_editingBlockId` (there's no
-    in-place edit-mode UI for one-shot actions). Location is
-    intentionally NOT in this set — its "interaction" is long-press
-    on the map, which is always available.
+  - `isActionBlock` — true for photo + memory + video. When the "expand
+    on edit" setting is OFF, `MainJournalScreen._requestBlockEdit` fires
+    `firePhotoBlockAction` / `fireMemoryBlockAction` /
+    `fireVideoBlockAction` immediately on double-tap instead of setting
+    `_editingBlockId` (there's no in-place edit-mode UI for one-shot
+    actions). Location is intentionally NOT in this set — its
+    "interaction" is long-press on the map, which is always available.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
   - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
-    (currently `{weatherApi, quoteBlock}`); edit that set to change the
-    free/Pro split — every other built-in block is free (GUS-34).
+    (currently `{weatherApi, quoteBlock, videoBlock}`); edit that set to
+    change the free/Pro split — every other built-in block is free
+    (GUS-34, GUS-16).
     `customCarousel` and `habitTracker` are deliberately NOT in the
     set: custom blocks are gated by *combined count*
     (`kFreeMaxCustomBlocks`, 1 free across carousels + habits) not a
@@ -211,6 +212,17 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [memory_block/memory_block_widget.dart](memory_block/memory_block_widget.dart)
 - [weather_api/weather_api_widget.dart](weather_api/weather_api_widget.dart)
 - [photo_block/photo_block_widget.dart](photo_block/photo_block_widget.dart)
+- [video_block/video_block_widget.dart](video_block/video_block_widget.dart) —
+  `VideoBlockWidget` (GUS-16, PRO). Mirrors the photo block: empty cell
+  shows "+ Add video", filled cell renders the first frame as a poster
+  (via a `VideoPlayerController` held only to paint frame 0) with a play
+  glyph + duration badge. Tap / long-press fires `fireVideoBlockAction`
+  (top-level, single-sourced like `firePhotoBlockAction`) → source sheet
+  (Record / library, `image_picker.pickVideo`, 10 s cap) when empty, or
+  Play / Replace / Remove when filled. Play pushes a fullscreen
+  tap-to-toggle `_FullscreenVideoPlayer`. Duration is probed once at save
+  time and stored in `VideoBlockContent.durationMs`. See
+  [video_block/CLAUDE.md](video_block/CLAUDE.md).
 - [custom_carousel/custom_carousel_widget.dart](custom_carousel/custom_carousel_widget.dart) —
   `CustomCarouselWidget`. Resolves `definitionId` against the
   `BlockSettings` registry; renders the definition's title + a

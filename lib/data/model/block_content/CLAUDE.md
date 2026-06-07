@@ -20,6 +20,15 @@ block content.
   [PhotoStorageService](../../services/photo_storage_service.dart);
   Hive only persists the path string. Used by `PhotoBlockWidget` and
   `JournalBlockEmptiness` (no photo → empty).
+- [video_block_content.dart](video_block_content.dart) — `VideoBlockContent { String? videoPath; int? durationMs }`.
+  Map shape: `{"videoPath": "/.../video/<uuid>.mp4", "durationMs": 8200}`
+  (keys omitted when null). `hasVideo` is true when `videoPath` is
+  non-null and non-empty. The file lives under the app documents dir,
+  written by [VideoStorageService](../../services/video_storage_service.dart);
+  Hive only persists the path + measured duration. `durationMs` is probed
+  once at save time so the grid cell can show a badge without keeping a
+  player alive. Used by `VideoBlockWidget` and `JournalBlockEmptiness`
+  (no video → empty).
 - [weather_api_block_content.dart](weather_api_block_content.dart) — `WeatherApiBlockContent { String? conditionId; double? temperatureC; String? cityName; String? fetchedDate; String? error }`.
   Map shape: `{"conditionId": "...", "temperatureC": 12.4, "cityName": "Berlin, Germany", "fetchedDate": "yyyy-MM-dd"}`
   (all keys omitted when null). `isFetched` is true when a condition

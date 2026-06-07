@@ -85,10 +85,13 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock, videoBlock }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
-  entries on disk. `streakBlock` (GUS-22, last) is the display-only
+  entries on disk. `videoBlock` (GUS-16, last) is the Pro short-clip
+  block (poster frame + fullscreen playback); its wrapper is
+  [video_block_content.dart](block_content/video_block_content.dart),
+  storing the file path + measured `durationMs`. `streakBlock` (GUS-22) is the display-only
   current/best-streak tile unlocked at the 7-day milestone for everyone
   (free + Pro); it carries **no per-entry content** (reads `computeStreak`
   live), so its wrapper step is satisfied by an empty `const {}` content
