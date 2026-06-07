@@ -80,8 +80,15 @@ Typed wrapper:
   feature (it's why the registry exists), but it means renaming a
   definition's title changes every entry's rendered title. Document
   this in the editor's UI if it surprises users.
-- **The icon picker is a curated subset.** Don't try to wire the
-  full HugeIcons library here — the picker becomes unusable.
+- **The icon picker is a curated subset; the emoji picker is the full
+  Unicode set.** Items are now added through the shared
+  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
+  (GUS-44) — one "Add item" button in the editor opens a sheet with an
+  Emoji tab (the full base-form catalogue) and an Icon tab over
+  `kCarouselIcons`. Emojis are no longer typed/pasted into a text
+  field. Don't wire the full HugeIcons library into the icon tab — a
+  curated subset keeps the icon grid usable; the emoji grid stays
+  usable because it's lazily built (`SliverGrid`).
 - **`onInteractionLockChanged` is forwarded to `CollapsibleCarouselBlock`**
   just like mood / weatherManual, so the outer pager freezes its
   horizontal swipe while the carousel is expanded.

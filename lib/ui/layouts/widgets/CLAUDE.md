@@ -119,16 +119,20 @@ sheet is a stateless top-level function returning the user's pick or
     spent their streak-reward token on renders ungated/addable for a
     free user. The caller passes `rewards` from `AppDependencies`.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
-  `Future<String?> showLayoutIconPicker(context, {selected})`.
-  Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
-  as a 56×56 tile. Returns the chosen `icon.name` (stable identifier
-  string carried over from the pre-HugeIcons Phosphor era) or `null`.
-  - Tiles that match `selected` get a `primaryContainer` background
-    and a thicker primary border; the glyph itself is the same
-    stroke-rounded HugeIcons icon as the unselected tiles (the free
-    package ships no fill variant).
+  `Future<String?> showLayoutIconPicker(context, {selected})`. Now a
+  **thin wrapper** (GUS-44) that maps [layout_icons.dart](../layout_icons.dart)
+  to `PickerIcon`s and delegates to the shared
+  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
+  (icon-only, `selectedIconName: selected`), unwrapping the
+  `PickerIconResult` back to its `name`. Returns the chosen `icon.name`
+  (stable identifier string carried over from the pre-HugeIcons
+  Phosphor era) or `null`. The shared picker owns the search field,
+  selection highlight, and tile chrome — the former local `_IconTile`
+  is gone.
   - Used by the layout editor's icon AppBar action. Callers may pass
-    the returned name (or `null`) straight into `vm.setIconName`.
+    the returned name (or `null`) straight into `vm.setIconName`. The
+    `Future<String?>` contract is unchanged, so the layout editor is
+    untouched.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
   `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Two-tile
   sheet ("Only blocks", "Fully customizable"), each with an icon and

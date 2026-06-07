@@ -43,6 +43,41 @@ for how they fit together; this file is per-file notes.
   hard-coded). `clearSnackBars()` runs first so toasts don't stack.
   Confirmation dialogs (Delete? / Sign out?) are intentionally **not**
   routed through this — only one-way informational messages are.
+- [icon_emoji_picker.dart](icon_emoji_picker.dart) — the shared
+  searchable picker (GUS-44). `Future<PickerResult?>
+  showIconEmojiPicker(context, {required List<PickerIcon> icons,
+  bool allowEmoji = false, String? selectedIconName, String title})`.
+  Modal bottom sheet (`isScrollControlled`, `useSafeArea`): a search
+  field, an optional Emoji / Icon `SegmentedButton` (shown only when
+  `allowEmoji`, defaults to the Emoji tab), then a grid. Returns a
+  sealed `PickerResult` — `PickerIconResult(name)` or
+  `PickerEmojiResult(emoji)` — or `null` on dismiss. `PickerIcon`
+  (`{name, icon, label}`) is the shared shape callers map their
+  per-area icon catalogue to (`kCarouselIcons`, `kLayoutIcons`). The
+  emoji grid is grouped by `EmojiCategory` (sliver headers + lazy
+  `SliverGrid` over [emoji_catalogue.dart](emoji_catalogue.dart), so
+  the ~1900-entry set stays performant); the icon grid is a
+  `GridView.builder` with `selectedIconName` highlight. Search filters
+  icons by `name`/`label` and emojis by `name`. Sheet height is
+  `min(85% screen, screen − keyboard − 24)` with keyboard-inset bottom
+  padding so the search field stays visible while typing. The single
+  picker behind all three call sites: the custom-carousel editor
+  (`allowEmoji: true`), the habit editor (icon-only), and the layout
+  icon picker (icon-only, via `showLayoutIconPicker`).
+- [emoji_catalogue.dart](emoji_catalogue.dart) — **GENERATED, do not
+  edit by hand** (GUS-44). `enum EmojiCategory {smileys, people,
+  nature, food, travel, activities, objects, symbols, flags}`,
+  `class EmojiEntry(emoji, name, category)`, and `const
+  kEmojiCatalogue` (~1899 base emojis). Generated from the Unicode
+  `emoji-test.txt` (Emoji 17.0) by
+  [tool/gen_emoji_catalogue.dart](../../../../tool/gen_emoji_catalogue.dart):
+  fully-qualified entries only, **base forms only** — skin-tone and
+  hair-color variants are dropped (the full permutation set would make
+  the grid unusable). `emoji` is the persisted value (stored verbatim
+  in `CarouselItem.value`); `name` is the CLDR short name, used for
+  search. Append-only contract like the icon catalogues — saved picks
+  render the raw glyph regardless, so regenerating never breaks
+  history. Regenerate with `dart run tool/gen_emoji_catalogue.dart`.
 - [section_header.dart](section_header.dart) — `SectionHeader`.
   Accent-tinted titleSmall label used by Settings and the entries list.
 - [settings_section.dart](settings_section.dart) — `SettingsSection`.
