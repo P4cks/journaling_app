@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -10,7 +9,6 @@ import 'package:journaling_app_rewrite/data/repositories/subscription_repository
 import 'package:journaling_app_rewrite/data/services/auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
-import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
@@ -20,7 +18,6 @@ import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
-import 'package:journaling_app_rewrite/firebase_options.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -29,7 +26,12 @@ import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authService = await _createAuthService();
+  // Auth is disabled in this build — Firebase has been removed for now.
+  // The app is local-first, so a DisabledAuthService keeps the Profile
+  // auth UI inert (sign-in buttons disabled, message shown).
+  final AuthService authService = DisabledAuthService(
+    'Sign-in is not available in this build.',
+  );
 
   await Hive.initFlutter();
   Hive.registerAdapters();
@@ -87,28 +89,6 @@ void main() async {
       subscriptionRepository: subscriptionRepository,
     ),
   );
-}
-
-Future<AuthService> _createAuthService() async {
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('[main] Firebase initialized');
-    return FirebaseAuthService();
-  } on UnsupportedError catch (error) {
-    debugPrint('[main] Firebase auth disabled: $error');
-    return DisabledAuthService(
-      'Firebase is not configured yet. Run flutterfire configure for Android '
-      'and iOS, then enable Email, Google, and Apple sign-in providers.',
-    );
-  } catch (error) {
-    debugPrint('[main] Firebase auth disabled: $error');
-    return DisabledAuthService(
-      'Firebase could not be initialized. Check the project configuration and '
-      'try again.',
-    );
-  }
 }
 
 class MyApp extends StatefulWidget {
