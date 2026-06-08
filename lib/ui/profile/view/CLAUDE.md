@@ -16,8 +16,25 @@ pushes these screens.
   sign-out) the moment auth completes. Pushed via `/profile` from the
   profile dropdown's "Sign in" row.
 - [settings_screen.dart](settings_screen.dart) — public `SettingsScreen`
-  (`StatelessWidget`) + private appearance/theme and color helpers.
-  Pushed via `/settings` from the profile dropdown.
+  (`StatelessWidget`) + the Post-it style section + destructive-action
+  helpers. The Appearance section is now a single `SettingsNavTile`
+  ("Theme") that pushes `/theme-settings`; the inline theme controls,
+  the `_AppearanceSettingsContent` wrapper, the theme-editor sheet, and
+  the three debug color-override pickers all moved out / were deleted
+  (GUS-27). Pushed via `/settings` from the profile dropdown.
+- [theme_settings_screen.dart](theme_settings_screen.dart) — public
+  `ThemeSettingsScreen` (`StatelessWidget`, GUS-27). The dedicated
+  theming page pushed from Settings → Appearance → "Theme". Body
+  (inside `ListenableBuilder(Listenable.merge([themeSettings,
+  subscriptionRepository]))`): a **live preview** (`ThemeMockPreview` —
+  a mock journal entry wrapped in `Theme(data: buildAppTheme(palette))`:
+  date header + text-block card + mood/post-it row, all self-contained,
+  no repositories) over the **vertical** `PalettePicker` + Add theme.
+  Owns the custom-theme add/edit handlers (`showThemeEditorSheet` →
+  `theme.addCustomPalette`/`updateCustomPalette`/`deleteCustomPalette`)
+  and the `_ThemeEditorSheet` (name + brightness `SegmentedButton` +
+  surface/secondary/accent/text color pickers). Pro-gates custom
+  customization via `requirePro`; built-in Light/Dark stay free.
 - [custom_block_editor_screen.dart](custom_block_editor_screen.dart) —
   public `CustomBlockEditorScreen({String? definitionId})`. Create
   (`null` id) or edit (existing id) a `CustomCarouselDefinition`.
@@ -126,10 +143,7 @@ pushes these screens.
 
 | Block                       | Listens to              | Notes                              |
 |-----------------------------|-------------------------|------------------------------------|
-| `SettingsSection` "Appearance" | `themeSettings`      | mode selector + palette strip      |
-| `ThemeModeSelector`         | `themeSettings`         | system/light/dark segmented        |
-| "Theme" + `PalettePicker` | `themeSettings` + `subscriptionRepository` | horizontal Graphite/user-theme strip; Pro-gated (GUS-26) |
-| `showThemeEditorSheet`    | —                       | add/edit user themes                |
+| `SettingsSection` "Appearance" | —                  | single `SettingsNavTile` "Theme" → `/theme-settings` (GUS-27) |
 | `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
 | `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
 | `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
@@ -138,9 +152,6 @@ pushes these screens.
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
-| `ListTile` "Override surface color" | `themeSettings` | `showSwatchPicker(allowFreePick: true)` |
-| `ListTile` "Free-pick secondary (HSL)" | `themeSettings` |                                |
-| `ListTile` "Free-pick accent (HSL)"    | `themeSettings` |                                |
 | `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count toast |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
@@ -175,9 +186,10 @@ The entire Settings → "Debug" `SettingsSection` is wrapped in a
 collection-`if (kDebugMode)` (from `package:flutter/foundation.dart`),
 so in release builds it — including the "Show debug menu" toggle — is
 absent from the tree and a production user can never reach the
-destructive actions, the "simulate free account" override, or the
-color overrides. Inside a debug build the existing `debugMenuVisible`
-toggle still gates the detailed rows.
+destructive actions or the "simulate free account" override. Inside a
+debug build the existing `debugMenuVisible` toggle still gates the
+detailed rows. (The three surface/secondary/accent color-override
+pickers were removed in GUS-27.)
 
 The former per-block input-limit tuning tiles (`_DebugLimitTile`, the
 italic caption, the `BlockInputLimits` scaffold) were **removed** —
@@ -186,23 +198,29 @@ the header keeps a fixed 60-char cap.
 
 ## Private widgets
 
-- `_AppearanceSettingsContent` — owns the Appearance section's live
-  `ThemeSettings` listener, mode selector, palette strip, and add/edit/delete
-  custom-theme callbacks. `SettingsScreen` only decides where the section sits
-  in the list. Takes a `SubscriptionRepository` (passed from
-  `AppDependencies`) and listens to it alongside `ThemeSettings` via
-  `Listenable.merge`, so the palette strip un-greys immediately after a
-  purchase. Passes `locked: !isPro` + `onUnlock: () =>
-  requirePro(subscriptions, context:)` into `PalettePicker` (GUS-26).
-  Theme mode stays free.
+### settings_screen.dart
+
+- `_PostItStyleSection` / `_PostItSwatch` / `_AddPostItSwatch` — the
+  Post-it style section (toggle + post-it palette `Wrap`). Unchanged by
+  GUS-27. (The former `_AppearanceSettingsContent`, `_ThemeEditorSheet`,
+  `_ThemePreview`, `_ColorTile`, `_ColorChip`, and `_DebugColorPickerTile`
+  were removed or moved to `theme_settings_screen.dart`.)
+
+### theme_settings_screen.dart (GUS-27)
+
+- `ThemeMockPreview` — the live preview. Wraps `Theme(data:
+  buildAppTheme(palette))` around a self-contained mock journal entry
+  (date header + text-block card + mood/post-it row via `_GreekLine` /
+  `_MiniBlock`). No repositories — renders the candidate `ThemeData`
+  directly so theme edits show immediately.
 - `_ThemeEditorSheet` / `showThemeEditorSheet` — half-sheet add/edit UI
-  for user themes; edits name, surface tint, secondary, accent, and text
-  colour. Returns a `SurfacePalette` for `ThemeSettings` to persist.
-- `_ColorTile` — palette-icon leading, label + subtitle ("… · custom"
-  appended when overridden), `_ColorChip` trailing.
-- `_ColorChip` — 28×28 circle. `outlined: true` adds a thicker
-  `scheme.outline` border (used to visually distinguish "no override
-  set" from "override is the same color as default").
+  for custom themes; edits name, **brightness** (a `SegmentedButton`),
+  surface, secondary, accent, and text colour. Returns a `SurfacePalette`
+  for `ThemeSettings` to persist (`copyWith(brightness:, surface:, …)`).
+- `_ThemePreview` — small color-swatch preview inside the editor sheet.
+- `_ColorTile` / `_ColorChip` — color-row + 28×28 chip used by the
+  editor sheet.
+- `SectionHeaderPlain` — thin wrapper over the shared `SectionHeader`.
 
 ## Gotchas
 
@@ -211,15 +229,12 @@ the header keeps a fixed 60-char cap.
   call `setXxx(null)`, otherwise → call `setXxx(result.color)`.
   Preserve this — `isReset` is the only way to distinguish reset from
   cancel.
-- **The "Layouts" ListTile is *outside* the Appearance section's
-  `ListenableBuilder`** — it doesn't depend on theme state and
-  shouldn't rebuild on color changes.
 - **Debug is conditionally rendered, not just collapsed.** When
   `debugMenuVisible` is false, the debug controls are absent from the
-  tree so casual users do not see the override controls.
-- **Deleting the active user theme falls back to Graphite.**
-  `ThemeSettings.deleteCustomPalette` owns the fallback and clears any
-  secondary/accent overrides.
+  tree so casual users do not see the destructive actions.
+- **Deleting the active custom theme falls back to the Light default.**
+  `ThemeSettings.deleteCustomPalette` owns the fallback
+  (`kLightDefaultPalette.id`).
 
 ## When to update this file
 

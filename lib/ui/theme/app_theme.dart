@@ -2,22 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
-ThemeData buildAppTheme({
-  required SurfacePalette palette,
-  required Brightness brightness,
-  Color? secondary,
-  Color? accent,
-  Color? textColor,
-  Color? surfaceOverride,
-}) {
+/// Builds the single app-wide [ThemeData] from a [palette]. The palette
+/// bakes in its own brightness, surface, accent, secondary, and text
+/// colour, so there are no override parameters anymore (GUS-27). The
+/// container-tier lerp math is unchanged.
+ThemeData buildAppTheme(SurfacePalette palette) {
+  final brightness = palette.brightness;
   final base = ColorScheme.fromSeed(
     seedColor: palette.seed,
     brightness: brightness,
   );
 
-  final surface = surfaceOverride ?? palette.surfaceFor(brightness);
-  final onSurface =
-      textColor ?? palette.defaultTextColor ?? contrastOn(surface);
+  final surface = palette.surface;
+  final onSurface = palette.defaultTextColor ?? contrastOn(surface);
 
   final containerLow = Color.lerp(surface, onSurface, 0.03)!;
   final container = Color.lerp(surface, onSurface, 0.05)!;
@@ -25,8 +22,8 @@ ThemeData buildAppTheme({
   final containerHighest = Color.lerp(surface, onSurface, 0.12)!;
   final onSurfaceVariant = Color.lerp(onSurface, surface, 0.30)!;
 
-  final effectiveAccent = accent ?? palette.defaultAccent;
-  final effectiveSecondary = secondary ?? palette.defaultSecondary;
+  final effectiveAccent = palette.defaultAccent;
+  final effectiveSecondary = palette.defaultSecondary;
 
   final primaryContainer = Color.lerp(
     surface,

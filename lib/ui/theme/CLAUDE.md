@@ -1,41 +1,49 @@
 # lib/ui/theme — Theme assembly
 
 Pure-Dart theming. The `MaterialApp.router` in `main.dart` calls
-`buildAppTheme(...)` twice (once for light, once for dark) inside a
-`ListenableBuilder(listenable: themeSettings, ...)` so palette / accent /
-text colour / brightness flips rebuild live.
+`buildAppTheme(palette)` **once** (single `theme:`, no `darkTheme`/
+`themeMode`) inside a `ListenableBuilder(listenable: themeSettings, ...)`
+so palette / accent / text colour / brightness flips rebuild live.
+**Each palette bakes in its own brightness (GUS-27)** — selecting Light
+vs Dark is what flips the app; the OS brightness is no longer followed.
 
 ## Files
 
-- [app_theme.dart](app_theme.dart) — `buildAppTheme({palette, brightness, secondary, accent, textColor, surfaceOverride})`.
+- [app_theme.dart](app_theme.dart) — `buildAppTheme(SurfacePalette palette)`.
   Pure function that:
-  1. Seeds an initial `ColorScheme` from `palette.seed` (gives M3 a
+  1. Reads `brightness = palette.brightness`, `surface = palette.surface`,
+     and seeds an initial `ColorScheme` from `palette.seed` (gives M3 a
      reasonable starting point).
-  2. Picks the surface from `surfaceOverride ?? palette.surfaceFor(brightness)`.
-  3. **Derives the surfaceContainer tiers** by `Color.lerp(surface, onSurface, t)`
+  2. **Derives the surfaceContainer tiers** by `Color.lerp(surface, onSurface, t)`
      with `t ∈ {0.03, 0.05, 0.08, 0.12}`. This is why blocks read as
      elevated against the dimmed base — the elevation is in surface
      color, not Material tint.
-  4. Uses `textColor ?? palette.defaultTextColor ?? contrastOn(surface)`
-     for `onSurface`, so custom palettes can carry a chosen font colour.
-  5. Sets `primary` to the **accent** (user's 10%), `secondary` to the
-     **secondary** (user's 30%), `tertiary` to a 40% lerp between them
-     (a derived harmony).
-  6. Computes container variants (`primaryContainer`, `secondaryContainer`,
+  3. Uses `palette.defaultTextColor ?? contrastOn(surface)` for
+     `onSurface`, so custom palettes can carry a chosen font colour.
+  4. Sets `primary` to the palette's **accent** (`defaultAccent`, user's
+     10%), `secondary` to `defaultSecondary` (user's 30%), `tertiary` to
+     a 40% lerp between them (a derived harmony).
+  5. Computes container variants (`primaryContainer`, `secondaryContainer`,
      `tertiaryContainer`) by lerping each chroma toward the surface, with
      dark themes using a smaller lerp (0.30/0.35) so the accent stays
      visible against the dark base.
-  7. Configures `appBarTheme` (no surfaceTint, no elevation),
+  6. Configures `appBarTheme` (no surfaceTint, no elevation),
      `bottomNavigationBarTheme`, `chipTheme`, `dividerTheme`. Ensures
      `scaffoldBackgroundColor == scheme.surface` so screens with no
      explicit `body` background still pick up the palette.
+  - The old `secondary` / `accent` / `textColor` / `surfaceOverride` /
+    `brightness` parameters are **gone** (GUS-27) — they only existed for
+    the removed debug overrides. Everything is read off the palette now.
 - [surface_palette.dart](surface_palette.dart) — `SurfacePalette` class
-  + `kDefaultSurfacePalette` / `kSurfacePalettes`. Graphite is the only
-  built-in palette and is not editable or deletable. User themes are
-  decoded by `ThemeSettings` from persisted JSON and use generated ids.
-  `paletteById(id)` falls back to Graphite on unknown id — safe to call
-  with a settings value that might have been written by an older version
-  of the app.
+  (now carries `final Brightness brightness` + a single `final Color
+  surface`; no `surfaceFor(brightness)`) + two built-in defaults
+  `kLightDefaultPalette` (id `light`) and `kDarkDefaultPalette` (id
+  `dark`), collected in `kBuiltInPalettes`. Both built-ins are free and
+  always selectable; they are not editable/deletable. Custom themes are
+  decoded by `ThemeSettings` from persisted JSON (each carries its own
+  `brightness` + `surface`) and use generated ids. `paletteById(id)`
+  falls back to `kLightDefaultPalette` on unknown id — safe to call with
+  a settings value that might have been written by an older version.
 - [color_hex.dart](color_hex.dart) — three top-level helpers:
   - `colorToHex(Color)` → `#RRGGBB` (uses the M3 `Color.r`/`.g`/`.b`
     floats, scaled to 0-255).
@@ -47,8 +55,8 @@ text colour / brightness flips rebuild live.
 ## Implementation details
 
 - **Why a pure function?** `ListenableBuilder(listenable: themeSettings)`
-  in `main.dart` calls `buildAppTheme` twice on each `themeSettings`
-  notification (light + dark). The function is cheap and stateless, so
+  in `main.dart` calls `buildAppTheme(palette)` once on each
+  `themeSettings` notification. The function is cheap and stateless, so
   rebuild cost is negligible.
 - **Why `Color.lerp` for containers?** A traditional `ColorScheme.fromSeed`
   produces tints that don't quite match a manually-curated dimmed dark
@@ -59,9 +67,10 @@ text colour / brightness flips rebuild live.
   store ARGB hex anywhere user-facing — alpha isn't user-controllable.
 - **User themes live in settings, not Hive model boxes.** `ThemeSettings`
   decodes the `theme.customPalettes` JSON list, appends those themes
-  after Graphite, and notifies listeners when a theme is added, edited,
-  or deleted. Legacy `custom1`/`custom2`/`custom3` map JSON is still
-  decoded for users who tried the earlier slot implementation.
+  after the two built-in defaults, and notifies listeners when a theme is
+  added, edited, or deleted. Each custom-palette JSON object now carries a
+  `brightness` (`'light'`/`'dark'`) and a single `surface` color; decode
+  is tolerant (missing brightness → inferred from surface luminance).
 - **Post-it palette is a separate concept.** `SurfacePalette` is the
   *theme* palette (one active at a time, owns surface + secondary +
   accent + text). The post-it palette — a flat `List<String>` of
@@ -72,9 +81,9 @@ text colour / brightness flips rebuild live.
 
 ## Gotchas
 
-- **`palette` is derived from `ThemeSettings.palettes`.** Graphite is
-  static; user theme edits rebuild live because `ThemeSettings` persists
-  the JSON list and notifies.
+- **`palette` is derived from `ThemeSettings.palettes`.** The two
+  built-in defaults are static; user theme edits rebuild live because
+  `ThemeSettings` persists the JSON list and notifies.
 - **`contrastOn` is a luminance threshold, not a WCAG-correct contrast
   check.** Custom palettes let users choose a text colour manually; the
   fallback still uses the threshold.

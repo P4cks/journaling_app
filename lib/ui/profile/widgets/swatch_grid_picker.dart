@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 const _kSwatches = <Color>[
   Color(0xFFFFB86B), // amber
@@ -14,6 +15,10 @@ const _kSwatches = <Color>[
   Color(0xFFE4B363), // honey
   Color(0xFFB0B6C2), // slate
 ];
+
+/// Lightness steps used to generate the "more shades" row of the
+/// currently-picked hue (Apple-style). Dark → light, left → right.
+const _kShadeLightness = <double>[0.30, 0.42, 0.54, 0.66, 0.76, 0.85, 0.92];
 
 /// Shows a swatch grid dialog. Returns the chosen color, or `null` if the
 /// user reset / cancelled. The result is wrapped in a sentinel to
@@ -87,6 +92,18 @@ class _SwatchDialogState extends State<_SwatchDialog> {
 
   void _setColor(Color c) => setState(() => _hsl = HSLColor.fromColor(c));
 
+  /// The "more shades" of the current hue: same hue + saturation, varying
+  /// lightness. Saturation is floored so greys still produce a visible
+  /// spread instead of a row of near-identical neutrals.
+  List<Color> get _shades {
+    final hue = _hsl.hue;
+    final sat = _hsl.saturation < 0.15 ? 0.45 : _hsl.saturation;
+    return [
+      for (final l in _kShadeLightness)
+        HSLColor.fromAHSL(1, hue, sat, l).toColor(),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -94,56 +111,77 @@ class _SwatchDialogState extends State<_SwatchDialog> {
       title: Text(widget.title),
       content: SizedBox(
         width: 320,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: _current,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: scheme.outlineVariant),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: _current,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final c in _kSwatches)
-                  _Swatch(
-                    color: c,
-                    selected: _isClose(_hsl.toColor(), c),
-                    onTap: () => _setColor(c),
-                  ),
-              ],
-            ),
-            if (widget.allowFreePick) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final c in _kSwatches)
+                    _Swatch(
+                      color: c,
+                      selected: _isClose(_current, c),
+                      onTap: () => _setColor(c),
+                    ),
+                ],
+              ),
               const SizedBox(height: 16),
-              _LabelSlider(
-                label: 'Hue',
-                value: _hsl.hue,
-                min: 0,
-                max: 360,
-                onChanged: (v) => setState(() => _hsl = _hsl.withHue(v)),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Shades',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ),
-              _LabelSlider(
-                label: 'Saturation',
-                value: _hsl.saturation,
-                min: 0,
-                max: 1,
-                onChanged: (v) => setState(() => _hsl = _hsl.withSaturation(v)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final c in _shades)
+                    _Swatch(
+                      color: c,
+                      size: 30,
+                      selected: _isClose(_current, c),
+                      onTap: () => _setColor(c),
+                    ),
+                ],
               ),
-              _LabelSlider(
-                label: 'Lightness',
-                value: _hsl.lightness,
-                min: 0,
-                max: 1,
-                onChanged: (v) => setState(() => _hsl = _hsl.withLightness(v)),
-              ),
+              if (widget.allowFreePick) ...[
+                const SizedBox(height: 8),
+                Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 8),
+                    title: const Text('Advanced'),
+                    children: [
+                      HueRingPicker(
+                        pickerColor: _current,
+                        onColorChanged: _setColor,
+                        enableAlpha: false,
+                        displayThumbColor: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       actions: [
@@ -175,21 +213,23 @@ class _Swatch extends StatelessWidget {
     required this.color,
     required this.selected,
     required this.onTap,
+    this.size = 36,
   });
 
   final Color color;
   final bool selected;
   final VoidCallback onTap;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(size / 2),
       child: Container(
-        width: 36,
-        height: 36,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
@@ -199,39 +239,6 @@ class _Swatch extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _LabelSlider extends StatelessWidget {
-  const _LabelSlider({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(width: 84, child: Text(label)),
-        Expanded(
-          child: Slider(
-            value: value.clamp(min, max),
-            min: min,
-            max: max,
-            onChanged: onChanged,
-          ),
-        ),
-      ],
     );
   }
 }

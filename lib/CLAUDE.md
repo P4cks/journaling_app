@@ -126,8 +126,10 @@ Feature backlog now lives in Linear (workspace **GustoJournalingApp**, team pref
   - The body wraps `AppDependencies` (DI) around a
     `ListenableBuilder(listenable: themeSettings, ...)` so palette /
     accent / brightness changes rebuild the whole `MaterialApp.router`
-    live. Both `theme` and `darkTheme` are supplied; `themeMode`
-    drives the swap.
+    live. A **single** `theme: buildAppTheme(palette)` is supplied —
+    no `darkTheme`/`themeMode` (GUS-27). The selected palette bakes in
+    its own brightness, so switching to the Light/Dark default flips the
+    whole app.
   - **When you add a new repository or settings object**, add it to
     `AppDependencies` *and* construct it here in the right order.
 

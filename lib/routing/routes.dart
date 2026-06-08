@@ -9,6 +9,7 @@ class Routes {
   static const statistics = '/statistics';
 
   static const settings = '/settings';
+  static const themeSettings = '/theme-settings';
   static const profile = '/profile';
   static const layouts = '/layouts';
   static const newLayout = '/layouts/new';
@@ -50,6 +51,7 @@ class RouteNames {
   static const entries = 'entries';
   static const statistics = 'statistics';
   static const settings = 'settings';
+  static const themeSettings = 'themeSettings';
   static const profile = 'profile';
   static const layouts = 'layouts';
   static const newLayout = 'newLayout';
