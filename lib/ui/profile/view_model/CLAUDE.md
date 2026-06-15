@@ -40,6 +40,23 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
   - `save()` builds `HabitDefinition(id, title, iconName: _iconName ??
     '')` and writes via `addHabit` or `updateHabit` based on `_isNew`.
   - `dispose` removes the controller listener + disposes the controller.
+- [wannado_editor_view_model.dart](wannado_editor_view_model.dart) —
+  `WannadoEditorViewModel extends ChangeNotifier` (GUS-42/GUS-45). Backs
+  `WannadoEditorScreen`. Same draft / `isDirty` / save shape as the
+  custom-block editor VM:
+  - `titleController` + a `List<WannadoItem>` items draft; snapshot on
+    construct, re-snapshot after `save()`.
+  - `titleError` — empty ('Add a title') OR case-insensitive conflict
+    with another `WannadoDefinition` ('A wanna-do carousel with this
+    title already exists'). `itemsError` — `_items.isEmpty` ('Add at
+    least one item'). `canSave` ANDs both. (Note: **≥1** item, unlike the
+    custom-block editor's ≥2 — a one-item carousel still reads fine.)
+  - `addItem(text)` / `updateItemAt(i, text)` / `removeItemAt(i)` /
+    `moveItem(old, new)` mutate the items draft (text trimmed; empty
+    ignored). New items get a fresh uuid.
+  - `save()` builds `WannadoDefinition(id, title, items)` and writes via
+    `addWannado` or `updateWannado` based on `_isNew`.
+  - `dispose` removes the controller listener + disposes the controller.
 
 ## BlockSettingsViewModel
 

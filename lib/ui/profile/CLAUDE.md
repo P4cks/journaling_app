@@ -22,9 +22,10 @@ directory hosts the pushed screens:
   (the prompt list + the Random Prompts toggle), **Carousel
   Blocks** (a single global "Show titles above carousels" switch +
   the custom-carousel definition list with Edit / Delete / Add),
-  **Wanna-dos** (the global wanna-do bucket-list editor — add / edit /
-  delete items the wannado carousel section renders across all entries;
-  GUS-8), and **Memory Block**.
+  **Wanna-do Carousels** (the per-definition list — create / edit /
+  delete named wanna-do carousels that `SectionKind.wannado` sections
+  render, capped at `kFreeMaxWannados` for free users; GUS-42/GUS-45),
+  and **Memory Block**.
   Built-in field edits are kept as drafts in `BlockSettingsViewModel`;
   a Cancel /
   Discard / Save dialog runs on leave, mirroring the layout editor.
@@ -84,9 +85,10 @@ Settings contains:
 Block-settings is rendered inline by `BlockSettingsScreen` —
 sections: **Prompt Block** (the prompt list + the Random Prompts
 toggle), **Carousel Blocks** (the "Show titles above carousels"
-switch + the custom-carousel definition list), **Wanna-dos** (the
-global wanna-do bucket-list editor; GUS-8), and **Memory Block**. The
-Wanna-dos list writes through `BlockSettings` immediately (not a
+switch + the custom-carousel definition list), **Wanna-do Carousels**
+(the per-definition list — Edit / Delete / Add named wanna-do carousels;
+GUS-42/GUS-45), and **Memory Block**. The
+Wanna-do Carousels list writes through `BlockSettings` immediately (not a
 draft). Text blocks have no
 per-type-global settings here — text input is uncapped (the GUS-10
 char-cap scaffold was removed; only the header keeps a fixed 60-char

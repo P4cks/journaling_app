@@ -16,7 +16,7 @@ class SettingsStorageService {
   static const _blockCustomCarouselDefinitionsKey =
       'block.customCarousel.definitions';
   static const _blockHabitDefinitionsKey = 'block.habit.definitions';
-  static const _blockWannadosKey = 'block.wannado.items';
+  static const _blockWannadoDefinitionsKey = 'block.wannado.definitions';
   static const _themePostItModeKey = 'theme.postItMode';
   static const _themePostItPaletteKey = 'theme.postItPalette';
   static const _debugExpandedDoneButtonKey =
@@ -128,12 +128,13 @@ class SettingsStorageService {
       ? _box.delete(_blockHabitDefinitionsKey)
       : _box.put(_blockHabitDefinitionsKey, json);
 
-  String? getBlockWannadosJson() => _box.get(_blockWannadosKey);
+  String? getBlockWannadoDefinitionsJson() =>
+      _box.get(_blockWannadoDefinitionsKey);
 
-  Future<void> setBlockWannadosJson(String? json) =>
+  Future<void> setBlockWannadoDefinitionsJson(String? json) =>
       (json == null || json.isEmpty)
-      ? _box.delete(_blockWannadosKey)
-      : _box.put(_blockWannadosKey, json);
+      ? _box.delete(_blockWannadoDefinitionsKey)
+      : _box.put(_blockWannadoDefinitionsKey, json);
 
   // null = key absent (use the default, currently `true`).
   bool? getThemePostItMode() {

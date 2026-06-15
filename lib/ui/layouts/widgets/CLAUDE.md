@@ -93,26 +93,36 @@ sheet is a stateless top-level function returning the user's pick or
     once unlocked it's free to add for both free and Pro users (it's NOT
     in `kProOnlyBlockTypes`).
 - [add_section_sheet.dart](add_section_sheet.dart) —
-  `Future<SectionKind?> showAddSectionSheet(context, {required
+  `Future<AddSectionResult?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions, required StreakRewardSettings
-  rewards})`. Seven-tile sheet (Text
-  section / Block grid / Header / Divider / Feature block / Block +
-  text / Wanna-dos), each rendered via the private `_SectionTile` (with
-  a `locked` flag). Header (GUS-6) and Divider (GUS-7) are always free.
-  Block-grid
+  rewards, required BlockSettings settings})` + the small
+  `AddSectionResult { SectionKind kind; String? definitionId }`. Seven-tile
+  sheet (Text section / Block grid / Header / Divider / Feature block /
+  Block + text / Wanna-do carousel), each rendered via the private
+  `_SectionTile` (with a `locked` flag). Header (GUS-6) and Divider
+  (GUS-7) are always free. Block-grid
   sections start empty — there is no row picker; the user adds blocks
   afterwards and the grid grows to fit. Feature-block and block-text
   sections also start empty; the editor body lets the user pick one
   photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
   Custom-layout editor uses this when the user taps the "Add section"
-  zone at the bottom (passing `subscriptions` from `AppDependencies`).
-  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-dos
-    (GUS-8) are Pro-only:** for free users
+  zone at the bottom (passing `subscriptions` + `rewards` + `settings`
+  from `AppDependencies`).
+  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-do
+    carousel (GUS-8/GUS-42/GUS-45) are Pro-only:** for free users
     (`!kFreeSectionKinds.contains(kind)`) the tile greys + badges and
-    tapping presents the paywall, popping the kind only on a successful
-    purchase. Text + block-grid + header + divider are always free. The
-    Wanna-dos tile description points the user to manage the list in
-    Block settings (the section itself has no per-section add affordance).
+    tapping presents the paywall, proceeding only on a successful
+    purchase. Text + block-grid + header + divider are always free.
+  - **Wanna-do carousel sub-picker (GUS-42/GUS-45).** Once unlocked,
+    tapping the Wanna-do carousel tile opens a nested `showModalBottomSheet`
+    listing the user's `BlockSettings.wannadoDefinitions`. Picking one
+    pops the *outer* sheet with `AddSectionResult(wannado,
+    definitionId: def.id)`. A capped `AddCustomBlockButton(max:
+    kFreeMaxWannados, label: 'Add wanna-do carousel')` pops both sheets
+    and pushes `Routes.newWannado` so the user can create a new
+    definition (then re-open to attach it) — the same "create in editor,
+    pick from sheet" flow custom blocks use. Non-wannado tiles return
+    `AddSectionResult(kind)` with a null `definitionId`.
   - **Streak-reward bypass (GUS-22).** Each of the three Pro locks
     (`featureLocked` / `blockTextLocked` / `wannadoLocked`) also ANDs
     `&& !rewards.isSectionUnlocked(kind)`, so a section the user already

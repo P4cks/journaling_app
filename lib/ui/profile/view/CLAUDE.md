@@ -52,6 +52,17 @@ pushes these screens.
   passing `selectedIconName: vm.iconName`, and writes back the picked
   `PickerIconResult.name` (GUS-44; the former local `_showIconPicker`
   sheet is gone).
+- [wannado_editor_screen.dart](wannado_editor_screen.dart) — public
+  `WannadoEditorScreen({String? definitionId})` (GUS-42/GUS-45). Create
+  (`null` id) or edit a `WannadoDefinition` (title + ordered text items).
+  Same draft + Cancel/Discard/Save-on-leave `PopScope` shape as the
+  custom-block editor: a title `TextField` (maxLength 40, `errorText:
+  vm.titleError`) + a `ReorderableListView` of text items, each editable
+  via a single-field `_WannadoItemDialog` (maxLength 80) and reorderable
+  via a drag handle. Items are free text (no icon/emoji). Constructs
+  `WannadoEditorViewModel` in `didChangeDependencies`. Pushed via
+  `/wannado/new` or `/wannado/edit/:id` from the Block Settings
+  "Wanna-do Carousels" section and the layout add-section sub-picker.
 - [block_settings_screen.dart](block_settings_screen.dart) — public
   `BlockSettingsScreen` (`StatefulWidget`). Top-level
   `SettingsSection`s:
@@ -61,29 +72,27 @@ pushes these screens.
        `vm.carouselTitlesEnabled`, followed by the inlined
        `_CustomCarouselList` (per-definition Edit / Delete rows + an
        "Add custom block" button at the bottom).
-    3. **Wanna-dos** (GUS-8, PRO) — the inlined `_WannadoList` over the
-       **global** wanna-do bucket list. Subscribes to `BlockSettings`
-       **and** `SubscriptionRepository` via
-       `ListenableBuilder(Listenable.merge([...]))` (NOT the VM —
-       wanna-do edits write through `BlockSettings` immediately, not as
-       drafts; the subscription listener un-locks live on purchase).
-       Each item is a `ListTile` with Edit / Delete `IconButton`s; an
-       "Add wanna-do" button (`_AddWannadoButton`) sits at the bottom.
-       Add / edit open a top-level `_showEditDialog` (an `AlertDialog`
-       with a maxLength-80 `TextField` returning trimmed text); `_add`
-       mints a `WannadoItem(id: _uuid.v4(), text: …)`, `_edit` calls
-       `item.copyWith(text: …)`. The list is the same one the wannado
-       carousel section renders in entries — edits reflect everywhere
-       immediately. The module-level `_uuid = Uuid()` backs new ids.
-       - **Downgrade locking (GUS-41).** When `!subscriptions.isPro`
-         (`locked`) the existing items stay **visible** (old entries'
-         wannado sections must keep rendering them) but management is
-         disabled: item titles grey, the Edit / Delete `IconButton`s go
-         `onPressed: null` (greyed/disabled), a `ProLockBadge` sits next
-         to the caption, and `_AddWannadoButton` greys + overlays a
-         compact `ProLockBadge` and presents the paywall on tap
-         (`requirePro`), only adding on a successful upgrade. Mirrors
-         `AddCustomBlockButton`'s gating shape.
+    3. **Wanna-do Carousels** (GUS-8/GUS-42/GUS-45, PRO) — the inlined
+       `_WannadoCarouselList`, mirroring `_CustomCarouselList` /
+       `_HabitList`. Subscribes to `BlockSettings` via `ListenableBuilder`
+       (writes go straight through `BlockSettings`, not the VM draft).
+       Renders one `_WannadoDefinitionRow` per
+       `BlockSettings.wannadoDefinitions` (title + item count + Edit /
+       Delete buttons), a `ProLimitHint(max: kFreeMaxWannados, noun:
+       'wanna-do carousels')`, and an `AddCustomBlockButton(max:
+       kFreeMaxWannados, label: 'Add wanna-do carousel')` at the bottom.
+       Edit / Add run the parent's `_maybeSaveOnLeave` then push
+       `Routes.newWannado` / `Routes.editWannadoFor(id)` (the dedicated
+       `WannadoEditorScreen`); editing a definition reflects in every
+       section that references it. Delete confirms with a usage count
+       from `LayoutRepository.countWannadoUsage(id)` before calling
+       `BlockSettings.deleteWannadoDefinition`.
+       - **Free cap (GUS-42/GUS-45).** The wanna-do *section* is fully
+         Pro (gated in the layout add-section sheet). On top of that free
+         users may define at most `kFreeMaxWannados` (1) carousels — the
+         `AddCustomBlockButton` greys + badges and routes through the
+         paywall past the cap. (No per-row downgrade locking like the old
+         global list — the section gate already covers the Pro story.)
     4. **Memory Block** — its existing settings.
   Built-in fields live on `BlockSettingsViewModel` as drafts;
   `PopScope` runs `_maybeSaveOnLeave` which mirrors
