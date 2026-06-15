@@ -24,8 +24,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     manually on return.
 - [layout_editor_screen.dart](layout_editor_screen.dart) —
   `LayoutEditorScreen`. Editor for one layout.
-  - AppBar: `LayoutNameTitle` (tap-to-edit) + actions `+ (Add block)`
-    and the layout's icon (tap → `showLayoutIconPicker`).
+  - AppBar: `LayoutNameTitle` (tap-to-edit) + actions `+ (Add block)`,
+    the layout's icon (tap → `showLayoutIconPicker`), and a trailing
+    `Save` `TextButton` (GUS-62).
   - Body: the `BlockGrid` (WYSIWYG, see [../CLAUDE.md](../CLAUDE.md))
     fills the body. Empty state: "No blocks yet. Tap + to add a block."
     There is **no** "Blocks" header and no bottom-bar Add button.
@@ -33,13 +34,23 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     (see [../widgets/CLAUDE.md](../widgets/CLAUDE.md)) returns the
     chosen `BlockType?`; on non-null, the screen calls
     `vm.addBlock(type)`.
-  - **No AppBar save button.** Edits are live to the VM; the screen
-    wraps `Scaffold` in `PopScope(canPop: false, ...)` AND registers
-    a `NavigationGuard` handler (see
-    [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md))
-    for tab switches that `PopScope` can't see.
-  - Both paths share `_maybeSaveOnLeave`: if `vm.isDirty` is true the
-    handler **validates the name first, then prompts**. It computes
+  - **Dedicated `Save` button** (GUS-62, `_save`): validates the name
+    the same way `_maybeSaveOnLeave` does (empty → "Add a name to save"
+    toast; duplicate → "A layout with this name already exists" toast;
+    both keep the user on the editor), then `vm.save()` + a success
+    toast + `context.pop()` back to the Layouts list. `context.pop()`
+    force-pops, so it bypasses the `PopScope` guard — nothing is unsaved
+    after a successful save. Always enabled (an unchanged save is a
+    harmless re-write); feedback comes from the on-tap validation, not a
+    greyed-out state.
+  - Edits are otherwise live to the VM; the screen wraps `Scaffold` in
+    `PopScope(canPop: false, ...)` so a Back press routes through
+    `_handlePop` → `_maybeSaveOnLeave` (the save-on-leave safety net).
+    There are no tab switches to guard against anymore (the bottom-nav
+    app-shell is gone — see
+    [../../core/widgets/CLAUDE.md](../../core/widgets/CLAUDE.md)).
+  - The Back press routes through `_maybeSaveOnLeave`: if `vm.isDirty`
+    is true the handler **validates the name first, then prompts**. It computes
     `canSave` (name non-blank and `!nameConflict`) before building the
     `AlertDialog`, so the dialog adapts:
     - Saveable → a Cancel / Discard / Save dialog, body "Save your
@@ -54,11 +65,6 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
   - **Back button** (`_handlePop`): on `canLeave == true`, calls
     `context.pop()` regardless of dirty state — back is an explicit
     "leave this screen".
-  - **Tab switch** (`_onTabSwitchAttempt`): on `canLeave == true`,
-    pops the editor only if it WAS dirty when the handler started —
-    so save/discard puts the user back on the Layouts list, but a
-    no-op tab switch leaves the editor mounted for the user to tab
-    back to.
   - `vm.save()` re-snapshots the initial state so `isDirty` reads
     false post-save — important for defensive code paths.
   - **All three layout kinds share the same `BlockGrid` for slot
