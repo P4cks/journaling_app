@@ -4,12 +4,13 @@ class SettingsStorageService {
   static const _defaultLayoutIdKey = 'defaultLayoutId';
   static const _debugMenuVisibleKey = 'debug.menuVisible';
   static const _unlockAllDaysKey = 'debug.unlockAllDays';
-  static const _themeModeKey = 'theme.mode';
+  // GUS-27 removed `theme.mode`, `theme.secondary`, `theme.accent`, and
+  // `theme.debugSurface`. Brightness is now baked into the selected
+  // palette and the per-theme override pickers are gone. Per the pre-1.0
+  // settings-box backwards-compat policy these stale keys are left on
+  // disk and simply not read anymore (no migration needed).
   static const _themePaletteIdKey = 'theme.paletteId';
-  static const _themeSecondaryKey = 'theme.secondary';
-  static const _themeAccentKey = 'theme.accent';
   static const _themeCustomPalettesKey = 'theme.customPalettes';
-  static const _themeDebugSurfaceKey = 'theme.debugSurface';
   static const _blockPromptListKey = 'block.prompt.list';
   static const _blockPromptStrategyKey = 'block.prompt.strategy';
   static const _blockCarouselTitlesEnabledKey = 'block.carousel.titlesEnabled';
@@ -60,37 +61,15 @@ class SettingsStorageService {
   Future<void> setDebugMenuVisible(bool value) =>
       _box.put(_debugMenuVisibleKey, value.toString());
 
-  String? getThemeMode() => _box.get(_themeModeKey);
-
-  Future<void> setThemeMode(String value) => _box.put(_themeModeKey, value);
-
   String? getThemePaletteId() => _box.get(_themePaletteIdKey);
 
   Future<void> setThemePaletteId(String value) =>
       _box.put(_themePaletteIdKey, value);
 
-  String? getThemeSecondary() => _box.get(_themeSecondaryKey);
-
-  Future<void> setThemeSecondary(String? hex) => hex == null
-      ? _box.delete(_themeSecondaryKey)
-      : _box.put(_themeSecondaryKey, hex);
-
-  String? getThemeAccent() => _box.get(_themeAccentKey);
-
-  Future<void> setThemeAccent(String? hex) => hex == null
-      ? _box.delete(_themeAccentKey)
-      : _box.put(_themeAccentKey, hex);
-
   String? getThemeCustomPalettes() => _box.get(_themeCustomPalettesKey);
 
   Future<void> setThemeCustomPalettes(String json) =>
       _box.put(_themeCustomPalettesKey, json);
-
-  String? getThemeDebugSurface() => _box.get(_themeDebugSurfaceKey);
-
-  Future<void> setThemeDebugSurface(String? hex) => hex == null
-      ? _box.delete(_themeDebugSurfaceKey)
-      : _box.put(_themeDebugSurfaceKey, hex);
 
   String? getBlockPromptListJson() => _box.get(_blockPromptListKey);
 

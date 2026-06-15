@@ -41,9 +41,8 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   the key — distinguishes "user reset to default" from "user picked
   the same value as default".
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
-    `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
-    `theme.secondary`, `theme.accent`, `theme.customPalettes`,
-    `theme.debugSurface`, `theme.postItMode` (`true`/`false`;
+    `debug.unlockAllDays`, `theme.paletteId`, `theme.customPalettes`,
+    `theme.postItMode` (`true`/`false`;
     absent → default `true`), `theme.postItPalette` (JSON-encoded
     list of `#RRGGBB` hex strings; absent → ships with the
     `kDefaultPostItPalette` muted pastels), `block.prompt.list`
@@ -74,6 +73,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `streak.reward.unlockedSections` (JSON list of `SectionKind.name`s
     unlocked the same way; absent → none — see
     [streak_reward_settings.dart](streak_reward_settings.dart)).
+  - **Removed keys (GUS-27):** `theme.mode`, `theme.secondary`,
+    `theme.accent`, `theme.debugSurface` and their accessors are gone —
+    brightness is now baked into the selected palette and the debug
+    surface/secondary/accent overrides were deleted. Per the pre-1.0
+    backwards-compat policy stale values left on disk are harmless and
+    simply stop being read; no migration.
     If you add another, give it a namespaced key and add a typed
     accessor pair. Abandoned legacy keys (`block.mood.title`,
     `block.weather.title`, `block.text.charLimit`, and the former
@@ -194,12 +199,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     can prompt the user.
   - Setters guard against no-op assignment and persist atomically.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
-  Mirrors a `ColorScheme` configuration:
-  - `themeMode` (`ThemeMode`, default `system`)
-  - `paletteId` (Graphite or a generated user-theme id)
-  - `palettes` (Graphite plus persisted user themes)
-  - `secondaryOverride`, `accentOverride`, `debugSurfaceOverride`
-    (all nullable; `null` means "use the palette's default")
+  Mirrors a `ColorScheme` configuration (GUS-27 — **no** `themeMode` and
+  **no** surface/secondary/accent overrides anymore):
+  - `paletteId` (`'light'`/`'dark'` built-in, or a generated user-theme
+    id; default `kLightDefaultPalette.id`)
+  - `palettes` (`[...kBuiltInPalettes, ...customPalettes]`)
+  - `palette` getter resolves the selected `SurfacePalette` (falls back
+    to `kLightDefaultPalette`). Each palette bakes in its own
+    `brightness` + single `surface`, so the selection alone drives the
+    app's light/dark.
   - `postItModeEnabled` (`bool`, default `true`) — gates the playful
     rotation/offset/color visuals in `PostItBlock`. When `false`, the
     grid renders blocks as flat cards (the pre-post-it look).
@@ -207,13 +215,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     hex strings. Random-picked per block at materialization. Defaults
     to `kDefaultPostItPalette` (7 muted pastels) on first launch.
   - User themes are persisted as a single `theme.customPalettes` JSON
-    list. Each item stores `id`, `name`, and `#RRGGBB` `surface`,
-    `secondary`, `accent`, and `text` values. Legacy slot-map JSON is
-    still decoded. Post-it palette is **separate** — a flat list of
-    single colors, not surface palettes.
-  - `effectiveSecondary` / `effectiveAccent` getters resolve override →
-    palette default. Use these from non-debug UI; the raw `*Override`
-    getters are for the Profile screen to show "is overridden".
+    list. Each item stores `id`, `name`, `brightness` (`'light'`/
+    `'dark'`), and `#RRGGBB` `surface`, `secondary`, `accent`, and
+    `text` values. Decode is tolerant — a missing `brightness` is
+    inferred from the surface luminance. `customPaletteTemplate()` mints
+    a new dark-brightness template. Post-it palette is **separate** — a
+    flat list of single colors, not surface palettes.
   - `setPostItModeEnabled`, `addPostItColor`, `removePostItColorAt`,
     `setPostItPalette` mutate the post-it state and notify.
   - Persists every setter to `SettingsStorageService`. Subscribed to by

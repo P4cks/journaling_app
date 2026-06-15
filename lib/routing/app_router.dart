@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/ui/profile/view/custom_block_editor_scree
 import 'package:journaling_app_rewrite/ui/profile/view/habit_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/theme_settings_screen.dart';
 import 'package:journaling_app_rewrite/ui/subscription/view/subscription_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
@@ -53,6 +54,11 @@ final GoRouter appRouter = GoRouter(
       path: Routes.settings,
       name: RouteNames.settings,
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: Routes.themeSettings,
+      name: RouteNames.themeSettings,
+      builder: (context, state) => const ThemeSettingsScreen(),
     ),
     GoRoute(
       path: Routes.profile,

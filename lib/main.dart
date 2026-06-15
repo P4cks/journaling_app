@@ -167,31 +167,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: ListenableBuilder(
         listenable: widget.themeSettings,
         builder: (context, _) {
+          // The selected palette bakes in its own brightness (GUS-27), so
+          // a single `theme` drives the whole app — no light/dark swap.
           final palette = widget.themeSettings.palette;
-          final secondary = widget.themeSettings.secondaryOverride;
-          final accent = widget.themeSettings.accentOverride;
-          final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
-          final textColor = palette.defaultTextColor;
           return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'Journaling App',
-            themeMode: widget.themeSettings.themeMode,
-            theme: buildAppTheme(
-              palette: palette,
-              brightness: Brightness.light,
-              secondary: secondary,
-              accent: accent,
-              textColor: textColor,
-              surfaceOverride: surfaceOverride,
-            ),
-            darkTheme: buildAppTheme(
-              palette: palette,
-              brightness: Brightness.dark,
-              secondary: secondary,
-              accent: accent,
-              textColor: textColor,
-              surfaceOverride: surfaceOverride,
-            ),
+            theme: buildAppTheme(palette),
             routerConfig: appRouter,
           );
         },
