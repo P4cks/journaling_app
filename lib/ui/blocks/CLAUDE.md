@@ -191,15 +191,16 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   type. See [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
   `WannadoSectionWidget`. Renders a `SectionKind.wannado` section
-  (GUS-8, PRO): a **vertical auto-rotating carousel** over the user's
-  **global** wanna-do list (`BlockSettings.wannados`, grabbed from
+  (GUS-8/GUS-42/GUS-45, PRO): a **vertical auto-rotating carousel** over
+  one user-created `WannadoDefinition`, resolved from
+  `BlockSettings.findWannadoDefinition(definitionId)` (grabbed from
   `AppDependencies` inside the widget, wrapped in a `ListenableBuilder`).
   **Pure display** — no per-item done/checkbox state; `mode` is ignored
   (identical on editable + read-only days). A `Timer.periodic` advances
   one item every 4 s; the user can also swipe vertically (a manual swipe
   restarts the timer). Loops via a large virtual base page +
-  `index % items.length`. Takes no arguments. See
-  [wannado_section/CLAUDE.md](wannado_section/CLAUDE.md).
+  `index % items.length`. Takes a `String? definitionId` (null/deleted →
+  placeholder). See [wannado_section/CLAUDE.md](wannado_section/CLAUDE.md).
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —

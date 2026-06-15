@@ -55,9 +55,10 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `HabitDefinition`s — the user-defined habit "types" (title + icon)
     referenced by `BlockType.habitTracker` blocks; absent means no
     user-defined habits yet; mirrors the custom-carousel storage pair),
-    `block.wannado.items` (JSON-encoded list of
-    `WannadoItem`s — the global wanna-do bucket list rendered by
-    `SectionKind.wannado` sections; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
+    `block.wannado.definitions` (JSON-encoded list of
+    `WannadoDefinition`s — the user-created "Wanna-do Carousel" lists
+    (title + text items) referenced by `SectionKind.wannado` sections via
+    `definitionId`; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
     default `true`; gates the expanded-block overlay vs in-place
     edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
     absent → default `false`; developer affordance that adds a Done
@@ -182,13 +183,18 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     block" placeholder. Mirrors the `customCarousels` pattern exactly.
     Free/Pro split is by *combined count* with `customCarousels`
     against `kFreeMaxCustomBlocks`, not a blanket flag.
-  - `wannados` (`List<WannadoItem>`) — the user's **global** wanna-do
-    bucket list (GUS-8), rendered by every `SectionKind.wannado`
-    section as a rotating carousel. `addWannado`, `updateWannado`,
-    `deleteWannado` mutate (each notifies). **No toggle / done state**
-    — items are pure display (text only). Caller owns id generation.
-    Persisted as a JSON list (`block.wannado.items`); mirrors the
-    `customCarousels` storage pattern exactly.
+  - `wannadoDefinitions` (`List<WannadoDefinition>`) — the user's
+    "Wanna-do Carousel" definitions (title + ordered text items, GUS-42/
+    GUS-45), each referenced by a `SectionKind.wannado` section via
+    `definitionId`. `addWannado(def)`, `updateWannado(def)`,
+    `deleteWannadoDefinition(id)`, and `findWannadoDefinition(id)` mutate /
+    look up (each mutator notifies + `debugPrint`s). **No toggle / done
+    state** — items are pure display (text only). Caller owns id
+    generation + title uniqueness. Persisted as a JSON list
+    (`block.wannado.definitions`); orphan-tolerant — delete doesn't
+    cascade into layouts / entries, the section renders an empty
+    placeholder. Mirrors the `customCarousels` / `habits` registry
+    pattern exactly.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so

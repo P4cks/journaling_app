@@ -150,13 +150,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   can't wrap around the inline block), so there is no
   `editingBlockId`/`textEditing` plumbing for this section.
 
-  **`SectionKind.wannado`** → renders `const WannadoSectionWidget()`
-  (GUS-8). The widget takes **no arguments** and self-fetches the
-  **global** wanna-do list from `AppDependencies.blockSettings`; the
+  **`SectionKind.wannado`** → renders
+  `WannadoSectionWidget(definitionId: section.definitionId)`
+  (GUS-8/GUS-42/GUS-45). The widget resolves that id against
+  `AppDependencies.blockSettings` to find the `WannadoDefinition`; the
   `EntrySection` carries no blocks, so `_buildSection` must NOT
   early-return on empty `section.blocks` (like `divider`). `mode` is
   ignored — it's a pure-display auto-rotating carousel, identical on
-  editable and read-only days.
+  editable and read-only days. A null/deleted id renders a placeholder.
 
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled

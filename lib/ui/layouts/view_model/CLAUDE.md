@@ -35,13 +35,20 @@ class SectionDraft {
   final SectionKind kind;
   int? rows;             // blockGrid only
   List<BlockSlot> slots; // empty for text sections
+  final String? definitionId; // wannado sections only — the WannadoDefinition
 }
 ```
 
-`definitionId` is threaded into `BlockTemplate.configJson` at save
-time (`{"definitionId": "..."}`) and pulled back out on load, so
-custom-carousel **and habit-tracker** slots round-trip correctly
-through Hive without a schema bump.
+For block slots, `BlockSlot.definitionId` is threaded into
+`BlockTemplate.configJson` at save time (`{"definitionId": "..."}`) and
+pulled back out on load, so custom-carousel **and habit-tracker** slots
+round-trip correctly through Hive without a schema bump. The
+**section-level** `SectionDraft.definitionId` is different: it's used
+only for `SectionKind.wannado` and saves straight onto
+`LayoutSection.definitionId` (a first-class nullable field, GUS-42/
+GUS-45), not into a block config — wanna-do sections carry no block
+slots. Chosen in the Add-Section sheet and fixed for the section's life
+(no in-editor swap).
 
 The editor needs **stable per-slot and per-section identities** so
 reorder/remove can target the right tile or section. `BlockSlot` is
@@ -153,9 +160,11 @@ cells are an editor-only concept. Entries materialized from a kind-B
 layout naturally contain only the chosen blocks.
 
 `custom` (full section toolkit):
-- `addSection(kind)` — append a `SectionDraft`. Block-grid sections
-  start empty (no seeded slots); rows are derived from the slot
-  count as the user adds blocks.
+- `addSection(kind, {definitionId})` — append a `SectionDraft`.
+  Block-grid sections start empty (no seeded slots); rows are derived
+  from the slot count as the user adds blocks. `definitionId` is only
+  stored for `SectionKind.wannado` (the chosen `WannadoDefinition`),
+  ignored for every other kind.
 - `removeSection(sectionId)` — remove by id.
 - `moveSection(from, to)` — straight list reorder (the editor uses
   explicit up/down arrows; the no-op detection from `moveSlot`

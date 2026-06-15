@@ -19,11 +19,21 @@ class EntrySection {
   final int? rows;
   final List<JournalBlockData> blocks;
 
+  /// For [SectionKind.wannado] only: the id of the `WannadoDefinition`
+  /// this section renders (carried over from the source `LayoutSection`).
+  /// `null` for every other kind, and for legacy wannado sections saved
+  /// before the definition-backed model.
+  ///
+  /// Appended last — `hive_ce` reads missing fields as `null`, so this is
+  /// a backward-compatible add with no box-name bump (see hive/CLAUDE.md).
+  final String? definitionId;
+
   const EntrySection({
     required this.id,
     required this.kind,
     required this.blocks,
     this.rows,
+    this.definitionId,
   });
 
   EntrySection copyWith({
@@ -31,15 +41,20 @@ class EntrySection {
     SectionKind? kind,
     int? rows,
     List<JournalBlockData>? blocks,
+    String? definitionId,
     bool clearRows = false,
+    bool clearDefinitionId = false,
   }) => EntrySection(
     id: id ?? this.id,
     kind: kind ?? this.kind,
     rows: clearRows ? null : (rows ?? this.rows),
     blocks: blocks ?? this.blocks,
+    definitionId: clearDefinitionId
+        ? null
+        : (definitionId ?? this.definitionId),
   );
 
   @override
   String toString() =>
-      'EntrySection(id: $id, kind: $kind, rows: $rows, blocks: ${blocks.length})';
+      'EntrySection(id: $id, kind: $kind, rows: $rows, blocks: ${blocks.length}, definitionId: $definitionId)';
 }
