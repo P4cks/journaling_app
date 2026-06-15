@@ -275,14 +275,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     unaffected). Constructed in `main.dart`, exposed via
     `AppDependencies`.
 - [auth_service.dart](auth_service.dart) — `AuthService` interface,
-  `AuthFailure`, and `DisabledAuthService`. The disabled service is used
-  when Firebase options are missing or initialization fails so the app
-  can keep running as a local-first journal.
-- [firebase_auth_service.dart](firebase_auth_service.dart) —
-  `FirebaseAuthService`. The only class that imports `firebase_auth` /
-  `google_sign_in`. Maps Firebase `User` → `AppUser`, wraps Firebase
-  exceptions in `AuthFailure`, and supports email/password, Google,
-  Apple, password reset, and sign-out.
+  `AuthFailure`, and `DisabledAuthService`. **This is the only auth
+  implementation right now.** `main.dart` always constructs a
+  `DisabledAuthService` so the app runs as a local-first journal with
+  the Profile auth buttons inert. Firebase (`firebase_core` /
+  `firebase_auth`) and `google_sign_in` were removed for now — the old
+  `firebase_auth_service.dart` (`FirebaseAuthService`) is gone. Re-add a
+  real `AuthService` implementation here when auth is reinstated.
 - [subscription_service.dart](subscription_service.dart) —
   `SubscriptionService`. The **only** class that imports
   `purchases_flutter` (RevenueCat). Static `configure()` calls
@@ -312,9 +311,9 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
 - `debugPrint` with a `[ClassName]` prefix on every state transition.
   This is intentional — the bottom-of-the-stack log makes drag/drop
   and sweep behavior debuggable from the console.
-- Firebase Auth is **optional**. Missing FlutterFire config should
-  disable only the Profile auth buttons, not app startup or local Hive
-  journaling.
+- Auth is **optional and currently disabled**. The `DisabledAuthService`
+  disables only the Profile auth buttons, not app startup or local Hive
+  journaling. (Firebase was removed; see `auth_service.dart`.)
 
 ## Gotchas
 
@@ -326,9 +325,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   Don't pass un-normalized `DateTime`s and expect dedup — the function
   normalizes internally, but the caller may still get hashing surprises
   if they reuse the same set elsewhere.
-- **Don't import Firebase Auth outside `FirebaseAuthService`.** Future
-  Firestore/Storage code should hang off `AuthRepository.currentUser.uid`
-  rather than coupling widgets or repositories to Firebase SDK state.
+- **Don't couple widgets or repositories to any auth SDK directly.**
+  Auth currently runs through `DisabledAuthService` (Firebase removed).
+  When auth is reinstated, future code should hang off
+  `AuthRepository.currentUser.uid` behind the `AuthService` interface
+  rather than importing an SDK directly.
 
 ## When to update this file
 
