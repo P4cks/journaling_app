@@ -526,9 +526,10 @@ class _CustomBody extends StatelessWidget {
       context,
       subscriptions: subscriptions,
       rewards: AppDependencies.of(context).streakRewardSettings,
+      settings: AppDependencies.of(context).blockSettings,
     );
     if (picked == null) return;
-    vm.addSection(picked);
+    vm.addSection(picked.kind, definitionId: picked.definitionId);
   }
 
   Future<bool> _confirmRemove(BuildContext context, String label) async {
@@ -618,7 +619,7 @@ class _SectionCard extends StatelessWidget {
       SectionKind.header => ('Header', 'header'),
       SectionKind.divider => ('Divider', 'divider'),
       SectionKind.blockTextBody => ('Block + text', 'block + text'),
-      SectionKind.wannado => ('Wanna-dos', 'wanna-dos'),
+      SectionKind.wannado => ('Wanna-do carousel', 'wanna-do carousel'),
     };
 
     return Container(
@@ -704,12 +705,13 @@ class _SectionCard extends StatelessWidget {
               vm: vm,
               sectionIndex: index,
             ),
-            // Content-free per entry — previews the *global* wanna-do
-            // list (rotating carousel). No per-section add affordance;
-            // items are managed in Block settings.
-            SectionKind.wannado => const Padding(
-              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
-              child: WannadoSectionWidget(),
+            // Content-free per entry — previews the chosen wanna-do
+            // carousel definition (resolved by `definitionId`). No
+            // per-section add affordance; the definition (title + items)
+            // is managed in Block settings.
+            SectionKind.wannado => Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: WannadoSectionWidget(definitionId: section.definitionId),
             ),
           },
         ],

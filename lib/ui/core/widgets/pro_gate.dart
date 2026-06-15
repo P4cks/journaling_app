@@ -39,6 +39,12 @@ const int kFreeMaxCustomBlocks = 1;
 /// layout; creating a second presents the paywall. (BACKLOG #90, GUS-40)
 const int kFreeMaxLayouts = 1;
 
+/// Free-tier cap on user-defined wanna-do carousel definitions. Creating
+/// a further one presents the paywall. Mostly bites reward-unlocked free
+/// users, since the wanna-do *section* itself is already Pro-only.
+/// (GUS-42 / GUS-45)
+const int kFreeMaxWannados = 1;
+
 /// Gates a Pro-only action. Returns `true` when the user already has the
 /// `pro` entitlement, or completes a purchase on the presented paywall;
 /// `false` when they cancel, are offline, or the paywall errors.
@@ -173,6 +179,7 @@ class AddCustomBlockButton extends StatelessWidget {
     required this.currentCount,
     required this.onAddAllowed,
     this.label = 'Add custom block',
+    this.max = kFreeMaxCustomBlocks,
   });
 
   final SubscriptionRepository subscriptions;
@@ -184,11 +191,16 @@ class AddCustomBlockButton extends StatelessWidget {
   /// carousels + habits together regardless.
   final String label;
 
+  /// Free-tier cap this button gates against. Defaults to
+  /// [kFreeMaxCustomBlocks] (the shared carousel + habit budget); the
+  /// wanna-do carousel add paths pass [kFreeMaxWannados], which is a
+  /// separate budget.
+  final int max;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final atLimit =
-        !subscriptions.isPro && currentCount >= kFreeMaxCustomBlocks;
+    final atLimit = !subscriptions.isPro && currentCount >= max;
     return OutlinedButton.icon(
       style: atLimit
           ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)

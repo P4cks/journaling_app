@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/habit_definition.dart';
-import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
+import 'package:journaling_app_rewrite/data/model/wannado_definition.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
 
 /// How a prompt is chosen when materializing a prompt block.
@@ -51,7 +51,7 @@ class BlockSettings extends ChangeNotifier {
   bool _carouselTitlesEnabled = true;
   List<CustomCarouselDefinition> _customCarousels = const [];
   List<HabitDefinition> _habits = const [];
-  List<WannadoItem> _wannados = const [];
+  List<WannadoDefinition> _wannadoDefinitions = const [];
 
   /// Block types that the memory block is allowed to snapshot from.
   /// Defaults to the historical hardcoded set — text, mood, and
@@ -85,12 +85,12 @@ class BlockSettings extends ChangeNotifier {
   /// [addHabit] / [updateHabit] / [deleteHabit].
   List<HabitDefinition> get habits => List.unmodifiable(_habits);
 
-  /// The user's **global** wanna-do / bucket list. Rendered by every
-  /// `SectionKind.wannado` section (pure display — no per-item done
-  /// state). Mutating it via [addWannado] / [updateWannado] /
-  /// [deleteWannado] notifies, so every visible wannado section
-  /// rebuilds live.
-  List<WannadoItem> get wannados => List.unmodifiable(_wannados);
+  /// The user's "Wanna-do Carousel" definitions (title + text items).
+  /// Each `SectionKind.wannado` section references one of these by id;
+  /// editing a definition propagates live to every section. Mutate via
+  /// [addWannado] / [updateWannado] / [deleteWannadoDefinition].
+  List<WannadoDefinition> get wannadoDefinitions =>
+      List.unmodifiable(_wannadoDefinitions);
 
   /// Eligible block types for memory snapshots. Returned as an
   /// unmodifiable set; mutate via [setMemoryEligibleTypes]. Memory
@@ -110,6 +110,13 @@ class BlockSettings extends ChangeNotifier {
 
   HabitDefinition? findHabit(String id) {
     for (final def in _habits) {
+      if (def.id == id) return def;
+    }
+    return null;
+  }
+
+  WannadoDefinition? findWannadoDefinition(String id) {
+    for (final def in _wannadoDefinitions) {
       if (def.id == id) return def;
     }
     return null;
@@ -171,14 +178,14 @@ class BlockSettings extends ChangeNotifier {
         // Corrupt JSON — fall back to empty.
       }
     }
-    final wannadosRaw = _storage.getBlockWannadosJson();
+    final wannadosRaw = _storage.getBlockWannadoDefinitionsJson();
     if (wannadosRaw != null && wannadosRaw.isNotEmpty) {
       try {
         final decoded = jsonDecode(wannadosRaw);
         if (decoded is List) {
-          _wannados = [
+          _wannadoDefinitions = [
             for (final raw in decoded)
-              if (raw is Map<String, dynamic>) WannadoItem.fromMap(raw),
+              if (raw is Map<String, dynamic>) WannadoDefinition.fromMap(raw),
           ];
         }
       } catch (_) {
@@ -220,10 +227,10 @@ class BlockSettings extends ChangeNotifier {
   }
 
   Future<void> _persistWannados() async {
-    final json = _wannados.isEmpty
+    final json = _wannadoDefinitions.isEmpty
         ? null
-        : jsonEncode([for (final item in _wannados) item.toMap()]);
-    await _storage.setBlockWannadosJson(json);
+        : jsonEncode([for (final def in _wannadoDefinitions) def.toMap()]);
+    await _storage.setBlockWannadoDefinitionsJson(json);
   }
 
   Future<void> setPrompts(List<String> prompts) async {
@@ -350,35 +357,42 @@ class BlockSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Append a new wanna-do to the global list. Caller owns the id (uuid).
-  Future<void> addWannado(WannadoItem item) async {
-    _wannados = [..._wannados, item];
-    await _persistWannados();
-    debugPrint('[BlockSettings] addWannado id=${item.id} text="${item.text}"');
-    notifyListeners();
-  }
-
-  /// Replace a wanna-do by id. No-op when id is not found.
-  Future<void> updateWannado(WannadoItem item) async {
-    final next = [..._wannados];
-    final i = next.indexWhere((w) => w.id == item.id);
-    if (i < 0) return;
-    next[i] = item;
-    _wannados = next;
+  /// Append a new wanna-do carousel definition to the registry. The caller
+  /// owns the id (uuid) and any title-uniqueness checks — `BlockSettings`
+  /// just persists and notifies.
+  Future<void> addWannado(WannadoDefinition definition) async {
+    _wannadoDefinitions = [..._wannadoDefinitions, definition];
     await _persistWannados();
     debugPrint(
-      '[BlockSettings] updateWannado id=${item.id} text="${item.text}"',
+      '[BlockSettings] addWannado id=${definition.id} title="${definition.title}"',
     );
     notifyListeners();
   }
 
-  /// Remove a wanna-do by id. No-op when id is not found.
-  Future<void> deleteWannado(String id) async {
-    final next = [..._wannados]..removeWhere((w) => w.id == id);
-    if (next.length == _wannados.length) return;
-    _wannados = next;
+  /// Replace a wanna-do carousel definition by id. No-op when id is not
+  /// found.
+  Future<void> updateWannado(WannadoDefinition definition) async {
+    final next = [..._wannadoDefinitions];
+    final i = next.indexWhere((d) => d.id == definition.id);
+    if (i < 0) return;
+    next[i] = definition;
+    _wannadoDefinitions = next;
     await _persistWannados();
-    debugPrint('[BlockSettings] deleteWannado id=$id');
+    debugPrint(
+      '[BlockSettings] updateWannado id=${definition.id} title="${definition.title}"',
+    );
+    notifyListeners();
+  }
+
+  /// Remove a wanna-do carousel definition by id. Existing layouts /
+  /// entries that reference it are left untouched — the section renders a
+  /// placeholder when the lookup fails.
+  Future<void> deleteWannadoDefinition(String id) async {
+    final next = [..._wannadoDefinitions]..removeWhere((d) => d.id == id);
+    if (next.length == _wannadoDefinitions.length) return;
+    _wannadoDefinitions = next;
+    await _persistWannados();
+    debugPrint('[BlockSettings] deleteWannadoDefinition id=$id');
     notifyListeners();
   }
 

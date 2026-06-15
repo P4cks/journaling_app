@@ -41,9 +41,8 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   the key — distinguishes "user reset to default" from "user picked
   the same value as default".
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
-    `debug.unlockAllDays`, `theme.mode`, `theme.paletteId`,
-    `theme.secondary`, `theme.accent`, `theme.customPalettes`,
-    `theme.debugSurface`, `theme.postItMode` (`true`/`false`;
+    `debug.unlockAllDays`, `theme.paletteId`, `theme.customPalettes`,
+    `theme.postItMode` (`true`/`false`;
     absent → default `true`), `theme.postItPalette` (JSON-encoded
     list of `#RRGGBB` hex strings; absent → ships with the
     `kDefaultPostItPalette` muted pastels), `block.prompt.list`
@@ -56,9 +55,10 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `HabitDefinition`s — the user-defined habit "types" (title + icon)
     referenced by `BlockType.habitTracker` blocks; absent means no
     user-defined habits yet; mirrors the custom-carousel storage pair),
-    `block.wannado.items` (JSON-encoded list of
-    `WannadoItem`s — the global wanna-do bucket list rendered by
-    `SectionKind.wannado` sections; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
+    `block.wannado.definitions` (JSON-encoded list of
+    `WannadoDefinition`s — the user-created "Wanna-do Carousel" lists
+    (title + text items) referenced by `SectionKind.wannado` sections via
+    `definitionId`; absent → empty), `block.expandOnEdit` (`true`/`false`; absent →
     default `true`; gates the expanded-block overlay vs in-place
     edit mode), `debug.expandedBlock.showDoneButton` (`true`/`false`;
     absent → default `false`; developer affordance that adds a Done
@@ -74,6 +74,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `streak.reward.unlockedSections` (JSON list of `SectionKind.name`s
     unlocked the same way; absent → none — see
     [streak_reward_settings.dart](streak_reward_settings.dart)).
+  - **Removed keys (GUS-27):** `theme.mode`, `theme.secondary`,
+    `theme.accent`, `theme.debugSurface` and their accessors are gone —
+    brightness is now baked into the selected palette and the debug
+    surface/secondary/accent overrides were deleted. Per the pre-1.0
+    backwards-compat policy stale values left on disk are harmless and
+    simply stop being read; no migration.
     If you add another, give it a namespaced key and add a typed
     accessor pair. Abandoned legacy keys (`block.mood.title`,
     `block.weather.title`, `block.text.charLimit`, and the former
@@ -177,13 +183,18 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     block" placeholder. Mirrors the `customCarousels` pattern exactly.
     Free/Pro split is by *combined count* with `customCarousels`
     against `kFreeMaxCustomBlocks`, not a blanket flag.
-  - `wannados` (`List<WannadoItem>`) — the user's **global** wanna-do
-    bucket list (GUS-8), rendered by every `SectionKind.wannado`
-    section as a rotating carousel. `addWannado`, `updateWannado`,
-    `deleteWannado` mutate (each notifies). **No toggle / done state**
-    — items are pure display (text only). Caller owns id generation.
-    Persisted as a JSON list (`block.wannado.items`); mirrors the
-    `customCarousels` storage pattern exactly.
+  - `wannadoDefinitions` (`List<WannadoDefinition>`) — the user's
+    "Wanna-do Carousel" definitions (title + ordered text items, GUS-42/
+    GUS-45), each referenced by a `SectionKind.wannado` section via
+    `definitionId`. `addWannado(def)`, `updateWannado(def)`,
+    `deleteWannadoDefinition(id)`, and `findWannadoDefinition(id)` mutate /
+    look up (each mutator notifies + `debugPrint`s). **No toggle / done
+    state** — items are pure display (text only). Caller owns id
+    generation + title uniqueness. Persisted as a JSON list
+    (`block.wannado.definitions`); orphan-tolerant — delete doesn't
+    cascade into layouts / entries, the section renders an empty
+    placeholder. Mirrors the `customCarousels` / `habits` registry
+    pattern exactly.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
@@ -194,12 +205,15 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     can prompt the user.
   - Setters guard against no-op assignment and persist atomically.
 - [theme_settings.dart](theme_settings.dart) — `ThemeSettings extends ChangeNotifier`.
-  Mirrors a `ColorScheme` configuration:
-  - `themeMode` (`ThemeMode`, default `system`)
-  - `paletteId` (Graphite or a generated user-theme id)
-  - `palettes` (Graphite plus persisted user themes)
-  - `secondaryOverride`, `accentOverride`, `debugSurfaceOverride`
-    (all nullable; `null` means "use the palette's default")
+  Mirrors a `ColorScheme` configuration (GUS-27 — **no** `themeMode` and
+  **no** surface/secondary/accent overrides anymore):
+  - `paletteId` (`'light'`/`'dark'` built-in, or a generated user-theme
+    id; default `kLightDefaultPalette.id`)
+  - `palettes` (`[...kBuiltInPalettes, ...customPalettes]`)
+  - `palette` getter resolves the selected `SurfacePalette` (falls back
+    to `kLightDefaultPalette`). Each palette bakes in its own
+    `brightness` + single `surface`, so the selection alone drives the
+    app's light/dark.
   - `postItModeEnabled` (`bool`, default `true`) — gates the playful
     rotation/offset/color visuals in `PostItBlock`. When `false`, the
     grid renders blocks as flat cards (the pre-post-it look).
@@ -207,13 +221,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     hex strings. Random-picked per block at materialization. Defaults
     to `kDefaultPostItPalette` (7 muted pastels) on first launch.
   - User themes are persisted as a single `theme.customPalettes` JSON
-    list. Each item stores `id`, `name`, and `#RRGGBB` `surface`,
-    `secondary`, `accent`, and `text` values. Legacy slot-map JSON is
-    still decoded. Post-it palette is **separate** — a flat list of
-    single colors, not surface palettes.
-  - `effectiveSecondary` / `effectiveAccent` getters resolve override →
-    palette default. Use these from non-debug UI; the raw `*Override`
-    getters are for the Profile screen to show "is overridden".
+    list. Each item stores `id`, `name`, `brightness` (`'light'`/
+    `'dark'`), and `#RRGGBB` `surface`, `secondary`, `accent`, and
+    `text` values. Decode is tolerant — a missing `brightness` is
+    inferred from the surface luminance. `customPaletteTemplate()` mints
+    a new dark-brightness template. Post-it palette is **separate** — a
+    flat list of single colors, not surface palettes.
   - `setPostItModeEnabled`, `addPostItColor`, `removePostItColorAt`,
     `setPostItPalette` mutate the post-it state and notify.
   - Persists every setter to `SettingsStorageService`. Subscribed to by
@@ -268,14 +281,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     unaffected). Constructed in `main.dart`, exposed via
     `AppDependencies`.
 - [auth_service.dart](auth_service.dart) — `AuthService` interface,
-  `AuthFailure`, and `DisabledAuthService`. The disabled service is used
-  when Firebase options are missing or initialization fails so the app
-  can keep running as a local-first journal.
-- [firebase_auth_service.dart](firebase_auth_service.dart) —
-  `FirebaseAuthService`. The only class that imports `firebase_auth` /
-  `google_sign_in`. Maps Firebase `User` → `AppUser`, wraps Firebase
-  exceptions in `AuthFailure`, and supports email/password, Google,
-  Apple, password reset, and sign-out.
+  `AuthFailure`, and `DisabledAuthService`. **This is the only auth
+  implementation right now.** `main.dart` always constructs a
+  `DisabledAuthService` so the app runs as a local-first journal with
+  the Profile auth buttons inert. Firebase (`firebase_core` /
+  `firebase_auth`) and `google_sign_in` were removed for now — the old
+  `firebase_auth_service.dart` (`FirebaseAuthService`) is gone. Re-add a
+  real `AuthService` implementation here when auth is reinstated.
 - [subscription_service.dart](subscription_service.dart) —
   `SubscriptionService`. The **only** class that imports
   `purchases_flutter` (RevenueCat). Static `configure()` calls
@@ -305,9 +317,9 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
 - `debugPrint` with a `[ClassName]` prefix on every state transition.
   This is intentional — the bottom-of-the-stack log makes drag/drop
   and sweep behavior debuggable from the console.
-- Firebase Auth is **optional**. Missing FlutterFire config should
-  disable only the Profile auth buttons, not app startup or local Hive
-  journaling.
+- Auth is **optional and currently disabled**. The `DisabledAuthService`
+  disables only the Profile auth buttons, not app startup or local Hive
+  journaling. (Firebase was removed; see `auth_service.dart`.)
 
 ## Gotchas
 
@@ -319,9 +331,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   Don't pass un-normalized `DateTime`s and expect dedup — the function
   normalizes internally, but the caller may still get hashing surprises
   if they reuse the same set elsewhere.
-- **Don't import Firebase Auth outside `FirebaseAuthService`.** Future
-  Firestore/Storage code should hang off `AuthRepository.currentUser.uid`
-  rather than coupling widgets or repositories to Firebase SDK state.
+- **Don't couple widgets or repositories to any auth SDK directly.**
+  Auth currently runs through `DisabledAuthService` (Firebase removed).
+  When auth is reinstated, future code should hang off
+  `AuthRepository.currentUser.uid` behind the `AuthService` interface
+  rather than importing an SDK directly.
 
 ## When to update this file
 

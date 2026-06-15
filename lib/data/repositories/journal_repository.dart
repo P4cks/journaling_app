@@ -336,12 +336,16 @@ class JournalRepository extends ChangeNotifier {
               ),
             ],
           ),
-          // Wanna-dos render the global list off `BlockSettings`; the
-          // section itself is content-free per entry.
+          // Wanna-do carousel renders a `WannadoDefinition` off
+          // `BlockSettings` (resolved by `definitionId`); the section
+          // carries no per-entry blocks. Carry the chosen definition id
+          // across from the layout section so the entry renders the same
+          // list the layout pointed at.
           SectionKind.wannado => EntrySection(
             id: _uuid.v4(),
             kind: SectionKind.wannado,
             blocks: const [],
+            definitionId: section.definitionId,
           ),
         },
     ];

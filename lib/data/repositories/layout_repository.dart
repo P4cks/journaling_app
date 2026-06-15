@@ -43,6 +43,24 @@ class LayoutRepository {
     return count;
   }
 
+  /// Counts layout sections that reference a wanna-do carousel definition.
+  ///
+  /// Unlike custom carousels (which live in a block template's config), a
+  /// wanna-do carousel is attached to the **section** via
+  /// `LayoutSection.definitionId`. The output is the number of
+  /// `SectionKind.wannado` sections currently pointing at [definitionId],
+  /// which callers use to warn before deletion.
+  int countWannadoUsage(String definitionId) {
+    var count = 0;
+    for (final layout in _layouts.getAllLayouts()) {
+      for (final section in layout.sections) {
+        if (section.kind != SectionKind.wannado) continue;
+        if (section.definitionId == definitionId) count++;
+      }
+    }
+    return count;
+  }
+
   Future<void> save(JournalLayout layout) {
     debugPrint(
       '[LayoutRepository] save id=${layout.id} name=${layout.name} kind=${layout.kind} sections=${layout.sections.length}',

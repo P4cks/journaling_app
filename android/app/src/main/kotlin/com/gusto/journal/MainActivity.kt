@@ -1,4 +1,4 @@
-package com.example.journaling_app_rewrite
+package com.gusto.journal
 
 import io.flutter.embedding.android.FlutterActivity
 

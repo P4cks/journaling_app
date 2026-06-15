@@ -3,9 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/custom_carousel_definition.dart';
 import 'package:journaling_app_rewrite/data/model/habit_definition.dart';
-import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
+import 'package:journaling_app_rewrite/data/model/wannado_definition.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
-import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
@@ -18,9 +17,6 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/block_settings_view_model.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/prompt_block_settings.dart';
-import 'package:uuid/uuid.dart';
-
-const _uuid = Uuid();
 
 /// Block-type-global configuration screen.
 ///
@@ -159,13 +155,14 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
               ],
             ),
             SettingsSection(
-              label: 'Wanna-dos',
+              label: 'Wanna-do Carousels',
               children: [
-                _WannadoList(
+                _WannadoCarouselList(
                   settings: AppDependencies.of(context).blockSettings,
-                  subscriptions: AppDependencies.of(
+                  layoutRepository: AppDependencies.of(
                     context,
-                  ).subscriptionRepository,
+                  ).layoutRepository,
+                  maybeSaveOnLeave: _maybeSaveOnLeave,
                 ),
               ],
             ),
@@ -365,110 +362,122 @@ class _CustomCarouselList extends StatelessWidget {
   }
 }
 
-/// Manages the user's *global* wanna-do list (GUS-8) — a single bucket
-/// list rendered by every `SectionKind.wannado` section as a rotating
-/// carousel. Pure display: items have text only, no done state. Writes
-/// directly to [BlockSettings] (not draft state), mirroring
-/// `_CustomCarouselList` / `_MemoryEligibleTypesPicker`, so additions /
-/// edits / deletes surface in every visible wannado section immediately.
+/// Renders the user's wanna-do carousel definitions (Edit / Delete per
+/// row) plus an "Add wanna-do carousel" button at the bottom. Mirrors
+/// `_CustomCarouselList` / `_HabitList`.
 ///
-/// **Pro-gated (GUS-8 / GUS-41).** Wanna-dos are a Pro feature. When a
-/// user downgrades to free the existing items stay **visible** (old
-/// entries' wannado sections must keep rendering them), but managing
-/// the list is locked: the Edit / Delete actions grey out and the
-/// "Add wanna-do" button presents the paywall on tap. A `ProLockBadge`
-/// next to the caption signals the lock.
-class _WannadoList extends StatelessWidget {
-  const _WannadoList({required this.settings, required this.subscriptions});
+/// Subscribes to [BlockSettings] directly via `ListenableBuilder` so
+/// additions / edits / deletes done in the dedicated editor screen
+/// surface here without re-pushing the Block-Settings route.
+///
+/// **Gating.** The wanna-do *section* is fully Pro (gated in the layout
+/// editor's add-section sheet). On top of that, free users may define at
+/// most [kFreeMaxWannados] carousels — the add button greys + badges and
+/// routes through the paywall past the cap (handled by
+/// [AddCustomBlockButton]). The Edit / "+ New" actions push the editor
+/// onto the navigation stack; before doing so we run the parent's
+/// [maybeSaveOnLeave] so a dirty Block-Settings draft isn't buried.
+class _WannadoCarouselList extends StatelessWidget {
+  const _WannadoCarouselList({
+    required this.settings,
+    required this.layoutRepository,
+    required this.maybeSaveOnLeave,
+  });
 
   final BlockSettings settings;
-  final SubscriptionRepository subscriptions;
+  final LayoutRepository layoutRepository;
+  final Future<bool> Function() maybeSaveOnLeave;
 
-  Future<void> _add(BuildContext context) async {
-    final text = await _showEditDialog(context);
-    if (text == null) return;
-    await settings.addWannado(WannadoItem(id: _uuid.v4(), text: text));
+  Future<void> _navigateToEditor(BuildContext context, String? id) async {
+    final canLeave = await maybeSaveOnLeave();
+    if (!context.mounted || !canLeave) return;
+    if (id == null) {
+      await context.push(Routes.newWannado);
+    } else {
+      await context.push(Routes.editWannadoFor(id));
+    }
   }
 
-  Future<void> _edit(BuildContext context, WannadoItem item) async {
-    final text = await _showEditDialog(context, initial: item.text);
-    if (text == null) return;
-    await settings.updateWannado(item.copyWith(text: text));
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WannadoDefinition def,
+  ) async {
+    final uses = layoutRepository.countWannadoUsage(def.id);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final label = def.title.isEmpty ? 'this wanna-do carousel' : '"${def.title}"';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete wanna-do carousel?'),
+        content: Text(
+          uses == 0
+              ? 'Deletes $label. It is not used by any layout.'
+              : 'Deletes $label, used by $uses layout${uses == 1 ? '' : 's'}. '
+                    'Those sections (and existing entries) will render an '
+                    'empty placeholder until you point them at another list.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: errorColor),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await settings.deleteWannadoDefinition(def.id);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([settings, subscriptions]),
+      listenable: settings,
       builder: (context, _) {
-        final items = settings.wannados;
-        final locked = !subscriptions.isPro;
+        final defs = settings.wannadoDefinitions;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'A single bucket list shown by every Wanna-dos section. '
-                      'Items rotate through one at a time.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  if (locked) ...[
-                    const SizedBox(width: 8),
-                    const ProLockBadge(),
-                  ],
-                ],
+              child: Text(
+                'Named lists shown by Wanna-do carousel sections, rotating '
+                'through one item at a time. Add a section from a layout to '
+                'use one.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-            for (final item in items)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  item.text,
-                  style: locked
-                      ? TextStyle(color: theme.disabledColor)
-                      : null,
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Edit',
-                      icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                      // Locked → disabled (greyed); unlocked → edit.
-                      onPressed: locked ? null : () => _edit(context, item),
-                    ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: AppIcon(
-                        HugeIcons.strokeRoundedDelete02,
-                        color: locked
-                            ? theme.disabledColor
-                            : theme.colorScheme.error,
-                      ),
-                      onPressed: locked
-                          ? null
-                          : () => settings.deleteWannado(item.id),
-                    ),
-                  ],
-                ),
+            for (final def in defs)
+              _WannadoDefinitionRow(
+                definition: def,
+                onEdit: () => _navigateToEditor(context, def.id),
+                onDelete: () => _confirmDelete(context, def),
               ),
+            ProLimitHint(
+              used: defs.length,
+              max: kFreeMaxWannados,
+              noun: 'wanna-do carousels',
+              subscriptions: AppDependencies.of(context).subscriptionRepository,
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: _AddWannadoButton(
-                  locked: locked,
-                  subscriptions: subscriptions,
-                  onAddAllowed: () => _add(context),
+                child: AddCustomBlockButton(
+                  subscriptions: AppDependencies.of(
+                    context,
+                  ).subscriptionRepository,
+                  currentCount: defs.length,
+                  max: kFreeMaxWannados,
+                  label: 'Add wanna-do carousel',
+                  onAddAllowed: () => _navigateToEditor(context, null),
                 ),
               ),
             ),
@@ -479,117 +488,69 @@ class _WannadoList extends StatelessWidget {
   }
 }
 
-/// "Add wanna-do" button. For free (downgraded) users it greys out and
-/// overlays a `ProLockBadge`; tapping presents the paywall and only
-/// invokes [onAddAllowed] on a successful upgrade. Mirrors
-/// `AddCustomBlockButton`'s gating shape. (GUS-41)
-class _AddWannadoButton extends StatelessWidget {
-  const _AddWannadoButton({
-    required this.locked,
-    required this.subscriptions,
-    required this.onAddAllowed,
+class _WannadoDefinitionRow extends StatelessWidget {
+  const _WannadoDefinitionRow({
+    required this.definition,
+    required this.onEdit,
+    required this.onDelete,
   });
 
-  final bool locked;
-  final SubscriptionRepository subscriptions;
-  final VoidCallback onAddAllowed;
+  final WannadoDefinition definition;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return OutlinedButton.icon(
-      style: locked
-          ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)
-          : null,
-      onPressed: () async {
-        if (locked) {
-          if (!await requirePro(subscriptions, context: context)) return;
-          if (!context.mounted) return;
-        }
-        onAddAllowed();
-      },
-      icon: locked
-          ? Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AppIcon(
-                  HugeIcons.strokeRoundedPlusSign,
-                  color: theme.disabledColor,
+    final errorColor = theme.colorScheme.error;
+    final count = definition.items.length;
+    final label = definition.title.isEmpty ? 'Untitled' : definition.title;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$count item${count == 1 ? '' : 's'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
+                  label: const Text('Edit'),
                 ),
-                const Positioned(
-                  top: -6,
-                  right: -6,
-                  child: ProLockBadge(compact: true),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onDelete,
+                  icon: AppIcon(
+                    HugeIcons.strokeRoundedDelete02,
+                    color: errorColor,
+                  ),
+                  label: Text('Delete', style: TextStyle(color: errorColor)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: errorColor),
+                  ),
                 ),
-              ],
-            )
-          : AppIcon(HugeIcons.strokeRoundedPlusSign),
-      label: const Text('Add wanna-do'),
-    );
-  }
-}
-
-/// Single-field add/edit dialog for a wanna-do. Returns the trimmed
-/// text, or `null` on cancel / empty.
-Future<String?> _showEditDialog(BuildContext context, {String? initial}) async {
-  final result = await showDialog<String>(
-    context: context,
-    builder: (_) => _WannadoEditDialog(initial: initial),
-  );
-  if (result == null || result.isEmpty) return null;
-  return result;
-}
-
-/// The add/edit dialog content. **Stateful so it owns its
-/// `TextEditingController`** and disposes it in its own `dispose()` —
-/// disposing the controller synchronously right after `showDialog`
-/// returns crashes the TextField as it rebuilds during the dialog's
-/// exit animation ("A TextEditingController was used after being
-/// disposed"), and that thrown exception aborts the frame so a freshly
-/// added wanna-do never paints until a restart.
-class _WannadoEditDialog extends StatefulWidget {
-  const _WannadoEditDialog({this.initial});
-
-  final String? initial;
-
-  @override
-  State<_WannadoEditDialog> createState() => _WannadoEditDialogState();
-}
-
-class _WannadoEditDialogState extends State<_WannadoEditDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initial ?? '',
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() => Navigator.of(context).pop(_controller.text.trim());
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.initial == null ? 'Add wanna-do' : 'Edit wanna-do'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        maxLength: 80,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          hintText: 'e.g. See the northern lights',
-        ),
-        onSubmitted: (_) => _submit(),
+              ),
+            ],
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
-      ],
     );
   }
 }

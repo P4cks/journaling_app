@@ -20,53 +20,43 @@ const List<String> kDefaultPostItPalette = [
 
 class ThemeSettings extends ChangeNotifier {
   ThemeSettings(this._settings)
-    : _themeMode = _parseMode(_settings.getThemeMode()),
-      _customPalettes = _decodeCustomPalettes(
+    : _customPalettes = _decodeCustomPalettes(
         _settings.getThemeCustomPalettes(),
       ),
       _paletteId = _resolvePaletteId(
         _settings.getThemePaletteId(),
         _decodeCustomPalettes(_settings.getThemeCustomPalettes()),
       ),
-      _secondaryOverride = colorFromHex(_settings.getThemeSecondary()),
-      _accentOverride = colorFromHex(_settings.getThemeAccent()),
-      _debugSurfaceOverride = colorFromHex(_settings.getThemeDebugSurface()),
       _postItModeEnabled = _settings.getThemePostItMode() ?? true,
       _postItPalette = _decodePostItPalette(_settings.getThemePostItPalette());
 
   final SettingsStorageService _settings;
 
-  ThemeMode _themeMode;
   String _paletteId;
   List<SurfacePalette> _customPalettes;
-  Color? _secondaryOverride;
-  Color? _accentOverride;
-  Color? _debugSurfaceOverride;
   bool _postItModeEnabled;
   List<String> _postItPalette;
 
-  ThemeMode get themeMode => _themeMode;
   String get paletteId => _paletteId;
+
+  /// Built-in Light + Dark defaults followed by the user's custom themes.
   List<SurfacePalette> get palettes => [
-    kDefaultSurfacePalette,
+    ...kBuiltInPalettes,
     ..._customPalettes,
   ];
   List<SurfacePalette> get customPalettes => List.unmodifiable(_customPalettes);
+
+  /// The currently-selected theme. The palette's baked-in brightness +
+  /// surface drive the whole app (GUS-27); there is no app-wide
+  /// light/dark mode anymore.
   SurfacePalette get palette {
     for (final p in palettes) {
       if (p.id == _paletteId) return p;
     }
-    return kDefaultSurfacePalette;
+    return kLightDefaultPalette;
   }
 
   bool get selectedPaletteIsCustom => palette.isCustom;
-  Color? get secondaryOverride => _secondaryOverride;
-  Color? get accentOverride => _accentOverride;
-  Color? get debugSurfaceOverride => _debugSurfaceOverride;
-
-  Color get effectiveSecondary =>
-      _secondaryOverride ?? palette.defaultSecondary;
-  Color get effectiveAccent => _accentOverride ?? palette.defaultAccent;
 
   bool get postItModeEnabled => _postItModeEnabled;
 
@@ -113,23 +103,11 @@ class ThemeSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setThemeMode(ThemeMode mode) async {
-    if (_themeMode == mode) return;
-    _themeMode = mode;
-    debugPrint('[ThemeSettings] themeMode -> $mode');
-    await _settings.setThemeMode(_encodeMode(mode));
-    notifyListeners();
-  }
-
   Future<void> setPaletteId(String id) async {
     if (_paletteId == id) return;
     _paletteId = id;
-    _secondaryOverride = null;
-    _accentOverride = null;
     debugPrint('[ThemeSettings] paletteId -> $id');
     await _settings.setThemePaletteId(id);
-    await _settings.setThemeSecondary(null);
-    await _settings.setThemeAccent(null);
     notifyListeners();
   }
 
@@ -137,14 +115,10 @@ class ThemeSettings extends ChangeNotifier {
     if (!palette.isCustom) return;
     final next = [..._customPalettes, palette];
     _customPalettes = next;
-    _secondaryOverride = null;
-    _accentOverride = null;
     _paletteId = palette.id;
     debugPrint('[ThemeSettings] customPalette.${palette.id} -> added');
     await _settings.setThemeCustomPalettes(_encodeCustomPalettes(next));
     await _settings.setThemePaletteId(palette.id);
-    await _settings.setThemeSecondary(null);
-    await _settings.setThemeAccent(null);
     notifyListeners();
   }
 
@@ -156,12 +130,8 @@ class ThemeSettings extends ChangeNotifier {
     ];
     if (!next.any((p) => p.id == palette.id)) return;
     _customPalettes = next;
-    _secondaryOverride = null;
-    _accentOverride = null;
     debugPrint('[ThemeSettings] customPalette.${palette.id} -> updated');
     await _settings.setThemeCustomPalettes(_encodeCustomPalettes(next));
-    await _settings.setThemeSecondary(null);
-    await _settings.setThemeAccent(null);
     notifyListeners();
   }
 
@@ -170,77 +140,25 @@ class ThemeSettings extends ChangeNotifier {
     if (next.length == _customPalettes.length) return;
     _customPalettes = next;
     if (_paletteId == id) {
-      _paletteId = kDefaultSurfacePalette.id;
+      _paletteId = kLightDefaultPalette.id;
       await _settings.setThemePaletteId(_paletteId);
     }
-    _secondaryOverride = null;
-    _accentOverride = null;
     debugPrint('[ThemeSettings] customPalette.$id -> deleted');
     await _settings.setThemeCustomPalettes(_encodeCustomPalettes(next));
-    await _settings.setThemeSecondary(null);
-    await _settings.setThemeAccent(null);
     notifyListeners();
   }
 
-  Future<void> setSecondaryOverride(Color? color) async {
-    if (_secondaryOverride == color) return;
-    _secondaryOverride = color;
-    debugPrint('[ThemeSettings] secondaryOverride -> $color');
-    await _settings.setThemeSecondary(color == null ? null : colorToHex(color));
-    notifyListeners();
-  }
-
-  Future<void> setAccentOverride(Color? color) async {
-    if (_accentOverride == color) return;
-    _accentOverride = color;
-    debugPrint('[ThemeSettings] accentOverride -> $color');
-    await _settings.setThemeAccent(color == null ? null : colorToHex(color));
-    notifyListeners();
-  }
-
-  Future<void> setDebugSurfaceOverride(Color? color) async {
-    if (_debugSurfaceOverride == color) return;
-    _debugSurfaceOverride = color;
-    debugPrint('[ThemeSettings] debugSurfaceOverride -> $color');
-    await _settings.setThemeDebugSurface(
-      color == null ? null : colorToHex(color),
-    );
-    notifyListeners();
-  }
-
-  static ThemeMode _parseMode(String? raw) {
-    switch (raw) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      case 'system':
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  static String _encodeMode(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'light';
-      case ThemeMode.dark:
-        return 'dark';
-      case ThemeMode.system:
-        return 'system';
-    }
-  }
-
+  /// A blank custom-palette template for the theme editor. New custom
+  /// themes default to dark brightness (matches the prior editor default).
   SurfacePalette customPaletteTemplate({String? id}) {
-    final surface = kDefaultSurfacePalette.surfaceFor(Brightness.dark);
     return SurfacePalette(
       id: id ?? 'custom-${DateTime.now().microsecondsSinceEpoch}',
       displayName: 'New theme',
-      seed: kDefaultSurfacePalette.defaultAccent,
-      darkSurface: surface,
-      lightSurface: surface,
-      defaultSecondary: kDefaultSurfacePalette.defaultSecondary,
-      defaultAccent: kDefaultSurfacePalette.defaultAccent,
+      seed: kDarkDefaultPalette.defaultAccent,
+      brightness: Brightness.dark,
+      surface: kDarkDefaultPalette.surface,
+      defaultSecondary: kDarkDefaultPalette.defaultSecondary,
+      defaultAccent: kDarkDefaultPalette.defaultAccent,
       defaultTextColor: const Color(0xFFFFFFFF),
       isCustom: true,
     );
@@ -250,13 +168,13 @@ class ThemeSettings extends ChangeNotifier {
     String? raw,
     List<SurfacePalette> customPalettes,
   ) {
-    for (final palette in kSurfacePalettes) {
+    for (final palette in kBuiltInPalettes) {
       if (palette.id == raw) return palette.id;
     }
     for (final palette in customPalettes) {
       if (palette.id == raw) return palette.id;
     }
-    return kDefaultSurfacePalette.id;
+    return kLightDefaultPalette.id;
   }
 
   static List<SurfacePalette> _decodeCustomPalettes(String? raw) {
@@ -287,26 +205,34 @@ class ThemeSettings extends ChangeNotifier {
   }
 
   static SurfacePalette _decodeCustomPalette(Map<String, dynamic> data) {
-    final fallback = kDefaultSurfacePalette;
     final id = _stringValue(data['id']) ?? 'custom-${data.hashCode}';
     final surface =
         colorFromHex(_stringValue(data['surface'])) ??
-        fallback.surfaceFor(Brightness.dark);
+        kDarkDefaultPalette.surface;
     final secondary =
         colorFromHex(_stringValue(data['secondary'])) ??
-        fallback.defaultSecondary;
+        kDarkDefaultPalette.defaultSecondary;
     final accent =
-        colorFromHex(_stringValue(data['accent'])) ?? fallback.defaultAccent;
+        colorFromHex(_stringValue(data['accent'])) ??
+        kDarkDefaultPalette.defaultAccent;
     final textColor =
-        colorFromHex(_stringValue(data['text'])) ??
-        fallback.defaultTextColor ??
-        contrastOn(surface);
+        colorFromHex(_stringValue(data['text'])) ?? contrastOn(surface);
+    // Decode brightness tolerantly: explicit 'light'/'dark' wins,
+    // otherwise infer from the surface's luminance.
+    final rawBrightness = _stringValue(data['brightness']);
+    final brightness = switch (rawBrightness) {
+      'light' => Brightness.light,
+      'dark' => Brightness.dark,
+      _ => surface.computeLuminance() > 0.5
+          ? Brightness.light
+          : Brightness.dark,
+    };
     return SurfacePalette(
       id: id,
       displayName: _stringValue(data['name']) ?? 'Custom theme',
       seed: accent,
-      darkSurface: surface,
-      lightSurface: surface,
+      brightness: brightness,
+      surface: surface,
       defaultSecondary: secondary,
       defaultAccent: accent,
       defaultTextColor: textColor,
@@ -352,12 +278,14 @@ class ThemeSettings extends ChangeNotifier {
         {
           'id': palette.id,
           'name': palette.displayName,
-          'surface': colorToHex(palette.surfaceFor(Brightness.dark)),
+          'brightness': palette.brightness == Brightness.dark
+              ? 'dark'
+              : 'light',
+          'surface': colorToHex(palette.surface),
           'secondary': colorToHex(palette.defaultSecondary),
           'accent': colorToHex(palette.defaultAccent),
           'text': colorToHex(
-            palette.defaultTextColor ??
-                contrastOn(palette.surfaceFor(Brightness.dark)),
+            palette.defaultTextColor ?? contrastOn(palette.surface),
           ),
         },
     ];
