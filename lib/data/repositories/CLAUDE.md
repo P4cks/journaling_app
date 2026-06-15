@@ -94,12 +94,13 @@ coordination live.
       keys off this order (body = `blocks.last`), not block type, so a
       float that is itself a `textBlock` stays unambiguous.
     - `SectionKind.wannado` — yields an `EntrySection` with `blocks:
-      const []` (content-free). The section renders the **global**
-      wanna-do list off `BlockSettings` at render time; nothing is
-      materialized into the entry. Like `divider`, contributes nothing
-      to emptiness — so an entry whose only section is wannado is swept
-      at midnight if otherwise untouched (consistent with the
-      global-list design; a wanna-do is not per-entry content).
+      const []` (content-free) but **carries `section.definitionId`
+      across** from the layout section. The section renders the matching
+      `WannadoDefinition` off `BlockSettings` at render time; nothing
+      else is materialized into the entry. Like `divider`, contributes
+      nothing to emptiness — so an entry whose only section is wannado is
+      swept at midnight if otherwise untouched (a wanna-do is not
+      per-entry content).
     Public so the editor's `applyLayout` path uses the same code.
   - `saveJournalEntry(entry)` — async write, notifies on completion.
   - `deleteEntry(entry)` — async delete, notifies.
@@ -150,6 +151,11 @@ coordination live.
     whose `customCarousel` template points at a custom block definition.
     Used by Block Settings delete confirmation so users see whether a
     definition is still present in any layouts.
+  - `countWannadoUsage(definitionId)` — counts `SectionKind.wannado`
+    **sections** whose `LayoutSection.definitionId` matches (GUS-42/
+    GUS-45). Unlike custom carousels (config on a block template), a
+    wanna-do carousel attaches to the section itself. Used by the Block
+    Settings wanna-do delete confirmation.
   - `setDefault(id)` — async write to settings.
   - **`delete(id)` clears the default-id setting if the deleted layout
     was the default.** Otherwise next entry-create would resolve to

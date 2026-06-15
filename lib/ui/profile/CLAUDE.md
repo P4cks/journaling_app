@@ -17,14 +17,21 @@ directory hosts the pushed screens:
   canonical sign-in surface; `/settings` is appearance and
   configuration only. The profile dropdown's "Sign in" row pushes
   `/profile` directly.
+- **Theme** (`/theme-settings`) — dedicated theming page (GUS-27),
+  pushed from Settings → Appearance → "Theme" nav tile. A live
+  mock-journal-entry preview (`ThemeMockPreview`) at the top + a
+  vertical `PalettePicker` + the custom-theme editor sheet
+  (`showThemeEditorSheet`). See
+  [view/theme_settings_screen.dart](view/theme_settings_screen.dart).
 - **Block-settings** (`/block-settings`) — block-type-global
   configuration inline on one screen. Sections: **Prompt Block**
   (the prompt list + the Random Prompts toggle), **Carousel
   Blocks** (a single global "Show titles above carousels" switch +
   the custom-carousel definition list with Edit / Delete / Add),
-  **Wanna-dos** (the global wanna-do bucket-list editor — add / edit /
-  delete items the wannado carousel section renders across all entries;
-  GUS-8), and **Memory Block**.
+  **Wanna-do Carousels** (the per-definition list — create / edit /
+  delete named wanna-do carousels that `SectionKind.wannado` sections
+  render, capped at `kFreeMaxWannados` for free users; GUS-42/GUS-45),
+  and **Memory Block**.
   Built-in field edits are kept as drafts in `BlockSettingsViewModel`;
   a Cancel /
   Discard / Save dialog runs on leave, mirroring the layout editor.
@@ -35,15 +42,14 @@ directory hosts the pushed screens:
 
 Settings contains:
 
-1. **Appearance** — expanded by default; theme mode (segmented), surface
-   palette grid, secondary/accent color pickers for built-ins, and
-   full surface/secondary/accent/text editing for custom slots.
-   **Theming is Pro-gated (GUS-26):** theme mode (light/dark/system)
-   stays free, but for free users `PalettePicker` greys + badges every
-   palette except the active one and the Add-theme tile, presenting the
-   paywall on tap (`PalettePicker.locked` + `onUnlock`, wired to
-   `requirePro` in `_AppearanceSettingsContent`). The active palette
-   stays usable so the app keeps a coherent theme.
+1. **Appearance** — a single `SettingsNavTile` ("Theme", paint-brush
+   icon) that pushes `/theme-settings` (GUS-27). All the theme controls
+   (mode/brightness is now baked into the Light/Dark default themes —
+   there is no System/Light/Dark selector anymore; vertical palette
+   picker; custom-theme editor; Apple-style color picker) live on that
+   dedicated page. **Theming customization is Pro-gated (GUS-26):** the
+   built-in Light/Dark defaults stay free and selectable; only custom
+   tiles + the Add-theme tile present the paywall.
 2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
    (defaults to on; flipping it off restores the pre-post-it flat-card
    look without rebuilding any data), followed by a `Wrap` of color
@@ -84,9 +90,10 @@ Settings contains:
 Block-settings is rendered inline by `BlockSettingsScreen` —
 sections: **Prompt Block** (the prompt list + the Random Prompts
 toggle), **Carousel Blocks** (the "Show titles above carousels"
-switch + the custom-carousel definition list), **Wanna-dos** (the
-global wanna-do bucket-list editor; GUS-8), and **Memory Block**. The
-Wanna-dos list writes through `BlockSettings` immediately (not a
+switch + the custom-carousel definition list), **Wanna-do Carousels**
+(the per-definition list — Edit / Delete / Add named wanna-do carousels;
+GUS-42/GUS-45), and **Memory Block**. The
+Wanna-do Carousels list writes through `BlockSettings` immediately (not a
 draft). Text blocks have no
 per-type-global settings here — text input is uncapped (the GUS-10
 char-cap scaffold was removed; only the header keeps a fixed 60-char
@@ -97,9 +104,10 @@ Discard / Save on leave. Saves write back to
 
 ```
 profile/
-├── view/         SettingsScreen, ProfileScreen, BlockSettingsScreen
+├── view/         SettingsScreen, ProfileScreen, ThemeSettingsScreen,
+│                 BlockSettingsScreen
 ├── view_model/   BlockSettingsViewModel
-└── widgets/      palette_picker, swatch_grid_picker, theme_mode_selector,
+└── widgets/      palette_picker, swatch_grid_picker,
                   profile_auth_card, prompt_block_settings
 ```
 
@@ -110,9 +118,14 @@ pull settings/repositories from `AppDependencies` and sprinkle
 `ListenableBuilder`s where each section needs to react:
 
 - The optional auth card listens to `authRepository`.
-- Each appearance / debug color row listens to `themeSettings`.
+- The Post-it style section listens to `themeSettings`.
 - The `Show debug menu` and `unlockAllDays` switches listen to
   `debugSettings`.
+
+`ThemeSettingsScreen` (`/theme-settings`) is also a `StatelessWidget`;
+it listens to `Listenable.merge([themeSettings, subscriptionRepository])`
+so the live preview + vertical `PalettePicker` restyle on theme select
+and un-grey on purchase.
 
 `BlockSettingsScreen` follows the **VM + save-on-leave** pattern
 instead, mirroring [`LayoutEditorScreen`](../layouts/view/layout_editor_screen.dart):
@@ -132,27 +145,27 @@ instead, mirroring [`LayoutEditorScreen`](../layouts/view/layout_editor_screen.d
 - [view_model/CLAUDE.md](view_model/CLAUDE.md) —
   `BlockSettingsViewModel`.
 - [widgets/CLAUDE.md](widgets/CLAUDE.md) — `PalettePicker`,
-  `ThemeModeSelector`, `showSwatchPicker` (the color dialog),
-  `ProfileAuthCard`, `PromptBlockSettings`. Note: `StreakStatCard`
-  lives in [../core/widgets/](../core/widgets/) and is reused by the
-  entries list and the profile dropdown.
+  `showSwatchPicker` (the color dialog), `ProfileAuthCard`,
+  `PromptBlockSettings`. Note: `StreakStatCard` lives in
+  [../core/widgets/](../core/widgets/) and is reused by the entries list
+  and the profile dropdown.
 
-## Theme override semantics
+## Theme semantics (GUS-27)
 
-- **User themes** — Graphite is the protected default. User-created
-  themes appear beside it in a horizontal strip, can be edited through
-  a half-sheet, and can be deleted. Deleting the active user theme
-  falls back to Graphite.
-- **Secondary / accent** — `setSecondaryOverride(null)` and
-  `setAccentOverride(null)` clear the override so the palette's
-  default takes effect. Color pickers return a `SwatchResult` sentinel
-  that distinguishes "picked a color" (`SwatchResult.color(c)`),
+- **Themes** — two built-in defaults (Light / Dark) plus user-created
+  custom themes, shown in a **vertical** list on the dedicated
+  `/theme-settings` page. Each theme bakes in its own brightness, so
+  selecting Light vs Dark flips the whole app — there is no
+  System/Light/Dark mode selector. Custom themes are edited through the
+  `showThemeEditorSheet` half-sheet (name + brightness toggle + surface
+  / secondary / accent / text colors) and can be deleted; deleting the
+  active custom theme falls back to the Light default.
+- **Color picker** — `showSwatchPicker` returns a `SwatchResult`
+  sentinel that distinguishes "picked a color" (`SwatchResult.color(c)`),
   "reset to default" (`SwatchResult.reset()`), and "dismissed" (`null`).
-- **Debug surface override** — `setDebugSurfaceOverride(null)`
-  restores the palette surface.
-- **Debug free-pick HSL** — runs the same `showSwatchPicker` with
-  `allowFreePick: true`, surfacing Hue / Saturation / Lightness
-  sliders alongside the curated swatches.
+  With `allowFreePick: true` an Apple-style Advanced expander reveals a
+  color wheel; the old debug surface/secondary/accent override pickers
+  and HSL sliders were removed.
 - **Debug menu visibility** — `debugSettings.debugMenuVisible` is a
   persisted gate. When false, the debug `ExpansionTile` is not rendered.
 

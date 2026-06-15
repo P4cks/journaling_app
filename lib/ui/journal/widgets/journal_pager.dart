@@ -410,12 +410,13 @@ class _SectionsBody extends StatelessWidget {
           ),
         );
       case SectionKind.wannado:
-        // Content-free per entry — renders the *global* wanna-do list
-        // off BlockSettings (grabbed from AppDependencies inside the
-        // widget) as a vertical auto-rotating carousel. Pure display:
-        // identical for editable and read-only days, so `mode` is
-        // intentionally ignored.
-        return const WannadoSectionWidget();
+        // Content-free per entry — renders the `WannadoDefinition` named
+        // by `section.definitionId` off BlockSettings (grabbed from
+        // AppDependencies inside the widget) as a vertical auto-rotating
+        // carousel. Pure display: identical for editable and read-only
+        // days, so `mode` is intentionally ignored. A null/missing id
+        // renders a placeholder.
+        return WannadoSectionWidget(definitionId: section.definitionId);
     }
   }
 }

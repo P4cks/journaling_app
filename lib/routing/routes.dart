@@ -9,6 +9,7 @@ class Routes {
   static const statistics = '/statistics';
 
   static const settings = '/settings';
+  static const themeSettings = '/theme-settings';
   static const profile = '/profile';
   static const layouts = '/layouts';
   static const newLayout = '/layouts/new';
@@ -18,6 +19,8 @@ class Routes {
   static const editCustomBlock = '/custom-block/edit/:id';
   static const newHabitBlock = '/habit-block/new';
   static const editHabitBlock = '/habit-block/edit/:id';
+  static const newWannado = '/wannado/new';
+  static const editWannado = '/wannado/edit/:id';
   static const subscription = '/subscription';
 
   /// Query-parameter name on `/layouts/new` carrying the chosen
@@ -38,6 +41,8 @@ class Routes {
 
   static String editHabitBlockFor(String id) => '/habit-block/edit/$id';
 
+  static String editWannadoFor(String id) => '/wannado/edit/$id';
+
   static String newLayoutFor(LayoutKind kind) =>
       '$newLayout?$newLayoutKindQueryParam=${kind.name}';
 }
@@ -50,6 +55,7 @@ class RouteNames {
   static const entries = 'entries';
   static const statistics = 'statistics';
   static const settings = 'settings';
+  static const themeSettings = 'themeSettings';
   static const profile = 'profile';
   static const layouts = 'layouts';
   static const newLayout = 'newLayout';
@@ -59,5 +65,7 @@ class RouteNames {
   static const editCustomBlock = 'editCustomBlock';
   static const newHabitBlock = 'newHabitBlock';
   static const editHabitBlock = 'editHabitBlock';
+  static const newWannado = 'newWannado';
+  static const editWannado = 'editWannado';
   static const subscription = 'subscription';
 }

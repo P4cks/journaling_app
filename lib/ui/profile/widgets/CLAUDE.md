@@ -4,39 +4,43 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ## Files
 
-- [theme_mode_selector.dart](theme_mode_selector.dart) —
-  `ThemeModeSelector`. `SegmentedButton<ThemeMode>` with three options
-  (System / Light / Dark), each with a HugeIcons stroke-rounded icon.
-  Pure presentation — driven by `value` and `onChanged`.
 - [palette_picker.dart](palette_picker.dart) — `PalettePicker`.
-  Horizontal `ListView` of theme tiles plus an Add theme tile at the end.
-  Graphite renders as the protected default with no actions. User themes
-  show surface + color dots, right-aligned name text, and edit/delete
-  icon actions. Calls back for select/add/edit/delete; persistence stays
-  in `ThemeSettings`.
-  - **Pro gating (GUS-26).** A `locked` flag + an async
-    `Future<bool> Function()? onUnlock` callback. When `locked`, every
-    affordance except keeping the **currently-selected** palette is
-    gated: non-selected tiles + the Add-theme tile grey out and show a
-    `ProLockBadge`, and a shared `_guard` helper runs the action only
-    after `onUnlock()` (which the Settings screen wires to
-    `requirePro(subscriptions)`) resolves `true`. The active palette
-    stays usable so the app still renders a coherent theme.
+  **Vertical**, non-scrolling `Column` of full-width theme tiles plus an
+  Add-theme tile at the bottom (GUS-27) — it renders inside the Theme
+  settings page's own scroll view. The two built-in Light/Dark defaults
+  render without edit/delete actions; custom themes show surface + color
+  dots, name text, a selected check, and edit/delete icon actions. Calls
+  back for select/add/edit/delete; persistence stays in `ThemeSettings`.
+  - **Pro gating (GUS-26 + GUS-27 fix).** A `locked` flag + an async
+    `Future<bool> Function()? onUnlock` callback. The built-in Light/Dark
+    defaults stay **free and selectable** even when `locked` so free
+    users can still switch base brightness; only **custom** tiles (when
+    not the active one) and the Add-theme tile gate
+    (`tileLocked = locked && palette.isCustom && !selected`), greying out
+    with a `ProLockBadge`. A shared `_guard` helper runs the gated action
+    only after `onUnlock()` (wired to `requirePro(subscriptions)`)
+    resolves `true`.
 - [swatch_grid_picker.dart](swatch_grid_picker.dart) —
   `Future<SwatchResult?> showSwatchPicker(...)` + `SwatchResult` value
-  class + private `_SwatchDialog`, `_Swatch`, `_LabelSlider`.
+  class + private `_SwatchDialog`, `_Swatch`. Apple-style picker
+  (GUS-27), built on the `flutter_colorpicker` package.
   - **Result sentinel**:
     - `SwatchResult.color(c)` — user applied a color.
     - `SwatchResult.reset()` — user pressed Reset.
     - `null` — user dismissed without applying.
-  - Modal dialog: large color preview strip + 12-swatch grid; with
-    `allowFreePick: true`, HSL sliders appear underneath.
+  - Modal dialog (in a `SingleChildScrollView`): large color preview bar
+    + the 12 standard `_kSwatches`, then a **"Shades"** row — ~7
+    lightness variants (`_kShadeLightness`) of the currently-picked hue
+    generated via `HSLColor` (saturation floored to 0.45 so near-greys
+    still spread). With `allowFreePick: true`, an **"Advanced"**
+    `ExpansionTile` reveals a `HueRingPicker` color wheel
+    (`enableAlpha: false`). This replaced the always-on HSL sliders.
   - The 12 curated swatches are a private `_kSwatches` list — tuned
     to read well against the dimmed dark surfaces. Don't promote
     them to the public palette list; they're for picker-only use.
   - `_isClose` uses an `< 0.01` per-channel threshold against the
     M3 `Color.r/.g/.b` floats to highlight the currently-selected
-    swatch when the user hasn't moved far in HSL space.
+    swatch.
 - [streak_stat_card.dart](streak_stat_card.dart) — `StreakStatCard` +
   private `_StatsRow`, `_StatColumn`, `_NudgeRow`.
   - Renders a `StreakResult` (from
@@ -61,12 +65,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ## Gotchas
 
-- **`PalettePicker` reads `Theme.of(context).brightness` per tile**
-  to decide which surface (dark or light) to render. If the user is
-  in `ThemeMode.system`, the displayed swatches follow the system
-  brightness — picking a palette while the OS is light will preview
-  the light surface even if the user runs in dark all evening.
-  Acceptable.
+- **`PalettePicker` tiles render `palette.surface` directly** — each
+  palette bakes in its own brightness (GUS-27), so a tile shows its own
+  light/dark surface regardless of the active theme.
 - **`showSwatchPicker` returns `null` on dismiss**, but `Reset` and
   `Apply` both pop with a non-null result. **Cancel** also pops with
   `null`. Callers must distinguish all three cases — see the
@@ -79,8 +80,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ## When to update this file
 
-- The horizontal theme tile actions/layout change.
-- A new pickable swatch is added (or the 12-swatch palette is retuned).
+- The vertical theme tile actions/layout change.
+- A new pickable swatch is added (or the 12-swatch palette is retuned),
+  or the shades-row / Advanced wheel behaviour changes.
 - A new picker variant is introduced (e.g. transparency).
 - The streak card gains new metrics (e.g. average per week).
 - The auth card adds providers, profile fields, or account actions.

@@ -11,7 +11,9 @@ import 'package:journaling_app_rewrite/ui/profile/view/block_settings_screen.dar
 import 'package:journaling_app_rewrite/ui/profile/view/custom_block_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/habit_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/profile_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/wannado_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/profile/view/settings_screen.dart';
+import 'package:journaling_app_rewrite/ui/profile/view/theme_settings_screen.dart';
 import 'package:journaling_app_rewrite/ui/subscription/view/subscription_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>(
@@ -53,6 +55,11 @@ final GoRouter appRouter = GoRouter(
       path: Routes.settings,
       name: RouteNames.settings,
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: Routes.themeSettings,
+      name: RouteNames.themeSettings,
+      builder: (context, state) => const ThemeSettingsScreen(),
     ),
     GoRoute(
       path: Routes.profile,
@@ -116,6 +123,17 @@ final GoRouter appRouter = GoRouter(
       name: RouteNames.editHabitBlock,
       builder: (context, state) =>
           HabitEditorScreen(definitionId: state.pathParameters['id']),
+    ),
+    GoRoute(
+      path: Routes.newWannado,
+      name: RouteNames.newWannado,
+      builder: (context, state) => const WannadoEditorScreen(),
+    ),
+    GoRoute(
+      path: Routes.editWannado,
+      name: RouteNames.editWannado,
+      builder: (context, state) =>
+          WannadoEditorScreen(definitionId: state.pathParameters['id']),
     ),
   ],
 );

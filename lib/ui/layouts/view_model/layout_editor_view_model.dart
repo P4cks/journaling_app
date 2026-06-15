@@ -73,12 +73,18 @@ class SectionDraft {
     required this.kind,
     required this.slots,
     this.rows,
+    this.definitionId,
   });
 
   final String id;
   final SectionKind kind;
   int? rows;
   List<BlockSlot> slots;
+
+  /// For [SectionKind.wannado] only: the `WannadoDefinition` this section
+  /// renders. Chosen in the Add-Section sheet and fixed for the section's
+  /// life (no in-editor swap). `null` for every other kind.
+  final String? definitionId;
 }
 
 class LayoutEditorViewModel extends ChangeNotifier {
@@ -97,6 +103,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             id: s.id,
             kind: s.kind,
             rows: s.rows,
+            definitionId: s.definitionId,
             slots: [
               for (final template in s.blocks)
                 BlockSlot(
@@ -147,6 +154,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
         _SectionSnapshot(
           kind: s.kind,
           rows: s.rows,
+          definitionId: s.definitionId,
           slotTypes: [for (final slot in s.slots) slot.type],
           slotDefinitionIds: [for (final slot in s.slots) slot.definitionId],
         ),
@@ -183,6 +191,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
       final snap = _initialSections[i];
       if (cur.kind != snap.kind) return true;
       if (cur.rows != snap.rows) return true;
+      if (cur.definitionId != snap.definitionId) return true;
       if (cur.slots.length != snap.slotTypes.length) return true;
       for (var j = 0; j < cur.slots.length; j++) {
         if (cur.slots[j].type != snap.slotTypes[j]) return true;
@@ -299,17 +308,21 @@ class LayoutEditorViewModel extends ChangeNotifier {
   // custom — full section toolkit.
   // ---------------------------------------------------------------------------
 
-  void addSection(SectionKind kind) {
+  /// Appends a new section. [definitionId] is only meaningful for
+  /// [SectionKind.wannado] — it pins the section to a `WannadoDefinition`
+  /// chosen in the Add-Section sheet; `null` for every other kind.
+  void addSection(SectionKind kind, {String? definitionId}) {
     _sections = [
       ..._sections,
       SectionDraft(
         id: _uuid.v4(),
         kind: kind,
         rows: kind == SectionKind.blockGrid ? 0 : null,
+        definitionId: kind == SectionKind.wannado ? definitionId : null,
         slots: const [],
       ),
     ];
-    debugPrint('[LayoutEditorVM] addSection $kind');
+    debugPrint('[LayoutEditorVM] addSection $kind definitionId=$definitionId');
     notifyListeners();
   }
 
@@ -467,6 +480,7 @@ class LayoutEditorViewModel extends ChangeNotifier {
             id: s.id,
             kind: s.kind,
             rows: s.rows,
+            definitionId: s.definitionId,
             blocks: [
               for (final slot in s.slots)
                 BlockTemplate.create(
@@ -530,11 +544,13 @@ class _SectionSnapshot {
   const _SectionSnapshot({
     required this.kind,
     required this.rows,
+    required this.definitionId,
     required this.slotTypes,
     required this.slotDefinitionIds,
   });
   final SectionKind kind;
   final int? rows;
+  final String? definitionId;
   final List<BlockType> slotTypes;
   final List<String?> slotDefinitionIds;
 }

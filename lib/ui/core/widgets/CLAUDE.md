@@ -33,8 +33,11 @@ for how they fit together; this file is per-file notes.
   replaces the scattered raw `SnackBar`s. Built on
   `ScaffoldMessenger`/`SnackBar` (so native queueing, swipe-to-dismiss
   and lifecycle still apply) but the visible body is a transparent,
-  zero-elevation SnackBar wrapping `_ToastPill`: a themed rounded pill,
-  right-aligned, that **flies in from the right** via a `SlideTransition`
+  zero-elevation SnackBar wrapping `_ToastPill`: a themed rounded,
+  **shadowless** (pill `Material` elevation 0, GUS-55) pill,
+  right-aligned with a touch more bottom clearance than the floating
+  default (SnackBar `margin` bottom 24, GUS-55), that **flies in from the
+  right** via a `SlideTransition`
   (`Offset(1,0) → 0`) + fade on mount, and **flies back out to the right**
   by reversing that same animation on a `Timer` `_kToastExitDuration`
   before the messenger auto-dismisses (so the visible exit is ours, not
