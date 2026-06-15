@@ -207,6 +207,33 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     vm.setIconName(picked);
   }
 
+  /// Handler for the dedicated AppBar "Save" action. Validates the name
+  /// the same way `_maybeSaveOnLeave` does (an empty or duplicate name
+  /// can't be persisted — surface why with a toast and stay put), then
+  /// saves and returns to the Layouts list. `context.pop()` force-pops,
+  /// so it bypasses the `PopScope` dirty-state guard — there's nothing
+  /// unsaved to prompt about after a successful save anyway.
+  Future<void> _save() async {
+    final vm = _viewModel;
+    if (vm == null) return;
+    FocusScope.of(context).unfocus();
+    final nameEmpty = vm.nameController.text.trim().isEmpty;
+    if (nameEmpty || vm.nameConflict) {
+      showToast(
+        context,
+        nameEmpty
+            ? 'Add a name to save'
+            : 'A layout with this name already exists',
+        kind: ToastKind.error,
+      );
+      return;
+    }
+    await vm.save();
+    if (!mounted) return;
+    showToast(context, 'Layout saved', kind: ToastKind.success);
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = _viewModel;
@@ -250,6 +277,13 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               tooltip: 'Change icon',
               onPressed: _pickIcon,
               icon: AppIcon(layoutIconFor(vm.iconName).icon),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: _save,
+                child: const Text('Save'),
+              ),
             ),
           ],
         ),
