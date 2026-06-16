@@ -97,6 +97,10 @@ Same gate as before the merge. Used for two decisions:
   `vm.createWithLayout`. The repository notification fans out to the
   VM, which adds the new entry to its `entries` list; the screen
   rebuilds with the pager pointing at the new entry.
+  - Both this and `_showChangeLayoutSheet` pass
+    `onManageLayouts: () => context.push(Routes.layouts)` so the
+    picker's "Create or edit layouts" footer (GUS-64) jumps to the
+    Layouts screen after dismissing the sheet.
 - `_showChangeLayoutSheet()` — opens the picker → confirm dialog →
   `vm.applyLayout`. Destructive; always confirms. When no layouts exist
   it shows a "No layouts configured" toast (`showToast`,

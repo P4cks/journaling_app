@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Capture audio while recording a video message for your journal entry.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -31,9 +33,9 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app uses your location to add weather and place details to your journal entries.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access so you can add photos to your journal entries.</string>
+	<string>This app needs camera access so you can take photos and record videos for your journal entries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photo library access so you can add photos to your journal entries.</string>
+	<string>This app needs photo library access so you can add photos and videos to your journal entries.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs microphone access so you can record voice notes in your journal entries.</string>
 	<key>UIApplicationSceneManifest</key>

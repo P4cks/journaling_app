@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart'
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/data/services/video_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
 
 class AppDependencies extends InheritedWidget {
@@ -25,6 +26,7 @@ class AppDependencies extends InheritedWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.videoStorage,
     required this.audioStorage,
     required this.subscriptionRepository,
     required super.child,
@@ -40,6 +42,7 @@ class AppDependencies extends InheritedWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final VideoStorageService videoStorage;
   final AudioStorageService audioStorage;
   final SubscriptionRepository subscriptionRepository;
 
@@ -62,6 +65,7 @@ class AppDependencies extends InheritedWidget {
       quoteService != oldWidget.quoteService ||
       weatherService != oldWidget.weatherService ||
       photoStorage != oldWidget.photoStorage ||
+      videoStorage != oldWidget.videoStorage ||
       audioStorage != oldWidget.audioStorage ||
       subscriptionRepository != oldWidget.subscriptionRepository;
 }

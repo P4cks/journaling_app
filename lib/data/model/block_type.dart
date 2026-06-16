@@ -16,4 +16,5 @@ enum BlockType {
   habitTracker,
   streakBlock,
   voiceBlock,
+  videoBlock,
 }
