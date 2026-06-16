@@ -127,7 +127,6 @@ SPEC CHECKSUMS:
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   purchases_flutter: 8e0d2c774c5bef250651b4b017864eac5105f48e
   purchases_ui_flutter: e908fe7d4fbdf5f7626af6828b2ee3d4f2f278f0
   PurchasesHybridCommon: e723f7c9b109be51f7ec6c85a104791369f1b562
