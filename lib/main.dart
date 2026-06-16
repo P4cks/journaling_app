@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
@@ -62,6 +63,7 @@ void main() async {
   final quoteService = QuoteService(settingsBox);
   final weatherService = WeatherService(settingsBox);
   final photoStorage = PhotoStorageService();
+  final audioStorage = AudioStorageService();
   final authRepository = AuthRepository(authService);
 
   // RevenueCat must be configured before any other Purchases call.
@@ -86,6 +88,7 @@ void main() async {
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
+      audioStorage: audioStorage,
       subscriptionRepository: subscriptionRepository,
     ),
   );
@@ -104,6 +107,7 @@ class MyApp extends StatefulWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.audioStorage,
     required this.subscriptionRepository,
   });
 
@@ -117,6 +121,7 @@ class MyApp extends StatefulWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final AudioStorageService audioStorage;
   final SubscriptionRepository subscriptionRepository;
 
   @override
@@ -163,6 +168,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,
+      audioStorage: widget.audioStorage,
       subscriptionRepository: widget.subscriptionRepository,
       child: ListenableBuilder(
         listenable: widget.themeSettings,

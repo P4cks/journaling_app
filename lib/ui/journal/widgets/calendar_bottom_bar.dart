@@ -75,7 +75,7 @@ Color _cellColor(
   ThemeSettings themeSettings,
   ColorScheme scheme,
 ) {
-  if (!themeSettings.postItModeEnabled) return scheme.primary;
+  if (!themeSettings.blockColorEnabled) return scheme.primary;
   return _dayPaletteColor(day, themeSettings.postItPalette) ?? scheme.primary;
 }
 
@@ -295,8 +295,12 @@ class _WeekStripState extends State<_WeekStrip> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // Listen to themeSettings too so toggling post-it mode / editing the
+    // post-it palette recolours the cells live — the root rebuild only
+    // carries ThemeData, not these flags (GUS-68).
+    final themeSettings = AppDependencies.of(context).themeSettings;
     return ListenableBuilder(
-      listenable: widget.debug,
+      listenable: Listenable.merge([widget.debug, themeSettings]),
       builder: (context, _) {
         final firstDay = DateTime.utc(2000, 1, 1);
         final now = DateTime.now();
@@ -395,8 +399,11 @@ class _MonthCalendarState extends State<_MonthCalendar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // See the week strip's note — post-it flags aren't in ThemeData, so
+    // listen to themeSettings directly to recolour cells live (GUS-68).
+    final themeSettings = AppDependencies.of(context).themeSettings;
     return ListenableBuilder(
-      listenable: widget.debug,
+      listenable: Listenable.merge([widget.debug, themeSettings]),
       builder: (context, _) {
         final firstDay = DateTime.utc(2000, 1, 1);
         final now = DateTime.now();

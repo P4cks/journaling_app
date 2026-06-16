@@ -20,8 +20,21 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - [no_entry_read_only.dart](no_entry_read_only.dart) — `NoEntryReadOnly`.
   Centered "No entry was made on this day." message for past days
   with no entry.
+- [app_menu_button.dart](app_menu_button.dart) — `AppMenuButton`.
+  The **currently-wired** top-bar menu: a profile-free
+  `PopupMenuButton<String>` anchored on a hamburger icon
+  (`strokeRoundedMenu01`). Three navigation rows only — **Settings**
+  (`strokeRoundedSettings01`), **Manage Layout**
+  (`strokeRoundedDashboardSquareSetting`), **Manage Blocks**
+  (`strokeRoundedBlockGame`) — each pushing the corresponding route.
+  Reuses the same focus-management dance as `ProfileMenuButton`
+  (`onOpened` unfocus + post-`onSelected` unfocus after the push
+  returns). Stateless, no `AppDependencies` (reads only
+  `Theme.of(context).colorScheme`). No streak / auth / Pro UI.
 - [profile_menu_button.dart](profile_menu_button.dart) —
-  `ProfileMenuButton`. `PopupMenuButton` anchored on a userCircle
+  `ProfileMenuButton`. **Currently unused — retained intentionally for
+  when user profiles are reimplemented** (the main screen now uses
+  `AppMenuButton` above). `PopupMenuButton` anchored on a userCircle
   icon (filled-check variant when signed in). The button wraps in a
   `ListenableBuilder(listenable: authRepository)` so the icon and
   menu items react to sign-in / sign-out without requiring a manual
@@ -82,8 +95,10 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   Colour comes from `themeSettings.postItPalette` via
   `_dayPaletteColor(day, palette)`, seeded by `y*10000+m*100+d` so a
   given date always renders the same colour. When
-  `themeSettings.postItModeEnabled` is false, every cell falls back
-  to `scheme.primary` (geometry unchanged). The week strip and month
+  `themeSettings.blockColorEnabled` is false (GUS-58 — the calendar
+  follows the block-color toggle, since the dots reuse the post-it
+  palette), every cell falls back to `scheme.primary` (geometry
+  unchanged). The week strip and month
   sheet share `_buildDayCell`. Marker dots are gone — the border
   carries the "has entry" signal. The month sheet sets
   `outsideDaysVisible: false` so adjacent-month days are hidden — they
@@ -203,13 +218,18 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
-- **`_buildDayCell` reads `themeSettings` inline (no local
-  ListenableBuilder).** Palette / post-it-mode changes propagate via
-  the root-level `ListenableBuilder(listenable: themeSettings)` in
-  [main.dart](../../../main.dart) which rebuilds the whole
-  MaterialApp. If you ever lift this widget out of that tree, add a
-  local listener — otherwise palette edits won't take effect until
-  the next unrelated rebuild.
+- **`_buildDayCell` reads `themeSettings` inline; the week-strip and
+  month builders subscribe to it via `Listenable.merge([debug,
+  themeSettings])` (GUS-68).** The root-level
+  `ListenableBuilder(listenable: themeSettings)` in
+  [main.dart](../../../main.dart) is NOT sufficient: it only rebuilds
+  `MaterialApp.router` with a fresh `theme:`, so palette/`ThemeData`
+  changes propagate via the `Theme` inherited widget — but
+  `postItModeEnabled` / `postItPalette` are not part of `ThemeData`,
+  and go_router keeps this page subtree mounted, so without the local
+  listener toggling post-it mode (or editing the post-it palette) left
+  the cells stale until an unrelated rebuild. Keep the merge if you
+  refactor these builders.
 - **Per-date colour is seeded by `y*10000 + m*100 + d`, not
   `day.hashCode`.** `DateTime.hashCode` mixes the time-of-day
   fields, so two `DateTime` instances for the same calendar date but

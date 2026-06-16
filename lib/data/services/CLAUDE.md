@@ -42,8 +42,11 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
   the same value as default".
   - Known keys: `defaultLayoutId`, `debug.menuVisible`,
     `debug.unlockAllDays`, `theme.paletteId`, `theme.customPalettes`,
-    `theme.postItMode` (`true`/`false`;
-    absent → default `true`), `theme.postItPalette` (JSON-encoded
+    `theme.blockRotation` / `theme.blockOffset` /
+    `theme.blockColor` (each `true`/`false`; absent → default `true`;
+    the three independent post-it visual toggles split out of the
+    former single `theme.postItMode` master in GUS-58),
+    `theme.postItPalette` (JSON-encoded
     list of `#RRGGBB` hex strings; absent → ships with the
     `kDefaultPostItPalette` muted pastels), `block.prompt.list`
     (JSON-encoded list of strings), `block.prompt.strategy`
@@ -82,10 +85,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     simply stop being read; no migration.
     If you add another, give it a namespaced key and add a typed
     accessor pair. Abandoned legacy keys (`block.mood.title`,
-    `block.weather.title`, `block.text.charLimit`, and the former
+    `block.weather.title`, `block.text.charLimit`, the former
     `debug.limit.*` per-block input-limit overrides — all removed when
-    the GUS-10 char-cap scaffold was deleted) are intentionally not
-    read by the service anymore and may still be present on existing
+    the GUS-10 char-cap scaffold was deleted — and `theme.postItMode`,
+    the single master post-it toggle split into the three
+    `theme.block{Rotation,Offset,Color}` keys in GUS-58) are
+    intentionally not read by the service anymore and may still be
+    present on existing
     users' disks; per the pre-1.0 backwards-compatibility policy in the
     root `CLAUDE.md` we do not migrate them.
 - [debug_settings.dart](debug_settings.dart) — `DebugSettings extends ChangeNotifier`.
@@ -116,6 +122,18 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `FileSystemException` so cleanup paths can call it without guarding.
   Photo bytes are **never stored in Hive** — only the path string is
   persisted via `PhotoBlockContent`.
+- [audio_storage_service.dart](audio_storage_service.dart) — `AudioStorageService` (GUS-12).
+  Owns `<app-docs>/audio/`. **Unlike `PhotoStorageService` it does not
+  copy bytes** — `package:record` writes the file itself, so this service
+  just hands out a fresh destination path and cleans up:
+  - `newRecordingPath()` → `Future<String>` — a fresh
+    `<app-docs>/audio/<uuid>.m4a` (the `.m4a` ext matches the AAC-LC
+    encoder). Lazily ensures the dir (caches the `Directory`).
+  - `deleteAtPath(path)` → best-effort delete; swallows
+    `FileSystemException` like the photo service.
+  Audio bytes are **never stored in Hive** — only the path string (+
+  measured `durationMs`) is persisted via `VoiceBlockContent`.
+  Constructed in `main.dart`, exposed via `AppDependencies.audioStorage`.
 - [weather_service.dart](weather_service.dart) — `WeatherService`.
   Wraps `geolocator` + Open-Meteo's `/v1/forecast?current_weather=true`
   + OSM Nominatim's `/reverse` endpoint.
@@ -214,9 +232,14 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     to `kLightDefaultPalette`). Each palette bakes in its own
     `brightness` + single `surface`, so the selection alone drives the
     app's light/dark.
-  - `postItModeEnabled` (`bool`, default `true`) — gates the playful
-    rotation/offset/color visuals in `PostItBlock`. When `false`, the
-    grid renders blocks as flat cards (the pre-post-it look).
+  - `blockRotationEnabled` / `blockOffsetEnabled` / `blockColorEnabled`
+    (each `bool`, default `true`) — the three independent post-it
+    visual toggles split out of the former single `postItModeEnabled`
+    master (GUS-58). Each gates one effect in `BlockChrome`
+    (rotation transform / offset translate / palette-color tint).
+    When all three are off the grid renders flat cards (the
+    pre-post-it look). `BlockChrome` derives `anyPostIt =
+    rotation || offset || color` for the radius/curve flourish.
   - `postItPalette` (`List<String>`) — user-managed list of `#RRGGBB`
     hex strings. Random-picked per block at materialization. Defaults
     to `kDefaultPostItPalette` (7 muted pastels) on first launch.
@@ -227,7 +250,8 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     inferred from the surface luminance. `customPaletteTemplate()` mints
     a new dark-brightness template. Post-it palette is **separate** — a
     flat list of single colors, not surface palettes.
-  - `setPostItModeEnabled`, `addPostItColor`, `removePostItColorAt`,
+  - `setBlockRotationEnabled`, `setBlockOffsetEnabled`,
+    `setBlockColorEnabled`, `addPostItColor`, `removePostItColorAt`,
     `setPostItPalette` mutate the post-it state and notify.
   - Persists every setter to `SettingsStorageService`. Subscribed to by
     `main.dart`'s root `ListenableBuilder` so a setter call rebuilds
