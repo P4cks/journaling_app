@@ -122,6 +122,13 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `FileSystemException` so cleanup paths can call it without guarding.
   Photo bytes are **never stored in Hive** — only the path string is
   persisted via `PhotoBlockContent`.
+- [video_storage_service.dart](video_storage_service.dart) — `VideoStorageService`.
+  Mirror of `PhotoStorageService` for the video block (GUS-16). Copies
+  `image_picker` `pickVideo` results into `<app-docs>/video/<uuid>.<ext>`
+  (extension whitelist `{.mp4, .mov, .m4v}`, fallback `.mp4`) and exposes
+  the same `savePickedFile(XFile) → Future<String>` + best-effort
+  `deleteAtPath(path)` pair. Video bytes are **never stored in Hive** —
+  only the path string is persisted via `VideoBlockContent`.
 - [audio_storage_service.dart](audio_storage_service.dart) — `AudioStorageService` (GUS-12).
   Owns `<app-docs>/audio/`. **Unlike `PhotoStorageService` it does not
   copy bytes** — `package:record` writes the file itself, so this service

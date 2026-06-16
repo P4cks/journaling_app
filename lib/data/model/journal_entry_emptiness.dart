@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/photo_block_cont
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/video_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/voice_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
@@ -40,6 +41,7 @@ extension BlockTypeInteraction on BlockType {
       case BlockType.promptBlock:
       case BlockType.todoBlock:
       case BlockType.photoBlock:
+      case BlockType.videoBlock:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
       case BlockType.habitTracker:
@@ -110,6 +112,8 @@ extension JournalBlockEmptiness on JournalBlockData {
         return !WeatherApiBlockContent.fromMap(content).isFetched;
       case BlockType.photoBlock:
         return !PhotoBlockContent.fromMap(content).hasPhoto;
+      case BlockType.videoBlock:
+        return !VideoBlockContent.fromMap(content).hasVideo;
       case BlockType.locationBlock:
         return !LocationBlockContent.fromMap(content).hasPin;
       case BlockType.customCarousel:

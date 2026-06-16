@@ -20,6 +20,15 @@ block content.
   [PhotoStorageService](../../services/photo_storage_service.dart);
   Hive only persists the path string. Used by `PhotoBlockWidget` and
   `JournalBlockEmptiness` (no photo → empty).
+- [video_block_content.dart](video_block_content.dart) — `VideoBlockContent { String? videoPath; int? durationMs }`.
+  Map shape: `{"videoPath": "/.../video/<uuid>.mp4", "durationMs": 8200}`
+  (keys omitted when null). `hasVideo` is true when `videoPath` is
+  non-null and non-empty. The file lives under the app documents dir,
+  written by [VideoStorageService](../../services/video_storage_service.dart);
+  Hive only persists the path + measured duration. `durationMs` is probed
+  once at save time so the grid cell can show a badge without keeping a
+  player alive. Used by `VideoBlockWidget` and `JournalBlockEmptiness`
+  (no video → empty).
 - [voice_block_content.dart](voice_block_content.dart) — `VoiceBlockContent { String? audioPath; int? durationMs }` (GUS-12).
   Map shape: `{"audioPath": "/.../audio/<uuid>.m4a", "durationMs": 12345}`
   (each key omitted when null). `hasAudio` is true when `audioPath` is

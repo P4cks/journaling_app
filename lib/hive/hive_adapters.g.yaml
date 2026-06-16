@@ -31,7 +31,7 @@ types:
         index: 4
   BlockType:
     typeId: 2
-    nextIndex: 14
+    nextIndex: 15
     fields:
       textBlock:
         index: 0
@@ -61,6 +61,8 @@ types:
         index: 12
       voiceBlock:
         index: 13
+      videoBlock:
+        index: 14
   JournalLayout:
     typeId: 4
     nextIndex: 6

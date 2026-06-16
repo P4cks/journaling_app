@@ -329,6 +329,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
+      case BlockType.videoBlock:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
       case BlockType.habitTracker:

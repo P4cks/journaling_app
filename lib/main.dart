@@ -18,6 +18,7 @@ import 'package:journaling_app_rewrite/data/services/settings_storage_service.da
 import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/data/services/video_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
@@ -63,6 +64,7 @@ void main() async {
   final quoteService = QuoteService(settingsBox);
   final weatherService = WeatherService(settingsBox);
   final photoStorage = PhotoStorageService();
+  final videoStorage = VideoStorageService();
   final audioStorage = AudioStorageService();
   final authRepository = AuthRepository(authService);
 
@@ -88,6 +90,7 @@ void main() async {
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
+      videoStorage: videoStorage,
       audioStorage: audioStorage,
       subscriptionRepository: subscriptionRepository,
     ),
@@ -107,6 +110,7 @@ class MyApp extends StatefulWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.videoStorage,
     required this.audioStorage,
     required this.subscriptionRepository,
   });
@@ -121,6 +125,7 @@ class MyApp extends StatefulWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final VideoStorageService videoStorage;
   final AudioStorageService audioStorage;
   final SubscriptionRepository subscriptionRepository;
 
@@ -168,6 +173,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,
+      videoStorage: widget.videoStorage,
       audioStorage: widget.audioStorage,
       subscriptionRepository: widget.subscriptionRepository,
       child: ListenableBuilder(

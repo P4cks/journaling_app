@@ -130,6 +130,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         return BlockType.streakBlock;
       case 13:
         return BlockType.voiceBlock;
+      case 14:
+        return BlockType.videoBlock;
       default:
         return BlockType.textBlock;
     }
@@ -166,6 +168,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(12);
       case BlockType.voiceBlock:
         writer.writeByte(13);
+      case BlockType.videoBlock:
+        writer.writeByte(14);
     }
   }
 
