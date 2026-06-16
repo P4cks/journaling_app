@@ -17,7 +17,7 @@ Scaffold
 │   └── actions: normal: Change-layout (editable + hasEntry),
 │                        Statistics icon (push /statistics; dot Badge when
 │                          a streak reward is unclaimed — GUS-22),
-│                        ProfileMenuButton (popup with streak/auth + items)
+│                        AppMenuButton (hamburger popup: Settings / Manage Layout / Manage Blocks)
 │                editing: Done (unfocus)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand
 │         └── GestureDetector (unfocus-on-tap; disabled when editing)
@@ -37,7 +37,7 @@ The screen state holds a `_editing` flag, updated from
 - **AppBar `actions`** collapses to a single Done `TextButton` that
   calls `FocusManager.instance.primaryFocus?.unfocus()` AND clears
   `_editingBlockId` if it is set. The normal trio (Change-layout /
-  Statistics / ProfileMenu) is hidden so the user can't navigate away
+  Statistics / AppMenu) is hidden so the user can't navigate away
   mid-edit.
 - **`JournalPager.externalLock`** is `true`, which puts the pager on
   `NeverScrollableScrollPhysics` (in addition to the existing inner-

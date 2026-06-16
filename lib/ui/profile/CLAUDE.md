@@ -1,10 +1,12 @@
 # lib/ui/profile — Profile + Settings + Block-settings screens
 
-The main journal screen's AppBar exposes a profile dropdown
-([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart))
-with a streak header, an auth-state-aware row (Sign in / Sign out),
-and navigation rows for Settings, Layouts, Block settings. This
-directory hosts the pushed screens:
+The main journal screen's AppBar exposes a hamburger app menu
+([../journal/widgets/app_menu_button.dart](../journal/widgets/app_menu_button.dart),
+`AppMenuButton`) with navigation rows for Settings, Manage Layout, and
+Manage Blocks — no profile / auth UI. The older profile-/auth-aware
+dropdown ([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart),
+`ProfileMenuButton`) is kept unused for when user profiles are
+reimplemented. This directory hosts the pushed screens:
 
 - **Profile** (`/profile`) — the canonical sign-in entry point.
   Reuses `ProfileAuthCard` for both signed-out (Email / Google / Apple
@@ -50,15 +52,18 @@ Settings contains:
    dedicated page. **Theming customization is Pro-gated (GUS-26):** the
    built-in Light/Dark defaults stay free and selectable; only custom
    tiles + the Add-theme tile present the paywall.
-2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
-   (defaults to on; flipping it off restores the pre-post-it flat-card
-   look without rebuilding any data), followed by a `Wrap` of color
-   swatches showing `themeSettings.postItPalette` plus a `+` tile that
-   opens `showSwatchPicker(allowFreePick: true)` and appends the
-   picked color via `addPostItColor`. Each swatch has an `×` cap that
-   calls `removePostItColorAt(index)`. The palette manager stays
-   visible-but-disabled when the toggle is off so users can curate
-   while previewing classic mode.
+2. **Post-it style** — three independent `SwitchListTile`s (GUS-58)
+   toggling `themeSettings.blockRotationEnabled` ("Block rotation"),
+   `.blockOffsetEnabled` ("Block offset"), and `.blockColorEnabled`
+   ("Block color") — split out of the former single post-it master
+   (each defaults to on; turning all off restores the pre-post-it
+   flat-card look without rebuilding any data), followed by a `Wrap`
+   of color swatches showing `themeSettings.postItPalette` plus a `+`
+   tile that opens `showSwatchPicker(allowFreePick: true)` and appends
+   the picked color via `addPostItColor`. Each swatch has an `×` cap
+   that calls `removePostItColorAt(index)`. The palette manager stays
+   visible-but-disabled when the **color** toggle is off so users can
+   curate while previewing without tint.
 3. **Journal templates** — `Manage templates` row that pushes `/layouts`.
 4. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
 5. **Subscription** — a `SettingsNavTile` (crown icon) that pushes

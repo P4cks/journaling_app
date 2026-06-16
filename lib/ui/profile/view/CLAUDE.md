@@ -1,9 +1,10 @@
 # lib/ui/profile/view — Profile + Settings screens
 
-See [../CLAUDE.md](../CLAUDE.md) for the screen overview. The profile
-dropdown in the main screen's AppBar
-([../../journal/widgets/profile_menu_button.dart](../../journal/widgets/profile_menu_button.dart))
-pushes these screens.
+See [../CLAUDE.md](../CLAUDE.md) for the screen overview. The hamburger
+app menu in the main screen's AppBar
+([../../journal/widgets/app_menu_button.dart](../../journal/widgets/app_menu_button.dart),
+`AppMenuButton`) pushes Settings / Manage Layout / Manage Blocks. The
+older `ProfileMenuButton` is retained unused for future user profiles.
 
 ## Files
 
@@ -153,11 +154,11 @@ pushes these screens.
 | Block                       | Listens to              | Notes                              |
 |-----------------------------|-------------------------|------------------------------------|
 | `SettingsSection` "Appearance" | —                  | single `SettingsNavTile` "Theme" → `/theme-settings` (GUS-27) |
-| `SettingsSection` "Journal templates" | —             | pushes `/layouts`                  |
-| `SettingsSection` "Blocks" | —                      | pushes `/block-settings`           |
+| `SettingsSection` "Journal templates" | —             | "Manage Layout" (dashboard-setting icon) → `/layouts` |
+| `SettingsSection` "Blocks" | —                      | "Manage Blocks" (block-game icon) → `/block-settings` |
 | `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
 | `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
-| `_PostItStyleSection`       | `themeSettings`         | "Playful post-it style" `SwitchListTile` + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Greyed out when toggle is off |
+| `_PostItStyleSection`       | `themeSettings`         | Three toggles — "Block rotation" / "Block offset" / "Block color" `SwitchListTile`s (GUS-58) — + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Palette greyed out when the **color** toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
 | `SwitchListTile` "Simulate free account" | `subscriptionRepository` | masks `isPro` → false via `setDebugForceFree`; local-only, doesn't cancel real sub |
