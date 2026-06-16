@@ -265,7 +265,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                   IconButton(
                     tooltip: 'Change layout',
                     onPressed: _showChangeLayoutSheet,
-                    icon: AppIcon(HugeIcons.strokeRoundedGrid),
+                    icon: AppIcon(HugeIcons.strokeRoundedDashboardSquareEdit),
                   )
                 else if (!editable)
                   Padding(
@@ -292,7 +292,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                     final button = IconButton(
                       tooltip: 'Statistics',
                       onPressed: _openStatistics,
-                      icon: AppIcon(HugeIcons.strokeRoundedChartBarLine),
+                      icon: AppIcon(HugeIcons.strokeRoundedChart02),
                     );
                     if (!unclaimed) return button;
                     return Badge(

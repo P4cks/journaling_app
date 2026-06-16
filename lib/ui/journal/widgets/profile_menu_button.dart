@@ -139,7 +139,7 @@ class ProfileMenuButton extends StatelessWidget {
             PopupMenuItem<String>(
               value: 'layouts',
               child: _MenuRow(
-                icon: HugeIcons.strokeRoundedGrid,
+                icon: HugeIcons.strokeRoundedDashboardSquareSetting,
                 label: 'Manage Layouts',
               ),
             ),
