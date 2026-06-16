@@ -49,8 +49,8 @@ class SettingsScreen extends StatelessWidget {
               label: "Journal templates",
               children: [
                 SettingsNavTile(
-                  icon: HugeIcons.strokeRoundedGrid,
-                  title: 'Manage templates',
+                  icon: HugeIcons.strokeRoundedDashboardSquareSetting,
+                  title: 'Manage Layout',
                   route: Routes.layouts,
                 ),
               ],
@@ -59,8 +59,8 @@ class SettingsScreen extends StatelessWidget {
               label: "Blocks",
               children: [
                 SettingsNavTile(
-                  icon: HugeIcons.strokeRoundedFilterHorizontal,
-                  title: 'Configure blocks',
+                  icon: HugeIcons.strokeRoundedBlockGame,
+                  title: 'Manage Blocks',
                   route: Routes.blockSettings,
                 ),
               ],

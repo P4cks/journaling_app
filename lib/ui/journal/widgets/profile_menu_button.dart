@@ -14,6 +14,10 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 /// header plus a "Sign out" row guarded by a confirm dialog. Always
 /// includes navigation rows for Settings, Layouts, Block settings.
 /// Replaces the former Profile tab.
+///
+/// NOTE: Currently unused. The main journal screen now uses the
+/// profile-free [AppMenuButton] (`app_menu_button.dart`). This component
+/// is retained intentionally for when user profiles are reimplemented.
 class ProfileMenuButton extends StatelessWidget {
   const ProfileMenuButton({super.key});
 

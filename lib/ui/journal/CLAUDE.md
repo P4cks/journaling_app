@@ -11,7 +11,8 @@ journal/
 ├── view/         MainJournalScreen — AppBar + pager/empty-state + bottom calendar
 ├── view_model/   MainJournalViewModel — selected date, entries list, mutations
 └── widgets/      JournalTitle, EditorTitle, MakeEntryCta, NoEntryReadOnly,
-                  CalendarBottomBar, JournalPager, ProfileMenuButton
+                  CalendarBottomBar, JournalPager, AppMenuButton
+                  (ProfileMenuButton kept unused for future profiles)
 ```
 
 ## Behaviour
@@ -40,9 +41,11 @@ journal/
 - **AppBar** — `JournalTitle` (editable title + date subtitle) on
   the left; right actions are the Change-layout icon (when editable +
   hasEntry), a Statistics icon (pushes `/statistics`), and the
-  `ProfileMenuButton` (PopupMenu with streak + auth header, then
-  Settings / Layouts / Block settings rows that push the
-  corresponding screens). The Statistics icon replaced the former
+  `AppMenuButton` (hamburger PopupMenu with Settings / Manage Layout /
+  Manage Blocks rows that push the corresponding screens — no streak /
+  auth / Pro UI). `ProfileMenuButton` (the older profile-/auth-aware
+  variant) is kept unused for when user profiles return. The Statistics
+  icon replaced the former
   Entries icon; `/entries` is still reachable by URL but no AppBar
   action links to it.
   - **Streak-reward dot (GUS-22).** The Statistics action is wrapped in
