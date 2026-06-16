@@ -82,8 +82,10 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   Colour comes from `themeSettings.postItPalette` via
   `_dayPaletteColor(day, palette)`, seeded by `y*10000+m*100+d` so a
   given date always renders the same colour. When
-  `themeSettings.postItModeEnabled` is false, every cell falls back
-  to `scheme.primary` (geometry unchanged). The week strip and month
+  `themeSettings.blockColorEnabled` is false (GUS-58 — the calendar
+  follows the block-color toggle, since the dots reuse the post-it
+  palette), every cell falls back to `scheme.primary` (geometry
+  unchanged). The week strip and month
   sheet share `_buildDayCell`. Marker dots are gone — the border
   carries the "has entry" signal. The month sheet sets
   `outsideDaysVisible: false` so adjacent-month days are hidden — they

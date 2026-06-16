@@ -23,24 +23,25 @@ const double kBlockChromeReferenceSize = kBlockContentReferenceSize + 24.0;
 /// The visual chrome wrapping every block — replaces the old
 /// `PostItBlock`.
 ///
-/// **Pure theming.** Reads `themeSettings.postItModeEnabled` to switch
-/// between post-it visuals (rotation, offset, palette colour) and
-/// classic flat-card visuals. Does **not** gate any animation,
-/// gesture, or interaction logic on the post-it flag — that's the
-/// whole point of the rewrite.
+/// **Pure theming.** Reads three independent toggles —
+/// `themeSettings.blockRotationEnabled`, `.blockOffsetEnabled`,
+/// `.blockColorEnabled` (GUS-58) — to mix post-it visuals (rotation,
+/// offset, palette colour) onto the classic flat-card. Each toggle is
+/// applied separately; when all three are off the block is a plain
+/// flat card. Does **not** gate any animation, gesture, or interaction
+/// logic on these flags — that's the whole point of the rewrite.
 ///
 /// **Live updates.** The chrome subscribes to `themeSettings` via a
-/// local `ListenableBuilder` so flipping the post-it toggle (or
-/// editing the post-it palette) restyles every chrome immediately.
-/// The root `ListenableBuilder(listenable: themeSettings)` in
-/// `MyApp.build` is NOT enough on its own: it only rebuilds
-/// `MaterialApp.router` with a fresh `theme:`, so changes that alter
-/// the `ThemeData`/palette propagate via the `Theme` inherited widget
-/// — but `postItModeEnabled` / `postItPalette` are not part of
-/// `ThemeData`, and go_router keeps the current page subtree mounted,
-/// so without this local listener the chrome would stay stale until
-/// some other rebuild (e.g. swiping the pager to a neighbour page).
-/// That was GUS-68.
+/// local `ListenableBuilder` so flipping a toggle (or editing the
+/// post-it palette) restyles every chrome immediately. The root
+/// `ListenableBuilder(listenable: themeSettings)` in `MyApp.build` is
+/// NOT enough on its own: it only rebuilds `MaterialApp.router` with a
+/// fresh `theme:`, so changes that alter the `ThemeData`/palette
+/// propagate via the `Theme` inherited widget — but the block toggles /
+/// `postItPalette` are not part of `ThemeData`, and go_router keeps the
+/// current page subtree mounted, so without this local listener the
+/// chrome would stay stale until some other rebuild (e.g. swiping the
+/// pager to a neighbour page). That was GUS-68.
 ///
 /// **Outline rule.** The 2 px accent outline appears only when
 /// `host == BlockHostKind.grid && isEditing` (in-place edit mode). The
@@ -107,8 +108,8 @@ class BlockChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeSettings = AppDependencies.of(context).themeSettings;
-    // Subscribe locally so post-it toggle / palette edits restyle the
-    // chrome live — the root rebuild only carries ThemeData (GUS-68).
+    // Subscribe locally so toggle / palette edits restyle the chrome
+    // live — the root rebuild only carries ThemeData (GUS-68).
     return ListenableBuilder(
       listenable: themeSettings,
       builder: (context, _) => _buildChrome(context),
@@ -117,18 +118,22 @@ class BlockChrome extends StatelessWidget {
 
   Widget _buildChrome(BuildContext context) {
     final themeSettings = AppDependencies.of(context).themeSettings;
-    final postIt = themeSettings.postItModeEnabled;
+    // Each post-it visual is an independent toggle (GUS-58).
+    final colorOn = themeSettings.blockColorEnabled;
+    final rotationOn = themeSettings.blockRotationEnabled;
+    final offsetOn = themeSettings.blockOffsetEnabled;
+    final anyPostIt = colorOn || rotationOn || offsetOn;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bg = postIt
+    final bg = colorOn
         ? (colorFromHex(visuals.colorHex) ?? scheme.surfaceContainerHigh)
         : scheme.surfaceContainerHigh;
-    final fg = postIt && visuals.colorHex != null
+    final fg = colorOn && visuals.colorHex != null
         ? contrastOn(bg)
         : scheme.onSurface;
 
-    final radius = postIt ? 16.0 : 14.0;
+    final radius = anyPostIt ? 16.0 : 14.0;
     final shadowAlpha = isDragging
         ? (isDark ? 0.85 : 0.32)
         : (isDark ? 0.55 : 0.18);
@@ -203,7 +208,7 @@ class BlockChrome extends StatelessWidget {
     final scale = isDragging ? 1.03 : (showEditOutline ? 1.05 : 1.0);
 
     // Classic mode: only the scale + card. No rotation, no offset.
-    if (!postIt) {
+    if (!anyPostIt) {
       return AnimatedScale(
         scale: scale,
         duration: const Duration(milliseconds: 180),
@@ -212,11 +217,16 @@ class BlockChrome extends StatelessWidget {
       );
     }
 
-    // Post-it mode: rotation + offset wrap the scaled card.
+    // Post-it mode: rotation and/or offset wrap the scaled card. Each
+    // transform is gated on its own toggle (GUS-58) — disabling one
+    // collapses to the identity (zero offset / zero angle).
+    final dx = offsetOn ? visuals.offsetX.toDouble() : 0.0;
+    final dy = offsetOn ? visuals.offsetY.toDouble() : 0.0;
+    final angle = rotationOn ? visuals.rotationDeg * pi / 180 : 0.0;
     return Transform.translate(
-      offset: Offset(visuals.offsetX.toDouble(), visuals.offsetY.toDouble()),
+      offset: Offset(dx, dy),
       child: Transform.rotate(
-        angle: visuals.rotationDeg * pi / 180,
+        angle: angle,
         child: AnimatedScale(
           scale: scale,
           duration: const Duration(milliseconds: 200),
