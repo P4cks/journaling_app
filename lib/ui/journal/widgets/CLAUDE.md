@@ -20,8 +20,21 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - [no_entry_read_only.dart](no_entry_read_only.dart) — `NoEntryReadOnly`.
   Centered "No entry was made on this day." message for past days
   with no entry.
+- [app_menu_button.dart](app_menu_button.dart) — `AppMenuButton`.
+  The **currently-wired** top-bar menu: a profile-free
+  `PopupMenuButton<String>` anchored on a hamburger icon
+  (`strokeRoundedMenu01`). Three navigation rows only — **Settings**
+  (`strokeRoundedSettings01`), **Manage Layout**
+  (`strokeRoundedDashboardSquareSetting`), **Manage Blocks**
+  (`strokeRoundedBlockGame`) — each pushing the corresponding route.
+  Reuses the same focus-management dance as `ProfileMenuButton`
+  (`onOpened` unfocus + post-`onSelected` unfocus after the push
+  returns). Stateless, no `AppDependencies` (reads only
+  `Theme.of(context).colorScheme`). No streak / auth / Pro UI.
 - [profile_menu_button.dart](profile_menu_button.dart) —
-  `ProfileMenuButton`. `PopupMenuButton` anchored on a userCircle
+  `ProfileMenuButton`. **Currently unused — retained intentionally for
+  when user profiles are reimplemented** (the main screen now uses
+  `AppMenuButton` above). `PopupMenuButton` anchored on a userCircle
   icon (filled-check variant when signed in). The button wraps in a
   `ListenableBuilder(listenable: authRepository)` so the icon and
   menu items react to sign-in / sign-out without requiring a manual

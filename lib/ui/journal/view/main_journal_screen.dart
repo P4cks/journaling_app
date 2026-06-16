@@ -16,7 +16,7 @@ import 'package:journaling_app_rewrite/ui/journal/widgets/journal_pager.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/journal_title.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/no_entry_read_only.dart';
-import 'package:journaling_app_rewrite/ui/journal/widgets/profile_menu_button.dart';
+import 'package:journaling_app_rewrite/ui/journal/widgets/app_menu_button.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 
 /// The merged main screen. Hosts the AppBar (editable title + date
@@ -265,7 +265,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                   IconButton(
                     tooltip: 'Change layout',
                     onPressed: _showChangeLayoutSheet,
-                    icon: AppIcon(HugeIcons.strokeRoundedGrid),
+                    icon: AppIcon(HugeIcons.strokeRoundedDashboardSquareEdit),
                   )
                 else if (!editable)
                   Padding(
@@ -292,7 +292,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                     final button = IconButton(
                       tooltip: 'Statistics',
                       onPressed: _openStatistics,
-                      icon: AppIcon(HugeIcons.strokeRoundedChartBarLine),
+                      icon: AppIcon(HugeIcons.strokeRoundedChart02),
                     );
                     if (!unclaimed) return button;
                     return Badge(
@@ -302,7 +302,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                     );
                   },
                 ),
-                const ProfileMenuButton(),
+                const AppMenuButton(),
               ];
 
         return Scaffold(
