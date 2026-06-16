@@ -113,18 +113,21 @@ for how they fit together; this file is per-file notes.
   a tappable "limit reached — Upgrade to Pro" row (calls `requirePro`) at
   the cap, and `SizedBox.shrink()` for Pro users (GUS-33). Surfaced in the
   block-only + custom layout editor bodies, the add-block sheet's
-  custom section, the layouts list (layouts cap, GUS-40), and the
-  Block Settings custom-carousel list.
+  custom section, the add-section sheet's Custom (wanna-do) tab, the
+  layouts list (layouts cap, GUS-40), and the Block Settings
+  custom-carousel list.
   `AddCustomBlockButton({subscriptions, currentCount, onAddAllowed,
-  label = 'Add custom block'})` — shared `OutlinedButton.icon`. Greyed +
-  `ProLockBadge(compact:)`-overlaid at the `kFreeMaxCustomBlocks` cap;
-  tapping at the cap presents the paywall and only invokes `onAddAllowed`
-  on a successful upgrade, below the cap it calls it directly. The
-  `label` param lets the habit add-paths render "Add habit" (GUS-13).
-  Used by the add-block sheet's custom + habit sections and
-  `block_settings_screen`'s custom-carousel + habit lists so all add
-  paths gate identically against the **shared** custom-block budget
-  (carousels + habits counted together, GUS-40 / GUS-13).
+  label = 'Add custom block', max = kFreeMaxCustomBlocks})` — shared
+  `OutlinedButton.icon`. Greyed + `ProLockBadge(compact:)`-overlaid at the
+  `max` cap; tapping at the cap presents the paywall and only invokes
+  `onAddAllowed` on a successful upgrade, below the cap it calls it
+  directly. The `label` param lets other add-paths render "Add habit"
+  (GUS-13) / "Add wanna-do carousel" (GUS-71); `max` lets the add-section
+  Custom tab cap on `kFreeMaxWannados` instead. Used by the add-block
+  sheet's custom + habit sections, the add-section sheet's wanna-do tab,
+  and `block_settings_screen`'s custom-carousel + habit lists so all add
+  paths gate identically against their respective free budget (carousels +
+  habits counted together, GUS-40 / GUS-13).
   **Free-tier caps (all in this file):** `kFreeMaxBlocksPerLayout = 6`
   (blocks in a `blockOnly` layout, BACKLOG #92); `kFreeMaxSectionsCustom
   = 3` (sections in a `custom` layout, GUS-32); `kFreeMaxCustomBlocks = 1`
@@ -150,9 +153,19 @@ for how they fit together; this file is per-file notes.
   rounded drag handle, and an optional left-aligned `titleMedium`
   header. The caller's `slivers` builder receives the inner
   `ScrollController` (which the helper wires to the wrapping
-  `CustomScrollView`). Used by the three draggable sheets — calendar
-  month sheet, layout picker, add-block sheet. Plain menu-style
-  bottom sheets intentionally don't go through this helper.
+  `CustomScrollView`). Used by the draggable sheets — calendar
+  month sheet, layout picker, add-block sheet, add-section sheet. Plain
+  menu-style bottom sheets intentionally don't go through this helper.
+- [sheet_search_field.dart](sheet_search_field.dart) — two small widgets
+  shared by the add-block and add-section picker sheets (GUS-71):
+  `SheetSearchField({required controller, hintText = 'Search'})` — the
+  rounded search `TextField` with a leading search glyph and a trailing
+  clear button (shown via a `ValueListenableBuilder` on the controller
+  once non-empty); and `NoMatchesHint({required message})` — the
+  muted empty-state caption rendered when a search filters everything
+  out. Extracted from `add_block_sheet`'s former private `_SearchField` /
+  `_NoMatchesHint` so both sheets stay visually identical; `hintText` /
+  `message` are the only per-sheet differences.
 - [streak_stat_card.dart](streak_stat_card.dart) — `StreakStatCard` +
   private nudge widget. Renders a `StreakResult` from
   [services/streak_service.dart](../../../data/services/streak_service.dart).

@@ -20,10 +20,10 @@ import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/sheet_search_field.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
@@ -182,7 +182,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: _SearchField(controller: _searchController),
+              child: SheetSearchField(
+                controller: _searchController,
+                hintText: 'Search blocks',
+              ),
             ),
             if (_showCustomSection)
               Padding(
@@ -243,7 +246,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
         .toList(growable: false);
 
     if (visibleTypes.isEmpty) {
-      return const _NoMatchesHint();
+      return const NoMatchesHint(message: 'No blocks match your search.');
     }
 
     // Restricted pickers (feature-block sections, `allowedTypes != null`)
@@ -323,9 +326,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
       itemBuilder: (gridCtx, i) => _BuiltinCell(
         type: types[i],
         locked:
-            !isPro &&
-            types[i].isProOnly &&
-            !rewards.isBlockUnlocked(types[i]),
+            !isPro && types[i].isProOnly && !rewards.isBlockUnlocked(types[i]),
         subscriptions: subscriptions,
       ),
     );
@@ -367,8 +368,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     final customBlockCount = allCustoms.length + allHabits.length;
 
     final nothingDefined = allCustoms.isEmpty && allHabits.isEmpty;
-    final nothingMatches =
-        !nothingDefined && customs.isEmpty && habits.isEmpty;
+    final nothingMatches = !nothingDefined && customs.isEmpty && habits.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -384,7 +384,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
             ),
           )
         else if (nothingMatches)
-          const _NoMatchesHint()
+          const NoMatchesHint(message: 'No blocks match your search.')
         else ...[
           if (customs.isNotEmpty) ...[
             // Logical divider by custom type (GUS-56).
@@ -487,8 +487,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 leading: AppIcon(BlockType.customCarousel.icon),
                 title: const Text('Custom carousel'),
                 subtitle: Text(BlockType.customCarousel.description),
-                onTap: () =>
-                    Navigator.of(sheetCtx).pop(Routes.newCustomBlock),
+                onTap: () => Navigator.of(sheetCtx).pop(Routes.newCustomBlock),
               ),
               ListTile(
                 leading: AppIcon(BlockType.habitTracker.icon),
@@ -506,77 +505,6 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
     // layout-editor screen, not the sheet.
     navigator.pop();
     router.push(route);
-  }
-}
-
-/// Rounded search input used at the top of the add-block sheet. Shows a
-/// leading search glyph and a trailing clear button once non-empty.
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller});
-
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return TextField(
-      controller: controller,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: 'Search blocks',
-        isDense: true,
-        prefixIcon: AppIcon(
-          HugeIcons.strokeRoundedSearch01,
-          size: 20,
-          color: scheme.onSurfaceVariant,
-        ),
-        // Rebuild the suffix as the text changes so the clear button
-        // appears / disappears with content.
-        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            if (value.text.isEmpty) return const SizedBox.shrink();
-            return IconButton(
-              tooltip: 'Clear',
-              icon: AppIcon(
-                HugeIcons.strokeRoundedCancel01,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
-              onPressed: controller.clear,
-            );
-          },
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outlineVariant),
-        ),
-      ),
-    );
-  }
-}
-
-/// Empty-state caption shown when the active tab has no cells matching
-/// the current search query.
-class _NoMatchesHint extends StatelessWidget {
-  const _NoMatchesHint();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: Text(
-        'No blocks match your search.',
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
   }
 }
 
