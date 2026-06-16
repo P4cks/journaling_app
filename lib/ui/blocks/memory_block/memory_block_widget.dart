@@ -329,10 +329,12 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
       case BlockType.quoteBlock:
       case BlockType.memoryBlock:
       case BlockType.weatherApi:
+      case BlockType.videoBlock:
       case BlockType.locationBlock:
       case BlockType.customCarousel:
       case BlockType.habitTracker:
       case BlockType.streakBlock:
+      case BlockType.voiceBlock:
         return Text('Memory', style: theme.textTheme.bodySmall);
     }
   }

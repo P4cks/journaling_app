@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
@@ -37,6 +38,12 @@ String _summarize(JournalLayout layout) {
 /// gets a tinted leading icon and a trailing "Default" chip so the user
 /// can tell at a glance which layout a no-pick entry would use (GUS-28).
 ///
+/// Pass [onManageLayouts] to append a "Create or edit layouts" footer row
+/// below the list (GUS-64). Tapping it dismisses the sheet (returning
+/// `null` to the awaiting caller) and then invokes the callback — the
+/// caller is responsible for navigating to the Layouts screen. Omit it to
+/// render no footer.
+///
 /// Uses the shared `showDraggableSheet` scaffold so the drag handle,
 /// title, and `DraggableScrollableSheet` chrome match the calendar and
 /// add-block sheets.
@@ -45,6 +52,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
   required List<JournalLayout> layouts,
   String? defaultLayoutId,
   String title = 'Choose layout',
+  VoidCallback? onManageLayouts,
 }) {
   if (layouts.isEmpty) return Future.value(null);
   return showDraggableSheet<JournalLayout>(
@@ -68,6 +76,34 @@ Future<JournalLayout?> showLayoutPickerSheet(
           );
         }, childCount: layouts.length),
       ),
+      if (onManageLayouts != null)
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Divider(height: 1),
+              Builder(
+                builder: (footerCtx) {
+                  final scheme = Theme.of(footerCtx).colorScheme;
+                  return ListTile(
+                    leading: AppIcon(
+                      HugeIcons.strokeRoundedPencilEdit02,
+                      color: scheme.primary,
+                    ),
+                    title: Text(
+                      'Manage layouts',
+                      style: TextStyle(color: scheme.primary),
+                    ),
+                    onTap: () {
+                      Navigator.of(footerCtx).pop();
+                      onManageLayouts();
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       const SliverToBoxAdapter(child: SizedBox(height: 8)),
     ],
   );

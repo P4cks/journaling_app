@@ -42,14 +42,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
     `JournalBlockData.visualsJson`).
 - [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody, wannado }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
-  `featureBlock` is a single-tile 2×2 section; the layout editor
-  restricts the block type to `photoBlock` or `memoryBlock` (defended
-  by `LayoutEditorViewModel.featureBlockAllowedTypes`). `header` (GUS-6,
+  `featureBlock` is a single-tile 2×2 section; the layout editor lets
+  the user pick **any** block type for it (GUS-67, was photo/memory only)
+  via the general `showAddBlockSheet`. `header` (GUS-6,
   FREE) is a single-line heading backed by one `textBlock` (reuses the
   text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
   visual rule carrying **no** blocks — it renders even with an empty
-  `blocks` list. `blockTextBody` (GUS-9, PRO) floats a photo/memory
-  block top-left with text wrapping around it (magazine `float: left`);
+  `blocks` list. `blockTextBody` (GUS-9, PRO) floats any block (GUS-46)
+  top-left with text wrapping around it (magazine `float: left`);
   the layout template stores only the float block (0 or 1, like
   `featureBlock`) and the `textBlock` is materialized fresh (always
   starts empty, like `text`). `wannado` (GUS-8/GUS-42/GUS-45, PRO)
@@ -95,10 +95,17 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock, voiceBlock, videoBlock }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
-  entries on disk. `streakBlock` (GUS-22, last) is the display-only
+  entries on disk. `voiceBlock` (GUS-12, byte 13) is a PRO 1×1
+  voice-note tile: records a ≤60 s `.m4a` clip and hosts an inline
+  player; its content is `VoiceBlockContent` (path + duration). It is
+  **not** an action block (the filled cell hosts a sustained player, not
+  a one-shot action). `videoBlock` (GUS-16, last, byte 14) is the Pro
+  short-clip block (poster frame + fullscreen playback); its wrapper is
+  [video_block_content.dart](block_content/video_block_content.dart),
+  storing the file path + measured `durationMs`. `streakBlock` (GUS-22) is the display-only
   current/best-streak tile unlocked at the 7-day milestone for everyone
   (free + Pro); it carries **no per-entry content** (reads `computeStreak`
   live), so its wrapper step is satisfied by an empty `const {}` content
@@ -144,7 +151,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   - `BlockType.isUserInteractive` — whether the block's content comes
     from explicit user action. User-interactive blocks (text, mood,
     weatherManual, prompt, todo, photo, location, customCarousel,
-    habitTracker) keep an entry alive;
+    habitTracker, voiceBlock) keep an entry alive;
     auto-seeded blocks (quote, memory, weatherApi, streakBlock) populate
     themselves from APIs / repo state and must NOT keep an
     otherwise-untouched entry alive (`streakBlock` reads the live streak —

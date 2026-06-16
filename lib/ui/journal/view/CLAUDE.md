@@ -17,7 +17,7 @@ Scaffold
 │   └── actions: normal: Change-layout (editable + hasEntry),
 │                        Statistics icon (push /statistics; dot Badge when
 │                          a streak reward is unclaimed — GUS-22),
-│                        ProfileMenuButton (popup with streak/auth + items)
+│                        AppMenuButton (hamburger popup: Settings / Manage Layout / Manage Blocks)
 │                editing: Done (unfocus)
 ├── body: Material(surfaceContainerLow) + SizedBox.expand
 │         └── GestureDetector (unfocus-on-tap; disabled when editing)
@@ -37,7 +37,7 @@ The screen state holds a `_editing` flag, updated from
 - **AppBar `actions`** collapses to a single Done `TextButton` that
   calls `FocusManager.instance.primaryFocus?.unfocus()` AND clears
   `_editingBlockId` if it is set. The normal trio (Change-layout /
-  Statistics / ProfileMenu) is hidden so the user can't navigate away
+  Statistics / AppMenu) is hidden so the user can't navigate away
   mid-edit.
 - **`JournalPager.externalLock`** is `true`, which puts the pager on
   `NeverScrollableScrollPhysics` (in addition to the existing inner-
@@ -97,6 +97,10 @@ Same gate as before the merge. Used for two decisions:
   `vm.createWithLayout`. The repository notification fans out to the
   VM, which adds the new entry to its `entries` list; the screen
   rebuilds with the pager pointing at the new entry.
+  - Both this and `_showChangeLayoutSheet` pass
+    `onManageLayouts: () => context.push(Routes.layouts)` so the
+    picker's "Create or edit layouts" footer (GUS-64) jumps to the
+    Layouts screen after dismissing the sheet.
 - `_showChangeLayoutSheet()` — opens the picker → confirm dialog →
   `vm.applyLayout`. Destructive; always confirms. When no layouts exist
   it shows a "No layouts configured" toast (`showToast`,

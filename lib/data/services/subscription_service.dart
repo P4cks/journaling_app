@@ -28,7 +28,6 @@ class SubscriptionService {
 
   /// Production (Google Play) key — used only in release builds on Android.
   ///
-  /// TODO: replace with the real RevenueCat `goog_…` key before the first Play
   /// Store release. RevenueCat rejects an `appl_` key on Android, so an Android
   /// release build will fail to configure until this is set.
   static const String _googleApiKey = "goog_PbGZmnCvYmbNVcFGOISQpzuPsVs";

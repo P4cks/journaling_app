@@ -17,14 +17,16 @@ sheet is a stateless top-level function returning the user's pick or
   (the shared scaffold owns the drag handle, the title row, and the
   `DraggableScrollableSheet` chrome). The body is the **stateful**
   `_AddBlockSheetBody` (was stateless before GUS-20/GUS-24), top → bottom:
-  - **Search field** (`_SearchField`) — a rounded `TextField` with a
-    leading search glyph and a trailing clear button (shown via a
-    `ValueListenableBuilder` on the controller once non-empty). Live
-    filters the active tab's cells: built-in cells match on
-    `BlockType.label` / `description`, custom cells on the definition
-    `title`. Query is stored trimmed + lower-cased; empty ⇒ no filter.
-    When a tab has no matches, `_NoMatchesHint` renders in place of the
-    grid. (GUS-20)
+  - **Search field** (`SheetSearchField`, shared with the add-section
+    sheet — [../../core/widgets/sheet_search_field.dart](../../core/widgets/sheet_search_field.dart),
+    GUS-71) — a rounded `TextField` with a leading search glyph and a
+    trailing clear button (shown via a `ValueListenableBuilder` on the
+    controller once non-empty). Live filters the active tab's cells:
+    built-in cells match on `BlockType.label` / `description`, custom
+    cells on the definition `title`. Query is stored trimmed +
+    lower-cased; empty ⇒ no filter. When a tab has no matches, the
+    shared `NoMatchesHint(message: …)` renders in place of the grid.
+    (GUS-20)
   - **Tab switcher** — a 2-segment `SegmentedButton<_BlockTab>`
     (**Default** / **Custom**), shown only when `allowedTypes == null`.
     The sections render **one-at-a-time** by tab (not stacked). GUS-52
@@ -59,7 +61,7 @@ sheet is a stateless top-level function returning the user's pick or
     It captures `Navigator` + `GoRouter` before the `await` and
     re-checks `mounted` (lint-clean across the async gap). The combined
     empty state reads "You haven't defined any custom blocks yet."; an
-    empty search across both lists shows `_NoMatchesHint`.
+    empty search across both lists shows `NoMatchesHint`.
 
   Subscribes to `BlockSettings` via `ListenableBuilder`, so a
   definition saved in the editor appears in the Custom tab
@@ -107,35 +109,53 @@ sheet is a stateless top-level function returning the user's pick or
   `Future<AddSectionResult?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions, required StreakRewardSettings
   rewards, required BlockSettings settings})` + the small
-  `AddSectionResult { SectionKind kind; String? definitionId }`. Seven-tile
-  sheet (Text section / Block grid / Header / Divider / Feature block /
-  Block + text / Wanna-do carousel), each rendered via the private
-  `_SectionTile` (with a `locked` flag). Header (GUS-6) and Divider
-  (GUS-7) are always free. Block-grid
-  sections start empty — there is no row picker; the user adds blocks
-  afterwards and the grid grows to fit. Feature-block and block-text
-  sections also start empty; the editor body lets the user pick one
-  photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
-  Custom-layout editor uses this when the user taps the "Add section"
-  zone at the bottom (passing `subscriptions` + `rewards` + `settings`
-  from `AppDependencies`).
+  `AddSectionResult { SectionKind kind; String? definitionId }`.
+  **Restructured (GUS-71) to mirror the add-block sheet's features and
+  structure while staying a vertical list of `ListTile`s (no grid).**
+  Half-screen sheet on
+  [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart);
+  the body is the **stateful** `_AddSectionSheetBody` (was a flat
+  `SliverList` before), top → bottom:
+  - **Search field** (the shared `SheetSearchField`, hint "Search
+    sections") — live filters the active tab's tiles by label /
+    description; query stored trimmed + lower-cased, empty ⇒ no filter.
+  - **Tab switcher** — a 2-segment `SegmentedButton<_SectionTab>`
+    (**Default** / **Custom**). The wanna-do carousel is the sheet's
+    "custom" type, so it moved out of the Default list into the Custom
+    tab (one tile per `WannadoDefinition`) — the old nested
+    `_pickWannadoDefinition` sub-sheet is gone.
+  - **Default tab** (`_buildDefaultTab`): the six built-in section kinds
+    grouped under `SectionHeader`s by `_sectionCategories` — **Text**
+    (Text section, Header), **Layout** (Block grid, Divider), **Featured**
+    (Feature block, Block + text) — rendered in order; a category with no
+    post-search members is skipped; nothing matching ⇒ shared
+    `NoMatchesHint`. Each kind renders via the private `_SectionTile`
+    (icon + label + description + optional `ProLockBadge`); `_isLocked`
+    keys on `kFreeSectionKinds` + `rewards.isSectionUnlocked`. Header
+    (GUS-6) and Divider (GUS-7) are always free; block-grid / feature /
+    block-text sections start empty (no row picker — the editor body
+    fills feature/block-text via `showAddBlockSheet(allowedTypes: …)`).
+  - **Custom tab** (`_buildCustomTab`): one `_SectionTile` per
+    `BlockSettings.wannadoDefinitions` (sparkles icon, title or
+    "Untitled", item count), filtered by search; tapping pops the sheet
+    with `AddSectionResult(wannado, definitionId: def.id)` (routing
+    through the paywall first when the wanna-do section is locked for a
+    free user). Below the list: the shared `ProLimitHint` +
+    `AddCustomBlockButton(max: kFreeMaxWannados, label: 'Add wanna-do
+    carousel')` that pops the sheet and pushes `Routes.newWannado`
+    (create-in-editor / pick-from-sheet flow, like the add-block custom
+    tab). Empty state when no definitions exist; `NoMatchesHint` when
+    search filters all out.
+  - Subscribes to `BlockSettings` via `ListenableBuilder`, so a wanna-do
+    definition saved in the editor appears in the Custom tab without
+    re-opening. Custom-layout editor opens it from the "Add section" zone,
+    passing `subscriptions` + `rewards` + `settings` from `AppDependencies`.
   - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-do
     carousel (GUS-8/GUS-42/GUS-45) are Pro-only:** for free users
     (`!kFreeSectionKinds.contains(kind)`) the tile greys + badges and
     tapping presents the paywall, proceeding only on a successful
     purchase. Text + block-grid + header + divider are always free.
-  - **Wanna-do carousel sub-picker (GUS-42/GUS-45).** Once unlocked,
-    tapping the Wanna-do carousel tile opens a nested `showModalBottomSheet`
-    listing the user's `BlockSettings.wannadoDefinitions`. Picking one
-    pops the *outer* sheet with `AddSectionResult(wannado,
-    definitionId: def.id)`. A capped `AddCustomBlockButton(max:
-    kFreeMaxWannados, label: 'Add wanna-do carousel')` pops both sheets
-    and pushes `Routes.newWannado` so the user can create a new
-    definition (then re-open to attach it) — the same "create in editor,
-    pick from sheet" flow custom blocks use. Non-wannado tiles return
-    `AddSectionResult(kind)` with a null `definitionId`.
-  - **Streak-reward bypass (GUS-22).** Each of the three Pro locks
-    (`featureLocked` / `blockTextLocked` / `wannadoLocked`) also ANDs
+  - **Streak-reward bypass (GUS-22).** `_isLocked` ANDs
     `&& !rewards.isSectionUnlocked(kind)`, so a section the user already
     spent their streak-reward token on renders ungated/addable for a
     free user. The caller passes `rewards` from `AppDependencies`.
@@ -180,7 +200,7 @@ sheet is a stateless top-level function returning the user's pick or
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -192,6 +212,12 @@ sheet is a stateless top-level function returning the user's pick or
     `MainJournalViewModel.defaultLayoutId`); the matching row gets a
     `primary`-tinted leading icon and a trailing `LayoutDefaultChip`.
     Omit it (or pass `null`) to render no highlight.
+  - **Create/edit footer (GUS-64).** Pass `onManageLayouts` to append a
+    `primary`-tinted "Create or edit layouts" `ListTile` (pencil-edit
+    icon) below the list, under a divider. Tapping it pops the sheet
+    (the awaiting caller sees `null`) then invokes the callback — the
+    caller navigates (both main-screen call sites do
+    `context.push(Routes.layouts)`). Omit it to render no footer.
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action

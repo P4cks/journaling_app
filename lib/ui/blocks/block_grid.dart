@@ -26,8 +26,9 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 //  • Deleted tiles animate out via an overlay "ghost" rendered above the
 //    grid using the tile's last known bounds; ghosts are cleaned up after
 //    their animation finishes.
-//  • Motion is INDEPENDENT of the `themeSettings.postItModeEnabled`
-//    theming flag — post-it is pure visuals only (see
+//  • Motion is INDEPENDENT of the per-block post-it theming toggles
+//    (`themeSettings.block{Rotation,Offset,Color}Enabled`) — post-it
+//    is pure visuals only (see
 //    [chrome/block_chrome.dart](chrome/block_chrome.dart) docstring).
 //
 // Hero:
