@@ -1,10 +1,12 @@
 # lib/ui/profile — Profile + Settings + Block-settings screens
 
-The main journal screen's AppBar exposes a profile dropdown
-([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart))
-with a streak header, an auth-state-aware row (Sign in / Sign out),
-and navigation rows for Settings, Layouts, Block settings. This
-directory hosts the pushed screens:
+The main journal screen's AppBar exposes a hamburger app menu
+([../journal/widgets/app_menu_button.dart](../journal/widgets/app_menu_button.dart),
+`AppMenuButton`) with navigation rows for Settings, Manage Layout, and
+Manage Blocks — no profile / auth UI. The older profile-/auth-aware
+dropdown ([../journal/widgets/profile_menu_button.dart](../journal/widgets/profile_menu_button.dart),
+`ProfileMenuButton`) is kept unused for when user profiles are
+reimplemented. This directory hosts the pushed screens:
 
 - **Profile** (`/profile`) — the canonical sign-in entry point.
   Reuses `ProfileAuthCard` for both signed-out (Email / Google / Apple

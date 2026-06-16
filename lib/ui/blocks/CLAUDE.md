@@ -535,7 +535,7 @@ This applies symmetrically to title edits and block edits — both
 raise the keyboard and trigger the same flag. The return key on the
 keyboard still inserts newlines in multi-line block TextFields.
 
-AppBar actions (Statistics, ProfileMenuButton, Change-layout) also
+AppBar actions (Statistics, AppMenuButton, Change-layout) also
 call `FocusManager.instance.primaryFocus?.unfocus()` before
 navigating AND once more on return — defending against Flutter's
 automatic focus restoration when the previously-focused TextField
