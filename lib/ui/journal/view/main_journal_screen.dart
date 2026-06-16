@@ -166,6 +166,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       context,
       layouts: vm.getAvailableLayouts(),
       defaultLayoutId: vm.defaultLayoutId,
+      onManageLayouts: () => context.push(Routes.layouts),
     );
     if (picked == null || !mounted) return;
     vm.createWithLayout(picked);
@@ -185,6 +186,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       context,
       layouts: layouts,
       defaultLayoutId: vm.defaultLayoutId,
+      onManageLayouts: () => context.push(Routes.layouts),
     );
     if (selected == null || !mounted) return;
     final confirm = await showDialog<bool>(

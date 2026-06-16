@@ -180,7 +180,7 @@ sheet is a stateless top-level function returning the user's pick or
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -192,6 +192,12 @@ sheet is a stateless top-level function returning the user's pick or
     `MainJournalViewModel.defaultLayoutId`); the matching row gets a
     `primary`-tinted leading icon and a trailing `LayoutDefaultChip`.
     Omit it (or pass `null`) to render no highlight.
+  - **Create/edit footer (GUS-64).** Pass `onManageLayouts` to append a
+    `primary`-tinted "Create or edit layouts" `ListTile` (pencil-edit
+    icon) below the list, under a divider. Tapping it pops the sheet
+    (the awaiting caller sees `null`) then invokes the callback — the
+    caller navigates (both main-screen call sites do
+    `context.push(Routes.layouts)`). Omit it to render no footer.
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action
