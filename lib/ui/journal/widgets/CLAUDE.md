@@ -203,13 +203,18 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
-- **`_buildDayCell` reads `themeSettings` inline (no local
-  ListenableBuilder).** Palette / post-it-mode changes propagate via
-  the root-level `ListenableBuilder(listenable: themeSettings)` in
-  [main.dart](../../../main.dart) which rebuilds the whole
-  MaterialApp. If you ever lift this widget out of that tree, add a
-  local listener — otherwise palette edits won't take effect until
-  the next unrelated rebuild.
+- **`_buildDayCell` reads `themeSettings` inline; the week-strip and
+  month builders subscribe to it via `Listenable.merge([debug,
+  themeSettings])` (GUS-68).** The root-level
+  `ListenableBuilder(listenable: themeSettings)` in
+  [main.dart](../../../main.dart) is NOT sufficient: it only rebuilds
+  `MaterialApp.router` with a fresh `theme:`, so palette/`ThemeData`
+  changes propagate via the `Theme` inherited widget — but
+  `postItModeEnabled` / `postItPalette` are not part of `ThemeData`,
+  and go_router keeps this page subtree mounted, so without the local
+  listener toggling post-it mode (or editing the post-it palette) left
+  the cells stale until an unrelated rebuild. Keep the merge if you
+  refactor these builders.
 - **Per-date colour is seeded by `y*10000 + m*100 + d`, not
   `day.hashCode`.** `DateTime.hashCode` mixes the time-of-day
   fields, so two `DateTime` instances for the same calendar date but
