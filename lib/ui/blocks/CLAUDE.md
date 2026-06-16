@@ -133,13 +133,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
     double-tap instead of setting `_editingBlockId` (there's no
     in-place edit-mode UI for one-shot actions). Location is
     intentionally NOT in this set — its "interaction" is long-press
-    on the map, which is always available.
+    on the map, which is always available. `voiceBlock` is **also
+    deliberately NOT** an action block: its filled cell hosts a
+    sustained inline player (tap play/pause, scrub) rather than a
+    one-shot action, and recording starts from a tap on the *empty*
+    cell — the player must keep receiving taps after the first.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
   - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
-    (currently `{weatherApi, quoteBlock}`); edit that set to change the
-    free/Pro split — every other built-in block is free (GUS-34).
+    (currently `{weatherApi, quoteBlock, voiceBlock}`); edit that set to
+    change the free/Pro split — every other built-in block is free
+    (GUS-34). `voiceBlock` is Pro (GUS-12).
     `customCarousel` and `habitTracker` are deliberately NOT in the
     set: custom blocks are gated by *combined count*
     (`kFreeMaxCustomBlocks`, 1 free across carousels + habits) not a
@@ -236,6 +241,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   today-anchored streak when the block isn't in a saved entry (layout
   preview). Unlocked at the 7-day milestone for everyone (free + Pro) via
   `StreakRewardSettings`. See [streak_block/CLAUDE.md](streak_block/CLAUDE.md).
+- [voice_block/voice_block_widget.dart](voice_block/voice_block_widget.dart) —
+  `VoiceBlockWidget` (GUS-12, PRO). 1×1 voice-note tile. Empty editable
+  cell shows a "Record voice" affordance that opens a modal recording
+  sheet (`showVoiceRecorderSheet`): live elapsed timer, progress bar to
+  `kMaxVoiceDuration` (60 s), Stop / Cancel, **auto-stops at 60 s**.
+  Records via `package:record` (`AudioRecorder`, `AudioEncoder.aacLc`)
+  straight to `AudioStorageService.newRecordingPath()`. Filled cell hosts
+  an inline `_VoicePlayer` (own `AudioPlayer` from `audioplayers`,
+  play/pause + scrubbing progress + `m:ss / m:ss` readout). Long-press →
+  Re-record / Remove sheet; double-tap → expanded route. **Not an action
+  block** — see the `isActionBlock` note below. See
+  [voice_block/CLAUDE.md](voice_block/CLAUDE.md).
 
 ---
 

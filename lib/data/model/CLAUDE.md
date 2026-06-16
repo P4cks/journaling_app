@@ -85,10 +85,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock, voiceBlock }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
-  entries on disk. `streakBlock` (GUS-22, last) is the display-only
+  entries on disk. `voiceBlock` (GUS-12, last, byte 13) is a PRO 1×1
+  voice-note tile: records a ≤60 s `.m4a` clip and hosts an inline
+  player; its content is `VoiceBlockContent` (path + duration). It is
+  **not** an action block (the filled cell hosts a sustained player, not
+  a one-shot action). `streakBlock` (GUS-22) is the display-only
   current/best-streak tile unlocked at the 7-day milestone for everyone
   (free + Pro); it carries **no per-entry content** (reads `computeStreak`
   live), so its wrapper step is satisfied by an empty `const {}` content
@@ -134,7 +138,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   - `BlockType.isUserInteractive` — whether the block's content comes
     from explicit user action. User-interactive blocks (text, mood,
     weatherManual, prompt, todo, photo, location, customCarousel,
-    habitTracker) keep an entry alive;
+    habitTracker, voiceBlock) keep an entry alive;
     auto-seeded blocks (quote, memory, weatherApi, streakBlock) populate
     themselves from APIs / repo state and must NOT keep an
     otherwise-untouched entry alive (`streakBlock` reads the live streak —
