@@ -29,6 +29,14 @@ block content.
   once at save time so the grid cell can show a badge without keeping a
   player alive. Used by `VideoBlockWidget` and `JournalBlockEmptiness`
   (no video → empty).
+- [voice_block_content.dart](voice_block_content.dart) — `VoiceBlockContent { String? audioPath; int? durationMs }` (GUS-12).
+  Map shape: `{"audioPath": "/.../audio/<uuid>.m4a", "durationMs": 12345}`
+  (each key omitted when null). `hasAudio` is true when `audioPath` is
+  non-null and non-empty. The recorded `.m4a` file lives under the app
+  documents dir, written by the recorder via
+  [AudioStorageService](../../services/audio_storage_service.dart);
+  Hive only persists the path + measured duration. Used by
+  `VoiceBlockWidget` and `JournalBlockEmptiness` (no audio → empty).
 - [weather_api_block_content.dart](weather_api_block_content.dart) — `WeatherApiBlockContent { String? conditionId; double? temperatureC; String? cityName; String? fetchedDate; String? error }`.
   Map shape: `{"conditionId": "...", "temperatureC": 12.4, "cityName": "Berlin, Germany", "fetchedDate": "yyyy-MM-dd"}`
   (all keys omitted when null). `isFetched` is true when a condition

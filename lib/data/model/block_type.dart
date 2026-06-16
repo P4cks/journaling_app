@@ -15,5 +15,6 @@ enum BlockType {
   customCarousel,
   habitTracker,
   streakBlock,
+  voiceBlock,
   videoBlock,
 }

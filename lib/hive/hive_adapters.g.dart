@@ -129,6 +129,8 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
       case 12:
         return BlockType.streakBlock;
       case 13:
+        return BlockType.voiceBlock;
+      case 14:
         return BlockType.videoBlock;
       default:
         return BlockType.textBlock;
@@ -164,8 +166,10 @@ class BlockTypeAdapter extends TypeAdapter<BlockType> {
         writer.writeByte(11);
       case BlockType.streakBlock:
         writer.writeByte(12);
-      case BlockType.videoBlock:
+      case BlockType.voiceBlock:
         writer.writeByte(13);
+      case BlockType.videoBlock:
+        writer.writeByte(14);
     }
   }
 
@@ -281,13 +285,14 @@ class EntrySectionAdapter extends TypeAdapter<EntrySection> {
       kind: fields[1] as SectionKind,
       blocks: (fields[3] as List).cast<JournalBlockData>(),
       rows: (fields[2] as num?)?.toInt(),
+      definitionId: fields[4] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, EntrySection obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -295,7 +300,9 @@ class EntrySectionAdapter extends TypeAdapter<EntrySection> {
       ..writeByte(2)
       ..write(obj.rows)
       ..writeByte(3)
-      ..write(obj.blocks);
+      ..write(obj.blocks)
+      ..writeByte(4)
+      ..write(obj.definitionId);
   }
 
   @override
@@ -324,13 +331,14 @@ class LayoutSectionAdapter extends TypeAdapter<LayoutSection> {
       kind: fields[1] as SectionKind,
       blocks: (fields[3] as List).cast<BlockTemplate>(),
       rows: (fields[2] as num?)?.toInt(),
+      definitionId: fields[4] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, LayoutSection obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -338,7 +346,9 @@ class LayoutSectionAdapter extends TypeAdapter<LayoutSection> {
       ..writeByte(2)
       ..write(obj.rows)
       ..writeByte(3)
-      ..write(obj.blocks);
+      ..write(obj.blocks)
+      ..writeByte(4)
+      ..write(obj.definitionId);
   }
 
   @override

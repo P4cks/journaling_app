@@ -14,6 +14,7 @@ import 'package:journaling_app_rewrite/ui/blocks/streak_block/streak_block_widge
 import 'package:journaling_app_rewrite/ui/blocks/text_block/text_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/todo_block/todo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/video_block/video_block_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/voice_block/voice_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_api/weather_api_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 
@@ -186,6 +187,13 @@ class BlockWidget extends StatelessWidget {
         );
       case BlockType.videoBlock:
         return VideoBlockWidget(
+          data: data,
+          mode: mode,
+          onChanged: onChanged,
+          onDoubleTap: onDoubleTap,
+        );
+      case BlockType.voiceBlock:
+        return VoiceBlockWidget(
           data: data,
           mode: mode,
           onChanged: onChanged,

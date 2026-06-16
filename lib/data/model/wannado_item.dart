@@ -1,13 +1,12 @@
-/// A single "wanna-do" / dream entry in the user's global bucket list.
+/// A single "wanna-do" / dream entry inside a [WannadoDefinition].
 ///
-/// The list lives in the `BlockSettings` registry (mirroring
-/// `CustomCarouselDefinition`) and is rendered by the `wannado` section
+/// Definitions live in the `BlockSettings` registry (mirroring
+/// `CustomCarouselDefinition`) and are rendered by the `wannado` section
 /// widget as a vertical auto-rotating carousel. It is **pure display**:
 /// there is no per-item done/checked state — a wanna-do is just a piece
 /// of text the user wants to be reminded of.
 ///
-/// Wire shape (in the `settings` Hive box, JSON list under
-/// `block.wannado.items`):
+/// Wire shape (inside a `WannadoDefinition`'s `items` list):
 /// ```json
 /// {"id": "uuid", "text": "Hike the Camino"}
 /// ```

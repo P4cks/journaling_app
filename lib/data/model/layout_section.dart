@@ -23,11 +23,21 @@ class LayoutSection {
   final int? rows;
   final List<BlockTemplate> blocks;
 
+  /// For [SectionKind.wannado] only: the id of the `WannadoDefinition`
+  /// (in the `BlockSettings` registry) this section renders. `null` for
+  /// every other kind, and for legacy wannado sections saved before the
+  /// definition-backed model (they render an empty placeholder).
+  ///
+  /// Appended last — `hive_ce` reads missing fields as `null`, so this is
+  /// a backward-compatible add with no box-name bump (see hive/CLAUDE.md).
+  final String? definitionId;
+
   const LayoutSection({
     required this.id,
     required this.kind,
     required this.blocks,
     this.rows,
+    this.definitionId,
   });
 
   LayoutSection copyWith({
@@ -35,15 +45,20 @@ class LayoutSection {
     SectionKind? kind,
     int? rows,
     List<BlockTemplate>? blocks,
+    String? definitionId,
     bool clearRows = false,
+    bool clearDefinitionId = false,
   }) => LayoutSection(
     id: id ?? this.id,
     kind: kind ?? this.kind,
     rows: clearRows ? null : (rows ?? this.rows),
     blocks: blocks ?? this.blocks,
+    definitionId: clearDefinitionId
+        ? null
+        : (definitionId ?? this.definitionId),
   );
 
   @override
   String toString() =>
-      'LayoutSection(id: $id, kind: $kind, rows: $rows, blocks: ${blocks.length})';
+      'LayoutSection(id: $id, kind: $kind, rows: $rows, blocks: ${blocks.length}, definitionId: $definitionId)';
 }

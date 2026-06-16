@@ -29,16 +29,27 @@ sheet is a stateless top-level function returning the user's pick or
     (**Default** / **Custom**), shown only when `allowedTypes == null`.
     The sections render **one-at-a-time** by tab (not stacked). GUS-52
     folded the former separate **Habits** tab into Custom. (GUS-24)
-  - **Default tab** (`_buildBuiltinGrid`): a 2-column grid of
-    scaled-down built-in block previews (`BlockWidget` in
-    `BlockMode.readOnly` with `sampleData`), iterating `BlockType.values`
-    minus `_hiddenBlockTypes`.
+  - **Default tab** (`_buildBuiltinGrid`): scaled-down built-in block
+    previews (`BlockWidget` in `BlockMode.readOnly` with `sampleData`),
+    iterating `BlockType.values` minus `_hiddenBlockTypes`. **Grouped
+    under `SectionHeader` dividers by logical category (GUS-56)** —
+    `_builtinCategories` (Text / Trackers / Weather / Memories /
+    Inspiration) is rendered in order, each as a heading + 2-column grid
+    via the shared `_builtinGrid(types, …)` helper; a category with no
+    visible (post-search) members is skipped, and any built-in type not
+    assigned to a category falls into a trailing "More" group so adding a
+    new `BlockType` never silently drops it. Grouping is only applied to
+    the full tab (`allowedTypes == null`); restricted feature-block
+    pickers keep a single flat grid (sparse one-cell headings read worse).
   - **Custom tab** (`_buildCustomSection`, only when
-    `allowedTypes == null`): both kinds of user-defined block (GUS-52) —
-    every `BlockSettings.customCarousels` definition as a `_CustomCell`
-    (live preview, GUS-41 lock on definitions past the free cap) **and**
-    every `BlockSettings.habits` definition as a `_HabitCell` (returns
-    `AddBlockResultHabit(id)`), each in its own 2-column grid. Below them
+    `allowedTypes == null`): both kinds of user-defined block (GUS-52),
+    each under its own `SectionHeader` divider by custom type (GUS-56) —
+    a **Carousel** heading over every `BlockSettings.customCarousels`
+    definition as a `_CustomCell` (live preview, GUS-41 lock on
+    definitions past the free cap) **and** a **Habit** heading over every
+    `BlockSettings.habits` definition as a `_HabitCell` (returns
+    `AddBlockResultHabit(id)`), each in its own 2-column grid (a heading
+    only shows when its grid is non-empty). Below them
     the shared `ProLimitHint` and a **single** "Add custom block"
     `AddCustomBlockButton`. After the button's free-cap/paywall check,
     `_promptNewCustomBlockKind` opens a small `showModalBottomSheet`
@@ -93,42 +104,56 @@ sheet is a stateless top-level function returning the user's pick or
     once unlocked it's free to add for both free and Pro users (it's NOT
     in `kProOnlyBlockTypes`).
 - [add_section_sheet.dart](add_section_sheet.dart) —
-  `Future<SectionKind?> showAddSectionSheet(context, {required
+  `Future<AddSectionResult?> showAddSectionSheet(context, {required
   SubscriptionRepository subscriptions, required StreakRewardSettings
-  rewards})`. Seven-tile sheet (Text
-  section / Block grid / Header / Divider / Feature block / Block +
-  text / Wanna-dos), each rendered via the private `_SectionTile` (with
-  a `locked` flag). Header (GUS-6) and Divider (GUS-7) are always free.
-  Block-grid
+  rewards, required BlockSettings settings})` + the small
+  `AddSectionResult { SectionKind kind; String? definitionId }`. Seven-tile
+  sheet (Text section / Block grid / Header / Divider / Feature block /
+  Block + text / Wanna-do carousel), each rendered via the private
+  `_SectionTile` (with a `locked` flag). Header (GUS-6) and Divider
+  (GUS-7) are always free. Block-grid
   sections start empty — there is no row picker; the user adds blocks
   afterwards and the grid grows to fit. Feature-block and block-text
   sections also start empty; the editor body lets the user pick one
   photo or memory block via `showAddBlockSheet(allowedTypes: …)`.
   Custom-layout editor uses this when the user taps the "Add section"
-  zone at the bottom (passing `subscriptions` from `AppDependencies`).
-  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-dos
-    (GUS-8) are Pro-only:** for free users
+  zone at the bottom (passing `subscriptions` + `rewards` + `settings`
+  from `AppDependencies`).
+  - **Feature block (GUS-19), Block + text (GUS-9), and Wanna-do
+    carousel (GUS-8/GUS-42/GUS-45) are Pro-only:** for free users
     (`!kFreeSectionKinds.contains(kind)`) the tile greys + badges and
-    tapping presents the paywall, popping the kind only on a successful
-    purchase. Text + block-grid + header + divider are always free. The
-    Wanna-dos tile description points the user to manage the list in
-    Block settings (the section itself has no per-section add affordance).
+    tapping presents the paywall, proceeding only on a successful
+    purchase. Text + block-grid + header + divider are always free.
+  - **Wanna-do carousel sub-picker (GUS-42/GUS-45).** Once unlocked,
+    tapping the Wanna-do carousel tile opens a nested `showModalBottomSheet`
+    listing the user's `BlockSettings.wannadoDefinitions`. Picking one
+    pops the *outer* sheet with `AddSectionResult(wannado,
+    definitionId: def.id)`. A capped `AddCustomBlockButton(max:
+    kFreeMaxWannados, label: 'Add wanna-do carousel')` pops both sheets
+    and pushes `Routes.newWannado` so the user can create a new
+    definition (then re-open to attach it) — the same "create in editor,
+    pick from sheet" flow custom blocks use. Non-wannado tiles return
+    `AddSectionResult(kind)` with a null `definitionId`.
   - **Streak-reward bypass (GUS-22).** Each of the three Pro locks
     (`featureLocked` / `blockTextLocked` / `wannadoLocked`) also ANDs
     `&& !rewards.isSectionUnlocked(kind)`, so a section the user already
     spent their streak-reward token on renders ungated/addable for a
     free user. The caller passes `rewards` from `AppDependencies`.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
-  `Future<String?> showLayoutIconPicker(context, {selected})`.
-  Modal sheet that shows every icon in [layout_icons.dart](../layout_icons.dart)
-  as a 56×56 tile. Returns the chosen `icon.name` (stable identifier
-  string carried over from the pre-HugeIcons Phosphor era) or `null`.
-  - Tiles that match `selected` get a `primaryContainer` background
-    and a thicker primary border; the glyph itself is the same
-    stroke-rounded HugeIcons icon as the unselected tiles (the free
-    package ships no fill variant).
+  `Future<String?> showLayoutIconPicker(context, {selected})`. Now a
+  **thin wrapper** (GUS-44) that maps [layout_icons.dart](../layout_icons.dart)
+  to `PickerIcon`s and delegates to the shared
+  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
+  (icon-only, `selectedIconName: selected`), unwrapping the
+  `PickerIconResult` back to its `name`. Returns the chosen `icon.name`
+  (stable identifier string carried over from the pre-HugeIcons
+  Phosphor era) or `null`. The shared picker owns the search field,
+  selection highlight, and tile chrome — the former local `_IconTile`
+  is gone.
   - Used by the layout editor's icon AppBar action. Callers may pass
-    the returned name (or `null`) straight into `vm.setIconName`.
+    the returned name (or `null`) straight into `vm.setIconName`. The
+    `Future<String?>` contract is unchanged, so the layout editor is
+    untouched.
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
   `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Two-tile
   sheet ("Only blocks", "Fully customizable"), each with an icon and

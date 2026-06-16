@@ -207,6 +207,33 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     vm.setIconName(picked);
   }
 
+  /// Handler for the dedicated AppBar "Save" action. Validates the name
+  /// the same way `_maybeSaveOnLeave` does (an empty or duplicate name
+  /// can't be persisted — surface why with a toast and stay put), then
+  /// saves and returns to the Layouts list. `context.pop()` force-pops,
+  /// so it bypasses the `PopScope` dirty-state guard — there's nothing
+  /// unsaved to prompt about after a successful save anyway.
+  Future<void> _save() async {
+    final vm = _viewModel;
+    if (vm == null) return;
+    FocusScope.of(context).unfocus();
+    final nameEmpty = vm.nameController.text.trim().isEmpty;
+    if (nameEmpty || vm.nameConflict) {
+      showToast(
+        context,
+        nameEmpty
+            ? 'Add a name to save'
+            : 'A layout with this name already exists',
+        kind: ToastKind.error,
+      );
+      return;
+    }
+    await vm.save();
+    if (!mounted) return;
+    showToast(context, 'Layout saved', kind: ToastKind.success);
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = _viewModel;
@@ -250,6 +277,13 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               tooltip: 'Change icon',
               onPressed: _pickIcon,
               icon: AppIcon(layoutIconFor(vm.iconName).icon),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: _save,
+                child: const Text('Save'),
+              ),
             ),
           ],
         ),
@@ -526,9 +560,10 @@ class _CustomBody extends StatelessWidget {
       context,
       subscriptions: subscriptions,
       rewards: AppDependencies.of(context).streakRewardSettings,
+      settings: AppDependencies.of(context).blockSettings,
     );
     if (picked == null) return;
-    vm.addSection(picked);
+    vm.addSection(picked.kind, definitionId: picked.definitionId);
   }
 
   Future<bool> _confirmRemove(BuildContext context, String label) async {
@@ -618,7 +653,7 @@ class _SectionCard extends StatelessWidget {
       SectionKind.header => ('Header', 'header'),
       SectionKind.divider => ('Divider', 'divider'),
       SectionKind.blockTextBody => ('Block + text', 'block + text'),
-      SectionKind.wannado => ('Wanna-dos', 'wanna-dos'),
+      SectionKind.wannado => ('Wanna-do carousel', 'wanna-do carousel'),
     };
 
     return Container(
@@ -704,12 +739,13 @@ class _SectionCard extends StatelessWidget {
               vm: vm,
               sectionIndex: index,
             ),
-            // Content-free per entry — previews the *global* wanna-do
-            // list (rotating carousel). No per-section add affordance;
-            // items are managed in Block settings.
-            SectionKind.wannado => const Padding(
-              padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
-              child: WannadoSectionWidget(),
+            // Content-free per entry — previews the chosen wanna-do
+            // carousel definition (resolved by `definitionId`). No
+            // per-section add affordance; the definition (title + items)
+            // is managed in Block settings.
+            SectionKind.wannado => Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: WannadoSectionWidget(definitionId: section.definitionId),
             ),
           },
         ],

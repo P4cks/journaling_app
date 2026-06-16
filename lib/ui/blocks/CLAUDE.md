@@ -17,10 +17,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [chrome/block_chrome.dart](chrome/block_chrome.dart) — `BlockChrome`,
   replaces the old `post_it_block.dart` and the `PostItBlock` class.
   Pure-theming chrome — wraps any block content in the rounded card
-  with rotation / offset / palette colour driven by
-  `themeSettings.postItModeEnabled`. **No animation, gesture, or
-  interaction logic is gated on the post-it flag** — that's the
-  central rewrite invariant. Renders a 2 px accent outline ONLY when
+  with rotation / offset / palette colour, each driven by its own
+  independent toggle (`themeSettings.blockRotationEnabled` /
+  `.blockOffsetEnabled` / `.blockColorEnabled`; GUS-58 split the
+  former single `postItModeEnabled` master). Each effect applies
+  separately; all three off → flat card. **No animation, gesture, or
+  interaction logic is gated on these flags** — that's the
+  central rewrite invariant. **Subscribes to `themeSettings` via a
+  local `ListenableBuilder` (GUS-68)** so flipping a toggle /
+  editing the post-it palette restyles the chrome live — the root
+  rebuild in `main.dart` only carries `ThemeData`, which doesn't
+  include the block toggles, so without the local listener the chrome
+  stayed stale until the pager was swiped. Renders a 2 px accent outline ONLY when
   `host == BlockHostKind.grid && isEditing`; the expanded route reads
   `host: expanded` so the outline is suppressed (the blurred backdrop
   + Hero are the affordance there).
@@ -134,13 +142,17 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
     `_editingBlockId` (there's no in-place edit-mode UI for one-shot
     actions). Location is intentionally NOT in this set — its
     "interaction" is long-press on the map, which is always available.
+    `voiceBlock` is **also deliberately NOT** an action block: its filled
+    cell hosts a sustained inline player (tap play/pause, scrub) rather
+    than a one-shot action, and recording starts from a tap on the
+    *empty* cell — the player must keep receiving taps after the first.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
   - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
-    (currently `{weatherApi, quoteBlock, videoBlock}`); edit that set to
-    change the free/Pro split — every other built-in block is free
-    (GUS-34, GUS-16).
+    (currently `{weatherApi, quoteBlock, voiceBlock, videoBlock}`); edit
+    that set to change the free/Pro split — every other built-in block is
+    free (GUS-34). `voiceBlock` (GUS-12) and `videoBlock` (GUS-16) are Pro.
     `customCarousel` and `habitTracker` are deliberately NOT in the
     set: custom blocks are gated by *combined count*
     (`kFreeMaxCustomBlocks`, 1 free across carousels + habits) not a
@@ -192,15 +204,16 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   type. See [block_text_section/CLAUDE.md](block_text_section/CLAUDE.md).
 - [wannado_section/wannado_section_widget.dart](wannado_section/wannado_section_widget.dart) —
   `WannadoSectionWidget`. Renders a `SectionKind.wannado` section
-  (GUS-8, PRO): a **vertical auto-rotating carousel** over the user's
-  **global** wanna-do list (`BlockSettings.wannados`, grabbed from
+  (GUS-8/GUS-42/GUS-45, PRO): a **vertical auto-rotating carousel** over
+  one user-created `WannadoDefinition`, resolved from
+  `BlockSettings.findWannadoDefinition(definitionId)` (grabbed from
   `AppDependencies` inside the widget, wrapped in a `ListenableBuilder`).
   **Pure display** — no per-item done/checkbox state; `mode` is ignored
   (identical on editable + read-only days). A `Timer.periodic` advances
   one item every 4 s; the user can also swipe vertically (a manual swipe
   restarts the timer). Loops via a large virtual base page +
-  `index % items.length`. Takes no arguments. See
-  [wannado_section/CLAUDE.md](wannado_section/CLAUDE.md).
+  `index % items.length`. Takes a `String? definitionId` (null/deleted →
+  placeholder). See [wannado_section/CLAUDE.md](wannado_section/CLAUDE.md).
 - [mood_tracker/mood_tracker_widget.dart](mood_tracker/mood_tracker_widget.dart)
 - [weather_manual/weather_manual_widget.dart](weather_manual/weather_manual_widget.dart)
 - [location_block/location_block_widget.dart](location_block/location_block_widget.dart) —
@@ -248,6 +261,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   today-anchored streak when the block isn't in a saved entry (layout
   preview). Unlocked at the 7-day milestone for everyone (free + Pro) via
   `StreakRewardSettings`. See [streak_block/CLAUDE.md](streak_block/CLAUDE.md).
+- [voice_block/voice_block_widget.dart](voice_block/voice_block_widget.dart) —
+  `VoiceBlockWidget` (GUS-12, PRO). 1×1 voice-note tile. Empty editable
+  cell shows a "Record voice" affordance that opens a modal recording
+  sheet (`showVoiceRecorderSheet`): live elapsed timer, progress bar to
+  `kMaxVoiceDuration` (60 s), Stop / Cancel, **auto-stops at 60 s**.
+  Records via `package:record` (`AudioRecorder`, `AudioEncoder.aacLc`)
+  straight to `AudioStorageService.newRecordingPath()`. Filled cell hosts
+  an inline `_VoicePlayer` (own `AudioPlayer` from `audioplayers`,
+  play/pause + scrubbing progress + `m:ss / m:ss` readout). Long-press →
+  Re-record / Remove sheet; double-tap → expanded route. **Not an action
+  block** — see the `isActionBlock` note below. See
+  [voice_block/CLAUDE.md](voice_block/CLAUDE.md).
 
 ---
 
@@ -271,8 +296,8 @@ animations affect the grid's RenderBoxes or insertion-index math:
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.
-  Skipped when `postItModeEnabled` is false (classic mode stays
-  still).
+  Runs regardless of the post-it toggles — the mount animation is a
+  structural affordance, not a theme decoration.
 - **Delete**: when `didUpdateWidget` notices a block id has gone
   missing, the tile's last-known `Rect` is snapshotted into a
   `_PendingDelete` and rendered as an overlay ghost above the grid.

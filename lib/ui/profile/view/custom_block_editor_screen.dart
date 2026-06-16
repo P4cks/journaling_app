@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_c
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_emoji_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/custom_block_editor_view_model.dart';
 
@@ -101,23 +102,26 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
     context.pop();
   }
 
-  Future<void> _addEmoji() async {
+  Future<void> _addItem() async {
     final vm = _viewModel;
     if (vm == null) return;
-    final emoji = await showDialog<String>(
-      context: context,
-      builder: (_) => const _AddEmojiDialog(),
+    final result = await showIconEmojiPicker(
+      context,
+      allowEmoji: true,
+      title: 'Add item',
+      icons: [
+        for (final i in kCarouselIcons)
+          PickerIcon(name: i.name, icon: i.icon, label: i.label),
+      ],
     );
-    if (emoji == null || emoji.isEmpty) return;
-    vm.addItem(CarouselItem.emoji(emoji));
-  }
-
-  Future<void> _addIcon() async {
-    final vm = _viewModel;
-    if (vm == null) return;
-    final iconName = await _showIconPicker(context);
-    if (iconName == null) return;
-    vm.addItem(CarouselItem.icon(iconName));
+    switch (result) {
+      case null:
+        return;
+      case PickerEmojiResult(:final emoji):
+        vm.addItem(CarouselItem.emoji(emoji));
+      case PickerIconResult(:final name):
+        vm.addItem(CarouselItem.icon(name));
+    }
   }
 
   @override
@@ -184,7 +188,7 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
                 itemCount: vm.items.length,
-                onReorder: vm.moveItem,
+                onReorderItem: vm.moveItem,
                 itemBuilder: (context, index) {
                   final item = vm.items[index];
                   return _ItemRow(
@@ -205,24 +209,10 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _addEmoji,
-                    icon: AppIcon(HugeIcons.strokeRoundedSmile),
-                    label: const Text('Add emoji'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _addIcon,
-                    icon: AppIcon(HugeIcons.strokeRoundedShapes),
-                    label: const Text('Add icon'),
-                  ),
-                ),
-              ],
+            OutlinedButton.icon(
+              onPressed: _addItem,
+              icon: AppIcon(HugeIcons.strokeRoundedAdd01),
+              label: const Text('Add item'),
             ),
             const SizedBox(height: 32),
           ],
@@ -292,135 +282,3 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-class _AddEmojiDialog extends StatefulWidget {
-  const _AddEmojiDialog();
-
-  @override
-  State<_AddEmojiDialog> createState() => _AddEmojiDialogState();
-}
-
-class _AddEmojiDialogState extends State<_AddEmojiDialog> {
-  final TextEditingController _controller = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final raw = _controller.text.trim();
-    if (raw.isEmpty) {
-      setState(() => _error = 'Type or paste an emoji');
-      return;
-    }
-    // No strict single-emoji enforcement — Dart can't easily count
-    // grapheme clusters without a package, and most emoji input
-    // (system keyboard / paste) yields exactly one anyway. Cap length
-    // as a sanity bound against pasted essays.
-    if (raw.length > 16) {
-      setState(() => _error = 'Just one emoji, please');
-      return;
-    }
-    Navigator.of(context).pop(raw);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add emoji'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 40),
-        decoration: InputDecoration(
-          hintText: '😀',
-          errorText: _error,
-          border: const OutlineInputBorder(),
-        ),
-        onSubmitted: (_) => _submit(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Add')),
-      ],
-    );
-  }
-}
-
-/// Modal-sheet picker over the curated [kCarouselIcons]. Returns the
-/// chosen icon's stable `name`, or `null` on dismiss. Layout mirrors
-/// [showLayoutIconPicker](../../layouts/widgets/layout_icon_picker.dart)
-/// — 56×56 tiles in a `Wrap`.
-Future<String?> _showIconPicker(BuildContext context) {
-  return showModalBottomSheet<String>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Pick an icon',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
-                  for (final icon in kCarouselIcons)
-                    _PickerTile(
-                      icon: icon,
-                      onTap: () => Navigator.of(sheetContext).pop(icon.name),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _PickerTile extends StatelessWidget {
-  const _PickerTile({required this.icon, required this.onTap});
-
-  final CarouselIcon icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: icon.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          alignment: Alignment.center,
-          child: AppIcon(icon.icon, size: 28),
-        ),
-      ),
-    );
-  }
-}
