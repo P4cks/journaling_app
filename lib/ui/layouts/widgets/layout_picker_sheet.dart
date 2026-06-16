@@ -91,7 +91,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
                       color: scheme.primary,
                     ),
                     title: Text(
-                      'Create or edit layouts',
+                      'Manage layouts',
                       style: TextStyle(color: scheme.primary),
                     ),
                     onTap: () {
