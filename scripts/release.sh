@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
-# release.sh — merge main into release/stage, optionally bumping the app version.
+# release.sh — merge main into release/stage, optionally bumping the app version
+# and shipping an internal test build to the stores.
+#
+# Store delivery is two-sided:
+#   - Apple: pushing release/stage triggers Xcode Cloud, which builds and ships
+#     to TestFlight. Nothing to do here beyond --push.
+#   - Google Play: there is no cloud trigger, so --play builds a signed prod AAB
+#     locally and uploads it to the Play "internal testing" track via fastlane
+#     (see android/fastlane/ and PLAY_RELEASE_SETUP.md for one-time setup).
 #
 # The version in pubspec.yaml follows X.Y.Z where:
 #   X = breaking   Y = major   Z = minor
@@ -18,8 +26,15 @@
 #   ./scripts/release.sh --major         # 1.1.0 -> 1.2.0, then merge
 #   ./scripts/release.sh --breaking      # 1.1.0 -> 2.0.0, then merge
 #   ./scripts/release.sh --minor --push  # also push main and release/stage
+#   ./scripts/release.sh --play          # merge, then build + upload Play internal
+#   ./scripts/release.sh --minor --push --play  # full release: both stores
 #   ./scripts/release.sh --major --dry-run
 #   ./scripts/release.sh --no-pull       # merge local branches as-is
+#
+# --play builds whatever is on release/stage after the merge, signs it with the
+# upload keystore (android/key.properties), and uploads to the Play internal
+# track. The Android versionCode is derived from the commit count so it always
+# increases without hand-editing pubspec's +build suffix.
 #
 # Works from any directory: it resolves the repo root from its own location.
 set -euo pipefail
@@ -33,12 +48,21 @@ SRC_BRANCH="main"
 DST_BRANCH="release/stage"
 PUBSPEC="pubspec.yaml"
 
+# --- Play Store (--play) ---
+ANDROID_DIR="$MAIN_ROOT/android"
+AAB_PATH="$MAIN_ROOT/build/app/outputs/bundle/prodRelease/app-prod-release.aab"
+# Service-account JSON for the Play Developer API. Override with the env var.
+PLAY_SERVICE_ACCOUNT_JSON="${PLAY_SERVICE_ACCOUNT_JSON:-$ANDROID_DIR/play-service-account.json}"
+
 info() { printf '\033[36m%s\033[0m\n' "$*"; }
 warn() { printf '\033[33m%s\033[0m\n' "$*" >&2; }
 die()  { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
 
 usage() {
-  sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  # Print the leading comment header (from line 2 until the first non-comment
+  # line), stripping the leading "# ". Robust to edits in the header length.
+  awk 'NR>=2 { if ($0 ~ /^#/) { sub(/^# ?/, ""); print } else { exit } }' \
+    "${BASH_SOURCE[0]}"
   exit "${1:-0}"
 }
 
@@ -47,12 +71,14 @@ bump=""        # breaking | major | minor | ""
 push=0
 dry_run=0
 pull=1
+play=0
 for arg in "$@"; do
   case "$arg" in
     --breaking|-b) [ -z "$bump" ] || die "Pick only one bump flag."; bump="breaking" ;;
     --major|-m)    [ -z "$bump" ] || die "Pick only one bump flag."; bump="major" ;;
     --minor|-n)    [ -z "$bump" ] || die "Pick only one bump flag."; bump="minor" ;;
     --push)        push=1 ;;
+    --play)        play=1 ;;
     --dry-run)     dry_run=1 ;;
     --no-pull)     pull=0 ;;
     -h|--help)     usage 0 ;;
@@ -70,6 +96,56 @@ run() {
   fi
 }
 
+# Resolve how to invoke fastlane: prefer bundler when android/Gemfile.lock is
+# present (reproducible), else a fastlane already on PATH. Sets `fastlane_cmd`.
+fastlane_cmd=()
+resolve_fastlane() {
+  if [ -f "$ANDROID_DIR/Gemfile.lock" ] && command -v bundle >/dev/null; then
+    fastlane_cmd=(bundle exec fastlane)
+  elif command -v fastlane >/dev/null; then
+    fastlane_cmd=(fastlane)
+  else
+    die "fastlane not found. Run 'cd android && bundle install' (or 'gem install fastlane'). See PLAY_RELEASE_SETUP.md."
+  fi
+}
+
+# Fail fast (before any merge/push) when --play prerequisites are missing.
+preflight_play() {
+  command -v flutter >/dev/null || die "flutter not on PATH — required for the Play build (--play)."
+  [ -f "$ANDROID_DIR/key.properties" ] \
+    || die "android/key.properties not found — the upload keystore is required to sign a Play build. See PLAY_RELEASE_SETUP.md."
+  [ -f "$PLAY_SERVICE_ACCOUNT_JSON" ] \
+    || die "Play service-account JSON not found at '$PLAY_SERVICE_ACCOUNT_JSON'. See PLAY_RELEASE_SETUP.md, or set PLAY_SERVICE_ACCOUNT_JSON."
+  resolve_fastlane
+}
+
+# Build the signed prod AAB and upload it to the Play internal testing track.
+# Runs on release/stage after the merge, so it ships the merged code.
+build_and_upload_play() {
+  # versionCode must strictly increase on every Play upload. Derive it from the
+  # commit count rather than hand-bumping pubspec's +build suffix (which this
+  # script intentionally leaves untouched), so re-uploads are never rejected.
+  local build_number
+  build_number="$(git rev-list --count HEAD)"
+
+  info "Building signed Android App Bundle (prod, versionCode=$build_number) ..."
+  run flutter build appbundle --flavor prod --release --build-number="$build_number"
+
+  if [ "$dry_run" -eq 0 ] && [ ! -f "$AAB_PATH" ]; then
+    die "Expected AAB not found at $AAB_PATH after build."
+  fi
+
+  info "Uploading AAB to the Play Store internal track via fastlane supply ..."
+  if [ "$dry_run" -eq 1 ]; then
+    printf '\033[90m[dry-run] (cd %s && PLAY_SERVICE_ACCOUNT_JSON=%s %s internal aab:%s)\033[0m\n' \
+      "$ANDROID_DIR" "$PLAY_SERVICE_ACCOUNT_JSON" "${fastlane_cmd[*]}" "$AAB_PATH"
+  else
+    ( cd "$ANDROID_DIR" \
+      && PLAY_SERVICE_ACCOUNT_JSON="$PLAY_SERVICE_ACCOUNT_JSON" \
+         "${fastlane_cmd[@]}" internal aab:"$AAB_PATH" )
+  fi
+}
+
 # --- safety: clean tree, known branches ---
 [ -z "$(git status --porcelain)" ] || die "Working tree is dirty — commit or stash first."
 git show-ref --verify --quiet "refs/heads/$SRC_BRANCH" || die "Branch '$SRC_BRANCH' not found locally."
@@ -78,6 +154,10 @@ git show-ref --verify --quiet "refs/heads/$DST_BRANCH" || die "Branch '$DST_BRAN
 start_branch="$(git rev-parse --abbrev-ref HEAD)"
 restore_branch() { git checkout --quiet "$start_branch" 2>/dev/null || true; }
 trap restore_branch EXIT
+
+# Check Play prerequisites up front so we never merge/push and then fail at the
+# build step with no way to ship Android.
+[ "$play" -eq 1 ] && preflight_play
 
 # --- get the bump commit onto main (if requested) ---
 info "Switching to $SRC_BRANCH ..."
@@ -140,6 +220,15 @@ if [ "$push" -eq 1 ]; then
   run git push origin "$DST_BRANCH"
 else
   warn "Not pushing (pass --push to push $DST_BRANCH${bump:+ and $SRC_BRANCH})."
+fi
+
+# --- Google Play internal test build (opt-in) ---
+# Apple ships via Xcode Cloud on the push above; Android has no such trigger,
+# so build + upload the AAB here. We are on $DST_BRANCH (merged code) now.
+if [ "$play" -eq 1 ]; then
+  build_and_upload_play
+else
+  warn "Not building for Play (pass --play to ship a Play internal test build)."
 fi
 
 info "Done."
