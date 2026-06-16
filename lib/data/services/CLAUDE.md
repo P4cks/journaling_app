@@ -116,6 +116,18 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     `FileSystemException` so cleanup paths can call it without guarding.
   Photo bytes are **never stored in Hive** — only the path string is
   persisted via `PhotoBlockContent`.
+- [audio_storage_service.dart](audio_storage_service.dart) — `AudioStorageService` (GUS-12).
+  Owns `<app-docs>/audio/`. **Unlike `PhotoStorageService` it does not
+  copy bytes** — `package:record` writes the file itself, so this service
+  just hands out a fresh destination path and cleans up:
+  - `newRecordingPath()` → `Future<String>` — a fresh
+    `<app-docs>/audio/<uuid>.m4a` (the `.m4a` ext matches the AAC-LC
+    encoder). Lazily ensures the dir (caches the `Directory`).
+  - `deleteAtPath(path)` → best-effort delete; swallows
+    `FileSystemException` like the photo service.
+  Audio bytes are **never stored in Hive** — only the path string (+
+  measured `durationMs`) is persisted via `VoiceBlockContent`.
+  Constructed in `main.dart`, exposed via `AppDependencies.audioStorage`.
 - [weather_service.dart](weather_service.dart) — `WeatherService`.
   Wraps `geolocator` + Open-Meteo's `/v1/forecast?current_weather=true`
   + OSM Nominatim's `/reverse` endpoint.

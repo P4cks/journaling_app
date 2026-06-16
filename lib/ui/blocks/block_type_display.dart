@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/photo_block_cont
 import 'package:journaling_app_rewrite/data/model/block_content/prompt_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/quote_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/voice_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_api_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/todo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/weather_block_content.dart';
@@ -22,6 +23,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 const Set<BlockType> kProOnlyBlockTypes = {
   BlockType.weatherApi, // "Weather (live)"
   BlockType.quoteBlock, // "Quote of the day"
+  BlockType.voiceBlock, // "Voice" recording (GUS-12)
 };
 
 extension BlockTypeDisplay on BlockType {
@@ -53,6 +55,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Habit';
       case BlockType.streakBlock:
         return 'Streak';
+      case BlockType.voiceBlock:
+        return 'Voice';
     }
   }
 
@@ -84,6 +88,8 @@ extension BlockTypeDisplay on BlockType {
         return HugeIcons.strokeRoundedCheckmarkCircle02;
       case BlockType.streakBlock:
         return HugeIcons.strokeRoundedFire;
+      case BlockType.voiceBlock:
+        return HugeIcons.strokeRoundedMic01;
     }
   }
 
@@ -115,6 +121,8 @@ extension BlockTypeDisplay on BlockType {
         return 'Cross off a daily habit and build a streak.';
       case BlockType.streakBlock:
         return 'Shows your current streak and your best.';
+      case BlockType.voiceBlock:
+        return 'Record a short voice note.';
     }
   }
 
@@ -237,6 +245,14 @@ extension BlockTypeDisplay on BlockType {
         // the repository. The preview renders whatever the user's real
         // streak is.
         return JournalBlockData.create(id: id, type: this, content: const {});
+      case BlockType.voiceBlock:
+        // No real file path in the preview — the widget renders its
+        // empty-state "Record voice" affordance instead.
+        return JournalBlockData.create(
+          id: id,
+          type: this,
+          content: const VoiceBlockContent().toMap(),
+        );
     }
   }
 
@@ -261,6 +277,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
       case BlockType.streakBlock:
+      case BlockType.voiceBlock:
         return true;
     }
   }
@@ -278,6 +295,12 @@ extension BlockTypeDisplay on BlockType {
   /// editable entries. Double-tap on a location block falls through
   /// to the standard in-place edit flow (outline + map remains
   /// interactive — i.e., a no-op in practice for setting OFF).
+  ///
+  /// Voice is also intentionally NOT in this set: its filled cell hosts
+  /// a sustained interactive UI (inline play/pause), and the expanded
+  /// route renders that same player rather than firing a one-shot
+  /// action. The empty-cell record affordance is handled by the
+  /// widget's own tap handler, not the action-block dispatch.
   bool get isActionBlock {
     switch (this) {
       case BlockType.photoBlock:
@@ -294,6 +317,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
       case BlockType.streakBlock:
+      case BlockType.voiceBlock:
         return false;
     }
   }
@@ -328,6 +352,7 @@ extension BlockTypeDisplay on BlockType {
       case BlockType.quoteBlock:
       case BlockType.weatherApi:
       case BlockType.streakBlock:
+      case BlockType.voiceBlock:
         return false;
     }
   }
