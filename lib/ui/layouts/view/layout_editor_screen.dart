@@ -820,13 +820,14 @@ class _FeatureBlockSectionBody extends StatelessWidget {
 
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
+    // Any block type is a valid feature block (GUS-67) — use the general
+    // add-block sheet (built-in + custom + habit tabs), no `allowedTypes`.
     final picked = await showAddBlockSheet(
       context,
-      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
-      title: isSwap ? 'Swap block' : 'Choose feature block',
+      title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+    vm.setSingleBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override
@@ -844,7 +845,7 @@ class _FeatureBlockSectionBody extends StatelessWidget {
             : _FilledCell(
                 slot: slots.first,
                 onSwapType: () => _pickType(context, isSwap: true),
-                onRemove: () => vm.clearFeatureBlock(sectionId),
+                onRemove: () => vm.clearSingleBlock(sectionId),
               ),
       ),
     );
@@ -864,14 +865,13 @@ class _BlockTextSectionBody extends StatelessWidget {
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
     // Any block type is a valid float here (GUS-46) — use the general
-    // add-block sheet (built-in + custom + habit tabs), not the
-    // photo/memory-restricted feature-block picker.
+    // add-block sheet (built-in + custom + habit tabs).
     final picked = await showAddBlockSheet(
       context,
       title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setBlockTextFloatBlock(vm.sections[sectionIndex].id, picked);
+    vm.setSingleBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override
@@ -902,7 +902,7 @@ class _BlockTextSectionBody extends StatelessWidget {
                     : _FilledCell(
                         slot: slots.first,
                         onSwapType: () => _pickType(context, isSwap: true),
-                        onRemove: () => vm.clearFeatureBlock(sectionId),
+                        onRemove: () => vm.clearSingleBlock(sectionId),
                       ),
               ),
               const SizedBox(width: 12),

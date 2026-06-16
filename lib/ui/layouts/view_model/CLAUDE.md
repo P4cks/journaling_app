@@ -113,21 +113,19 @@ Name validation:
   ("A layout with this name already exists") when this fires.
 
 All slot-creating methods (`addBlock`, `addBlockInFixedFour`,
-`addBlockInSection`, `replaceSlotType`, `setFeatureBlock`,
-`setBlockTextFloatBlock`) take an `AddBlockResult` (the discriminated
-return of `showAddBlockSheet`) rather than a raw `BlockType`. Internally
-`_slotFromResult` / `_typeAndDefIdFromResult` decode the result into a
-slot (`BlockType` + optional `definitionId`) — `AddBlockResultCustom` →
+`addBlockInSection`, `replaceSlotType`, `setSingleBlock`) take an
+`AddBlockResult` (the discriminated return of `showAddBlockSheet`)
+rather than a raw `BlockType`. Internally `_slotFromResult` /
+`_typeAndDefIdFromResult` decode the result into a slot (`BlockType` +
+optional `definitionId`) — `AddBlockResultCustom` →
 `(customCarousel, id)`, `AddBlockResultHabit` → `(habitTracker, id)`.
-`setFeatureBlock` additionally rejects non-built-in results because
-feature blocks are restricted to photo / memory.
 
-`setFeatureBlock` fills/swaps a `SectionKind.featureBlock` slot
-(photo/memory only). `setBlockTextFloatBlock` fills/swaps a
-`SectionKind.blockTextBody` float slot and accepts **any** block type
-(GUS-46) — built-in, custom, or habit — via `_slotFromResult`.
-`clearFeatureBlock` empties **both** kinds (the set
-`_singleBlockSectionKinds`). The `blockTextBody` section's body
+`setSingleBlock` fills/swaps the single slot of **either** single-block
+kind (`SectionKind.featureBlock` and `SectionKind.blockTextBody`, the set
+`_singleBlockSectionKinds`) and accepts **any** block type — built-in,
+custom, or habit — via `_slotFromResult` (GUS-46 opened up `blockTextBody`,
+GUS-67 opened up `featureBlock`). `clearSingleBlock` empties either kind.
+The `blockTextBody` section's body
 `textBlock` is **not** an editor slot; it's materialized fresh by
 `JournalRepository.materializeLayout`, so it never appears in
 `SectionDraft.slots`.
