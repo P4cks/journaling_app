@@ -13,13 +13,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     - Title: layout name.
     - Subtitle: `"N block(s)"`.
     - Trailing (GUS-28): a `ProLockBadge` "Pro" chip (GUS-72) leads when
-      `layoutHasProOnlyFeatures(layout)` (the layout was built with
-      Pro-only sections/blocks — shown regardless of the user's tier, so
-      it reads as a "Pro layout"); then the default row shows a
-      `LayoutDefaultChip` ("★ Default" pill) while non-default rows show
-      an explicit `TextButton.icon` "Set default" that calls
-      `vm.setDefault`. A chevron follows. (The chip replaced the old bare
-      star `IconButton` whose meaning relied on a tooltip.)
+      `!subs.isPro && layoutHasProOnlyFeatures(layout)` (a free user
+      viewing a layout built with Pro-only sections/blocks — Pro users
+      get no badge since every layout is editable for them); then the
+      default row shows a `LayoutDefaultChip` ("★ Default" pill) while
+      non-default rows show an explicit `TextButton.icon` "Set default"
+      that calls `vm.setDefault`. A chevron follows. (The chip replaced
+      the old bare star `IconButton` whose meaning relied on a tooltip.)
     - Tap → open the editor at `/profile/layouts/edit/<id>`.
   - FAB → open the editor at `/profile/layouts/new`.
   - `_openEditor` awaits the push and then `vm.refresh()` — because

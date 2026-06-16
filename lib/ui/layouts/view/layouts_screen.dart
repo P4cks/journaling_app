@@ -182,10 +182,12 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                   final layout = layouts[index];
                   final isDefault = layout.id == vm.defaultLayoutId;
                   // GUS-72: mark layouts built with Pro-only features so
-                  // they read as "Pro layouts" in the list (independent of
-                  // the user's current tier — the lock dialog on tap still
-                  // gates editing for downgraded free users, GUS-41).
-                  final isProLayout = layoutHasProOnlyFeatures(layout);
+                  // free users can see which layouts depend on Pro (the
+                  // lock dialog on tap still gates editing for downgraded
+                  // free users, GUS-41). Pro users get no badge — every
+                  // layout is editable for them, so it carries no signal.
+                  final isProLayout =
+                      !subs.isPro && layoutHasProOnlyFeatures(layout);
                   return Dismissible(
                     key: ValueKey(layout.id),
                     direction: DismissDirection.endToStart,
