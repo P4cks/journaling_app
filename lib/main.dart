@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
@@ -7,10 +6,10 @@ import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/journal_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/layout_repository.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
-import 'package:journaling_app_rewrite/data/services/firebase_auth_service.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
@@ -20,7 +19,6 @@ import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/data/services/weather_service.dart';
-import 'package:journaling_app_rewrite/firebase_options.dart';
 import 'package:journaling_app_rewrite/hive/hive_registrar.g.dart';
 import 'package:journaling_app_rewrite/routing/app_router.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
@@ -29,7 +27,12 @@ import 'package:journaling_app_rewrite/ui/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authService = await _createAuthService();
+  // Auth is disabled in this build — Firebase has been removed for now.
+  // The app is local-first, so a DisabledAuthService keeps the Profile
+  // auth UI inert (sign-in buttons disabled, message shown).
+  final AuthService authService = DisabledAuthService(
+    'Sign-in is not available in this build.',
+  );
 
   await Hive.initFlutter();
   Hive.registerAdapters();
@@ -60,6 +63,7 @@ void main() async {
   final quoteService = QuoteService(settingsBox);
   final weatherService = WeatherService(settingsBox);
   final photoStorage = PhotoStorageService();
+  final audioStorage = AudioStorageService();
   final authRepository = AuthRepository(authService);
 
   // RevenueCat must be configured before any other Purchases call.
@@ -84,31 +88,10 @@ void main() async {
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
+      audioStorage: audioStorage,
       subscriptionRepository: subscriptionRepository,
     ),
   );
-}
-
-Future<AuthService> _createAuthService() async {
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('[main] Firebase initialized');
-    return FirebaseAuthService();
-  } on UnsupportedError catch (error) {
-    debugPrint('[main] Firebase auth disabled: $error');
-    return DisabledAuthService(
-      'Firebase is not configured yet. Run flutterfire configure for Android '
-      'and iOS, then enable Email, Google, and Apple sign-in providers.',
-    );
-  } catch (error) {
-    debugPrint('[main] Firebase auth disabled: $error');
-    return DisabledAuthService(
-      'Firebase could not be initialized. Check the project configuration and '
-      'try again.',
-    );
-  }
 }
 
 class MyApp extends StatefulWidget {
@@ -124,6 +107,7 @@ class MyApp extends StatefulWidget {
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
+    required this.audioStorage,
     required this.subscriptionRepository,
   });
 
@@ -137,6 +121,7 @@ class MyApp extends StatefulWidget {
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
+  final AudioStorageService audioStorage;
   final SubscriptionRepository subscriptionRepository;
 
   @override
@@ -183,35 +168,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,
+      audioStorage: widget.audioStorage,
       subscriptionRepository: widget.subscriptionRepository,
       child: ListenableBuilder(
         listenable: widget.themeSettings,
         builder: (context, _) {
+          // The selected palette bakes in its own brightness (GUS-27), so
+          // a single `theme` drives the whole app — no light/dark swap.
           final palette = widget.themeSettings.palette;
-          final secondary = widget.themeSettings.secondaryOverride;
-          final accent = widget.themeSettings.accentOverride;
-          final surfaceOverride = widget.themeSettings.debugSurfaceOverride;
-          final textColor = palette.defaultTextColor;
           return MaterialApp.router(
             debugShowCheckedModeBanner: false,
             title: 'Journaling App',
-            themeMode: widget.themeSettings.themeMode,
-            theme: buildAppTheme(
-              palette: palette,
-              brightness: Brightness.light,
-              secondary: secondary,
-              accent: accent,
-              textColor: textColor,
-              surfaceOverride: surfaceOverride,
-            ),
-            darkTheme: buildAppTheme(
-              palette: palette,
-              brightness: Brightness.dark,
-              secondary: secondary,
-              accent: accent,
-              textColor: textColor,
-              surfaceOverride: surfaceOverride,
-            ),
+            theme: buildAppTheme(palette),
             routerConfig: appRouter,
           );
         },

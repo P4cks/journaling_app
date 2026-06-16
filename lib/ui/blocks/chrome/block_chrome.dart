@@ -30,8 +30,18 @@ const double kBlockChromeReferenceSize = kBlockContentReferenceSize + 24.0;
 /// applied separately; when all three are off the block is a plain
 /// flat card. Does **not** gate any animation, gesture, or interaction
 /// logic on these flags — that's the whole point of the rewrite.
-/// Flipping a flag in settings updates every chrome instantly via the
-/// root `ListenableBuilder(listenable: themeSettings)` in `MyApp.build`.
+///
+/// **Live updates.** The chrome subscribes to `themeSettings` via a
+/// local `ListenableBuilder` so flipping a toggle (or editing the
+/// post-it palette) restyles every chrome immediately. The root
+/// `ListenableBuilder(listenable: themeSettings)` in `MyApp.build` is
+/// NOT enough on its own: it only rebuilds `MaterialApp.router` with a
+/// fresh `theme:`, so changes that alter the `ThemeData`/palette
+/// propagate via the `Theme` inherited widget — but the block toggles /
+/// `postItPalette` are not part of `ThemeData`, and go_router keeps the
+/// current page subtree mounted, so without this local listener the
+/// chrome would stay stale until some other rebuild (e.g. swiping the
+/// pager to a neighbour page). That was GUS-68.
 ///
 /// **Outline rule.** The 2 px accent outline appears only when
 /// `host == BlockHostKind.grid && isEditing` (in-place edit mode). The
@@ -97,6 +107,16 @@ class BlockChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeSettings = AppDependencies.of(context).themeSettings;
+    // Subscribe locally so toggle / palette edits restyle the chrome
+    // live — the root rebuild only carries ThemeData (GUS-68).
+    return ListenableBuilder(
+      listenable: themeSettings,
+      builder: (context, _) => _buildChrome(context),
+    );
+  }
+
+  Widget _buildChrome(BuildContext context) {
     final themeSettings = AppDependencies.of(context).themeSettings;
     // Each post-it visual is an independent toggle (GUS-58).
     final colorOn = themeSettings.blockColorEnabled;

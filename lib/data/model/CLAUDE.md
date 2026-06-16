@@ -31,8 +31,15 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   a float block (`photoBlock` or `memoryBlock`, may be absent) and a
   `textBlock`; the widget looks each up by type, so order is irrelevant.
   For `SectionKind.wannado` the blocks list is **empty** — the section
-  renders the global wanna-do list off `BlockSettings`, carrying no
-  per-entry content.
+  renders a `WannadoDefinition` off `BlockSettings`, resolved by the
+  `definitionId` field, carrying no per-entry content.
+  - Both `EntrySection` and `LayoutSection` carry `definitionId`
+    (`String?`, appended last) — for `SectionKind.wannado` only: the id
+    of the `WannadoDefinition` the section renders. `null` for every
+    other kind and for legacy wannado sections saved before the
+    definition-backed model (GUS-42/GUS-45). A nullable append →
+    backward-compatible, **no box-name bump** (precedent
+    `JournalBlockData.visualsJson`).
 - [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody, wannado }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
   `featureBlock` is a single-tile 2×2 section; the layout editor
@@ -45,12 +52,15 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   block top-left with text wrapping around it (magazine `float: left`);
   the layout template stores only the float block (0 or 1, like
   `featureBlock`) and the `textBlock` is materialized fresh (always
-  starts empty, like `text`). `wannado` (GUS-8, PRO) renders the user's
-  **global** wanna-do list (a single bucket list on
-  [BlockSettings](../services/block_settings.dart), see
+  starts empty, like `text`). `wannado` (GUS-8/GUS-42/GUS-45, PRO)
+  renders a user-created `WannadoDefinition` (a named list in the
+  [BlockSettings](../services/block_settings.dart) registry, see
+  [wannado_definition.dart](wannado_definition.dart) /
   [wannado_item.dart](wannado_item.dart)) as a vertical auto-rotating
-  carousel. **Pure display, content-free per entry** — `blocks` is
-  always empty; the list never round-trips through the layout/entry.
+  carousel. The section points at its definition via `definitionId` on
+  `LayoutSection` / `EntrySection`. **Pure display, content-free per
+  entry** — `blocks` is always empty; only the `definitionId` round-trips
+  through the layout/entry.
   - **Hive byte note:** the `hive_ce` generator assigns *content-stable*
     enum byte ids, NOT the enum index — `blockTextBody` is byte 7 and
     `wannado` is byte 8 (bytes 5/6 are unused). Don't hand-edit the
@@ -85,10 +95,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   `BlockVisuals.zero`); `toMap` omits zero values to keep persisted
   JSON small. `BlockVisuals.random(rng, paletteHex)` is the seed
   used at entry materialization.
-- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock }`.
+- [block_type.dart](block_type.dart) — `enum BlockType { textBlock, moodTracker, weatherManual, promptBlock, todoBlock, quoteBlock, memoryBlock, weatherApi, photoBlock, locationBlock, customCarousel, habitTracker, streakBlock, voiceBlock }`.
   **New values MUST be appended at the end** — Hive serializes enum
   values by index, so inserting or reordering would corrupt existing
-  entries on disk. `streakBlock` (GUS-22, last) is the display-only
+  entries on disk. `voiceBlock` (GUS-12, last, byte 13) is a PRO 1×1
+  voice-note tile: records a ≤60 s `.m4a` clip and hosts an inline
+  player; its content is `VoiceBlockContent` (path + duration). It is
+  **not** an action block (the filled cell hosts a sustained player, not
+  a one-shot action). `streakBlock` (GUS-22) is the display-only
   current/best-streak tile unlocked at the 7-day milestone for everyone
   (free + Pro); it carries **no per-entry content** (reads `computeStreak`
   live), so its wrapper step is satisfied by an empty `const {}` content
@@ -134,7 +148,7 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   - `BlockType.isUserInteractive` — whether the block's content comes
     from explicit user action. User-interactive blocks (text, mood,
     weatherManual, prompt, todo, photo, location, customCarousel,
-    habitTracker) keep an entry alive;
+    habitTracker, voiceBlock) keep an entry alive;
     auto-seeded blocks (quote, memory, weatherApi, streakBlock) populate
     themselves from APIs / repo state and must NOT keep an
     otherwise-untouched entry alive (`streakBlock` reads the live streak —
@@ -181,14 +195,20 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   box, so no Hive adapter. Mirrors the `CustomCarouselDefinition`
   storage pattern; orphan-tolerant (delete leaves a "Deleted block"
   placeholder).
+- [wannado_definition.dart](wannado_definition.dart) —
+  `WannadoDefinition` (`id`, `title`, `items: List<WannadoItem>`). A
+  user-created "Wanna-do Carousel" (GUS-42/GUS-45): a named, reusable
+  list referenced by `SectionKind.wannado` sections via `definitionId`.
+  Lives in the `BlockSettings` registry, persisted as a JSON list under
+  the `settings` key `block.wannado.definitions`; no Hive adapter.
+  Mirrors `CustomCarouselDefinition`; orphan-tolerant (deleting a
+  definition leaves referencing sections rendering an empty placeholder).
 - [wannado_item.dart](wannado_item.dart) — `WannadoItem` (`id`, `text`).
-  One entry in the user's **global** wanna-do bucket list (GUS-8), held
-  by [BlockSettings](../services/block_settings.dart) and rendered by
-  every `SectionKind.wannado` section. **Pure display — no `done` /
-  checkbox state**; a wanna-do is an aspiration the carousel surfaces,
-  not a per-entry to-do. Pure JSON (`fromMap`/`toMap`/`copyWith`), lives
-  in the schema-free `settings` box, so no Hive adapter. Mirrors the
-  `CustomCarouselDefinition` storage pattern.
+  One entry **inside** a `WannadoDefinition`'s `items` list. **Pure
+  display — no `done` / checkbox state**; a wanna-do is an aspiration the
+  carousel surfaces, not a per-entry to-do. Pure JSON
+  (`fromMap`/`toMap`/`copyWith`); persisted as part of its definition in
+  the schema-free `settings` box, so no Hive adapter.
 
 ## Implementation details
 

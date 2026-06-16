@@ -152,13 +152,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   can't wrap around the inline block), so there is no
   `editingBlockId`/`textEditing` plumbing for this section.
 
-  **`SectionKind.wannado`** → renders `const WannadoSectionWidget()`
-  (GUS-8). The widget takes **no arguments** and self-fetches the
-  **global** wanna-do list from `AppDependencies.blockSettings`; the
+  **`SectionKind.wannado`** → renders
+  `WannadoSectionWidget(definitionId: section.definitionId)`
+  (GUS-8/GUS-42/GUS-45). The widget resolves that id against
+  `AppDependencies.blockSettings` to find the `WannadoDefinition`; the
   `EntrySection` carries no blocks, so `_buildSection` must NOT
   early-return on empty `section.blocks` (like `divider`). `mode` is
   ignored — it's a pure-display auto-rotating carousel, identical on
-  editable and read-only days.
+  editable and read-only days. A null/deleted id renders a placeholder.
 
   **Empty blockGrid sections render nothing** — when a section's
   `blocks` list is empty (e.g. a kind-B layout saved with zero filled
@@ -204,13 +205,18 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - **The week strip and the month sheet each keep their own focused
   day**, so paging within the strip doesn't pollute the sheet's view
   (or vice versa). The shared state is `selectedDate`, not focus.
-- **`_buildDayCell` reads `themeSettings` inline (no local
-  ListenableBuilder).** Palette / post-it-mode changes propagate via
-  the root-level `ListenableBuilder(listenable: themeSettings)` in
-  [main.dart](../../../main.dart) which rebuilds the whole
-  MaterialApp. If you ever lift this widget out of that tree, add a
-  local listener — otherwise palette edits won't take effect until
-  the next unrelated rebuild.
+- **`_buildDayCell` reads `themeSettings` inline; the week-strip and
+  month builders subscribe to it via `Listenable.merge([debug,
+  themeSettings])` (GUS-68).** The root-level
+  `ListenableBuilder(listenable: themeSettings)` in
+  [main.dart](../../../main.dart) is NOT sufficient: it only rebuilds
+  `MaterialApp.router` with a fresh `theme:`, so palette/`ThemeData`
+  changes propagate via the `Theme` inherited widget — but
+  `postItModeEnabled` / `postItPalette` are not part of `ThemeData`,
+  and go_router keeps this page subtree mounted, so without the local
+  listener toggling post-it mode (or editing the post-it palette) left
+  the cells stale until an unrelated rebuild. Keep the merge if you
+  refactor these builders.
 - **Per-date colour is seeded by `y*10000 + m*100 + d`, not
   `day.hashCode`.** `DateTime.hashCode` mixes the time-of-day
   fields, so two `DateTime` instances for the same calendar date but

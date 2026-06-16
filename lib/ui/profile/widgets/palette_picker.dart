@@ -4,6 +4,9 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
+/// Vertical list of theme tiles plus an Add-theme tile at the bottom
+/// (GUS-27). Renders inside the Theme settings page's own scroll view,
+/// so it is a non-scrolling `Column` (`shrinkWrap` semantics).
 class PalettePicker extends StatelessWidget {
   const PalettePicker({
     super.key,
@@ -24,11 +27,10 @@ class PalettePicker extends StatelessWidget {
   final ValueChanged<SurfacePalette> onEdit;
   final ValueChanged<SurfacePalette> onDelete;
 
-  /// When true, theme customization is Pro-gated (GUS-26). The currently
-  /// selected palette stays usable so the app still renders a coherent
-  /// theme; every other affordance (selecting another palette, adding,
-  /// editing, deleting) presents the paywall via [onUnlock] and only
-  /// proceeds on a successful purchase.
+  /// When true, theme *customization* is Pro-gated (GUS-26). The built-in
+  /// Light/Dark defaults stay free and selectable so free users can still
+  /// switch base brightness; only **custom** tiles and the Add-theme tile
+  /// present the paywall via [onUnlock] and proceed on success.
   final bool locked;
 
   /// Presents the paywall and resolves `true` when the user is (now) Pro.
@@ -49,34 +51,36 @@ class PalettePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 112,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: palettes.length + 1,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          if (index == palettes.length) {
-            return _AddThemeTile(locked: locked, onTap: () => _guard(onAdd));
-          }
-          final palette = palettes[index];
-          final selected = palette.id == selectedId;
-          return _PaletteTile(
-            palette: palette,
-            selected: selected,
-            // The active palette stays visually usable; others grey out.
-            locked: locked && !selected,
-            outlineColor: scheme.outline,
-            onTap: () => _guard(() => onSelected(palette.id)),
-            onEdit: palette.isCustom
-                ? () => _guard(() => onEdit(palette))
-                : null,
-            onDelete: palette.isCustom
-                ? () => _guard(() => onDelete(palette))
-                : null,
-          );
-        },
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final palette in palettes) ...[
+          Builder(
+            builder: (context) {
+              final selected = palette.id == selectedId;
+              // Built-in defaults are always free; only custom tiles lock.
+              final tileLocked = locked && palette.isCustom && !selected;
+              return _PaletteTile(
+                palette: palette,
+                selected: selected,
+                locked: tileLocked,
+                outlineColor: scheme.outline,
+                onTap: palette.isCustom
+                    ? () => _guard(() => onSelected(palette.id))
+                    : () => onSelected(palette.id),
+                onEdit: palette.isCustom
+                    ? () => _guard(() => onEdit(palette))
+                    : null,
+                onDelete: palette.isCustom
+                    ? () => _guard(() => onDelete(palette))
+                    : null,
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+        _AddThemeTile(locked: locked, onTap: () => _guard(onAdd)),
+      ],
     );
   }
 }
@@ -95,8 +99,7 @@ class _AddThemeTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
@@ -145,10 +148,7 @@ class _PaletteTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = palette.surfaceFor(
-      isDark ? Brightness.dark : Brightness.light,
-    );
+    final surface = palette.surface;
     final foreground = surface.computeLuminance() > 0.5
         ? const Color(0xFF000000)
         : const Color(0xFFFFFFFF);
@@ -158,8 +158,7 @@ class _PaletteTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 220,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: surface,
           borderRadius: BorderRadius.circular(12),
@@ -168,55 +167,44 @@ class _PaletteTile extends StatelessWidget {
             width: selected ? 2 : 1,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
           children: [
-            Row(
-              children: [
-                _Dot(color: palette.defaultSecondary),
-                const SizedBox(width: 4),
-                _Dot(color: palette.defaultAccent),
-                const SizedBox(width: 4),
-                _Dot(color: palette.defaultTextColor ?? foreground),
-                const Spacer(),
-                if (selected)
-                  AppIcon(
-                    HugeIcons.strokeRoundedCheckmarkCircle01,
-                    size: 18,
-                    color: scheme.primary,
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    palette.displayName,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      color: foreground,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            _Dot(color: palette.defaultSecondary),
+            const SizedBox(width: 6),
+            _Dot(color: palette.defaultAccent),
+            const SizedBox(width: 6),
+            _Dot(color: palette.defaultTextColor ?? foreground),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                palette.displayName,
+                style: TextStyle(
+                  color: foreground,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 ),
-                if (canEdit) ...[
-                  const SizedBox(width: 12),
-                  _TileIconButton(
-                    icon: HugeIcons.strokeRoundedPencil,
-                    color: foreground,
-                    onTap: onEdit!,
-                  ),
-                  _TileIconButton(
-                    icon: HugeIcons.strokeRoundedDelete02,
-                    color: foreground,
-                    onTap: onDelete!,
-                  ),
-                ],
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            if (selected)
+              AppIcon(
+                HugeIcons.strokeRoundedCheckmarkCircle01,
+                size: 18,
+                color: scheme.primary,
+              ),
+            if (canEdit) ...[
+              const SizedBox(width: 8),
+              _TileIconButton(
+                icon: HugeIcons.strokeRoundedPencil,
+                color: foreground,
+                onTap: onEdit!,
+              ),
+              _TileIconButton(
+                icon: HugeIcons.strokeRoundedDelete02,
+                color: foreground,
+                onTap: onDelete!,
+              ),
+            ],
           ],
         ),
       ),

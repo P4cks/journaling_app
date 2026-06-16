@@ -31,7 +31,7 @@ class SubscriptionService {
   /// TODO: replace with the real RevenueCat `goog_…` key before the first Play
   /// Store release. RevenueCat rejects an `appl_` key on Android, so an Android
   /// release build will fail to configure until this is set.
-  static const String _googleApiKey = _appleApiKey;
+  static const String _googleApiKey = "goog_PbGZmnCvYmbNVcFGOISQpzuPsVs";
 
   /// The key to configure with. Only release builds (what ships to the stores)
   /// get a production key; debug and profile builds use the Test Store key.

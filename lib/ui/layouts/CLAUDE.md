@@ -203,9 +203,10 @@ how layouts materialize).
     add-block sheet's custom section greys + badges every custom-carousel
     definition past the first (`kFreeMaxCustomBlocks`) for free users
     (see [widgets/CLAUDE.md](widgets/CLAUDE.md)), and the Block-Settings
-    wanna-do list locks management for free users (see
-    [../profile/view/CLAUDE.md](../profile/view/CLAUDE.md)). Old entries
-    keep rendering every block/section — only editing/adding is gated.
+    wanna-do carousel list caps definitions at `kFreeMaxWannados` for
+    free users (see [../profile/view/CLAUDE.md](../profile/view/CLAUDE.md)).
+    Old entries keep rendering every block/section — only editing/adding
+    is gated.
   See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
   [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).
 - **`LayoutsScreen` refreshes its VM manually on push-pop** because

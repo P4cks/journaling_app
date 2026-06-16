@@ -32,6 +32,9 @@ void showToast(
         backgroundColor: Colors.transparent,
         elevation: 0,
         padding: EdgeInsets.zero,
+        // A touch more clearance from the bottom edge than the floating
+        // SnackBar default (GUS-55).
+        margin: const EdgeInsets.fromLTRB(15, 15, 15, 24),
         duration: duration,
         dismissDirection: DismissDirection.horizontal,
         content: _ToastPill(message: message, kind: kind, duration: duration),
@@ -132,7 +135,7 @@ class _ToastPillState extends State<_ToastPill>
           position: _slide,
           child: Material(
             color: scheme.surfaceContainerHighest,
-            elevation: 3,
+            elevation: 0,
             borderRadius: BorderRadius.circular(14),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

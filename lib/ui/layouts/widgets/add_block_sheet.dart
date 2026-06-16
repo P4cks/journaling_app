@@ -23,6 +23,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/section_header.dart';
 
 /// Block types intentionally hidden from the layout-editor picker.
 ///
@@ -36,6 +37,22 @@ const _hiddenBlockTypes = <BlockType>{
   BlockType.customCarousel,
   BlockType.habitTracker,
 };
+
+/// Logical groupings for the Default tab, rendered top-to-bottom with a
+/// [SectionHeader] above each (GUS-56). A built-in type not listed here
+/// still renders — it falls into a trailing "More" group (see
+/// `_builtinGroups`) so adding a new `BlockType` never silently drops it
+/// from the grid.
+const _builtinCategories = <({String label, List<BlockType> types})>[
+  (
+    label: 'Text',
+    types: [BlockType.textBlock, BlockType.promptBlock, BlockType.todoBlock],
+  ),
+  (label: 'Trackers', types: [BlockType.moodTracker, BlockType.streakBlock]),
+  (label: 'Weather', types: [BlockType.weatherManual, BlockType.weatherApi]),
+  (label: 'Memories', types: [BlockType.photoBlock, BlockType.memoryBlock]),
+  (label: 'Inspiration', types: [BlockType.quoteBlock]),
+];
 
 /// Discriminated return type for [showAddBlockSheet]:
 /// - [AddBlockResultBuiltin] — user picked a built-in `BlockType`.
@@ -229,26 +246,87 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
       return const _NoMatchesHint();
     }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: visibleTypes.length,
-        itemBuilder: (gridCtx, i) => _BuiltinCell(
-          type: visibleTypes[i],
-          locked:
-              !isPro &&
-              visibleTypes[i].isProOnly &&
-              !rewards.isBlockUnlocked(visibleTypes[i]),
+    // Restricted pickers (feature-block sections, `allowedTypes != null`)
+    // show a small fixed subset — a single flat grid reads better than
+    // sparse one-cell category headings. The logical dividers are only
+    // for the full Default tab (GUS-56).
+    if (allowed != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child: _builtinGrid(
+          visibleTypes,
           subscriptions: subscriptions,
+          isPro: isPro,
+          rewards: rewards,
         ),
+      );
+    }
+
+    // Group the visible types under their category heading, in
+    // `_builtinCategories` order. Any visible type not assigned to a
+    // category lands in a trailing "More" group so nothing is dropped.
+    final grouped = <({String label, List<BlockType> types})>[];
+    final seen = <BlockType>{};
+    for (final category in _builtinCategories) {
+      final members = category.types
+          .where(visibleTypes.contains)
+          .toList(growable: false);
+      if (members.isEmpty) continue;
+      grouped.add((label: category.label, types: members));
+      seen.addAll(members);
+    }
+    final leftovers = visibleTypes
+        .where((t) => !seen.contains(t))
+        .toList(growable: false);
+    if (leftovers.isNotEmpty) {
+      grouped.add((label: 'More', types: leftovers));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final group in grouped) ...[
+          SectionHeader(label: group.label),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: _builtinGrid(
+              group.types,
+              subscriptions: subscriptions,
+              isPro: isPro,
+              rewards: rewards,
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// A 2-column grid of built-in block cells for [types]. Padding and any
+  /// category heading are owned by the caller.
+  Widget _builtinGrid(
+    List<BlockType> types, {
+    required SubscriptionRepository subscriptions,
+    required bool isPro,
+    required StreakRewardSettings rewards,
+  }) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: types.length,
+      itemBuilder: (gridCtx, i) => _BuiltinCell(
+        type: types[i],
+        locked:
+            !isPro &&
+            types[i].isProOnly &&
+            !rewards.isBlockUnlocked(types[i]),
+        subscriptions: subscriptions,
       ),
     );
   }
@@ -308,7 +386,9 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
         else if (nothingMatches)
           const _NoMatchesHint()
         else ...[
-          if (customs.isNotEmpty)
+          if (customs.isNotEmpty) ...[
+            // Logical divider by custom type (GUS-56).
+            const SectionHeader(label: 'Carousel'),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: GridView.builder(
@@ -333,7 +413,10 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 ),
               ),
             ),
-          if (habits.isNotEmpty)
+          ],
+          if (habits.isNotEmpty) ...[
+            // Logical divider by custom type (GUS-56).
+            const SectionHeader(label: 'Habit'),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: GridView.builder(
@@ -353,6 +436,7 @@ class _AddBlockSheetBodyState extends State<_AddBlockSheetBody> {
                 ),
               ),
             ),
+          ],
         ],
         ProLimitHint(
           used: customBlockCount,
