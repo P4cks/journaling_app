@@ -42,14 +42,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
     `JournalBlockData.visualsJson`).
 - [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody, wannado }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
-  `featureBlock` is a single-tile 2×2 section; the layout editor
-  restricts the block type to `photoBlock` or `memoryBlock` (defended
-  by `LayoutEditorViewModel.featureBlockAllowedTypes`). `header` (GUS-6,
+  `featureBlock` is a single-tile 2×2 section; the layout editor lets
+  the user pick **any** block type for it (GUS-67, was photo/memory only)
+  via the general `showAddBlockSheet`. `header` (GUS-6,
   FREE) is a single-line heading backed by one `textBlock` (reuses the
   text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
   visual rule carrying **no** blocks — it renders even with an empty
-  `blocks` list. `blockTextBody` (GUS-9, PRO) floats a photo/memory
-  block top-left with text wrapping around it (magazine `float: left`);
+  `blocks` list. `blockTextBody` (GUS-9, PRO) floats any block (GUS-46)
+  top-left with text wrapping around it (magazine `float: left`);
   the layout template stores only the float block (0 or 1, like
   `featureBlock`) and the `textBlock` is materialized fresh (always
   starts empty, like `text`). `wannado` (GUS-8/GUS-42/GUS-45, PRO)
