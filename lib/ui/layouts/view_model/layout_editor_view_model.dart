@@ -327,18 +327,11 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // featureBlock / blockTextBody — single-slot sections restricted to
-  // photo/memory. Slot semantics are identical (0–1 photo/memory block),
-  // so both kinds share the same setter/clearer.
+  // featureBlock / blockTextBody — single-slot sections holding 0–1 block.
+  // Both kinds accept ANY block type (built-in, custom carousel, or habit;
+  // GUS-46 for blockTextBody, GUS-67 for featureBlock), so they share one
+  // setter/clearer.
   // ---------------------------------------------------------------------------
-
-  /// Allowed block types for a feature-block / block-text-body section.
-  /// The layout editor passes this set to `showAddBlockSheet` so the
-  /// picker only shows these types; the VM also defensively validates here.
-  static const Set<BlockType> featureBlockAllowedTypes = {
-    BlockType.photoBlock,
-    BlockType.memoryBlock,
-  };
 
   static const Set<SectionKind> _singleBlockSectionKinds = {
     SectionKind.featureBlock,
@@ -346,31 +339,12 @@ class LayoutEditorViewModel extends ChangeNotifier {
   };
 
   /// Either fills an empty feature-block / block-text-body section, or
-  /// swaps the type of the existing slot. No-op if the section is not a
-  /// single-block kind or `type` is not in [featureBlockAllowedTypes].
-  void setFeatureBlock(String sectionId, AddBlockResult result) {
+  /// swaps the type of the existing slot. Accepts ANY block type — built-in,
+  /// custom carousel, or habit — via [_slotFromResult]. No-op if the section
+  /// is not a single-block kind.
+  void setSingleBlock(String sectionId, AddBlockResult result) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (!_singleBlockSectionKinds.contains(section.kind)) return;
-    // Defensive: these sections are restricted to built-in photo/memory
-    // types. The Add-Block sheet's `allowedTypes` already filters, but
-    // the sealed-result switch keeps that invariant explicit here.
-    if (result is! AddBlockResultBuiltin) return;
-    final type = result.type;
-    if (!featureBlockAllowedTypes.contains(type)) return;
-    if (section.slots.length == 1 && section.slots.first.type == type) return;
-    section.slots = [BlockSlot(id: _uuid.v4(), type: type)];
-    debugPrint('[LayoutEditorVM] setFeatureBlock $sectionId -> $type');
-    notifyListeners();
-  }
-
-  /// Either fills an empty `blockTextBody` section's float slot, or swaps
-  /// the type of the existing slot. Accepts ANY block type (GUS-46) —
-  /// built-in, custom carousel, or habit — via [_slotFromResult], unlike
-  /// [setFeatureBlock] which restricts feature-block sections to
-  /// photo/memory. No-op if the section is not a `blockTextBody` section.
-  void setBlockTextFloatBlock(String sectionId, AddBlockResult result) {
-    final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.blockTextBody) return;
     final slot = _slotFromResult(result);
     // Swap-in-place no-op guard: skip when the same type + definition is
     // already set (a fresh slot id would otherwise churn `isDirty`).
@@ -380,20 +354,18 @@ class LayoutEditorViewModel extends ChangeNotifier {
       return;
     }
     section.slots = [slot];
-    debugPrint(
-      '[LayoutEditorVM] setBlockTextFloatBlock $sectionId -> ${slot.type}',
-    );
+    debugPrint('[LayoutEditorVM] setSingleBlock $sectionId -> ${slot.type}');
     notifyListeners();
   }
 
   /// Empties a feature-block / block-text-body section. No-op for other
   /// section kinds.
-  void clearFeatureBlock(String sectionId) {
+  void clearSingleBlock(String sectionId) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (!_singleBlockSectionKinds.contains(section.kind)) return;
     if (section.slots.isEmpty) return;
     section.slots = const [];
-    debugPrint('[LayoutEditorVM] clearFeatureBlock $sectionId');
+    debugPrint('[LayoutEditorVM] clearSingleBlock $sectionId');
     notifyListeners();
   }
 
