@@ -20,7 +20,12 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   with rotation / offset / palette colour driven by
   `themeSettings.postItModeEnabled`. **No animation, gesture, or
   interaction logic is gated on the post-it flag** — that's the
-  central rewrite invariant. Renders a 2 px accent outline ONLY when
+  central rewrite invariant. **Subscribes to `themeSettings` via a
+  local `ListenableBuilder` (GUS-68)** so flipping the post-it toggle /
+  editing the post-it palette restyles the chrome live — the root
+  rebuild in `main.dart` only carries `ThemeData`, which doesn't
+  include the post-it flags, so without the local listener the chrome
+  stayed stale until the pager was swiped. Renders a 2 px accent outline ONLY when
   `host == BlockHostKind.grid && isEditing`; the expanded route reads
   `host: expanded` so the outline is suppressed (the blurred backdrop
   + Hero are the affordance there).
