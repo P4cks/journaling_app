@@ -18,8 +18,15 @@ class SettingsStorageService {
       'block.customCarousel.definitions';
   static const _blockHabitDefinitionsKey = 'block.habit.definitions';
   static const _blockWannadoDefinitionsKey = 'block.wannado.definitions';
-  static const _themePostItModeKey = 'theme.postItMode';
+  static const _themeBlockRotationKey = 'theme.blockRotation';
+  static const _themeBlockOffsetKey = 'theme.blockOffset';
+  static const _themeBlockColorKey = 'theme.blockColor';
   static const _themePostItPaletteKey = 'theme.postItPalette';
+  // Legacy key `theme.postItMode` (the single master post-it toggle) is
+  // intentionally not read anymore — it was split into the three
+  // independent `theme.block{Rotation,Offset,Color}` toggles (GUS-58).
+  // Old values on disk are harmless under the pre-1.0 settings-box
+  // backwards-compat policy.
   static const _debugExpandedDoneButtonKey =
       'debug.expandedBlock.showDoneButton';
   static const _blockMemoryEligibleTypesKey = 'block.memory.eligibleTypes';
@@ -116,14 +123,34 @@ class SettingsStorageService {
       : _box.put(_blockWannadoDefinitionsKey, json);
 
   // null = key absent (use the default, currently `true`).
-  bool? getThemePostItMode() {
-    final raw = _box.get(_themePostItModeKey);
+  bool? getThemeBlockRotation() {
+    final raw = _box.get(_themeBlockRotationKey);
     if (raw == null) return null;
     return raw == 'true';
   }
 
-  Future<void> setThemePostItMode(bool value) =>
-      _box.put(_themePostItModeKey, value.toString());
+  Future<void> setThemeBlockRotation(bool value) =>
+      _box.put(_themeBlockRotationKey, value.toString());
+
+  // null = key absent (use the default, currently `true`).
+  bool? getThemeBlockOffset() {
+    final raw = _box.get(_themeBlockOffsetKey);
+    if (raw == null) return null;
+    return raw == 'true';
+  }
+
+  Future<void> setThemeBlockOffset(bool value) =>
+      _box.put(_themeBlockOffsetKey, value.toString());
+
+  // null = key absent (use the default, currently `true`).
+  bool? getThemeBlockColor() {
+    final raw = _box.get(_themeBlockColorKey);
+    if (raw == null) return null;
+    return raw == 'true';
+  }
+
+  Future<void> setThemeBlockColor(bool value) =>
+      _box.put(_themeBlockColorKey, value.toString());
 
   String? getThemePostItPalette() => _box.get(_themePostItPaletteKey);
 

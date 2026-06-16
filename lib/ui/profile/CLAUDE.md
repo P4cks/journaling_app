@@ -52,19 +52,20 @@ Settings contains:
    dedicated page. **Theming customization is Pro-gated (GUS-26):** the
    built-in Light/Dark defaults stay free and selectable; only custom
    tiles + the Add-theme tile present the paywall.
-2. **Post-it style** — `SwitchListTile` toggling `themeSettings.postItModeEnabled`
-   (defaults to on; flipping it off restores the pre-post-it flat-card
-   look without rebuilding any data), followed by a `Wrap` of color
-   swatches showing `themeSettings.postItPalette` plus a `+` tile that
-   opens `showSwatchPicker(allowFreePick: true)` and appends the
-   picked color via `addPostItColor`. Each swatch has an `×` cap that
-   calls `removePostItColorAt(index)`. The palette manager stays
-   visible-but-disabled when the toggle is off so users can curate
-   while previewing classic mode.
-3. **Journal templates** — `Manage Layout` row (dashboard-setting icon)
-   that pushes `/layouts`.
-4. **Blocks** — `Manage Blocks` row (block-game icon) that pushes
-   `/block-settings`.
+2. **Post-it style** — three independent `SwitchListTile`s (GUS-58)
+   toggling `themeSettings.blockRotationEnabled` ("Block rotation"),
+   `.blockOffsetEnabled` ("Block offset"), and `.blockColorEnabled`
+   ("Block color") — split out of the former single post-it master
+   (each defaults to on; turning all off restores the pre-post-it
+   flat-card look without rebuilding any data), followed by a `Wrap`
+   of color swatches showing `themeSettings.postItPalette` plus a `+`
+   tile that opens `showSwatchPicker(allowFreePick: true)` and appends
+   the picked color via `addPostItColor`. Each swatch has an `×` cap
+   that calls `removePostItColorAt(index)`. The palette manager stays
+   visible-but-disabled when the **color** toggle is off so users can
+   curate while previewing without tint.
+3. **Journal templates** — `Manage templates` row that pushes `/layouts`.
+4. **Blocks** — `Configure blocks` row that pushes `/block-settings`.
 5. **Subscription** — a `SettingsNavTile` (crown icon) that pushes
    `/subscription`. Wrapped in a `ListenableBuilder` on
    `subscriptionRepository` so the title flips between "Upgrade to Pro"

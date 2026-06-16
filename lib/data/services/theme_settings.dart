@@ -27,14 +27,18 @@ class ThemeSettings extends ChangeNotifier {
         _settings.getThemePaletteId(),
         _decodeCustomPalettes(_settings.getThemeCustomPalettes()),
       ),
-      _postItModeEnabled = _settings.getThemePostItMode() ?? true,
+      _blockRotationEnabled = _settings.getThemeBlockRotation() ?? true,
+      _blockOffsetEnabled = _settings.getThemeBlockOffset() ?? true,
+      _blockColorEnabled = _settings.getThemeBlockColor() ?? true,
       _postItPalette = _decodePostItPalette(_settings.getThemePostItPalette());
 
   final SettingsStorageService _settings;
 
   String _paletteId;
   List<SurfacePalette> _customPalettes;
-  bool _postItModeEnabled;
+  bool _blockRotationEnabled;
+  bool _blockOffsetEnabled;
+  bool _blockColorEnabled;
   List<String> _postItPalette;
 
   String get paletteId => _paletteId;
@@ -58,18 +62,41 @@ class ThemeSettings extends ChangeNotifier {
 
   bool get selectedPaletteIsCustom => palette.isCustom;
 
-  bool get postItModeEnabled => _postItModeEnabled;
+  /// Whether each block is rendered with a slight per-block rotation.
+  bool get blockRotationEnabled => _blockRotationEnabled;
+
+  /// Whether each block is nudged off-center by its per-block offset.
+  bool get blockOffsetEnabled => _blockOffsetEnabled;
+
+  /// Whether each block is tinted with its per-block palette color.
+  bool get blockColorEnabled => _blockColorEnabled;
 
   /// Hex strings of the user-configured post-it color palette. Empty when
   /// the user has cleared every color; new entries materialize with no
   /// `colorHex` and the block falls back to `surfaceContainerHigh`.
   List<String> get postItPalette => List.unmodifiable(_postItPalette);
 
-  Future<void> setPostItModeEnabled(bool value) async {
-    if (_postItModeEnabled == value) return;
-    _postItModeEnabled = value;
-    debugPrint('[ThemeSettings] postItModeEnabled -> $value');
-    await _settings.setThemePostItMode(value);
+  Future<void> setBlockRotationEnabled(bool value) async {
+    if (_blockRotationEnabled == value) return;
+    _blockRotationEnabled = value;
+    debugPrint('[ThemeSettings] blockRotationEnabled -> $value');
+    await _settings.setThemeBlockRotation(value);
+    notifyListeners();
+  }
+
+  Future<void> setBlockOffsetEnabled(bool value) async {
+    if (_blockOffsetEnabled == value) return;
+    _blockOffsetEnabled = value;
+    debugPrint('[ThemeSettings] blockOffsetEnabled -> $value');
+    await _settings.setThemeBlockOffset(value);
+    notifyListeners();
+  }
+
+  Future<void> setBlockColorEnabled(bool value) async {
+    if (_blockColorEnabled == value) return;
+    _blockColorEnabled = value;
+    debugPrint('[ThemeSettings] blockColorEnabled -> $value');
+    await _settings.setThemeBlockColor(value);
     notifyListeners();
   }
 

@@ -382,20 +382,32 @@ class _PostItStyleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final enabled = theme.postItModeEnabled;
+    final colorEnabled = theme.blockColorEnabled;
     final palette = theme.postItPalette;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile(
-          secondary: AppIcon(HugeIcons.strokeRoundedNote),
-          title: const Text('Playful post-it style'),
-          subtitle: const Text(
-            'Slight rotation, offset, and color on each block.',
-          ),
-          value: enabled,
-          onChanged: theme.setPostItModeEnabled,
+          secondary: AppIcon(HugeIcons.strokeRoundedRotate01),
+          title: const Text('Block rotation'),
+          subtitle: const Text('Tilt each block slightly.'),
+          value: theme.blockRotationEnabled,
+          onChanged: theme.setBlockRotationEnabled,
+        ),
+        SwitchListTile(
+          secondary: AppIcon(HugeIcons.strokeRoundedMove),
+          title: const Text('Block offset'),
+          subtitle: const Text('Nudge each block off-center.'),
+          value: theme.blockOffsetEnabled,
+          onChanged: theme.setBlockOffsetEnabled,
+        ),
+        SwitchListTile(
+          secondary: AppIcon(HugeIcons.strokeRoundedColorPicker),
+          title: const Text('Block color'),
+          subtitle: const Text('Tint each block with the palette below.'),
+          value: colorEnabled,
+          onChanged: theme.setBlockColorEnabled,
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -407,10 +419,10 @@ class _PostItStyleSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: AnimatedOpacity(
-            opacity: enabled ? 1.0 : 0.5,
+            opacity: colorEnabled ? 1.0 : 0.5,
             duration: const Duration(milliseconds: 180),
             child: IgnorePointer(
-              ignoring: !enabled,
+              ignoring: !colorEnabled,
               child: Wrap(
                 spacing: 12,
                 runSpacing: 12,

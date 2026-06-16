@@ -31,7 +31,7 @@ types:
         index: 4
   BlockType:
     typeId: 2
-    nextIndex: 13
+    nextIndex: 14
     fields:
       textBlock:
         index: 0
@@ -59,6 +59,8 @@ types:
         index: 11
       streakBlock:
         index: 12
+      voiceBlock:
+        index: 13
   JournalLayout:
     typeId: 4
     nextIndex: 6

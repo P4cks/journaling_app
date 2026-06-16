@@ -17,10 +17,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
 - [chrome/block_chrome.dart](chrome/block_chrome.dart) — `BlockChrome`,
   replaces the old `post_it_block.dart` and the `PostItBlock` class.
   Pure-theming chrome — wraps any block content in the rounded card
-  with rotation / offset / palette colour driven by
-  `themeSettings.postItModeEnabled`. **No animation, gesture, or
-  interaction logic is gated on the post-it flag** — that's the
-  central rewrite invariant. Renders a 2 px accent outline ONLY when
+  with rotation / offset / palette colour, each driven by its own
+  independent toggle (`themeSettings.blockRotationEnabled` /
+  `.blockOffsetEnabled` / `.blockColorEnabled`; GUS-58 split the
+  former single `postItModeEnabled` master). Each effect applies
+  separately; all three off → flat card. **No animation, gesture, or
+  interaction logic is gated on these flags** — that's the
+  central rewrite invariant. **Subscribes to `themeSettings` via a
+  local `ListenableBuilder` (GUS-68)** so flipping a toggle /
+  editing the post-it palette restyles the chrome live — the root
+  rebuild in `main.dart` only carries `ThemeData`, which doesn't
+  include the block toggles, so without the local listener the chrome
+  stayed stale until the pager was swiped. Renders a 2 px accent outline ONLY when
   `host == BlockHostKind.grid && isEditing`; the expanded route reads
   `host: expanded` so the outline is suppressed (the blurred backdrop
   + Hero are the affordance there).
@@ -133,13 +141,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
     double-tap instead of setting `_editingBlockId` (there's no
     in-place edit-mode UI for one-shot actions). Location is
     intentionally NOT in this set — its "interaction" is long-press
-    on the map, which is always available.
+    on the map, which is always available. `voiceBlock` is **also
+    deliberately NOT** an action block: its filled cell hosts a
+    sustained inline player (tap play/pause, scrub) rather than a
+    one-shot action, and recording starts from a tap on the *empty*
+    cell — the player must keep receiving taps after the first.
   - `usesKeyboardOnEdit` — true for text / prompt / todo. Drives the
     expanded route's two-step dismiss state machine (only keyboard
     blocks need the unfocus-before-pop dance).
   - `isProOnly` — derives from the top-level `kProOnlyBlockTypes` set
-    (currently `{weatherApi, quoteBlock}`); edit that set to change the
-    free/Pro split — every other built-in block is free (GUS-34).
+    (currently `{weatherApi, quoteBlock, voiceBlock}`); edit that set to
+    change the free/Pro split — every other built-in block is free
+    (GUS-34). `voiceBlock` is Pro (GUS-12).
     `customCarousel` and `habitTracker` are deliberately NOT in the
     set: custom blocks are gated by *combined count*
     (`kFreeMaxCustomBlocks`, 1 free across carousels + habits) not a
@@ -237,6 +250,18 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   today-anchored streak when the block isn't in a saved entry (layout
   preview). Unlocked at the 7-day milestone for everyone (free + Pro) via
   `StreakRewardSettings`. See [streak_block/CLAUDE.md](streak_block/CLAUDE.md).
+- [voice_block/voice_block_widget.dart](voice_block/voice_block_widget.dart) —
+  `VoiceBlockWidget` (GUS-12, PRO). 1×1 voice-note tile. Empty editable
+  cell shows a "Record voice" affordance that opens a modal recording
+  sheet (`showVoiceRecorderSheet`): live elapsed timer, progress bar to
+  `kMaxVoiceDuration` (60 s), Stop / Cancel, **auto-stops at 60 s**.
+  Records via `package:record` (`AudioRecorder`, `AudioEncoder.aacLc`)
+  straight to `AudioStorageService.newRecordingPath()`. Filled cell hosts
+  an inline `_VoicePlayer` (own `AudioPlayer` from `audioplayers`,
+  play/pause + scrubbing progress + `m:ss / m:ss` readout). Long-press →
+  Re-record / Remove sheet; double-tap → expanded route. **Not an action
+  block** — see the `isActionBlock` note below. See
+  [voice_block/CLAUDE.md](voice_block/CLAUDE.md).
 
 ---
 
@@ -260,8 +285,8 @@ animations affect the grid's RenderBoxes or insertion-index math:
 - **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
   with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
   Effects only run on first mount, so re-orders don't replay them.
-  Skipped when `postItModeEnabled` is false (classic mode stays
-  still).
+  Runs regardless of the post-it toggles — the mount animation is a
+  structural affordance, not a theme decoration.
 - **Delete**: when `didUpdateWidget` notices a block id has gone
   missing, the tile's last-known `Rect` is snapshotted into a
   `_PendingDelete` and rendered as an overlay ghost above the grid.
