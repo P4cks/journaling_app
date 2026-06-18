@@ -104,7 +104,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   `outsideDaysVisible: false` so adjacent-month days are hidden — they
   rendered as bare greyed numbers with no entry marker, which looked
   broken when a trailing/leading day had an entry (GUS-36). The week
-  strip keeps all 7 days (no outside-day concept in week format).
+  strip keeps all 7 days — and because week format spans a month
+  boundary, the week strip supplies an `outsideBuilder` (rendering the
+  same `_buildDayCell`) so adjacent-month days still get their entry
+  border. `table_calendar` routes any day whose month differs from the
+  focused month to `outsideBuilder`/`outsideTextStyle` instead of
+  `defaultBuilder`, so without it an entry on e.g. Jun 30 in the week
+  of Jul 1 rendered as a bare greyed number with no marker.
 - [journal_pager.dart](journal_pager.dart) — `JournalPager` plus the
   private `_SectionsBody`. The swipe pager: `PageView.builder` over
   `vm.pagerDates` sorted ascending (entry dates plus a trailing

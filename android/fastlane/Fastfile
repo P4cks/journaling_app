@@ -1,0 +1,44 @@
+# fastlane Fastfile — Play Store delivery lanes for the journaling app.
+#
+# The build itself is done by Flutter (scripts/release.sh --play runs
+# `flutter build appbundle --flavor prod --release`); these lanes only handle
+# the upload. Run from the android/ directory:
+#
+#   bundle exec fastlane internal aab:/abs/path/to/app-prod-release.aab
+#
+# Auth + package name come from the Appfile.
+
+default_platform(:android)
+
+platform :android do
+  desc "Upload the prod release AAB to the Play Store internal testing track"
+  lane :internal do |options|
+    aab = options[:aab] ||
+          File.expand_path(
+            "../../build/app/outputs/bundle/prodRelease/app-prod-release.aab",
+            __dir__,
+          )
+
+    UI.user_error!(
+      "AAB not found at #{aab}. Build it first " \
+      "(scripts/release.sh --play does this, or run " \
+      "`flutter build appbundle --flavor prod --release`).",
+    ) unless File.exist?(aab)
+
+    UI.message("Uploading #{aab} to the internal testing track")
+
+    upload_to_play_store(
+      track: "internal",
+      aab: aab,
+      # Make the build immediately available to internal testers.
+      release_status: "completed",
+      # We ship only the binary from CI — store listing, screenshots, and
+      # changelogs are managed in the Play Console, not in this repo.
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+    )
+  end
+end
