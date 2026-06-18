@@ -88,15 +88,24 @@ class SectionDraft {
 }
 
 class LayoutEditorViewModel extends ChangeNotifier {
+  /// [ephemeral] flips the editor into per-day custom-layout mode (GUS-65):
+  /// the layout is never persisted (built via [buildEphemeral] and handed
+  /// back to the caller), the kind is forced to [LayoutKind.custom], and
+  /// the name/icon are unused. Pass [seedLayout] to pre-populate the drafts
+  /// from an existing structure (e.g. the day's current entry) — it takes
+  /// precedence over [layoutId].
   LayoutEditorViewModel({
     required LayoutRepository repository,
     String? layoutId,
     LayoutKind? initialKind,
+    this.ephemeral = false,
+    JournalLayout? seedLayout,
   }) : _repository = repository {
-    final existing = layoutId == null ? null : _repository.getById(layoutId);
+    final existing =
+        seedLayout ?? (layoutId == null ? null : _repository.getById(layoutId));
     if (existing != null) {
       _id = existing.id;
-      _kind = existing.kind;
+      _kind = ephemeral ? LayoutKind.custom : existing.kind;
       _sections = [
         for (final s in existing.sections)
           SectionDraft(
@@ -114,12 +123,16 @@ class LayoutEditorViewModel extends ChangeNotifier {
             ],
           ),
       ];
-      nameController = TextEditingController(text: existing.name);
-      _iconName = existing.iconName;
-      _isNew = false;
+      nameController = TextEditingController(
+        text: ephemeral ? '' : existing.name,
+      );
+      _iconName = ephemeral ? null : existing.iconName;
+      _isNew = ephemeral ? true : false;
     } else {
       _id = _uuid.v4();
-      _kind = initialKind ?? LayoutKind.blockOnly;
+      _kind = ephemeral
+          ? LayoutKind.custom
+          : (initialKind ?? LayoutKind.blockOnly);
       _sections = _seedSectionsFor(_kind);
       nameController = TextEditingController();
       _iconName = null;
@@ -135,6 +148,10 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   final LayoutRepository _repository;
+
+  /// Per-day custom-layout mode — never persisted to the layout box; built
+  /// via [buildEphemeral] and returned to the caller (GUS-65).
+  final bool ephemeral;
   late final String _id;
   late final LayoutKind _kind;
   late final TextEditingController nameController;
@@ -470,37 +487,45 @@ class LayoutEditorViewModel extends ChangeNotifier {
       );
       return null;
     }
-    final layout = JournalLayout(
-      id: _id,
-      name: nameController.text.trim(),
-      kind: _kind,
-      sections: [
-        for (final s in _sections)
-          LayoutSection(
-            id: s.id,
-            kind: s.kind,
-            rows: s.rows,
-            definitionId: s.definitionId,
-            blocks: [
-              for (final slot in s.slots)
-                BlockTemplate.create(
-                  id: slot.id,
-                  type: slot.type,
-                  config: slot.definitionId == null
-                      ? const {}
-                      : {'definitionId': slot.definitionId},
-                ),
-            ],
-          ),
-      ],
-      iconName: _iconName,
-    );
+    final layout = _buildLayout(name: nameController.text.trim());
     await _repository.save(layout);
     _snapshotInitial();
     debugPrint('[LayoutEditorVM] saved $layout');
     notifyListeners();
     return layout;
   }
+
+  /// Builds the current drafts into a [JournalLayout] **without persisting**
+  /// it. Used by per-day custom-layout mode (GUS-65): the caller
+  /// materializes the result into a single entry instead of saving a
+  /// reusable template, so the name/icon are placeholders.
+  JournalLayout buildEphemeral() => _buildLayout(name: 'Custom');
+
+  JournalLayout _buildLayout({required String name}) => JournalLayout(
+    id: _id,
+    name: name,
+    kind: _kind,
+    sections: [
+      for (final s in _sections)
+        LayoutSection(
+          id: s.id,
+          kind: s.kind,
+          rows: s.rows,
+          definitionId: s.definitionId,
+          blocks: [
+            for (final slot in s.slots)
+              BlockTemplate.create(
+                id: slot.id,
+                type: slot.type,
+                config: slot.definitionId == null
+                    ? const {}
+                    : {'definitionId': slot.definitionId},
+              ),
+          ],
+        ),
+    ],
+    iconName: _iconName,
+  );
 
   @override
   void dispose() {

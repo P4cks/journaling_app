@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/text_block_conte
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
+import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
@@ -81,10 +82,22 @@ class LayoutEditorScreen extends StatefulWidget {
     super.key,
     required this.layoutId,
     this.initialKind,
+    this.ephemeral = false,
+    this.seedLayout,
   });
 
   final String? layoutId;
   final LayoutKind? initialKind;
+
+  /// Per-day custom-layout mode (GUS-65): the editor builds a transient
+  /// custom layout that is **not** saved to the layout box — instead it is
+  /// returned via `Navigator.pop` so the caller can materialize it into a
+  /// single entry. Hides the name/icon chrome and swaps "Save" for "Apply".
+  final bool ephemeral;
+
+  /// Seed structure for [ephemeral] mode (e.g. the day's current entry,
+  /// or the user's default layout). Ignored when not ephemeral.
+  final JournalLayout? seedLayout;
 
   @override
   State<LayoutEditorScreen> createState() => _LayoutEditorScreenState();
@@ -103,6 +116,8 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         repository: deps.layoutRepository,
         layoutId: widget.layoutId,
         initialKind: widget.initialKind,
+        ephemeral: widget.ephemeral,
+        seedLayout: widget.seedLayout,
       );
       _viewModel!.addListener(_onChanged);
       _subscriptions = deps.subscriptionRepository;
@@ -175,9 +190,53 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
 
   Future<void> _handlePop(bool didPop, Object? result) async {
     if (didPop) return;
+    // Per-day custom-layout mode is pushed via Navigator (not go_router) and
+    // is never saved to the box — the back gesture discards (confirming when
+    // there are edits) and returns `null` to the caller.
+    if (widget.ephemeral) {
+      final canLeave = await _confirmDiscardEphemeral();
+      if (!mounted || !canLeave) return;
+      Navigator.of(context).pop();
+      return;
+    }
     final canLeave = await _maybeSaveOnLeave();
     if (!mounted || !canLeave) return;
     context.pop();
+  }
+
+  Future<bool> _confirmDiscardEphemeral() async {
+    final vm = _viewModel;
+    if (vm == null || !vm.isDirty) return true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard custom layout?'),
+        content: const Text(
+          "This custom layout hasn't been applied to the day yet. Discard it?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
+  /// AppBar "Apply" action for per-day custom-layout mode: builds the
+  /// transient layout and returns it to the caller (the journal screen),
+  /// which materializes it into the day's entry. Never persisted.
+  void _applyEphemeral() {
+    final vm = _viewModel;
+    if (vm == null) return;
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).pop(vm.buildEphemeral());
   }
 
   Future<void> _addBlockBlockOnly() async {
@@ -247,45 +306,57 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
         appBar: AppBar(
-          titleSpacing: 0,
-          title: LayoutNameTitle(controller: vm.nameController),
-          actions: [
-            if (vm.kind == LayoutKind.blockOnly)
-              IconButton(
-                tooltip: blockOnlyLocked
-                    ? 'Pro — unlimited blocks'
-                    : 'Add block',
-                onPressed: _addBlockBlockOnly,
-                icon: blockOnlyLocked
-                    ? Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          AppIcon(
-                            HugeIcons.strokeRoundedPlusSign,
-                            color: Theme.of(context).disabledColor,
-                          ),
-                          const Positioned(
-                            top: -4,
-                            right: -4,
-                            child: ProLockBadge(compact: true),
-                          ),
-                        ],
-                      )
-                    : AppIcon(HugeIcons.strokeRoundedPlusSign),
-              ),
-            IconButton(
-              tooltip: 'Change icon',
-              onPressed: _pickIcon,
-              icon: AppIcon(layoutIconFor(vm.iconName).icon),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TextButton(
-                onPressed: _save,
-                child: const Text('Save'),
-              ),
-            ),
-          ],
+          titleSpacing: widget.ephemeral ? null : 0,
+          title: widget.ephemeral
+              ? const Text('Customize this day')
+              : LayoutNameTitle(controller: vm.nameController),
+          actions: widget.ephemeral
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: TextButton(
+                      onPressed: _applyEphemeral,
+                      child: const Text('Apply'),
+                    ),
+                  ),
+                ]
+              : [
+                  if (vm.kind == LayoutKind.blockOnly)
+                    IconButton(
+                      tooltip: blockOnlyLocked
+                          ? 'Pro — unlimited blocks'
+                          : 'Add block',
+                      onPressed: _addBlockBlockOnly,
+                      icon: blockOnlyLocked
+                          ? Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                AppIcon(
+                                  HugeIcons.strokeRoundedPlusSign,
+                                  color: Theme.of(context).disabledColor,
+                                ),
+                                const Positioned(
+                                  top: -4,
+                                  right: -4,
+                                  child: ProLockBadge(compact: true),
+                                ),
+                              ],
+                            )
+                          : AppIcon(HugeIcons.strokeRoundedPlusSign),
+                    ),
+                  IconButton(
+                    tooltip: 'Change icon',
+                    onPressed: _pickIcon,
+                    icon: AppIcon(layoutIconFor(vm.iconName).icon),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: TextButton(
+                      onPressed: _save,
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
