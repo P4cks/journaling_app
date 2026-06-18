@@ -158,6 +158,7 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 | `SettingsSection` "Blocks" | —                      | "Manage Blocks" (block-game icon) → `/block-settings` |
 | `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
 | `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
+| `_VersionFooter`            | —                       | Always-visible footer pinned to the bottom of the list. `FutureBuilder<PackageInfo>` (`package_info_plus`) renders "Version `<version>` (`<buildNumber>`)"; appends a red **DEBUG** badge when `kDebugMode` (dev builds only) |
 | `_PostItStyleSection`       | `themeSettings`         | Three toggles — "Block rotation" / "Block offset" / "Block color" `SwitchListTile`s (GUS-58) — + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Palette greyed out when the **color** toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
@@ -210,6 +211,11 @@ the header keeps a fixed 60-char cap.
 
 ### settings_screen.dart
 
+- `_VersionFooter` — bottom-of-list app version indicator. Reads
+  `PackageInfo.fromPlatform()` via a `FutureBuilder` and shows
+  "Version `<version>` (`<buildNumber>`)"; in `kDebugMode` builds it
+  appends a small red **DEBUG** badge (errorContainer chip). Depends on
+  the `package_info_plus` direct dependency added to `pubspec.yaml`.
 - `_PostItStyleSection` / `_PostItSwatch` / `_AddPostItSwatch` — the
   Post-it style section (toggle + post-it palette `Wrap`). Unchanged by
   GUS-27. (The former `_AppearanceSettingsContent`, `_ThemeEditorSheet`,

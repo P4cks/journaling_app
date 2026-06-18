@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -65,17 +66,20 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your block settings before leaving?'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop('save'),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -302,14 +306,17 @@ class _CustomCarouselList extends StatelessWidget {
                     'You can edit the affected layouts afterwards.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.primary,
+            backgroundColor: errorColor,
+            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -417,14 +424,17 @@ class _WannadoCarouselList extends StatelessWidget {
                     'empty placeholder until you point them at another list.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.primary,
+            backgroundColor: errorColor,
+            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -527,24 +537,21 @@ class _WannadoDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  foregroundColor: errorColor,
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],
@@ -597,14 +604,17 @@ class _HabitList extends StatelessWidget {
           'a "Deleted block" placeholder from now on.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.primary,
+            backgroundColor: errorColor,
+            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -714,24 +724,21 @@ class _HabitDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  foregroundColor: errorColor,
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],
@@ -781,24 +788,21 @@ class _CustomDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  foregroundColor: errorColor,
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 
@@ -69,20 +70,26 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               _StatusCard(isPro: isPro),
               const SizedBox(height: 24),
               if (isPro) ...[
-                FilledButton(
+                AppButton(
+                  variant: AppButtonVariant.primary,
+                  expand: true,
                   onPressed: subs.isLoading ? null : _openCustomerCenter,
-                  child: const Text('Manage subscription'),
+                  label: 'Manage subscription',
                 ),
               ] else ...[
-                FilledButton(
+                AppButton(
+                  variant: AppButtonVariant.primary,
+                  expand: true,
                   onPressed: subs.isLoading ? null : _openPaywall,
-                  child: const Text('Upgrade to Pro'),
+                  label: 'Upgrade to Pro',
                 ),
               ],
               const SizedBox(height: 12),
-              TextButton(
+              AppButton(
+                variant: AppButtonVariant.text,
+                expand: true,
                 onPressed: subs.isLoading ? null : _restore,
-                child: const Text('Restore purchases'),
+                label: 'Restore purchases',
               ),
               if (subs.isLoading) ...[
                 const SizedBox(height: 24),

@@ -107,6 +107,16 @@ Same gate as before the merge. Used for two decisions:
   `ToastKind.info`) and returns without opening the picker (GUS-47) —
   otherwise the picker would silently no-op (`showLayoutPickerSheet`
   returns null on an empty list).
+- `_openCustomLayoutEditor({forNewEntry})` (GUS-65, Pro) — the picker's
+  "Create a custom layout for this day" footer (`onCustomLayout`, badged
+  for free users) routes here. Gates on `requirePro`, then pushes
+  `LayoutEditorScreen(ephemeral: true, seedLayout: …)` via a
+  `MaterialPageRoute` (so it returns a transient `JournalLayout`). The
+  seed is the day's current entry (`layoutFromSections`) or the default
+  layout for a new day. On a non-null result it calls
+  `vm.createWithLayout` (new entry) or, for an existing entry, a
+  destructive confirm + `vm.applyLayout`. The layout is never saved to
+  the layout box. See [../../layouts/CLAUDE.md](../../layouts/CLAUDE.md).
 - `_openStatistics()` — `context.push(Routes.statistics)`. Back
   returns to `MainJournalScreen` on the same selected date. The
   former `_openEntries` pushed `/entries`; that route still works

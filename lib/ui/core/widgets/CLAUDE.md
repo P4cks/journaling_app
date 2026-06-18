@@ -27,6 +27,29 @@ for how they fit together; this file is per-file notes.
   their parameters cleanly. The streak card now drives the flame's
   active vs. dim state via the `color` prop (dimmed via
   `withValues(alpha: 0.55)`) instead of swapping a fill glyph.
+- [app_button.dart](app_button.dart) — `AppButton` + `enum AppButtonVariant
+  {secondary, primary, text}` (GUS-75). The app's single button primitive —
+  replaces the scattered raw `FilledButton` / `TextButton` / `OutlinedButton`
+  call sites. Wraps `FilledButton` (so ripple / focus / pressed / disabled
+  states come for free) with the house style: a 100%-rounded `StadiumBorder`
+  pill, **no border side**, `elevation: 0`. `secondary` (the default) is the
+  spec'd style — `colorScheme.secondary` fill, `onSurface` foreground; `primary`
+  is `primary`/`onPrimary` for solid CTAs; `text` is a transparent-fill
+  low-emphasis action (its disabled background is forced transparent so no faint
+  pill shows). The prefix `icon` (and optional `trailingIcon`) are `HugeIconData`
+  rendered through `AppIcon` **without an explicit colour**, so they inherit the
+  button's resolved foreground (incl. disabled dimming) from `IconTheme` — i.e.
+  the icon always matches the label/font colour. `backgroundColor` /
+  `foregroundColor` override the variant's colours for one-offs (error-tinted
+  "Delete" / "Sign out", greyed disabled-cap affordance). `expand: true` fills
+  the horizontal constraints (full-width buttons in stretch columns / list
+  views); `busy: true` swaps the prefix slot for a spinner and disables taps.
+  The label is a plain `Text` (not `Flexible`) so it's safe inside unbounded
+  rows. **Not migrated (intentional):** icon-only `IconButton`s, `InkWell` /
+  `GestureDetector` tiles, and the compact calendar "Today" pill (a
+  height-constrained bottom-bar control). `AddCustomBlockButton` (in
+  [pro_gate.dart](pro_gate.dart)) is now an `AppButton` wrapped in a `Stack` for
+  its crown-badge overlay at the free cap.
 - [app_toast.dart](app_toast.dart) — `showToast(context, message,
   {kind = ToastKind.info, duration})` + `enum ToastKind {info, success,
   error}` (GUS-49). The app's single transient-notification primitive —

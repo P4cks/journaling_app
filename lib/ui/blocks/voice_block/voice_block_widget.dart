@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/voice_block_cont
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:record/record.dart';
@@ -489,9 +490,10 @@ class _RecorderSheetState extends State<_RecorderSheet> {
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
-              FilledButton(
+              AppButton(
+                variant: AppButtonVariant.primary,
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+                label: 'Close',
               ),
             ] else if (_starting) ...[
               const SizedBox(
@@ -531,11 +533,16 @@ class _RecorderSheetState extends State<_RecorderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(onPressed: _cancel, child: const Text('Cancel')),
-                  FilledButton.icon(
+                  AppButton(
+                    variant: AppButtonVariant.text,
+                    onPressed: _cancel,
+                    label: 'Cancel',
+                  ),
+                  AppButton(
+                    variant: AppButtonVariant.primary,
                     onPressed: _stop,
-                    icon: AppIcon(HugeIcons.strokeRoundedStop, size: 18),
-                    label: const Text('Stop'),
+                    icon: HugeIcons.strokeRoundedStop,
+                    label: 'Stop',
                   ),
                 ],
               ),

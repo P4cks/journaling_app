@@ -3,13 +3,16 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/model/journal_entry.dart';
+import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/calendar_bottom_bar.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/journal_pager.dart';
@@ -17,6 +20,8 @@ import 'package:journaling_app_rewrite/ui/journal/widgets/journal_title.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/make_entry_cta.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/no_entry_read_only.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/app_menu_button.dart';
+import 'package:journaling_app_rewrite/ui/layouts/entry_to_layout.dart';
+import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_picker_sheet.dart';
 
 /// The merged main screen. Hosts the AppBar (editable title + date
@@ -162,11 +167,14 @@ class _MainJournalScreenState extends State<MainJournalScreen>
     final vm = _viewModel;
     if (vm == null) return;
     FocusManager.instance.primaryFocus?.unfocus();
+    final subs = AppDependencies.of(context).subscriptionRepository;
     final picked = await showLayoutPickerSheet(
       context,
       layouts: vm.getAvailableLayouts(),
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: true),
+      customLayoutLocked: !subs.isPro,
     );
     if (picked == null || !mounted) return;
     vm.createWithLayout(picked);
@@ -182,11 +190,14 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       showToast(context, 'No layouts configured', kind: ToastKind.info);
       return;
     }
+    final subs = AppDependencies.of(context).subscriptionRepository;
     final selected = await showLayoutPickerSheet(
       context,
       layouts: layouts,
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: false),
+      customLayoutLocked: !subs.isPro,
     );
     if (selected == null || !mounted) return;
     final confirm = await showDialog<bool>(
@@ -198,18 +209,90 @@ class _MainJournalScreenState extends State<MainJournalScreen>
           'Existing content for this day will be lost.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Apply'),
+            label: 'Apply',
           ),
         ],
       ),
     );
     if (confirm == true && mounted) vm.applyLayout(selected);
+  }
+
+  /// Opens the per-day custom-layout editor (GUS-65, a Pro feature). Gates
+  /// on Pro first; on a successful build it materializes the transient
+  /// layout into the day's entry — creating a new entry ([forNewEntry]) or
+  /// replacing the current entry's blocks (destructive, confirmed) — but
+  /// never saves it to the layouts list.
+  Future<void> _openCustomLayoutEditor({required bool forNewEntry}) async {
+    final vm = _viewModel;
+    if (vm == null) return;
+    final subs = AppDependencies.of(context).subscriptionRepository;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!await requirePro(subs, context: context)) return;
+    if (!mounted) return;
+
+    // Seed the editor from the day's current structure when an entry
+    // exists; otherwise from the default layout so the user has a starting
+    // point (falling back to a blank custom layout).
+    final current = vm.currentEntry;
+    final JournalLayout? seed = current != null
+        ? layoutFromSections(current.sections)
+        : _defaultLayoutSeed(vm);
+
+    final built = await Navigator.of(context).push<JournalLayout>(
+      MaterialPageRoute(
+        builder: (_) =>
+            LayoutEditorScreen(layoutId: null, ephemeral: true, seedLayout: seed),
+      ),
+    );
+    if (built == null || !mounted) return;
+
+    if (forNewEntry) {
+      vm.createWithLayout(built);
+      return;
+    }
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Apply custom layout?'),
+        content: const Text(
+          'This will replace the current blocks for this day. '
+          'Existing content for this day will be lost.',
+        ),
+        actions: [
+          AppButton(
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            label: 'Cancel',
+          ),
+          AppButton(
+            variant: AppButtonVariant.primary,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            label: 'Apply',
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) vm.applyLayout(built);
+  }
+
+  /// The user's default layout (or the first available) used to seed a
+  /// brand-new day's custom-layout editor. Null when no layouts exist.
+  JournalLayout? _defaultLayoutSeed(MainJournalViewModel vm) {
+    final layouts = vm.getAvailableLayouts();
+    if (layouts.isEmpty) return null;
+    final defaultId = vm.defaultLayoutId;
+    for (final layout in layouts) {
+      if (layout.id == defaultId) return layout;
+    }
+    return layouts.first;
   }
 
   Future<void> _openStatistics() async {
@@ -250,15 +333,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
         // block (or the title) can't accidentally navigate away.
         final List<Widget> appBarActions = _editing
             ? [
-                TextButton(
+                AppButton(
+                  variant: AppButtonVariant.text,
+                  foregroundColor: scheme.primary,
                   onPressed: _onDone,
-                  style: TextButton.styleFrom(
-                    foregroundColor: scheme.primary,
-                    textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  child: const Text('Done'),
+                  label: 'Done',
                 ),
                 const SizedBox(width: 4),
               ]

@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
 import 'package:journaling_app_rewrite/data/services/streak_service.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/statistics/widgets/claim_reward_sheet.dart';
@@ -97,12 +98,13 @@ class StreakRewardCard extends StatelessWidget {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: FilledButton.icon(
+              child: AppButton(
+                variant: AppButtonVariant.primary,
                 onPressed: () => isPro
                     ? _claimAsPro(context)
                     : showClaimRewardSheet(context, rewards: rewards),
-                icon: const AppIcon(HugeIcons.strokeRoundedSparkles, size: 18),
-                label: const Text('Claim your reward'),
+                icon: HugeIcons.strokeRoundedSparkles,
+                label: 'Claim your reward',
               ),
             ),
           ],
