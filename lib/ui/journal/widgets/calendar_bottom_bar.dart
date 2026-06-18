@@ -339,6 +339,20 @@ class _WeekStripState extends State<_WeekStrip> {
               isSelected: false,
               hasEntry: _hasEntry(day),
             ),
+            // Days from the adjacent month are still part of the visible
+            // week strip (week format shows all 7 days). `table_calendar`
+            // routes them to `outsideBuilder` instead of `defaultBuilder`,
+            // so without this they'd render as bare greyed numbers and
+            // miss their entry border — e.g. an entry on Jun 30 when the
+            // week of Jul 1 is shown. Render them identically to in-month
+            // days so the "has entry" border still appears.
+            outsideBuilder: (ctx, day, _) => _buildDayCell(
+              context: ctx,
+              day: day,
+              isToday: false,
+              isSelected: false,
+              hasEntry: _hasEntry(day),
+            ),
             todayBuilder: (ctx, day, _) => _buildDayCell(
               context: ctx,
               day: day,
