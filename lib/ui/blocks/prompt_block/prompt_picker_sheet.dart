@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+
 /// Modal bottom sheet that lets the user pick a prompt for a prompt block.
 ///
 /// Returns the chosen prompt string, or `null` if dismissed without picking.
@@ -115,18 +117,20 @@ class _PromptPickerBodyState extends State<_PromptPickerBody> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              AppButton(
+                variant: AppButtonVariant.text,
                 onPressed: () => setState(() => _typing = false),
-                child: const Text('Back'),
+                label: 'Back',
               ),
               const SizedBox(width: 8),
-              FilledButton(
+              AppButton(
+                variant: AppButtonVariant.primary,
                 onPressed: () {
                   final text = _controller.text.trim();
                   if (text.isEmpty) return;
                   Navigator.of(context).pop(text);
                 },
-                child: const Text('Done'),
+                label: 'Done',
               ),
             ],
           ),

@@ -20,6 +20,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -280,9 +281,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: TextButton(
+              child: AppButton(
+                variant: AppButtonVariant.text,
                 onPressed: _save,
-                child: const Text('Save'),
+                label: 'Save',
               ),
             ),
           ],

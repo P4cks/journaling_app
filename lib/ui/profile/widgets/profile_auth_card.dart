@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/app_user.dart';
 import 'package:journaling_app_rewrite/data/repositories/auth_repository.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 class ProfileAuthCard extends StatelessWidget {
@@ -185,15 +186,12 @@ class _SignedInProfile extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 16),
-          OutlinedButton.icon(
+          AppButton(
+            expand: true,
             onPressed: authRepository.isLoading ? null : authRepository.signOut,
-            icon: authRepository.operation == AuthOperation.signOut
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : AppIcon(HugeIcons.strokeRoundedLogout01),
-            label: const Text('Sign out'),
+            busy: authRepository.operation == AuthOperation.signOut,
+            icon: HugeIcons.strokeRoundedLogout01,
+            label: 'Sign out',
           ),
         ],
       ),
@@ -237,15 +235,12 @@ class _AuthActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    return AppButton(
+      expand: true,
       onPressed: onPressed,
-      icon: isLoading
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : AppIcon(icon),
-      label: Text(label),
+      busy: isLoading,
+      icon: icon,
+      label: label,
     );
   }
 }
@@ -467,19 +462,19 @@ class _EmailAuthSheetState extends State<_EmailAuthSheet> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: busy ? null : _submit,
-                  icon: busy
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : AppIcon(HugeIcons.strokeRoundedArrowRight01),
-                  label: Text(_isRegistering ? 'Create account' : 'Sign in'),
+                AppButton(
+                  variant: AppButtonVariant.primary,
+                  expand: true,
+                  onPressed: _submit,
+                  busy: busy,
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  label: _isRegistering ? 'Create account' : 'Sign in',
                 ),
-                TextButton(
+                AppButton(
+                  variant: AppButtonVariant.text,
+                  expand: true,
                   onPressed: busy ? null : _sendReset,
-                  child: const Text('Send password reset email'),
+                  label: 'Send password reset email',
                 ),
               ],
             ),

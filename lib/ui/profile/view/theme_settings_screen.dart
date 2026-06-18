@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
@@ -347,7 +348,11 @@ class _ThemeEditorSheetState extends State<_ThemeEditorSheet> {
                 Expanded(
                   child: Text(widget.title, style: theme.textTheme.titleMedium),
                 ),
-                FilledButton(onPressed: _save, child: const Text('Save')),
+                AppButton(
+                  variant: AppButtonVariant.primary,
+                  onPressed: _save,
+                  label: 'Save',
+                ),
               ],
             ),
             const SizedBox(height: 12),

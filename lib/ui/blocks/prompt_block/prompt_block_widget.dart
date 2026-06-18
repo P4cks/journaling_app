@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -158,17 +159,20 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           'You already typed an answer. Keep it under the new prompt, or clear it?',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(null),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Clear it'),
+            label: 'Clear it',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keep'),
+            label: 'Keep',
           ),
         ],
       ),

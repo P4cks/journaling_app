@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/data/services/subscription_service.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 
@@ -201,10 +202,12 @@ class AddCustomBlockButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final atLimit = !subscriptions.isPro && currentCount >= max;
-    return OutlinedButton.icon(
-      style: atLimit
-          ? OutlinedButton.styleFrom(foregroundColor: theme.disabledColor)
-          : null,
+    final button = AppButton(
+      // At the cap the button still taps through to the paywall, but greys
+      // its foreground to read as locked; the crown badge confirms it.
+      foregroundColor: atLimit ? theme.disabledColor : null,
+      icon: HugeIcons.strokeRoundedPlusSign,
+      label: label,
       onPressed: () async {
         if (atLimit) {
           if (!await requirePro(subscriptions, context: context)) return;
@@ -212,23 +215,14 @@ class AddCustomBlockButton extends StatelessWidget {
         }
         onAddAllowed();
       },
-      icon: atLimit
-          ? Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AppIcon(
-                  HugeIcons.strokeRoundedPlusSign,
-                  color: theme.disabledColor,
-                ),
-                const Positioned(
-                  top: -6,
-                  right: -6,
-                  child: ProLockBadge(compact: true),
-                ),
-              ],
-            )
-          : AppIcon(HugeIcons.strokeRoundedPlusSign),
-      label: Text(label),
+    );
+    if (!atLimit) return button;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        const Positioned(top: -6, right: -6, child: ProLockBadge(compact: true)),
+      ],
     );
   }
 }
