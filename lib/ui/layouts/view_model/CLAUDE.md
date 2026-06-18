@@ -99,7 +99,22 @@ Common:
   `nameConflict` is false (returns `null` on either failure). Builds
   a `JournalLayout` (with its `kind` and `sections`) from current
   state, persists via the repository, returns it. The caller pops on
-  success.
+  success. Both `save()` and `buildEphemeral()` share the private
+  `_buildLayout({name})` constructor.
+- `buildEphemeral()` (GUS-65) — builds the current drafts into a
+  `JournalLayout` **without persisting** (placeholder name `'Custom'`,
+  null icon). Used by per-day custom-layout mode: the editor returns the
+  result via `Navigator.pop` and the journal screen materializes it into
+  a single entry. No name/`nameConflict` validation.
+
+### Ephemeral construction (GUS-65)
+
+When `ephemeral: true` (with an optional `seedLayout`), the VM forces
+`_kind = LayoutKind.custom`, seeds its drafts from `seedLayout` (reusing
+the same `LayoutSection → SectionDraft` path as the load-by-id branch;
+`seedLayout` takes precedence over `layoutId`), and leaves the name/icon
+empty. The layout is never written to the repository — see
+`buildEphemeral`.
 
 Name validation:
 - `canSave` — `true` when the trimmed name is non-empty AND there is

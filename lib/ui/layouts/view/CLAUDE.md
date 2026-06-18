@@ -24,9 +24,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     manually on return.
 - [layout_editor_screen.dart](layout_editor_screen.dart) —
   `LayoutEditorScreen`. Editor for one layout.
-  - AppBar: `LayoutNameTitle` (tap-to-edit) + actions `+ (Add block)`,
-    the layout's icon (tap → `showLayoutIconPicker`), and a trailing
-    `Save` `TextButton` (GUS-62).
+  - **Ephemeral mode (GUS-65).** `LayoutEditorScreen(ephemeral: true,
+    seedLayout: …)` runs the editor as a per-day custom-layout builder
+    (always `LayoutKind.custom` → `_CustomBody`). The AppBar shows a
+    plain "Customize this day" title (no `LayoutNameTitle`/icon action)
+    and an **Apply** action (`_applyEphemeral`) that pops
+    `vm.buildEphemeral()` via `Navigator.pop` (the screen is pushed with
+    a `MaterialPageRoute`, not go_router, so it returns a value). Back
+    discards (`_confirmDiscardEphemeral` prompts when `vm.isDirty`) and
+    pops `null` — it is never saved to the layout box. See
+    [../CLAUDE.md](../CLAUDE.md) "Per-day custom layouts".
+  - AppBar (normal mode): `LayoutNameTitle` (tap-to-edit) + actions
+    `+ (Add block)`, the layout's icon (tap → `showLayoutIconPicker`),
+    and a trailing `Save` `TextButton` (GUS-62).
   - Body: the `BlockGrid` (WYSIWYG, see [../CLAUDE.md](../CLAUDE.md))
     fills the body. Empty state: "No blocks yet. Tap + to add a block."
     There is **no** "Blocks" header and no bottom-bar Add button.

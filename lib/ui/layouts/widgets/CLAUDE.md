@@ -200,7 +200,7 @@ sheet is a stateless top-level function returning the user's pick or
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts, onCustomLayout, customLayoutLocked})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -218,6 +218,13 @@ sheet is a stateless top-level function returning the user's pick or
     (the awaiting caller sees `null`) then invokes the callback — the
     caller navigates (both main-screen call sites do
     `context.push(Routes.layouts)`). Omit it to render no footer.
+  - **Per-day custom-layout footer (GUS-65, Pro).** Pass `onCustomLayout`
+    to append a "Create a custom layout for this day" `ListTile` (above
+    the manage-layouts row); set `customLayoutLocked` to badge it with a
+    `ProLockBadge` for free users. Tapping pops the sheet (caller sees
+    `null`) then invokes the callback — the caller owns the `requirePro`
+    gate and opens the ephemeral layout editor (see
+    [../CLAUDE.md](../CLAUDE.md) "Per-day custom layouts").
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action
