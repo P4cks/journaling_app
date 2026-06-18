@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -208,13 +209,15 @@ class _MainJournalScreenState extends State<MainJournalScreen>
           'Existing content for this day will be lost.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Apply'),
+            label: 'Apply',
           ),
         ],
       ),
@@ -264,13 +267,15 @@ class _MainJournalScreenState extends State<MainJournalScreen>
           'Existing content for this day will be lost.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Apply'),
+            label: 'Apply',
           ),
         ],
       ),
@@ -328,15 +333,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
         // block (or the title) can't accidentally navigate away.
         final List<Widget> appBarActions = _editing
             ? [
-                TextButton(
+                AppButton(
+                  variant: AppButtonVariant.text,
+                  foregroundColor: scheme.primary,
                   onPressed: _onDone,
-                  style: TextButton.styleFrom(
-                    foregroundColor: scheme.primary,
-                    textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  child: const Text('Done'),
+                  label: 'Done',
                 ),
                 const SizedBox(width: 4),
               ]

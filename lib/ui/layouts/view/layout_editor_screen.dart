@@ -21,6 +21,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -161,17 +162,20 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your changes to this layout before leaving?'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop('save'),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -215,13 +219,15 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           "This custom layout hasn't been applied to the day yet. Discard it?",
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
         ],
       ),
@@ -314,9 +320,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
               ? [
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: TextButton(
+                    child: AppButton(
+                      variant: AppButtonVariant.text,
                       onPressed: _applyEphemeral,
-                      child: const Text('Apply'),
+                      label: 'Apply',
                     ),
                   ),
                 ]
@@ -351,9 +358,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: TextButton(
+                    child: AppButton(
+                      variant: AppButtonVariant.text,
                       onPressed: _save,
-                      child: const Text('Save'),
+                      label: 'Save',
                     ),
                   ),
                 ],
@@ -644,13 +652,15 @@ class _CustomBody extends StatelessWidget {
         title: Text('Remove $label?'),
         content: Text('The $label will be removed from this layout.'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Remove'),
+            label: 'Remove',
           ),
         ],
       ),
@@ -891,13 +901,14 @@ class _FeatureBlockSectionBody extends StatelessWidget {
 
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
+    // Any block type is a valid feature block (GUS-67) — use the general
+    // add-block sheet (built-in + custom + habit tabs), no `allowedTypes`.
     final picked = await showAddBlockSheet(
       context,
-      allowedTypes: LayoutEditorViewModel.featureBlockAllowedTypes,
-      title: isSwap ? 'Swap block' : 'Choose feature block',
+      title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setFeatureBlock(vm.sections[sectionIndex].id, picked);
+    vm.setSingleBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override
@@ -915,7 +926,7 @@ class _FeatureBlockSectionBody extends StatelessWidget {
             : _FilledCell(
                 slot: slots.first,
                 onSwapType: () => _pickType(context, isSwap: true),
-                onRemove: () => vm.clearFeatureBlock(sectionId),
+                onRemove: () => vm.clearSingleBlock(sectionId),
               ),
       ),
     );
@@ -935,14 +946,13 @@ class _BlockTextSectionBody extends StatelessWidget {
   Future<void> _pickType(BuildContext context, {bool isSwap = false}) async {
     FocusScope.of(context).unfocus();
     // Any block type is a valid float here (GUS-46) — use the general
-    // add-block sheet (built-in + custom + habit tabs), not the
-    // photo/memory-restricted feature-block picker.
+    // add-block sheet (built-in + custom + habit tabs).
     final picked = await showAddBlockSheet(
       context,
       title: isSwap ? 'Swap block' : 'Choose block',
     );
     if (picked == null) return;
-    vm.setBlockTextFloatBlock(vm.sections[sectionIndex].id, picked);
+    vm.setSingleBlock(vm.sections[sectionIndex].id, picked);
   }
 
   @override
@@ -973,7 +983,7 @@ class _BlockTextSectionBody extends StatelessWidget {
                     : _FilledCell(
                         slot: slots.first,
                         onSwapType: () => _pickType(context, isSwap: true),
-                        onRemove: () => vm.clearFeatureBlock(sectionId),
+                        onRemove: () => vm.clearSingleBlock(sectionId),
                       ),
               ),
               const SizedBox(width: 12),

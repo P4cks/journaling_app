@@ -118,11 +118,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     - `featureBlock` → `_FeatureBlockSectionBody` — full-width
       `AspectRatio(1, ...)` that is either an `_EmptyAddBlockCell` or
       a `_FilledCell` (both live at the top level of
-      `layout_editor_screen.dart`). Tapping a filled cell opens
-      `showAddBlockSheet(allowedTypes: {photoBlock, memoryBlock})`;
-      the X-remove calls `vm.clearFeatureBlock`. `_EmptyAddBlockCell`
-      is no longer used by `_FixedFourPlusTextBody` (which now uses
-      `BlockGrid.onAddBlock`) — feature-block is the only caller.
+      `layout_editor_screen.dart`). Tapping a cell opens the **general**
+      `showAddBlockSheet(context)` (any built-in / custom / habit block —
+      GUS-67, was photo/memory only) → `vm.setSingleBlock`; the X-remove
+      calls `vm.clearSingleBlock`. `_EmptyAddBlockCell` is no longer used
+      by `_FixedFourPlusTextBody` (which now uses `BlockGrid.onAddBlock`) —
+      the two single-block sections (feature-block + block-text-body) are
+      the only callers.
     - `header` → `_HeaderSectionPreview` — a `HeaderSectionWidget` in
       `BlockMode.readOnly` over an empty `TextBlockContent` (mirrors
       `_TextSectionPreview`; shows the italic "Heading" placeholder).
@@ -138,10 +140,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       a fixed 120px square or the old `* 0.42` proportion. The picker
       uses the **general** `showAddBlockSheet(context)` (any built-in /
       custom / habit block — GUS-46, was photo/memory only) →
-      `vm.setBlockTextFloatBlock` (accepts any `AddBlockResult`, unlike
-      `setFeatureBlock`); the X-remove calls `vm.clearFeatureBlock` (still
-      shared with `featureBlock`). The text block is entered per-entry
-      (not an editor slot). (GUS-9)
+      `vm.setSingleBlock` (accepts any `AddBlockResult`, shared with
+      `featureBlock`); the X-remove calls `vm.clearSingleBlock`. The text
+      block is entered per-entry (not an editor slot). (GUS-9)
     - `wannado` → a `WannadoSectionWidget` preview (the same widget the
       journal pager renders). It self-fetches the **global** wanna-do
       list off `AppDependencies.blockSettings` and rotates live in the

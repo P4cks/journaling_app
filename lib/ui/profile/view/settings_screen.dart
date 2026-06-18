@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -10,6 +11,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -236,8 +238,66 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ],
               ),
+            const _VersionFooter(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// App version indicator pinned to the bottom of the Settings list. Reads
+/// the version + build number from the bundle via `package_info_plus`. In a
+/// dev build (`kDebugMode`) a "DEBUG" tag is appended so QA can tell at a
+/// glance which flavour they are running.
+class _VersionFooter extends StatelessWidget {
+  const _VersionFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      child: FutureBuilder<PackageInfo>(
+        future: PackageInfo.fromPlatform(),
+        builder: (context, snapshot) {
+          final info = snapshot.data;
+          if (info == null) return const SizedBox(height: 20);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Version ${info.version} (${info.buildNumber})',
+                style: labelStyle,
+              ),
+              if (kDebugMode) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.errorContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'DEBUG',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onErrorContainer,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -249,21 +309,24 @@ Future<bool> _confirmDestructive(
   required String message,
   required String confirmLabel,
 }) async {
-  final errorColor = Theme.of(context).colorScheme.error;
+  final scheme = Theme.of(context).colorScheme;
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(
+        AppButton(
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
+          label: 'Cancel',
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: errorColor),
+        AppButton(
+          variant: AppButtonVariant.primary,
+          backgroundColor: scheme.error,
+          foregroundColor: scheme.onError,
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(confirmLabel),
+          label: confirmLabel,
         ),
       ],
     ),

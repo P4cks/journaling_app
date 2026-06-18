@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/carousel_item.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -60,17 +61,20 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your custom block before leaving?'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop('save'),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -209,10 +213,10 @@ class _CustomBlockEditorScreenState extends State<CustomBlockEditorScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            OutlinedButton.icon(
+            AppButton(
               onPressed: _addItem,
-              icon: AppIcon(HugeIcons.strokeRoundedAdd01),
-              label: const Text('Add item'),
+              icon: HugeIcons.strokeRoundedAdd01,
+              label: 'Add item',
             ),
             const SizedBox(height: 32),
           ],
