@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
 
@@ -44,6 +45,11 @@ String _summarize(JournalLayout layout) {
 /// caller is responsible for navigating to the Layouts screen. Omit it to
 /// render no footer.
 ///
+/// Pass [isProUser] so free users see a trailing "Pro" chip on layouts
+/// built with Pro-only features (GUS-72) — they can still *apply* such a
+/// layout (existing content keeps rendering), the badge just flags that
+/// editing it needs Pro. Pro users get no badge (every layout is theirs).
+///
 /// Uses the shared `showDraggableSheet` scaffold so the drag handle,
 /// title, and `DraggableScrollableSheet` chrome match the calendar and
 /// add-block sheets.
@@ -53,6 +59,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
   String? defaultLayoutId,
   String title = 'Choose layout',
   VoidCallback? onManageLayouts,
+  bool isProUser = false,
 }) {
   if (layouts.isEmpty) return Future.value(null);
   return showDraggableSheet<JournalLayout>(
@@ -63,6 +70,10 @@ Future<JournalLayout?> showLayoutPickerSheet(
         delegate: SliverChildBuilderDelegate((listCtx, index) {
           final layout = layouts[index];
           final isDefault = layout.id == defaultLayoutId;
+          // GUS-72: flag Pro-built layouts for free users — applying is
+          // still allowed, the chip only signals editing needs Pro.
+          final isProLayout =
+              !isProUser && layoutHasProOnlyFeatures(layout);
           final scheme = Theme.of(listCtx).colorScheme;
           return ListTile(
             leading: HugeIcon(
@@ -71,7 +82,17 @@ Future<JournalLayout?> showLayoutPickerSheet(
             ),
             title: Text(layout.name),
             subtitle: Text(_summarize(layout)),
-            trailing: isDefault ? const LayoutDefaultChip() : null,
+            trailing: (isProLayout || isDefault)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isProLayout) const ProLockBadge(),
+                      if (isProLayout && isDefault)
+                        const SizedBox(width: 8),
+                      if (isDefault) const LayoutDefaultChip(),
+                    ],
+                  )
+                : null,
             onTap: () => Navigator.of(listCtx).pop(layout),
           );
         }, childCount: layouts.length),
