@@ -293,7 +293,6 @@ class _CustomCarouselList extends StatelessWidget {
     CustomCarouselDefinition def,
   ) async {
     final uses = layoutRepository.countCustomCarouselUsage(def.id);
-    final errorColor = Theme.of(context).colorScheme.error;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -312,9 +311,7 @@ class _CustomCarouselList extends StatelessWidget {
             label: 'Cancel',
           ),
           AppButton(
-            variant: AppButtonVariant.primary,
-            backgroundColor: errorColor,
-            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
             label: 'Delete',
           ),
@@ -410,7 +407,6 @@ class _WannadoCarouselList extends StatelessWidget {
     WannadoDefinition def,
   ) async {
     final uses = layoutRepository.countWannadoUsage(def.id);
-    final errorColor = Theme.of(context).colorScheme.error;
     final label = def.title.isEmpty ? 'this wanna-do carousel' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -430,9 +426,7 @@ class _WannadoCarouselList extends StatelessWidget {
             label: 'Cancel',
           ),
           AppButton(
-            variant: AppButtonVariant.primary,
-            backgroundColor: errorColor,
-            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
             label: 'Delete',
           ),
@@ -512,7 +506,6 @@ class _WannadoDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final count = definition.items.length;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
     return Padding(
@@ -548,8 +541,8 @@ class _WannadoDefinitionRow extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  foregroundColor: errorColor,
                   icon: HugeIcons.strokeRoundedDelete02,
                   label: 'Delete',
                 ),
@@ -592,7 +585,6 @@ class _HabitList extends StatelessWidget {
     BuildContext context,
     HabitDefinition def,
   ) async {
-    final errorColor = Theme.of(context).colorScheme.error;
     final label = def.title.isEmpty ? 'this habit' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -610,9 +602,7 @@ class _HabitList extends StatelessWidget {
             label: 'Cancel',
           ),
           AppButton(
-            variant: AppButtonVariant.primary,
-            backgroundColor: errorColor,
-            foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
             label: 'Delete',
           ),
@@ -693,7 +683,6 @@ class _HabitDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
     final icon = definition.iconName.isEmpty
         ? null
@@ -735,8 +724,8 @@ class _HabitDefinitionRow extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  foregroundColor: errorColor,
                   icon: HugeIcons.strokeRoundedDelete02,
                   label: 'Delete',
                 ),
@@ -763,7 +752,6 @@ class _CustomDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final count = definition.items.length;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
     return Padding(
@@ -799,8 +787,8 @@ class _CustomDefinitionRow extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  foregroundColor: errorColor,
                   icon: HugeIcons.strokeRoundedDelete02,
                   label: 'Delete',
                 ),
