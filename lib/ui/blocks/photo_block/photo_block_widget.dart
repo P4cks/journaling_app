@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/photo_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -130,7 +131,9 @@ Future<String?> _showPhotoManageSheet(BuildContext context) {
 
 /// One image filling the 1×1 cell. Empty state shows a centred "+ Add
 /// photo" affordance that opens a Camera / Gallery action sheet. Once
-/// set, long-press in editable mode opens a Replace / Remove sheet.
+/// set, the manage sheet (Replace / Remove) is reached via the top-right
+/// [BlockOptionsButton] — long-press is left free for `BlockGrid`'s
+/// drag-to-reorder (GUS-76). Double-tap still expands.
 class PhotoBlockWidget extends StatefulWidget {
   const PhotoBlockWidget({
     super.key,
@@ -138,6 +141,7 @@ class PhotoBlockWidget extends StatefulWidget {
     required this.mode,
     this.onChanged,
     this.onDoubleTap,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -146,6 +150,10 @@ class PhotoBlockWidget extends StatefulWidget {
 
   /// Host's "push expanded route" callback — fires on double-tap.
   final VoidCallback? onDoubleTap;
+
+  /// True when rendered inside the expanded route — suppresses the
+  /// top-right options button (the route fires the action on body tap).
+  final bool expanded;
 
   @override
   State<PhotoBlockWidget> createState() => _PhotoBlockWidgetState();
@@ -234,20 +242,33 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
       return Padding(padding: const EdgeInsets.all(12), child: shaped);
     }
 
-    // Single-tap or long-press opens the picker (delayed by the
-    // double-tap timeout). Double-tap pushes the expanded route. The
-    // 12 px padding sits inside the detector so taps on the chrome
-    // inset still engage.
-    return GestureDetector(
+    // Double-tap pushes the expanded route. Long-press is intentionally
+    // NOT handled here so it falls through to `BlockGrid`'s
+    // `LongPressDraggable` (drag-to-reorder); the manage sheet is reached
+    // via the top-right options button instead (GUS-76). The 12 px
+    // padding sits inside the detector so taps on the chrome inset still
+    // engage.
+    final body = GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.onChanged == null
-          ? null
-          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
       onDoubleTap: widget.onDoubleTap,
-      onLongPress: widget.onChanged == null
-          ? null
-          : () => firePhotoBlockAction(context, widget.data, widget.onChanged!),
       child: Padding(padding: const EdgeInsets.all(12), child: shaped),
+    );
+
+    if (widget.onChanged == null || widget.expanded) return body;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        Positioned(
+          top: 4,
+          right: 4,
+          child: BlockOptionsButton(
+            onPressed: () =>
+                firePhotoBlockAction(context, widget.data, widget.onChanged!),
+          ),
+        ),
+      ],
     );
   }
 }
