@@ -200,7 +200,7 @@ sheet is a stateless top-level function returning the user's pick or
 - [layout_name_title.dart](layout_name_title.dart) — `LayoutNameTitle`.
   Tap-to-edit AppBar title for the editor; commits on submit/blur.
 - [layout_picker_sheet.dart](layout_picker_sheet.dart) —
-  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts, isProUser})`.
+  `Future<JournalLayout?> showLayoutPickerSheet(context, {required layouts, defaultLayoutId, title, onManageLayouts, subscriptions})`.
   Half-screen sheet built on
   [showDraggableSheet](../../core/widgets/bottom_sheet_scaffold.dart)
   — same UX as `showAddBlockSheet`. Caller provides one `SliverList`
@@ -218,15 +218,19 @@ sheet is a stateless top-level function returning the user's pick or
     (the awaiting caller sees `null`) then invokes the callback — the
     caller navigates (both main-screen call sites do
     `context.push(Routes.layouts)`). Omit it to render no footer.
-  - **Pro badge for free users (GUS-72).** Pass `isProUser` (both
-    main-screen call sites read
-    `AppDependencies.of(context).subscriptionRepository.isPro`). When
-    `!isProUser && layoutHasProOnlyFeatures(layout)` the row's trailing
-    becomes a `Row` of `ProLockBadge()` (+ the `LayoutDefaultChip` when
-    also default). The badge is **informational only** — picking a Pro
-    layout still applies it (existing entries keep rendering every
-    block/section; only *editing* the layout is gated, GUS-41). Pro
-    users (and layouts without Pro features) get the old plain trailing.
+  - **Pro gate for free users (GUS-72).** Pass `subscriptions` (both
+    main-screen call sites pass
+    `AppDependencies.of(context).subscriptionRepository`). When
+    `!subscriptions.isPro && layoutHasProOnlyFeatures(layout)` the row
+    renders **greyed** (leading icon + title + subtitle in
+    `theme.disabledColor`) with a trailing `ProLockBadge()` (+ the
+    `LayoutDefaultChip` when also default), and **tapping it routes
+    through `requirePro`** — the sheet only pops with the layout on a
+    successful upgrade (the navigator is captured before the await since
+    `listCtx` can unmount while the paywall is up). So a free user cannot
+    *apply* a Pro-built layout, matching the editor gate (GUS-41). Pro
+    users (and layouts without Pro features) tap straight through; omit
+    `subscriptions` to disable the gate.
   - **Stateless and stand-alone** — both the "Make entry" CTA on the
     main screen and the editor's "Change layout" action share this
     sheet. The editor wraps the result in a destructive-action
