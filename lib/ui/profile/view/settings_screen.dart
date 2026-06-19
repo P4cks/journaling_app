@@ -206,6 +206,22 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             ListTile(
                               leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Reset custom blocks',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every custom carousel, habit, and '
+                                'wanna-do definition. Layouts using them render '
+                                'a placeholder. Cannot be undone.',
+                              ),
+                              onTap: () => _confirmAndResetCustomBlocks(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
                                 HugeIcons.strokeRoundedGift,
                                 color: primaryColor,
                               ),
@@ -409,30 +425,58 @@ Future<void> _resetStreakReward(BuildContext context) async {
   );
 }
 
-/// Debug action: nuke all test data in one shot — every entry, every
-/// layout (a fresh default is re-seeded), and the streak-reward state.
+/// Debug action (GUS-81): clear every user-defined block/section
+/// definition — custom carousels, habits, and wanna-do carousels.
 /// Destructive: behind a confirm dialog.
+Future<void> _confirmAndResetCustomBlocks(BuildContext context) async {
+  final ok = await _confirmDestructive(
+    context,
+    title: 'Reset custom blocks?',
+    message:
+        'This deletes every custom carousel, habit, and wanna-do '
+        'definition. Layouts and entries that use them will render a '
+        'deleted-block placeholder. This cannot be undone.',
+    confirmLabel: 'Reset custom blocks',
+  );
+  if (!ok || !context.mounted) return;
+  final cleared = await AppDependencies.of(context).blockSettings
+      .resetCustomBlocks();
+  if (!context.mounted) return;
+  showToast(
+    context,
+    cleared == 0
+        ? 'No custom blocks to reset'
+        : 'Reset $cleared custom block${cleared == 1 ? '' : 's'}',
+    kind: ToastKind.success,
+  );
+}
+
+/// Debug action: nuke all test data in one shot — every entry, every
+/// layout (a fresh default is re-seeded), every custom block/section
+/// definition, and the streak-reward state. Destructive: behind a confirm
+/// dialog.
 Future<void> _confirmAndResetEverything(BuildContext context) async {
   final ok = await _confirmDestructive(
     context,
     title: 'Reset everything?',
     message:
         'This deletes every journal entry and every layout (a fresh '
-        '"Default" layout is recreated) and resets the streak reward. This '
-        'cannot be undone.',
+        '"Default" layout is recreated), wipes every custom block and '
+        'resets the streak reward. This cannot be undone.',
     confirmLabel: 'Reset everything',
   );
   if (!ok || !context.mounted) return;
   final deps = AppDependencies.of(context);
   final deletedEntries = await deps.journalRepository.deleteAllEntries();
   final deletedLayouts = await deps.layoutRepository.deleteAllLayouts();
+  await deps.blockSettings.resetCustomBlocks();
   await deps.streakRewardSettings.reset();
   if (!context.mounted) return;
   showToast(
     context,
     'Reset: $deletedEntries entr${deletedEntries == 1 ? 'y' : 'ies'}, '
     '$deletedLayouts layout${deletedLayouts == 1 ? '' : 's'}, '
-    'and the streak reward',
+    'custom blocks, and the streak reward',
     kind: ToastKind.success,
   );
 }

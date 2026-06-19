@@ -166,8 +166,9 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 | `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count toast |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
+| `ListTile` "Reset custom blocks" | —             | GUS-81; destructive; confirm dialog; calls `BlockSettings.resetCustomBlocks()` (custom carousels + habits + wanna-dos); count toast |
 | `ListTile` "Reset streak reward" | —             | GUS-22; non-destructive (no confirm); calls `StreakRewardSettings.reset()` so the milestone is claimable again; count toast |
-| `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `streakRewardSettings.reset()` in one shot |
+| `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `blockSettings.resetCustomBlocks()` + `streakRewardSettings.reset()` in one shot |
 
 ## Top-level helpers (settings_screen.dart)
 
@@ -186,10 +187,14 @@ older `ProfileMenuButton` is retained unused for future user profiles.
   (non-destructive to journal content) — calls
   `streakRewardSettings.reset()` so the 7-day milestone is claimable
   again, then toasts. Lets you re-test the claim flow.
+- `_confirmAndResetCustomBlocks(context)` — debug (GUS-81); destructive,
+  confirm-gated — calls `blockSettings.resetCustomBlocks()` (wipes custom
+  carousels + habits + wanna-do definitions) and toasts the cleared count.
 - `_confirmAndResetEverything(context)` — debug (GUS-22); destructive,
   confirm-gated — `deleteAllEntries` + `deleteAllLayouts` (re-seeds
-  default) + `streakRewardSettings.reset()`, then a combined-count
-  toast. The "nuke all test data" button.
+  default) + `blockSettings.resetCustomBlocks()` + `streakRewardSettings.reset()`,
+  then a combined-count toast. The "nuke all test data" button (GUS-81 folded
+  custom-block wiping into it).
 
 ## Debug menu visibility (GUS-10 follow-up)
 
