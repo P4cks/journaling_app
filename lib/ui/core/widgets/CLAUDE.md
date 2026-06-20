@@ -28,20 +28,29 @@ for how they fit together; this file is per-file notes.
   active vs. dim state via the `color` prop (dimmed via
   `withValues(alpha: 0.55)`) instead of swapping a fill glyph.
 - [app_button.dart](app_button.dart) — `AppButton` + `enum AppButtonVariant
-  {secondary, primary, text}` (GUS-75). The app's single button primitive —
-  replaces the scattered raw `FilledButton` / `TextButton` / `OutlinedButton`
-  call sites. Wraps `FilledButton` (so ripple / focus / pressed / disabled
-  states come for free) with the house style: a 100%-rounded `StadiumBorder`
-  pill, **no border side**, `elevation: 0`. `secondary` (the default) is the
-  spec'd style — `colorScheme.secondary` fill, `onSurface` foreground; `primary`
-  is `primary`/`onPrimary` for solid CTAs; `text` is a transparent-fill
-  low-emphasis action (its disabled background is forced transparent so no faint
-  pill shows). The prefix `icon` (and optional `trailingIcon`) are `HugeIconData`
+  {secondary, primary, text, inverted}` (GUS-75 / GUS-78). The app's single
+  button primitive — replaces the scattered raw `FilledButton` / `TextButton` /
+  `OutlinedButton` call sites. Wraps `FilledButton` (so ripple / focus / pressed
+  / disabled states come for free) with the house style: a 100%-rounded
+  `StadiumBorder` pill, `elevation: 0`. `secondary` (the default) is the spec'd
+  style — `colorScheme.secondary` fill, `onSurface` foreground, no border;
+  `primary` is `primary`/`onPrimary` for solid CTAs, no border; `text` is a
+  transparent-fill low-emphasis action with no border (its disabled background is
+  forced transparent so no faint pill shows). `inverted` (GUS-78) is the
+  border-and-no-fill style: a transparent fill with a foreground-coloured
+  **border**, foreground defaulting to `colorScheme.error` — the standard look
+  for destructive / non-default-font-colour actions (the "Delete" button, both
+  the inline Edit/Delete rows and the confirm-dialog action). Like `text` its
+  disabled background is forced transparent; the border is a single static colour
+  so a disabled inverted button dims its label/icon but not its border
+  (acceptable — destructive buttons aren't disabled in practice). The prefix
+  `icon` (and optional `trailingIcon`) are `HugeIconData`
   rendered through `AppIcon` **without an explicit colour**, so they inherit the
   button's resolved foreground (incl. disabled dimming) from `IconTheme` — i.e.
   the icon always matches the label/font colour. `backgroundColor` /
-  `foregroundColor` override the variant's colours for one-offs (error-tinted
-  "Delete" / "Sign out", greyed disabled-cap affordance). `expand: true` fills
+  `foregroundColor` override the variant's colours for one-offs (a tinted
+  "Sign out", a greyed disabled-cap affordance, or a non-error `inverted`
+  outline). `expand: true` fills
   the horizontal constraints (full-width buttons in stretch columns / list
   views); `busy: true` swaps the prefix slot for a spinner and disables taps.
   The label is a plain `Text` (not `Flexible`) so it's safe inside unbounded

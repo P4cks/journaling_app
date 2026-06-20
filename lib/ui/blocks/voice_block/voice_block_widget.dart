@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/data/model/block_content/voice_block_cont
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -18,8 +19,10 @@ const Duration kMaxVoiceDuration = Duration(seconds: 60);
 
 /// A 1×1 voice-note block. Empty state shows a "Record voice" affordance
 /// that opens a recording sheet; once recorded, the cell hosts an inline
-/// play/pause control with a scrubbing progress bar. Long-press opens a
-/// Re-record / Remove sheet; double-tap pushes the expanded route.
+/// play/pause control with a scrubbing progress bar. The Re-record /
+/// Remove sheet is reached via the top-right [BlockOptionsButton] —
+/// long-press is left free for `BlockGrid`'s drag-to-reorder (GUS-76).
+/// Double-tap pushes the expanded route.
 ///
 /// Unlike the photo block this is **not** an action block — the filled
 /// cell hosts a sustained interactive player rather than firing a
@@ -32,6 +35,7 @@ class VoiceBlockWidget extends StatefulWidget {
     required this.mode,
     this.onChanged,
     this.onDoubleTap,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -40,6 +44,11 @@ class VoiceBlockWidget extends StatefulWidget {
 
   /// Host's "push expanded route" callback — fires on double-tap.
   final VoidCallback? onDoubleTap;
+
+  /// True when rendered inside the expanded route — suppresses the
+  /// top-right options button (re-record / remove stay reachable from
+  /// the in-grid tile).
+  final bool expanded;
 
   @override
   State<VoiceBlockWidget> createState() => _VoiceBlockWidgetState();
@@ -137,13 +146,27 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
     }
 
     // The inner play/pause InkWell wins single taps; the outer detector
-    // catches long-press (manage) and double-tap (expand) on the rest of
-    // the cell.
-    return GestureDetector(
+    // catches double-tap (expand). Long-press is left free for
+    // `BlockGrid`'s drag-to-reorder; the Re-record / Remove sheet is
+    // reached via the top-right options button instead (GUS-76).
+    final body = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      onLongPress: widget.onChanged == null ? null : _manage,
       child: Padding(padding: const EdgeInsets.all(12), child: player),
+    );
+
+    if (widget.onChanged == null || widget.expanded) return body;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        Positioned(
+          top: 4,
+          right: 4,
+          child: BlockOptionsButton(onPressed: _manage),
+        ),
+      ],
     );
   }
 

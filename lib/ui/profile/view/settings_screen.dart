@@ -309,7 +309,6 @@ Future<bool> _confirmDestructive(
   required String message,
   required String confirmLabel,
 }) async {
-  final scheme = Theme.of(context).colorScheme;
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -322,9 +321,7 @@ Future<bool> _confirmDestructive(
           label: 'Cancel',
         ),
         AppButton(
-          variant: AppButtonVariant.primary,
-          backgroundColor: scheme.error,
-          foregroundColor: scheme.onError,
+          variant: AppButtonVariant.inverted,
           onPressed: () => Navigator.of(dialogContext).pop(true),
           label: confirmLabel,
         ),

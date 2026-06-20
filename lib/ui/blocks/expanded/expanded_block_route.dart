@@ -11,6 +11,7 @@ import 'package:journaling_app_rewrite/ui/blocks/chrome/block_chrome.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dart';
 import 'package:journaling_app_rewrite/ui/blocks/photo_block/photo_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
+import 'package:journaling_app_rewrite/ui/blocks/video_block/video_block_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 
 /// Translucent overlay route that morphs an in-grid block into a
@@ -185,6 +186,12 @@ class _ExpandedBlockBodyState extends State<_ExpandedBlockBody> {
     switch (_data.type) {
       case BlockType.photoBlock:
         await firePhotoBlockAction(context, _data, _onInnerChanged);
+        break;
+      case BlockType.videoBlock:
+        // The in-grid video tile no longer fires the action on tap (its
+        // manage sheet moved to the options button, GUS-76), so the
+        // expanded route owns the tap-to-act here.
+        await fireVideoBlockAction(context, _data, _onInnerChanged);
         break;
       // Memory navigation lives behind its own "Navigate to that day"
       // button inside the body (see MemoryBlockWidget). The body

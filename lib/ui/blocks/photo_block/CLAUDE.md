@@ -15,7 +15,7 @@ wrapper: [PhotoBlockContent](../../../data/model/block_content/photo_block_conte
 | Mode + state | Render |
 |---|---|
 | `editable`, no photo | "+ Add photo" affordance; tap → Camera/Library action sheet. |
-| `editable`, has photo | `Image.file` filling the cell (`BoxFit.cover`); long-press → Replace/Remove sheet. |
+| `editable`, has photo | `Image.file` filling the cell (`BoxFit.cover`); top-right `⋯` [`BlockOptionsButton`](../widgets/block_options_button.dart) → Replace/Remove sheet; double-tap → expanded route. **Long-press is NOT handled** so it falls through to `BlockGrid`'s drag-to-reorder (GUS-76). |
 | `readOnly`, no photo | Dimmed italic "No photo" placeholder. |
 | `readOnly`, has photo | `Image.file` filling the cell. No interaction. |
 

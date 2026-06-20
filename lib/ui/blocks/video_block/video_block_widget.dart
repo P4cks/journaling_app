@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/video_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:video_player/video_player.dart';
@@ -178,8 +179,10 @@ String _formatDuration(int ms) {
 
 /// One clip filling the 1×1 cell. Empty state shows a centred "+ Add
 /// video" affordance that opens a Record / Library action sheet. Once
-/// set, the cell renders the poster frame with a play overlay; tap or
-/// long-press opens the Play / Replace / Remove sheet.
+/// set, the cell renders the poster frame with a play overlay; the
+/// Play / Replace / Remove sheet is reached via the top-right
+/// [BlockOptionsButton] — long-press is left free for `BlockGrid`'s
+/// drag-to-reorder (GUS-76). Double-tap still expands.
 class VideoBlockWidget extends StatelessWidget {
   const VideoBlockWidget({
     super.key,
@@ -187,6 +190,7 @@ class VideoBlockWidget extends StatelessWidget {
     required this.mode,
     this.onChanged,
     this.onDoubleTap,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -195,6 +199,10 @@ class VideoBlockWidget extends StatelessWidget {
 
   /// Host's "push expanded route" callback — fires on double-tap.
   final VoidCallback? onDoubleTap;
+
+  /// True when rendered inside the expanded route — suppresses the
+  /// top-right options button (the route fires the action on body tap).
+  final bool expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -266,16 +274,30 @@ class VideoBlockWidget extends StatelessWidget {
       );
     }
 
-    return GestureDetector(
+    // Double-tap pushes the expanded route. Long-press is intentionally
+    // NOT handled here so it falls through to `BlockGrid`'s
+    // `LongPressDraggable` (drag-to-reorder); the manage sheet is reached
+    // via the top-right options button instead (GUS-76).
+    final body = GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onChanged == null
-          ? null
-          : () => fireVideoBlockAction(context, data, onChanged!),
       onDoubleTap: onDoubleTap,
-      onLongPress: onChanged == null
-          ? null
-          : () => fireVideoBlockAction(context, data, onChanged!),
       child: Padding(padding: const EdgeInsets.all(12), child: poster),
+    );
+
+    if (onChanged == null || expanded) return body;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        Positioned(
+          top: 4,
+          right: 4,
+          child: BlockOptionsButton(
+            onPressed: () => fireVideoBlockAction(context, data, onChanged!),
+          ),
+        ),
+      ],
     );
   }
 }
