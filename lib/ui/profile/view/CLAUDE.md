@@ -172,8 +172,9 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 ## Top-level helpers (settings_screen.dart)
 
 - `_confirmDestructive(context, {title, message, confirmLabel})` —
-  shared confirm dialog with a red `FilledButton`. Returns true on
-  confirm. Used by the two "Delete all …" debug actions.
+  shared confirm dialog with an `AppButtonVariant.inverted` confirm
+  button (red outline, no fill — GUS-78). Returns true on confirm. Used
+  by the two "Delete all …" debug actions.
 - `_confirmAndDeleteAllEntries(context)` /
   `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
   + show a toast with the deleted count. The layouts variant

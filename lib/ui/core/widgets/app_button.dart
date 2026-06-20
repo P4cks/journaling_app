@@ -4,15 +4,18 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 /// Visual style of an [AppButton].
 ///
-/// All three share the same pill shape and borderless silhouette — only the
-/// fill / foreground colours differ:
+/// All variants share the same pill shape — only the fill / foreground / border
+/// differ:
 /// - [secondary] (default): `colorScheme.secondary` fill, `onSurface`
-///   foreground. The app's standard button.
-/// - [primary]: `colorScheme.primary` fill, `onPrimary` foreground — solid
-///   call-to-action emphasis.
-/// - [text]: transparent fill, `onSurface` foreground — low-emphasis actions
-///   (dialog "Cancel", inline "Retry", etc.).
-enum AppButtonVariant { secondary, primary, text }
+///   foreground, no border. The app's standard button.
+/// - [primary]: `colorScheme.primary` fill, `onPrimary` foreground, no border —
+///   solid call-to-action emphasis.
+/// - [text]: transparent fill, `onSurface` foreground, no border — low-emphasis
+///   actions (dialog "Cancel", inline "Retry", etc.).
+/// - [inverted]: transparent fill with a foreground-coloured **border** —
+///   foreground defaults to `colorScheme.error`. The standard style for
+///   destructive / non-default-font-colour actions (the "Delete" button).
+enum AppButtonVariant { secondary, primary, text, inverted }
 
 /// The app's single button primitive. Wraps [FilledButton] so ripple, focus,
 /// pressed and disabled states come for free, then layers on the house style:
@@ -29,6 +32,11 @@ enum AppButtonVariant { secondary, primary, text }
 /// to override the resolved colours for one-off cases (e.g. an error-tinted
 /// "Sign out" or a greyed-out disabled affordance). A null [onPressed] renders
 /// the button disabled.
+///
+/// The [AppButtonVariant.inverted] variant draws its border in the resolved
+/// foreground colour. That side is a single static colour, so a *disabled*
+/// inverted button dims its label/icon but not its border — acceptable since
+/// destructive buttons aren't rendered disabled in practice.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -88,15 +96,25 @@ class AppButton extends StatelessWidget {
         backgroundColor ?? Colors.transparent,
         foregroundColor ?? scheme.onSurface,
       ),
+      AppButtonVariant.inverted => (
+        backgroundColor ?? Colors.transparent,
+        foregroundColor ?? scheme.error,
+      ),
     };
+
+    // The fill-less variants (text + inverted) must stay transparent even when
+    // disabled — otherwise the disabled default paints a faint pill behind the
+    // label.
+    final fillLess =
+        variant == AppButtonVariant.text || variant == AppButtonVariant.inverted;
 
     final style = FilledButton.styleFrom(
       backgroundColor: background,
       foregroundColor: foreground,
-      // Keep the text variant fill-less even when disabled (otherwise the
-      // disabled default paints a faint pill behind the label).
-      disabledBackgroundColor: variant == AppButtonVariant.text
-          ? Colors.transparent
+      disabledBackgroundColor: fillLess ? Colors.transparent : null,
+      // Only the inverted variant carries a border; it tracks the foreground.
+      side: variant == AppButtonVariant.inverted
+          ? BorderSide(color: foreground, width: 1.5)
           : null,
       elevation: 0,
       shape: const StadiumBorder(),
