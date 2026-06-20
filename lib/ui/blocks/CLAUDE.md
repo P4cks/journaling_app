@@ -180,8 +180,9 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   Carousels open with the picker already interactive; text / prompt /
   todo open in display state and promote to editing on a tap inside
   the block. Two-step dismiss for keyboard blocks (tap-1 unfocus +
-  re-center, tap-2 pop). Action blocks (photo / memory) fire their
-  action on a tap inside the route. Text sections render the text
+  re-center, tap-2 pop). Action blocks (photo / video) fire their
+  action on a tap inside the route (`_fireActionBlock`); memory exposes
+  its own in-body navigate button. Text sections render the text
   directly on the blur — no card chrome.
 - [text_block/text_block_widget.dart](text_block/text_block_widget.dart)
 - [header_section/header_section_widget.dart](header_section/header_section_widget.dart) —
@@ -229,12 +230,16 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   `VideoBlockWidget` (GUS-16, PRO). Mirrors the photo block: empty cell
   shows "+ Add video", filled cell renders the first frame as a poster
   (via a `VideoPlayerController` held only to paint frame 0) with a play
-  glyph + duration badge. Tap / long-press fires `fireVideoBlockAction`
-  (top-level, single-sourced like `firePhotoBlockAction`) → source sheet
+  glyph + duration badge. `fireVideoBlockAction` (top-level,
+  single-sourced like `firePhotoBlockAction`) opens the source sheet
   (Record / library, `image_picker.pickVideo`, 10 s cap) when empty, or
-  Play / Replace / Remove when filled. Play pushes a fullscreen
-  tap-to-toggle `_FullscreenVideoPlayer`. Duration is probed once at save
-  time and stored in `VideoBlockContent.durationMs`. See
+  Play / Replace / Remove when filled. **Empty** cell fires it on tap;
+  **filled** cell fires it from the top-right `BlockOptionsButton` —
+  tap/long-press no longer trigger it so long-press is free for
+  drag-to-reorder (GUS-76). The expanded route fires the same action on
+  body tap (`_fireActionBlock` now has a `videoBlock` case). Play pushes
+  a fullscreen tap-to-toggle `_FullscreenVideoPlayer`. Duration is probed
+  once at save time and stored in `VideoBlockContent.durationMs`. See
   [video_block/CLAUDE.md](video_block/CLAUDE.md).
 - [custom_carousel/custom_carousel_widget.dart](custom_carousel/custom_carousel_widget.dart) —
   `CustomCarouselWidget`. Resolves `definitionId` against the
@@ -269,10 +274,11 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   Records via `package:record` (`AudioRecorder`, `AudioEncoder.aacLc`)
   straight to `AudioStorageService.newRecordingPath()`. Filled cell hosts
   an inline `_VoicePlayer` (own `AudioPlayer` from `audioplayers`,
-  play/pause + scrubbing progress + `m:ss / m:ss` readout). Long-press →
-  Re-record / Remove sheet; double-tap → expanded route. **Not an action
-  block** — see the `isActionBlock` note below. See
-  [voice_block/CLAUDE.md](voice_block/CLAUDE.md).
+  play/pause + scrubbing progress + `m:ss / m:ss` readout). Re-record /
+  Remove sheet is reached via the top-right `BlockOptionsButton`
+  (long-press is left free for drag-to-reorder, GUS-76); double-tap →
+  expanded route. **Not an action block** — see the `isActionBlock` note
+  below. See [voice_block/CLAUDE.md](voice_block/CLAUDE.md).
 
 ---
 
@@ -407,13 +413,23 @@ read inside the body's `AnimatedBuilder`.
 `TextSectionWidget` applies its own 2 px primary-color border via an
 inner `AnimatedContainer` because it has no `PostItBlock` chrome.
 
-### Action blocks (photo / location / memory)
+### Multimedia blocks (photo / video / voice) — GUS-76
 
-These keep their existing single-tap behavior. They opt out of the new
-flow via `BlockTypeDisplay.usesEditMode == false`. Routing them
-through double-tap is a possible follow-up but adds plumbing for
-"immediately fire action + exit edit mode" semantics that's out of
-scope for this iteration.
+These three never fire their manage sheet from a tap or long-press on
+the **filled** tile. Long-press is reserved for `BlockGrid`'s
+`LongPressDraggable` (a filled tile used to be undraggable because the
+block's own `onLongPress` won the gesture arena), and the manage sheet
+(Replace/Remove, Play/Replace/Remove, Re-record/Remove) is reached from
+a small top-right [`BlockOptionsButton`](widgets/block_options_button.dart).
+Each widget renders that button **inside its own content** (a
+`Positioned` in a top-level `Stack`), gated on
+`mode == editable && onChanged != null && !expanded`, so it works in
+both grid tiles and 2×2 feature blocks with no per-host wiring and is
+suppressed in the expanded route. The **empty** cell keeps its tap-to-add
+(photo/video) / tap-to-record (voice) affordance and has no options
+button. Double-tap still opens the expanded route; for photo/video the
+expanded route fires the action on body tap (`_fireActionBlock` handles
+both `photoBlock` and `videoBlock`).
 
 ## Drag-and-drop (BlockGrid) — how it works
 
