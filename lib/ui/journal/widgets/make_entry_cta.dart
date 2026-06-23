@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
 /// Centered call-to-action shown on the main journal screen for days
@@ -10,8 +11,8 @@ class MakeEntryCta extends StatelessWidget {
   const MakeEntryCta({
     super.key,
     required this.onTap,
-    this.title = 'No entry yet',
-    this.subtitle = 'Start journaling — pick a layout to begin.',
+    this.title = 'A blank page',
+    this.subtitle = 'Start today’s entry — pick a layout and begin.',
     this.buttonLabel = 'Make entry',
   });
 
@@ -30,18 +31,27 @@ class MakeEntryCta extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(
-              HugeIcons.strokeRoundedNoteEdit,
-              size: 56,
-              color: scheme.onSurfaceVariant,
+            // Soft accent halo behind the glyph — a warm, inviting focal point
+            // rather than a cold grey icon (GUS-87).
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.primary.withValues(alpha: 0.10),
+              ),
+              child: AppIcon(
+                HugeIcons.strokeRoundedNoteEdit,
+                size: 44,
+                color: scheme.primary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               title,
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -49,11 +59,12 @@ class MakeEntryCta extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            FilledButton.tonalIcon(
+            const SizedBox(height: 24),
+            AppButton(
+              variant: AppButtonVariant.primary,
               onPressed: onTap,
-              icon: AppIcon(HugeIcons.strokeRoundedPlusSign),
-              label: Text(buttonLabel),
+              icon: HugeIcons.strokeRoundedPlusSign,
+              label: buttonLabel,
             ),
           ],
         ),
