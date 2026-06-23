@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/block_render_context.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// The natural content size used by every block body — roughly a 1×1
 /// grid cell minus the chrome's 12 px padding. The chrome lays content
@@ -126,11 +127,17 @@ class BlockChrome extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bg = colorOn
-        ? (colorFromHex(visuals.colorHex) ?? scheme.surfaceContainerHigh)
+    // Tonal same-hue colour (GUS-86): when a block carries a colour, derive a
+    // soft tint background + a matched same-hue ink rather than the raw colour
+    // with naive black/white text. `fg` flows into the block's DefaultTextStyle
+    // + IconTheme below, so text AND icons stay legible and on-hue together.
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    final base = colorOn ? colorFromHex(visuals.colorHex) : null;
+    final bg = base != null
+        ? tonalBlockBackground(base, brightness)
         : scheme.surfaceContainerHigh;
-    final fg = colorOn && visuals.colorHex != null
-        ? contrastOn(bg)
+    final fg = base != null
+        ? tonalBlockForeground(base, brightness)
         : scheme.onSurface;
 
     final radius = anyPostIt ? 16.0 : 14.0;

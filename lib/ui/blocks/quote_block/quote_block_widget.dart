@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// Renders today's ZenQuotes quote.
 ///
@@ -120,7 +121,7 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
                 Text(
                   '— ${content.author}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: blockInk(context).withValues(alpha: 0.7),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -141,7 +142,7 @@ class _QuoteBlockWidgetState extends State<QuoteBlockWidget> {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontStyle: FontStyle.italic,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: blockInk(context).withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),

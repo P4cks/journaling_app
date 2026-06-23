@@ -183,7 +183,41 @@ class LayoutEditorViewModel extends ChangeNotifier {
   bool get isNew => _isNew;
   List<SectionDraft> get sections => List.unmodifiable(_sections);
   String? get iconName => _iconName;
-  bool get canSave => nameController.text.trim().isNotEmpty && !nameConflict;
+  bool get canSave =>
+      nameController.text.trim().isNotEmpty && !nameConflict && !isEmpty;
+
+  /// True when the layout carries no user-meaningful content and so must
+  /// not be saved or applied (GUS-80). Scoped per kind:
+  /// - [LayoutKind.blockOnly] — the single block-grid section has zero
+  ///   blocks.
+  /// - [LayoutKind.custom] — there are zero sections.
+  /// [LayoutKind.fixedFourPlusText] always carries an intrinsic text body,
+  /// so it is never considered empty.
+  bool get isEmpty {
+    switch (_kind) {
+      case LayoutKind.blockOnly:
+        return _sections.every((s) => s.slots.isEmpty);
+      case LayoutKind.custom:
+        return _sections.isEmpty;
+      case LayoutKind.fixedFourPlusText:
+        return false;
+    }
+  }
+
+  /// Human-readable reason an [isEmpty] layout can't be saved/applied, or
+  /// `null` when the layout has content. Drives the toast in the editor
+  /// screen. Phrased to read for both Save and Apply (ephemeral) flows.
+  String? get emptyError {
+    if (!isEmpty) return null;
+    switch (_kind) {
+      case LayoutKind.blockOnly:
+        return 'Add at least one block first';
+      case LayoutKind.custom:
+        return 'Add at least one section first';
+      case LayoutKind.fixedFourPlusText:
+        return null;
+    }
+  }
 
   /// True when the trimmed, case-insensitive name matches another
   /// layout in the repository (excluding this one's own id). Used by
@@ -457,6 +491,10 @@ class LayoutEditorViewModel extends ChangeNotifier {
         '[LayoutEditorVM] save skipped (name "${nameController.text.trim()}" '
         'conflicts with an existing layout)',
       );
+      return null;
+    }
+    if (isEmpty) {
+      debugPrint('[LayoutEditorVM] save skipped (layout empty for kind $_kind)');
       return null;
     }
     final layout = _buildLayout(name: nameController.text.trim());

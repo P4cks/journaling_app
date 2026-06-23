@@ -6,16 +6,21 @@ import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
 /// Default post-it palette seeded on first run when the user has not
-/// picked their own colors yet. Muted pastels chosen to read against
-/// both light and dark themes.
+/// picked their own colors yet.
+///
+/// These are **hue anchors**, not final block colours (GUS-86): the tonal
+/// system in `block_chrome` reads each one's hue and derives a soft same-hue
+/// wash + a legible same-hue ink at render time, so the stored value only
+/// needs to pin a pleasant, distinct hue. A warm, journal-leaning spread
+/// (amber → clay → rose → sage → teal → periwinkle → plum).
 const List<String> kDefaultPostItPalette = [
-  '#FFE066',
-  '#FFADAD',
-  '#FFD6A5',
-  '#CAFFBF',
-  '#9BF6FF',
-  '#BDB2FF',
-  '#FFC6FF',
+  '#E0A92E', // amber
+  '#D2693E', // clay / terracotta
+  '#D2607A', // rose
+  '#7FA86A', // sage
+  '#4FA3A3', // teal
+  '#6F86D6', // periwinkle
+  '#9B6FB0', // plum
 ];
 
 class ThemeSettings extends ChangeNotifier {

@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
@@ -181,6 +182,13 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                 itemBuilder: (context, index) {
                   final layout = layouts[index];
                   final isDefault = layout.id == vm.defaultLayoutId;
+                  // GUS-72: mark layouts built with Pro-only features so
+                  // free users can see which layouts depend on Pro (the
+                  // lock dialog on tap still gates editing for downgraded
+                  // free users, GUS-41). Pro users get no badge — every
+                  // layout is editable for them, so it carries no signal.
+                  final isProLayout =
+                      !subs.isPro && layoutHasProOnlyFeatures(layout);
                   return Dismissible(
                     key: ValueKey(layout.id),
                     direction: DismissDirection.endToStart,
@@ -204,6 +212,10 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (isProLayout) ...[
+                            const ProLockBadge(),
+                            const SizedBox(width: 8),
+                          ],
                           if (isDefault)
                             const LayoutDefaultChip()
                           else
@@ -286,7 +298,6 @@ class _LayoutIconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final icon = layoutIconFor(iconName);
     return Container(
       width: 40,
       height: 40,
@@ -301,8 +312,9 @@ class _LayoutIconBadge extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: AppIcon(
-        icon.icon,
+      child: IconOrEmoji(
+        value: iconName,
+        resolveIcon: (v) => layoutIconFor(v).icon,
         size: 22,
         color: isDefault ? scheme.onPrimaryContainer : scheme.onSurface,
       ),

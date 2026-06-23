@@ -23,7 +23,27 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   former single `postItModeEnabled` master). Each effect applies
   separately; all three off → flat card. **No animation, gesture, or
   interaction logic is gated on these flags** — that's the
-  central rewrite invariant. **Subscribes to `themeSettings` via a
+  central rewrite invariant. **Tonal same-hue colour (GUS-86):** when
+  `blockColorEnabled` and the block carries a `colorHex`, the chrome no
+  longer paints that raw colour with `contrastOn` black/white text — it
+  derives a `tonalBlockBackground` (soft same-hue tint) + a
+  `tonalBlockForeground` (saturated same-hue, WCAG-checked ink) from
+  [theme/tonal.dart](../theme/tonal.dart), and pushes `fg` into the card's
+  `DefaultTextStyle.merge` + `IconTheme.merge` so block **text and icons
+  that inherit their colour follow the ink automatically**. Block widgets
+  that needed an explicit colour for a non-text glyph (todo / habit
+  checkboxes, the streak number + flame, the voice player, photo/video/
+  voice "+Add" affordances, the prompt label + pencil, memory caption,
+  quote author, weather city) were audited to derive it from
+  `blockInk(context)` (with `contrastOn(ink)` for a tick on a filled
+  bubble) instead of pinning `colorScheme.primary`/`onSurfaceVariant`.
+  **Intentionally NOT tonal-inked:** full-width **sections** (wannado, text/
+  header/blockText) render on the surface, not in chrome, so they keep the
+  theme accent; the `location` map pin sits on map tiles (not the wash);
+  `block_options_button` is a neutral control chip; and modal sheets
+  (voice recorder, prompt picker) live on the surface. The stored
+  `colorHex` is a hue anchor, re-interpreted at render time (no schema
+  change). **Subscribes to `themeSettings` via a
   local `ListenableBuilder` (GUS-68)** so flipping a toggle /
   editing the post-it palette restyles the chrome live — the root
   rebuild in `main.dart` only carries `ThemeData`, which doesn't

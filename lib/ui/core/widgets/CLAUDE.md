@@ -59,6 +59,18 @@ for how they fit together; this file is per-file notes.
   height-constrained bottom-bar control). `AddCustomBlockButton` (in
   [pro_gate.dart](pro_gate.dart)) is now an `AppButton` wrapped in a `Stack` for
   its crown-badge overlay at the free cap.
+- [paper_background.dart](paper_background.dart) — `PaperBackground`
+  (GUS-85). Warm tactile journal background: paints the palette
+  `surface` plus a very faint, tileable paper grain behind its `child`.
+  The grain asset (`assets/textures/paper_grain.png`) is pure-white RGB
+  with the speckle in its **alpha** channel, so a `srcIn`
+  `ColorFilter` recolours it per theme from one texture (dark flecks on
+  the cream light surface, light flecks on the warm-dark surface), tinted
+  toward `onSurface` at low alpha and painted via a single repeated
+  `DecorationImage` (`opacity` defaults to 0.6 — keep it a whisper). Used
+  as the body background of the main journal screen (behind
+  `JournalPager`); blocks/cards sit on top and occlude it, so the grain
+  only reads in the open page gutters. Cheap — no per-frame painting.
 - [app_toast.dart](app_toast.dart) — `showToast(context, message,
   {kind = ToastKind.info, duration})` + `enum ToastKind {info, success,
   error}` (GUS-49). The app's single transient-notification primitive —
@@ -96,9 +108,29 @@ for how they fit together; this file is per-file notes.
   icons by `name`/`label` and emojis by `name`. Sheet height is
   `min(85% screen, screen − keyboard − 24)` with keyboard-inset bottom
   padding so the search field stays visible while typing. The single
-  picker behind all three call sites: the custom-carousel editor
-  (`allowEmoji: true`), the habit editor (icon-only), and the layout
-  icon picker (icon-only, via `showLayoutIconPicker`).
+  picker behind all three call sites — **all now `allowEmoji: true`
+  (GUS-82)**: the custom-carousel editor, the habit editor (via its
+  `_pickIcon`), and the layout icon picker (via `showLayoutIconPicker`).
+  The habit/layout picks store the chosen icon `name` **or** emoji glyph in
+  the same `iconName` String and render through `IconOrEmoji` (below).
+- [icon_or_emoji.dart](icon_or_emoji.dart) — `IconOrEmoji` widget +
+  `bool isEmojiValue(String)` (GUS-82). The render-side counterpart to the
+  emoji-enabled pickers: layout (`JournalLayout.iconName`) and habit
+  (`HabitDefinition.iconName`) icons persist a single `String` holding
+  **either** a curated icon name (ASCII identifier, resolved via a catalogue)
+  **or** an emoji glyph (non-ASCII, rendered verbatim). `isEmojiValue` —
+  `value.runes.any((r) => r > 0x7F)` — is the single disambiguator (icon
+  names are pure ASCII; emoji glyphs are non-ASCII, so they never collide,
+  and a removed/all-ASCII name still falls through the icon path to the
+  catalogue's default-glyph fallback). `IconOrEmoji({value, resolveIcon,
+  size, color})` renders an emoji as `Text` (font size = `size`) or an icon
+  as `AppIcon(resolveIcon(value))`; each surface passes its own resolver
+  (`(v) => layoutIconFor(v).icon` for layouts, `(v) =>
+  carouselIconFor(v ?? '')?.icon ?? <fallback>` for habits — note the `?? ''`
+  since `resolveIcon` receives the nullable value). **No Hive schema bump** —
+  the string field's shape is unchanged. Used by the layouts list badge, the
+  layout editor AppBar icon, the layout picker sheet, the habit editor
+  preview, the habit-block check bubble, and the Block-Settings habit row.
 - [emoji_catalogue.dart](emoji_catalogue.dart) — **GENERATED, do not
   edit by hand** (GUS-44). `enum EmojiCategory {smileys, people,
   nature, food, travel, activities, objects, symbols, flags}`,

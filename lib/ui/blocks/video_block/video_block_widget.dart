@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:video_player/video_player.dart';
 
 /// Fires the video block's primary action — opens the capture / manage
@@ -239,13 +240,13 @@ class VideoBlockWidget extends StatelessWidget {
                 AppIcon(
                   HugeIcons.strokeRoundedVideo01,
                   size: 32,
-                  color: theme.colorScheme.primary,
+                  color: blockInk(context),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Add video',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: blockInk(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

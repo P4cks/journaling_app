@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/weather_manual/weather_manual_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// Fetches current weather via [WeatherService] (Open-Meteo + geolocator)
 /// and bakes the result into the entry's content the first time it
@@ -126,8 +127,8 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
                 (city == null || city.isEmpty) ? '—' : city,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: (city == null || city.isEmpty)
-                      ? theme.disabledColor
-                      : theme.colorScheme.onSurfaceVariant,
+                      ? blockInk(context).withValues(alpha: 0.4)
+                      : blockInk(context).withValues(alpha: 0.7),
                   fontStyle: (city == null || city.isEmpty)
                       ? FontStyle.italic
                       : FontStyle.normal,
@@ -153,7 +154,7 @@ class _WeatherApiWidgetState extends State<WeatherApiWidget> {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontStyle: FontStyle.italic,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: blockInk(context).withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 6),
