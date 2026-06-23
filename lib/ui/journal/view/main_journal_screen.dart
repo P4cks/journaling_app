@@ -389,6 +389,9 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
         return Scaffold(
           appBar: AppBar(
+            // Taller header so the Fraunces entry title + dateline read as the
+            // page's nameplate — the entry is the hero (GUS-87).
+            toolbarHeight: 72,
             title: JournalTitle(
               date: selectedDate,
               title: entry?.title,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/app_typography.dart';
 
 /// AppBar title field for the merged journal screen.
 ///
@@ -121,9 +122,7 @@ class _EditorTitleState extends State<EditorTitle> {
           Flexible(
             child: Text(
               primaryText,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppText.entryTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -167,14 +166,13 @@ class _InlineTitleField extends StatelessWidget {
       maxLines: 1,
       textInputAction: TextInputAction.done,
       onSubmitted: onSubmitted,
-      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+      style: AppText.entryTitle,
       decoration: InputDecoration(
         isDense: true,
         contentPadding: EdgeInsets.zero,
         border: InputBorder.none,
         hintText: hintText,
-        hintStyle: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w400,
+        hintStyle: AppText.entryTitle.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
