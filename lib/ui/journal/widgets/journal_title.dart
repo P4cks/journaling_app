@@ -44,6 +44,10 @@ class JournalTitle extends StatelessWidget {
       );
     }
 
+    // Only show the date subtitle when a real title sits above it. With no
+    // title, EditorTitle already renders the date as the primary nameplate,
+    // so a subtitle would just duplicate it (GUS-87).
+    final hasTitle = (title ?? '').trim().isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -55,7 +59,7 @@ class JournalTitle extends StatelessWidget {
           editable: editable,
           onChanged: onChanged,
         ),
-        Text(formatEntryDate(date), style: subtitleStyle),
+        if (hasTitle) Text(formatEntryDate(date), style: subtitleStyle),
       ],
     );
   }
