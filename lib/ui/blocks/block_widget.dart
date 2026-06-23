@@ -151,6 +151,7 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onDoubleTap: onDoubleTap,
+          expanded: expanded,
         );
       case BlockType.locationBlock:
         return LocationBlockWidget(
@@ -191,6 +192,7 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onDoubleTap: onDoubleTap,
+          expanded: expanded,
         );
       case BlockType.voiceBlock:
         return VoiceBlockWidget(
@@ -198,6 +200,7 @@ class BlockWidget extends StatelessWidget {
           mode: mode,
           onChanged: onChanged,
           onDoubleTap: onDoubleTap,
+          expanded: expanded,
         );
     }
   }

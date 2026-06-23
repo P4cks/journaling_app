@@ -396,6 +396,28 @@ class BlockSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Debug action (GUS-81): wipe every user-defined block/section
+  /// definition — custom carousels, habits, and wanna-do carousels — in
+  /// one shot, returning the total number cleared. Layouts and entries
+  /// that reference these ids are left untouched; their widgets render the
+  /// usual deleted-definition placeholder. Also invoked from the Settings
+  /// "Reset everything" action so a full wipe leaves no orphaned
+  /// definitions behind. No-op (returns 0) when nothing is defined.
+  Future<int> resetCustomBlocks() async {
+    final cleared =
+        _customCarousels.length + _habits.length + _wannadoDefinitions.length;
+    if (cleared == 0) return 0;
+    _customCarousels = const [];
+    _habits = const [];
+    _wannadoDefinitions = const [];
+    await _persistCustomCarousels();
+    await _persistHabits();
+    await _persistWannados();
+    debugPrint('[BlockSettings] resetCustomBlocks cleared=$cleared');
+    notifyListeners();
+    return cleared;
+  }
+
   /// Pick a prompt for a single prompt-block slot.
   ///
   /// Returns `null` when:

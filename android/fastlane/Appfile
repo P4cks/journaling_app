@@ -1,0 +1,10 @@
+# fastlane Appfile — Google Play upload configuration.
+#
+# The service-account JSON authenticates to the Play Developer API. By default
+# we look for android/play-service-account.json (gitignored); override the path
+# with the PLAY_SERVICE_ACCOUNT_JSON env var (scripts/release.sh --play sets it).
+# See ../../PLAY_RELEASE_SETUP.md for how to create the service account.
+json_key_file(ENV["PLAY_SERVICE_ACCOUNT_JSON"] || "play-service-account.json")
+
+# Must match android/app/build.gradle.kts applicationId (prod flavor).
+package_name("com.gusto.journal")

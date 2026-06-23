@@ -8,12 +8,32 @@ of 1×1 `BlockType`s) that new entries are pre-populated from.
 ```
 layouts/
 ├── layout_icons.dart   curated icon catalogue (top-level, not in a subdir)
+├── entry_to_layout.dart  layoutFromSections() — inverse of materializeLayout (GUS-65)
 ├── view/               LayoutsScreen (list) + LayoutEditorScreen
 ├── view_model/         LayoutsViewModel + LayoutEditorViewModel (+ BlockSlot, SectionDraft)
 └── widgets/            add_block_sheet, add_section_sheet,
                         layout_icon_picker, layout_kind_picker_sheet,
                         layout_name_title, layout_picker_sheet
 ```
+
+## Per-day custom layouts (GUS-65, Pro)
+
+A Pro user can build a one-off layout for a single day's entry that is
+**never saved to the layout box**. The journal screen
+(`MainJournalScreen._openCustomLayoutEditor`) gates on `requirePro`, then
+pushes `LayoutEditorScreen(ephemeral: true, seedLayout: …)` via a plain
+`Navigator` route (not go_router, so it returns a value). The editor runs
+in [ephemeral mode](view/CLAUDE.md) — always `LayoutKind.custom`, no
+name/icon chrome, an **Apply** action instead of Save — and returns a
+transient `JournalLayout` via `LayoutEditorViewModel.buildEphemeral()`.
+The caller materializes it into the day's entry through the existing
+`MainJournalViewModel.createWithLayout` (new entry) / `applyLayout`
+(existing entry, destructive + confirmed) paths — no VM changes needed.
+The seed is the day's current entry (via
+[`layoutFromSections`](entry_to_layout.dart), the inverse of
+`materializeLayout`) or the default layout for a brand-new day. The
+entry point is a Pro-badged "Create a custom layout for this day" footer
+row on `showLayoutPickerSheet` (`onCustomLayout`).
 
 ## Layout kinds
 
@@ -70,6 +90,11 @@ visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
   human `label`.
   - Names are persisted as plain strings in `JournalLayout.iconName`
     so we don't need a Hive adapter for the underlying icon data.
+  - **Since GUS-82 `iconName` may instead hold an emoji glyph** (the
+    icon picker now offers an Emoji tab). Render through `IconOrEmoji`
+    (`../core/widgets/icon_or_emoji.dart`), which routes ASCII names to
+    `layoutIconFor` and non-ASCII glyphs to a `Text`. The field shape is
+    unchanged (still a `String?`), so no Hive bump.
   - `kDefaultLayoutIconName = 'squaresFour'`.
   - `layoutIconFor(null)` and unknown names both fall back to the
     default icon — safe to call with values written by an older app

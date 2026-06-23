@@ -7,8 +7,12 @@ import 'package:journaling_app_rewrite/data/model/block_content/voice_block_cont
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
+import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:record/record.dart';
 
 /// Hard cap on a single voice note. The recorder auto-stops here so a
@@ -17,8 +21,10 @@ const Duration kMaxVoiceDuration = Duration(seconds: 60);
 
 /// A 1×1 voice-note block. Empty state shows a "Record voice" affordance
 /// that opens a recording sheet; once recorded, the cell hosts an inline
-/// play/pause control with a scrubbing progress bar. Long-press opens a
-/// Re-record / Remove sheet; double-tap pushes the expanded route.
+/// play/pause control with a scrubbing progress bar. The Re-record /
+/// Remove sheet is reached via the top-right [BlockOptionsButton] —
+/// long-press is left free for `BlockGrid`'s drag-to-reorder (GUS-76).
+/// Double-tap pushes the expanded route.
 ///
 /// Unlike the photo block this is **not** an action block — the filled
 /// cell hosts a sustained interactive player rather than firing a
@@ -31,6 +37,7 @@ class VoiceBlockWidget extends StatefulWidget {
     required this.mode,
     this.onChanged,
     this.onDoubleTap,
+    this.expanded = false,
   });
 
   final JournalBlockData data;
@@ -39,6 +46,11 @@ class VoiceBlockWidget extends StatefulWidget {
 
   /// Host's "push expanded route" callback — fires on double-tap.
   final VoidCallback? onDoubleTap;
+
+  /// True when rendered inside the expanded route — suppresses the
+  /// top-right options button (re-record / remove stay reachable from
+  /// the in-grid tile).
+  final bool expanded;
 
   @override
   State<VoiceBlockWidget> createState() => _VoiceBlockWidgetState();
@@ -108,13 +120,13 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
                 AppIcon(
                   HugeIcons.strokeRoundedMic01,
                   size: 32,
-                  color: theme.colorScheme.primary,
+                  color: blockInk(context),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Record voice',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: blockInk(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -136,13 +148,27 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
     }
 
     // The inner play/pause InkWell wins single taps; the outer detector
-    // catches long-press (manage) and double-tap (expand) on the rest of
-    // the cell.
-    return GestureDetector(
+    // catches double-tap (expand). Long-press is left free for
+    // `BlockGrid`'s drag-to-reorder; the Re-record / Remove sheet is
+    // reached via the top-right options button instead (GUS-76).
+    final body = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onDoubleTap: widget.onDoubleTap,
-      onLongPress: widget.onChanged == null ? null : _manage,
       child: Padding(padding: const EdgeInsets.all(12), child: player),
+    );
+
+    if (widget.onChanged == null || widget.expanded) return body;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        Positioned(
+          top: 4,
+          right: 4,
+          child: BlockOptionsButton(onPressed: _manage),
+        ),
+      ],
     );
   }
 
@@ -281,12 +307,14 @@ class _VoicePlayerState extends State<_VoicePlayer> {
         ? _format(_position)
         : '${_format(_position)} / ${_format(total)}';
 
+    // Tonal ink so the inline player reads on-hue on a coloured block (GUS-86).
+    final ink = blockInk(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Material(
-            color: theme.colorScheme.primary,
+            color: ink,
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -298,7 +326,7 @@ class _VoicePlayerState extends State<_VoicePlayer> {
                       ? HugeIcons.strokeRoundedPause
                       : HugeIcons.strokeRoundedPlay,
                   size: 24,
-                  color: theme.colorScheme.onPrimary,
+                  color: contrastOn(ink),
                 ),
               ),
             ),
@@ -311,9 +339,8 @@ class _VoicePlayerState extends State<_VoicePlayer> {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 4,
-                backgroundColor: theme.colorScheme.primary.withValues(
-                  alpha: 0.18,
-                ),
+                color: ink,
+                backgroundColor: ink.withValues(alpha: 0.18),
               ),
             ),
           ),
@@ -321,7 +348,7 @@ class _VoicePlayerState extends State<_VoicePlayer> {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: ink.withValues(alpha: 0.7),
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
@@ -489,9 +516,10 @@ class _RecorderSheetState extends State<_RecorderSheet> {
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
-              FilledButton(
+              AppButton(
+                variant: AppButtonVariant.primary,
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+                label: 'Close',
               ),
             ] else if (_starting) ...[
               const SizedBox(
@@ -531,11 +559,16 @@ class _RecorderSheetState extends State<_RecorderSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(onPressed: _cancel, child: const Text('Cancel')),
-                  FilledButton.icon(
+                  AppButton(
+                    variant: AppButtonVariant.text,
+                    onPressed: _cancel,
+                    label: 'Cancel',
+                  ),
+                  AppButton(
+                    variant: AppButtonVariant.primary,
                     onPressed: _stop,
-                    icon: AppIcon(HugeIcons.strokeRoundedStop, size: 18),
-                    label: const Text('Stop'),
+                    icon: HugeIcons.strokeRoundedStop,
+                    label: 'Stop',
                   ),
                 ],
               ),

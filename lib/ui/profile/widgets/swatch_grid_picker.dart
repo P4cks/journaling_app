@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+
 const _kSwatches = <Color>[
   Color(0xFFFFB86B), // amber
   Color(0xFFE6855F), // coral
@@ -185,18 +187,21 @@ class _SwatchDialogState extends State<_SwatchDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        AppButton(
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(context).pop(SwatchResult.reset()),
-          child: const Text('Reset'),
+          label: 'Reset',
         ),
-        TextButton(
+        AppButton(
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          label: 'Cancel',
         ),
-        FilledButton(
+        AppButton(
+          variant: AppButtonVariant.primary,
           onPressed: () =>
               Navigator.of(context).pop(SwatchResult.color(_current)),
-          child: const Text('Apply'),
+          label: 'Apply',
         ),
       ],
     );

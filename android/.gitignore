@@ -12,3 +12,10 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# fastlane / Play Store delivery — never commit credentials or run artifacts.
+play-service-account.json
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/*.log
+/vendor/bundle

@@ -9,9 +9,11 @@ import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -65,17 +67,20 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your block settings before leaving?'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop('save'),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -289,7 +294,6 @@ class _CustomCarouselList extends StatelessWidget {
     CustomCarouselDefinition def,
   ) async {
     final uses = layoutRepository.countCustomCarouselUsage(def.id);
-    final errorColor = Theme.of(context).colorScheme.error;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -302,14 +306,15 @@ class _CustomCarouselList extends StatelessWidget {
                     'You can edit the affected layouts afterwards.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -403,7 +408,6 @@ class _WannadoCarouselList extends StatelessWidget {
     WannadoDefinition def,
   ) async {
     final uses = layoutRepository.countWannadoUsage(def.id);
-    final errorColor = Theme.of(context).colorScheme.error;
     final label = def.title.isEmpty ? 'this wanna-do carousel' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -417,14 +421,15 @@ class _WannadoCarouselList extends StatelessWidget {
                     'empty placeholder until you point them at another list.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -502,7 +507,6 @@ class _WannadoDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final count = definition.items.length;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
     return Padding(
@@ -527,24 +531,21 @@ class _WannadoDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],
@@ -585,7 +586,6 @@ class _HabitList extends StatelessWidget {
     BuildContext context,
     HabitDefinition def,
   ) async {
-    final errorColor = Theme.of(context).colorScheme.error;
     final label = def.title.isEmpty ? 'this habit' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -597,14 +597,15 @@ class _HabitList extends StatelessWidget {
           'a "Deleted block" placeholder from now on.',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: errorColor),
+          AppButton(
+            variant: AppButtonVariant.inverted,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            label: 'Delete',
           ),
         ],
       ),
@@ -683,12 +684,9 @@ class _HabitDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
-    final icon = definition.iconName.isEmpty
-        ? null
-        : carouselIconFor(definition.iconName)?.icon ??
-              HugeIcons.strokeRoundedQuestion;
+    final iconValue =
+        definition.iconName.isEmpty ? null : definition.iconName;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
@@ -696,8 +694,14 @@ class _HabitDefinitionRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (icon != null) ...[
-                AppIcon(icon, size: 20),
+              if (iconValue != null) ...[
+                IconOrEmoji(
+                  value: iconValue,
+                  resolveIcon: (v) =>
+                      carouselIconFor(v ?? '')?.icon ??
+                      HugeIcons.strokeRoundedQuestion,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
               ],
               Expanded(
@@ -714,24 +718,21 @@ class _HabitDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],
@@ -756,7 +757,6 @@ class _CustomDefinitionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
     final count = definition.items.length;
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
     return Padding(
@@ -781,24 +781,21 @@ class _CustomDefinitionRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
                   onPressed: onEdit,
-                  icon: AppIcon(HugeIcons.strokeRoundedPencil),
-                  label: const Text('Edit'),
+                  icon: HugeIcons.strokeRoundedPencil,
+                  label: 'Edit',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton(
+                  expand: true,
+                  variant: AppButtonVariant.inverted,
                   onPressed: onDelete,
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: errorColor,
-                  ),
-                  label: Text('Delete', style: TextStyle(color: errorColor)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: errorColor),
-                  ),
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  label: 'Delete',
                 ),
               ),
             ],

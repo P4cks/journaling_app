@@ -5,8 +5,10 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 class PromptBlockWidget extends StatefulWidget {
   const PromptBlockWidget({
@@ -127,6 +129,12 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       context,
       prompts: settings.prompts,
       selected: currentPrompt.isEmpty ? null : currentPrompt,
+      onSaveToRotation: (prompt) async {
+        // The sheet only invokes this when the prompt isn't already in
+        // the list, but guard anyway so a stale list never double-adds.
+        if (settings.prompts.contains(prompt)) return;
+        await settings.setPrompts([...settings.prompts, prompt]);
+      },
     );
     if (!mounted) return;
     if (picked == null) return;
@@ -158,17 +166,20 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           'You already typed an answer. Keep it under the new prompt, or clear it?',
         ),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(null),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Clear it'),
+            label: 'Clear it',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Keep'),
+            label: 'Keep',
           ),
         ],
       ),
@@ -180,7 +191,6 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     final theme = Theme.of(context);
     final content = PromptBlockContent.fromMap(widget.data.content);
     final prompt = content.prompt.trim();
-    final scheme = theme.colorScheme;
     final isEditable = widget.mode == BlockMode.editable;
 
     final promptText = prompt.isEmpty
@@ -195,7 +205,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
             prompt,
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: scheme.primary,
+              color: blockInk(context),
               height: 1.25,
             ),
           );
@@ -228,7 +238,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
                   onPressed: () => _openPicker(initial: false),
                   icon: AppIcon(
                     HugeIcons.strokeRoundedPencil,
-                    color: scheme.primary,
+                    color: blockInk(context),
                   ),
                 ),
               ),

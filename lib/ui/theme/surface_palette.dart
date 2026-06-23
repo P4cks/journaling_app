@@ -52,27 +52,35 @@ class SurfacePalette {
 }
 
 /// Built-in light default. Free + always selectable (GUS-27 / GUS-26).
+///
+/// Warm tactile journal palette (GUS-85): a warm cream surface and a warm
+/// near-black ink rather than the old cool greys, with a soft terracotta
+/// accent so CTAs / focus read warm instead of fighting the cream.
 const kLightDefaultPalette = SurfacePalette(
   id: 'light',
   displayName: 'Light',
-  seed: Color(0xFF5A5A5F),
+  seed: Color(0xFF5A524A),
   brightness: Brightness.light,
-  surface: Color(0xFFF6F6F7),
-  defaultSecondary: Color(0xFFB0B6C2),
-  defaultAccent: Color(0xFF7DD3FC),
-  defaultTextColor: Color(0xFF14161A),
+  surface: Color(0xFFFAF6EF),
+  defaultSecondary: Color(0xFFB6AE9F),
+  defaultAccent: Color(0xFFC57B57),
+  defaultTextColor: Color(0xFF2B2622),
 );
 
 /// Built-in dark default. Free + always selectable (GUS-27 / GUS-26).
+///
+/// Warm tactile journal palette (GUS-85): a warm near-black surface and a
+/// warm off-white ink (not harsh pure white), with a slightly brighter
+/// terracotta accent for visibility on the dark ground.
 const kDarkDefaultPalette = SurfacePalette(
   id: 'dark',
   displayName: 'Dark',
-  seed: Color(0xFF5A5A5F),
+  seed: Color(0xFF5A524A),
   brightness: Brightness.dark,
-  surface: Color(0xFF14161A),
-  defaultSecondary: Color(0xFFB0B6C2),
-  defaultAccent: Color(0xFF7DD3FC),
-  defaultTextColor: Color(0xFFFFFFFF),
+  surface: Color(0xFF1A1714),
+  defaultSecondary: Color(0xFFB6AE9F),
+  defaultAccent: Color(0xFFD98E68),
+  defaultTextColor: Color(0xFFF3ECE2),
 );
 
 /// The two built-in defaults, in display order. Custom palettes are

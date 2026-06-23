@@ -96,16 +96,39 @@ the slot.
 Common:
 - `setIconName(name)` — guard against no-op assignment.
 - `save()` — defensively re-checks that the name is non-empty AND
-  `nameConflict` is false (returns `null` on either failure). Builds
-  a `JournalLayout` (with its `kind` and `sections`) from current
-  state, persists via the repository, returns it. The caller pops on
-  success.
+  `nameConflict` is false AND `isEmpty` is false (returns `null` on any
+  failure). Builds a `JournalLayout` (with its `kind` and `sections`) from
+  current state, persists via the repository, returns it. The caller pops on
+  success. Both `save()` and `buildEphemeral()` share the private
+  `_buildLayout({name})` constructor.
+- `buildEphemeral()` (GUS-65) — builds the current drafts into a
+  `JournalLayout` **without persisting** (placeholder name `'Custom'`,
+  null icon). Used by per-day custom-layout mode: the editor returns the
+  result via `Navigator.pop` and the journal screen materializes it into
+  a single entry. No name/`nameConflict` validation here — the editor's
+  `_applyEphemeral` checks `isEmpty` and toasts before popping (GUS-80).
 
-Name validation:
+### Ephemeral construction (GUS-65)
+
+When `ephemeral: true` (with an optional `seedLayout`), the VM forces
+`_kind = LayoutKind.custom`, seeds its drafts from `seedLayout` (reusing
+the same `LayoutSection → SectionDraft` path as the load-by-id branch;
+`seedLayout` takes precedence over `layoutId`), and leaves the name/icon
+empty. The layout is never written to the repository — see
+`buildEphemeral`.
+
+Name / content validation:
 - `canSave` — `true` when the trimmed name is non-empty AND there is
-  no `nameConflict`. The editor screen reads this to enable/disable
-  the AppBar save affordance live; the save-on-leave dialog also
-  checks it before persisting.
+  no `nameConflict` AND the layout is not `isEmpty`. The editor screen
+  reads this to enable/disable the AppBar save affordance live; the
+  save-on-leave dialog also checks it before persisting.
+- `isEmpty` / `emptyError` (GUS-80) — a layout with no user content must
+  not be saved or applied. `isEmpty` is `true` when a `blockOnly` layout
+  has zero blocks or a `custom` layout has zero sections;
+  `fixedFourPlusText` is never empty (it always carries a text body).
+  `emptyError` returns the matching toast message (`'Add at least one
+  block/section first'`) or `null` when there is content. The editor
+  screen surfaces it in `_save`, `_maybeSaveOnLeave`, and `_applyEphemeral`.
 - `nameConflict` — `true` when the trimmed, case-insensitive name
   matches another layout (excluding this one's own id). Driven off
   `LayoutRepository.getAll()` each call (cheap; layout volumes are
@@ -113,21 +136,19 @@ Name validation:
   ("A layout with this name already exists") when this fires.
 
 All slot-creating methods (`addBlock`, `addBlockInFixedFour`,
-`addBlockInSection`, `replaceSlotType`, `setFeatureBlock`,
-`setBlockTextFloatBlock`) take an `AddBlockResult` (the discriminated
-return of `showAddBlockSheet`) rather than a raw `BlockType`. Internally
-`_slotFromResult` / `_typeAndDefIdFromResult` decode the result into a
-slot (`BlockType` + optional `definitionId`) — `AddBlockResultCustom` →
+`addBlockInSection`, `replaceSlotType`, `setSingleBlock`) take an
+`AddBlockResult` (the discriminated return of `showAddBlockSheet`)
+rather than a raw `BlockType`. Internally `_slotFromResult` /
+`_typeAndDefIdFromResult` decode the result into a slot (`BlockType` +
+optional `definitionId`) — `AddBlockResultCustom` →
 `(customCarousel, id)`, `AddBlockResultHabit` → `(habitTracker, id)`.
-`setFeatureBlock` additionally rejects non-built-in results because
-feature blocks are restricted to photo / memory.
 
-`setFeatureBlock` fills/swaps a `SectionKind.featureBlock` slot
-(photo/memory only). `setBlockTextFloatBlock` fills/swaps a
-`SectionKind.blockTextBody` float slot and accepts **any** block type
-(GUS-46) — built-in, custom, or habit — via `_slotFromResult`.
-`clearFeatureBlock` empties **both** kinds (the set
-`_singleBlockSectionKinds`). The `blockTextBody` section's body
+`setSingleBlock` fills/swaps the single slot of **either** single-block
+kind (`SectionKind.featureBlock` and `SectionKind.blockTextBody`, the set
+`_singleBlockSectionKinds`) and accepts **any** block type — built-in,
+custom, or habit — via `_slotFromResult` (GUS-46 opened up `blockTextBody`,
+GUS-67 opened up `featureBlock`). `clearSingleBlock` empties either kind.
+The `blockTextBody` section's body
 `textBlock` is **not** an editor slot; it's materialized fresh by
 `JournalRepository.materializeLayout`, so it never appears in
 `SectionDraft.slots`.

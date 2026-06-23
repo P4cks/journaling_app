@@ -42,14 +42,14 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
     `JournalBlockData.visualsJson`).
 - [section_kind.dart](section_kind.dart) — `enum SectionKind { text, blockGrid, featureBlock, header, divider, blockTextBody, wannado }`.
   Discriminator for both `LayoutSection` and `EntrySection`. **Append-only.**
-  `featureBlock` is a single-tile 2×2 section; the layout editor
-  restricts the block type to `photoBlock` or `memoryBlock` (defended
-  by `LayoutEditorViewModel.featureBlockAllowedTypes`). `header` (GUS-6,
+  `featureBlock` is a single-tile 2×2 section; the layout editor lets
+  the user pick **any** block type for it (GUS-67, was photo/memory only)
+  via the general `showAddBlockSheet`. `header` (GUS-6,
   FREE) is a single-line heading backed by one `textBlock` (reuses the
   text JSON path, like `text`). `divider` (GUS-7, FREE) is a purely
   visual rule carrying **no** blocks — it renders even with an empty
-  `blocks` list. `blockTextBody` (GUS-9, PRO) floats a photo/memory
-  block top-left with text wrapping around it (magazine `float: left`);
+  `blocks` list. `blockTextBody` (GUS-9, PRO) floats any block (GUS-46)
+  top-left with text wrapping around it (magazine `float: left`);
   the layout template stores only the float block (0 or 1, like
   `featureBlock`) and the `textBlock` is materialized fresh (always
   starts empty, like `text`). `wannado` (GUS-8/GUS-42/GUS-45, PRO)
@@ -129,6 +129,11 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   like `"squaresFour"` carried over from the pre-HugeIcons Phosphor
   era, resolved to a HugeIcons glyph via
   [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
+  **Since GUS-82 `iconName` may instead hold an emoji glyph** (e.g.
+  `"😀"`, stored verbatim); `isEmojiValue` / `IconOrEmoji`
+  ([ui/core/widgets/icon_or_emoji.dart](../../ui/core/widgets/icon_or_emoji.dart))
+  disambiguate at render time (ASCII = icon name, non-ASCII = emoji).
+  The field stays a `String?` — **no schema bump**.
   `copyWith` has `clearIcon: true` for explicit-null on `iconName`.
 - [layout_section.dart](layout_section.dart) — `LayoutSection`. One
   ordered section of a `JournalLayout`. Fields: `id`, `kind`
@@ -193,7 +198,10 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   registry and referenced by id from `BlockTemplate.configJson` (layout
   slots) and from `HabitBlockContent`. `iconName` is a name from the
   shared `kCarouselIcons` catalogue (resolved via `carouselIconFor`;
-  unknown → question-mark fallback). Pure JSON
+  unknown → question-mark fallback) **or, since GUS-82, an emoji glyph
+  stored verbatim** — `IconOrEmoji` / `isEmojiValue` disambiguate at
+  render time (no schema change; it lives in the `settings` box anyway).
+  Pure JSON
   (`fromMap`/`toMap`/`copyWith`), lives in the schema-free `settings`
   box, so no Hive adapter. Mirrors the `CustomCarouselDefinition`
   storage pattern; orphan-tolerant (delete leaves a "Deleted block"

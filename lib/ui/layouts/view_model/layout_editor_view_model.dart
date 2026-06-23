@@ -88,15 +88,24 @@ class SectionDraft {
 }
 
 class LayoutEditorViewModel extends ChangeNotifier {
+  /// [ephemeral] flips the editor into per-day custom-layout mode (GUS-65):
+  /// the layout is never persisted (built via [buildEphemeral] and handed
+  /// back to the caller), the kind is forced to [LayoutKind.custom], and
+  /// the name/icon are unused. Pass [seedLayout] to pre-populate the drafts
+  /// from an existing structure (e.g. the day's current entry) — it takes
+  /// precedence over [layoutId].
   LayoutEditorViewModel({
     required LayoutRepository repository,
     String? layoutId,
     LayoutKind? initialKind,
+    this.ephemeral = false,
+    JournalLayout? seedLayout,
   }) : _repository = repository {
-    final existing = layoutId == null ? null : _repository.getById(layoutId);
+    final existing =
+        seedLayout ?? (layoutId == null ? null : _repository.getById(layoutId));
     if (existing != null) {
       _id = existing.id;
-      _kind = existing.kind;
+      _kind = ephemeral ? LayoutKind.custom : existing.kind;
       _sections = [
         for (final s in existing.sections)
           SectionDraft(
@@ -114,12 +123,16 @@ class LayoutEditorViewModel extends ChangeNotifier {
             ],
           ),
       ];
-      nameController = TextEditingController(text: existing.name);
-      _iconName = existing.iconName;
-      _isNew = false;
+      nameController = TextEditingController(
+        text: ephemeral ? '' : existing.name,
+      );
+      _iconName = ephemeral ? null : existing.iconName;
+      _isNew = ephemeral ? true : false;
     } else {
       _id = _uuid.v4();
-      _kind = initialKind ?? LayoutKind.blockOnly;
+      _kind = ephemeral
+          ? LayoutKind.custom
+          : (initialKind ?? LayoutKind.blockOnly);
       _sections = _seedSectionsFor(_kind);
       nameController = TextEditingController();
       _iconName = null;
@@ -135,6 +148,10 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   final LayoutRepository _repository;
+
+  /// Per-day custom-layout mode — never persisted to the layout box; built
+  /// via [buildEphemeral] and returned to the caller (GUS-65).
+  final bool ephemeral;
   late final String _id;
   late final LayoutKind _kind;
   late final TextEditingController nameController;
@@ -166,7 +183,41 @@ class LayoutEditorViewModel extends ChangeNotifier {
   bool get isNew => _isNew;
   List<SectionDraft> get sections => List.unmodifiable(_sections);
   String? get iconName => _iconName;
-  bool get canSave => nameController.text.trim().isNotEmpty && !nameConflict;
+  bool get canSave =>
+      nameController.text.trim().isNotEmpty && !nameConflict && !isEmpty;
+
+  /// True when the layout carries no user-meaningful content and so must
+  /// not be saved or applied (GUS-80). Scoped per kind:
+  /// - [LayoutKind.blockOnly] — the single block-grid section has zero
+  ///   blocks.
+  /// - [LayoutKind.custom] — there are zero sections.
+  /// [LayoutKind.fixedFourPlusText] always carries an intrinsic text body,
+  /// so it is never considered empty.
+  bool get isEmpty {
+    switch (_kind) {
+      case LayoutKind.blockOnly:
+        return _sections.every((s) => s.slots.isEmpty);
+      case LayoutKind.custom:
+        return _sections.isEmpty;
+      case LayoutKind.fixedFourPlusText:
+        return false;
+    }
+  }
+
+  /// Human-readable reason an [isEmpty] layout can't be saved/applied, or
+  /// `null` when the layout has content. Drives the toast in the editor
+  /// screen. Phrased to read for both Save and Apply (ephemeral) flows.
+  String? get emptyError {
+    if (!isEmpty) return null;
+    switch (_kind) {
+      case LayoutKind.blockOnly:
+        return 'Add at least one block first';
+      case LayoutKind.custom:
+        return 'Add at least one section first';
+      case LayoutKind.fixedFourPlusText:
+        return null;
+    }
+  }
 
   /// True when the trimmed, case-insensitive name matches another
   /// layout in the repository (excluding this one's own id). Used by
@@ -327,18 +378,11 @@ class LayoutEditorViewModel extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // featureBlock / blockTextBody — single-slot sections restricted to
-  // photo/memory. Slot semantics are identical (0–1 photo/memory block),
-  // so both kinds share the same setter/clearer.
+  // featureBlock / blockTextBody — single-slot sections holding 0–1 block.
+  // Both kinds accept ANY block type (built-in, custom carousel, or habit;
+  // GUS-46 for blockTextBody, GUS-67 for featureBlock), so they share one
+  // setter/clearer.
   // ---------------------------------------------------------------------------
-
-  /// Allowed block types for a feature-block / block-text-body section.
-  /// The layout editor passes this set to `showAddBlockSheet` so the
-  /// picker only shows these types; the VM also defensively validates here.
-  static const Set<BlockType> featureBlockAllowedTypes = {
-    BlockType.photoBlock,
-    BlockType.memoryBlock,
-  };
 
   static const Set<SectionKind> _singleBlockSectionKinds = {
     SectionKind.featureBlock,
@@ -346,31 +390,12 @@ class LayoutEditorViewModel extends ChangeNotifier {
   };
 
   /// Either fills an empty feature-block / block-text-body section, or
-  /// swaps the type of the existing slot. No-op if the section is not a
-  /// single-block kind or `type` is not in [featureBlockAllowedTypes].
-  void setFeatureBlock(String sectionId, AddBlockResult result) {
+  /// swaps the type of the existing slot. Accepts ANY block type — built-in,
+  /// custom carousel, or habit — via [_slotFromResult]. No-op if the section
+  /// is not a single-block kind.
+  void setSingleBlock(String sectionId, AddBlockResult result) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (!_singleBlockSectionKinds.contains(section.kind)) return;
-    // Defensive: these sections are restricted to built-in photo/memory
-    // types. The Add-Block sheet's `allowedTypes` already filters, but
-    // the sealed-result switch keeps that invariant explicit here.
-    if (result is! AddBlockResultBuiltin) return;
-    final type = result.type;
-    if (!featureBlockAllowedTypes.contains(type)) return;
-    if (section.slots.length == 1 && section.slots.first.type == type) return;
-    section.slots = [BlockSlot(id: _uuid.v4(), type: type)];
-    debugPrint('[LayoutEditorVM] setFeatureBlock $sectionId -> $type');
-    notifyListeners();
-  }
-
-  /// Either fills an empty `blockTextBody` section's float slot, or swaps
-  /// the type of the existing slot. Accepts ANY block type (GUS-46) —
-  /// built-in, custom carousel, or habit — via [_slotFromResult], unlike
-  /// [setFeatureBlock] which restricts feature-block sections to
-  /// photo/memory. No-op if the section is not a `blockTextBody` section.
-  void setBlockTextFloatBlock(String sectionId, AddBlockResult result) {
-    final section = _sections.firstWhere((s) => s.id == sectionId);
-    if (section.kind != SectionKind.blockTextBody) return;
     final slot = _slotFromResult(result);
     // Swap-in-place no-op guard: skip when the same type + definition is
     // already set (a fresh slot id would otherwise churn `isDirty`).
@@ -380,20 +405,18 @@ class LayoutEditorViewModel extends ChangeNotifier {
       return;
     }
     section.slots = [slot];
-    debugPrint(
-      '[LayoutEditorVM] setBlockTextFloatBlock $sectionId -> ${slot.type}',
-    );
+    debugPrint('[LayoutEditorVM] setSingleBlock $sectionId -> ${slot.type}');
     notifyListeners();
   }
 
   /// Empties a feature-block / block-text-body section. No-op for other
   /// section kinds.
-  void clearFeatureBlock(String sectionId) {
+  void clearSingleBlock(String sectionId) {
     final section = _sections.firstWhere((s) => s.id == sectionId);
     if (!_singleBlockSectionKinds.contains(section.kind)) return;
     if (section.slots.isEmpty) return;
     section.slots = const [];
-    debugPrint('[LayoutEditorVM] clearFeatureBlock $sectionId');
+    debugPrint('[LayoutEditorVM] clearSingleBlock $sectionId');
     notifyListeners();
   }
 
@@ -470,37 +493,49 @@ class LayoutEditorViewModel extends ChangeNotifier {
       );
       return null;
     }
-    final layout = JournalLayout(
-      id: _id,
-      name: nameController.text.trim(),
-      kind: _kind,
-      sections: [
-        for (final s in _sections)
-          LayoutSection(
-            id: s.id,
-            kind: s.kind,
-            rows: s.rows,
-            definitionId: s.definitionId,
-            blocks: [
-              for (final slot in s.slots)
-                BlockTemplate.create(
-                  id: slot.id,
-                  type: slot.type,
-                  config: slot.definitionId == null
-                      ? const {}
-                      : {'definitionId': slot.definitionId},
-                ),
-            ],
-          ),
-      ],
-      iconName: _iconName,
-    );
+    if (isEmpty) {
+      debugPrint('[LayoutEditorVM] save skipped (layout empty for kind $_kind)');
+      return null;
+    }
+    final layout = _buildLayout(name: nameController.text.trim());
     await _repository.save(layout);
     _snapshotInitial();
     debugPrint('[LayoutEditorVM] saved $layout');
     notifyListeners();
     return layout;
   }
+
+  /// Builds the current drafts into a [JournalLayout] **without persisting**
+  /// it. Used by per-day custom-layout mode (GUS-65): the caller
+  /// materializes the result into a single entry instead of saving a
+  /// reusable template, so the name/icon are placeholders.
+  JournalLayout buildEphemeral() => _buildLayout(name: 'Custom');
+
+  JournalLayout _buildLayout({required String name}) => JournalLayout(
+    id: _id,
+    name: name,
+    kind: _kind,
+    sections: [
+      for (final s in _sections)
+        LayoutSection(
+          id: s.id,
+          kind: s.kind,
+          rows: s.rows,
+          definitionId: s.definitionId,
+          blocks: [
+            for (final slot in s.slots)
+              BlockTemplate.create(
+                id: slot.id,
+                type: slot.type,
+                config: slot.definitionId == null
+                    ? const {}
+                    : {'definitionId': slot.definitionId},
+              ),
+          ],
+        ),
+    ],
+    iconName: _iconName,
+  );
 
   @override
   void dispose() {

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -10,6 +11,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:journaling_app_rewrite/ui/profile/widgets/swatch_grid_picker.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -204,6 +206,22 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             ListTile(
                               leading: AppIcon(
+                                HugeIcons.strokeRoundedDelete02,
+                                color: errorColor,
+                              ),
+                              title: Text(
+                                'Reset custom blocks',
+                                style: TextStyle(color: errorColor),
+                              ),
+                              subtitle: const Text(
+                                'Wipe every custom carousel, habit, and '
+                                'wanna-do definition. Layouts using them render '
+                                'a placeholder. Cannot be undone.',
+                              ),
+                              onTap: () => _confirmAndResetCustomBlocks(context),
+                            ),
+                            ListTile(
+                              leading: AppIcon(
                                 HugeIcons.strokeRoundedGift,
                                 color: primaryColor,
                               ),
@@ -236,8 +254,66 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ],
               ),
+            const _VersionFooter(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// App version indicator pinned to the bottom of the Settings list. Reads
+/// the version + build number from the bundle via `package_info_plus`. In a
+/// dev build (`kDebugMode`) a "DEBUG" tag is appended so QA can tell at a
+/// glance which flavour they are running.
+class _VersionFooter extends StatelessWidget {
+  const _VersionFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      child: FutureBuilder<PackageInfo>(
+        future: PackageInfo.fromPlatform(),
+        builder: (context, snapshot) {
+          final info = snapshot.data;
+          if (info == null) return const SizedBox(height: 20);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Version ${info.version} (${info.buildNumber})',
+                style: labelStyle,
+              ),
+              if (kDebugMode) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.errorContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'DEBUG',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onErrorContainer,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -249,21 +325,21 @@ Future<bool> _confirmDestructive(
   required String message,
   required String confirmLabel,
 }) async {
-  final errorColor = Theme.of(context).colorScheme.error;
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(
+        AppButton(
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
+          label: 'Cancel',
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: errorColor),
+        AppButton(
+          variant: AppButtonVariant.inverted,
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(confirmLabel),
+          label: confirmLabel,
         ),
       ],
     ),
@@ -346,30 +422,58 @@ Future<void> _resetStreakReward(BuildContext context) async {
   );
 }
 
-/// Debug action: nuke all test data in one shot — every entry, every
-/// layout (a fresh default is re-seeded), and the streak-reward state.
+/// Debug action (GUS-81): clear every user-defined block/section
+/// definition — custom carousels, habits, and wanna-do carousels.
 /// Destructive: behind a confirm dialog.
+Future<void> _confirmAndResetCustomBlocks(BuildContext context) async {
+  final ok = await _confirmDestructive(
+    context,
+    title: 'Reset custom blocks?',
+    message:
+        'This deletes every custom carousel, habit, and wanna-do '
+        'definition. Layouts and entries that use them will render a '
+        'deleted-block placeholder. This cannot be undone.',
+    confirmLabel: 'Reset custom blocks',
+  );
+  if (!ok || !context.mounted) return;
+  final cleared = await AppDependencies.of(context).blockSettings
+      .resetCustomBlocks();
+  if (!context.mounted) return;
+  showToast(
+    context,
+    cleared == 0
+        ? 'No custom blocks to reset'
+        : 'Reset $cleared custom block${cleared == 1 ? '' : 's'}',
+    kind: ToastKind.success,
+  );
+}
+
+/// Debug action: nuke all test data in one shot — every entry, every
+/// layout (a fresh default is re-seeded), every custom block/section
+/// definition, and the streak-reward state. Destructive: behind a confirm
+/// dialog.
 Future<void> _confirmAndResetEverything(BuildContext context) async {
   final ok = await _confirmDestructive(
     context,
     title: 'Reset everything?',
     message:
         'This deletes every journal entry and every layout (a fresh '
-        '"Default" layout is recreated) and resets the streak reward. This '
-        'cannot be undone.',
+        '"Default" layout is recreated), wipes every custom block and '
+        'resets the streak reward. This cannot be undone.',
     confirmLabel: 'Reset everything',
   );
   if (!ok || !context.mounted) return;
   final deps = AppDependencies.of(context);
   final deletedEntries = await deps.journalRepository.deleteAllEntries();
   final deletedLayouts = await deps.layoutRepository.deleteAllLayouts();
+  await deps.blockSettings.resetCustomBlocks();
   await deps.streakRewardSettings.reset();
   if (!context.mounted) return;
   showToast(
     context,
     'Reset: $deletedEntries entr${deletedEntries == 1 ? 'y' : 'ies'}, '
     '$deletedLayouts layout${deletedLayouts == 1 ? '' : 's'}, '
-    'and the streak reward',
+    'custom blocks, and the streak reward',
     kind: ToastKind.success,
   );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// Wraps a block body with an optional title row above it.
 ///
@@ -29,8 +30,10 @@ class BlockWithTitle extends StatelessWidget {
           child: Text(
             t,
             textAlign: TextAlign.center,
+            // Muted tonal ink so the title stays on-hue on a coloured block
+            // (was onSurfaceVariant, a fixed theme grey — GUS-86).
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: blockInk(context).withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,

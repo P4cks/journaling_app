@@ -24,7 +24,7 @@ Typed wrapper: [VoiceBlockContent](../../../data/model/block_content/voice_block
 | Mode + state | Render |
 |---|---|
 | `editable`, no audio | "Record voice" mic affordance; tap → recording sheet. |
-| `editable`, has audio | Inline `_VoicePlayer` (play/pause + progress + `m:ss / m:ss`); long-press → Re-record/Remove sheet; double-tap → expanded route. |
+| `editable`, has audio | Inline `_VoicePlayer` (play/pause + progress + `m:ss / m:ss`); top-right `⋯` [`BlockOptionsButton`](../widgets/block_options_button.dart) → Re-record/Remove sheet; double-tap → expanded route. **Long-press is NOT handled** so it falls through to `BlockGrid`'s drag-to-reorder (GUS-76). |
 | `readOnly`, no audio | Dimmed italic "No recording" placeholder. |
 | `readOnly`, has audio | Inline `_VoicePlayer`. No long-press/expand. |
 
@@ -66,9 +66,10 @@ new one is captured, so a cancelled re-record keeps the original.
 memory). The filled cell hosts a sustained interactive player — the
 play/pause `InkWell` must keep winning single taps — so it can't be a
 one-shot "fire on engage" action. The outer `GestureDetector` uses
-`HitTestBehavior.opaque` and only claims long-press (manage) + double-tap
-(expand); the inner `InkWell` wins the single tap. Recording is initiated
-by a tap on the **empty** cell instead.
+`HitTestBehavior.opaque` and only claims double-tap (expand); the inner
+`InkWell` wins the single tap. Manage (Re-record / Remove) moved to the
+top-right `BlockOptionsButton` so long-press is free for drag-to-reorder
+(GUS-76). Recording is initiated by a tap on the **empty** cell instead.
 
 ## Permissions
 

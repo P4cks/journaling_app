@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/wannado_item.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -59,17 +60,20 @@ class _WannadoEditorScreenState extends State<WannadoEditorScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your wanna-do carousel before leaving?'),
         actions: [
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          AppButton(
+            variant: AppButtonVariant.text,
             onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            child: const Text('Discard'),
+            label: 'Discard',
           ),
-          FilledButton(
+          AppButton(
+            variant: AppButtonVariant.primary,
             onPressed: () => Navigator.of(dialogContext).pop('save'),
-            child: const Text('Save'),
+            label: 'Save',
           ),
         ],
       ),
@@ -205,10 +209,10 @@ class _WannadoEditorScreenState extends State<WannadoEditorScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            OutlinedButton.icon(
+            AppButton(
               onPressed: _addItem,
-              icon: AppIcon(HugeIcons.strokeRoundedAdd01),
-              label: const Text('Add item'),
+              icon: HugeIcons.strokeRoundedAdd01,
+              label: 'Add item',
             ),
             const SizedBox(height: 32),
           ],
@@ -319,11 +323,12 @@ class _WannadoItemDialogState extends State<_WannadoItemDialog> {
         onSubmitted: (_) => _submit(),
       ),
       actions: [
-        TextButton(
+        AppButton(
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          label: 'Cancel',
         ),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
+        AppButton(variant: AppButtonVariant.primary, onPressed: _submit, label: 'Save'),
       ],
     );
   }

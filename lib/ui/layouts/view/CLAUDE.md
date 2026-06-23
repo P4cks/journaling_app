@@ -27,9 +27,19 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     manually on return.
 - [layout_editor_screen.dart](layout_editor_screen.dart) —
   `LayoutEditorScreen`. Editor for one layout.
-  - AppBar: `LayoutNameTitle` (tap-to-edit) + actions `+ (Add block)`,
-    the layout's icon (tap → `showLayoutIconPicker`), and a trailing
-    `Save` `TextButton` (GUS-62).
+  - **Ephemeral mode (GUS-65).** `LayoutEditorScreen(ephemeral: true,
+    seedLayout: …)` runs the editor as a per-day custom-layout builder
+    (always `LayoutKind.custom` → `_CustomBody`). The AppBar shows a
+    plain "Customize this day" title (no `LayoutNameTitle`/icon action)
+    and an **Apply** action (`_applyEphemeral`) that pops
+    `vm.buildEphemeral()` via `Navigator.pop` (the screen is pushed with
+    a `MaterialPageRoute`, not go_router, so it returns a value). Back
+    discards (`_confirmDiscardEphemeral` prompts when `vm.isDirty`) and
+    pops `null` — it is never saved to the layout box. See
+    [../CLAUDE.md](../CLAUDE.md) "Per-day custom layouts".
+  - AppBar (normal mode): `LayoutNameTitle` (tap-to-edit) + actions
+    `+ (Add block)`, the layout's icon (tap → `showLayoutIconPicker`),
+    and a trailing `Save` `TextButton` (GUS-62).
   - Body: the `BlockGrid` (WYSIWYG, see [../CLAUDE.md](../CLAUDE.md))
     fills the body. Empty state: "No blocks yet. Tap + to add a block."
     There is **no** "Blocks" header and no bottom-bar Add button.
@@ -111,11 +121,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
     - `featureBlock` → `_FeatureBlockSectionBody` — full-width
       `AspectRatio(1, ...)` that is either an `_EmptyAddBlockCell` or
       a `_FilledCell` (both live at the top level of
-      `layout_editor_screen.dart`). Tapping a filled cell opens
-      `showAddBlockSheet(allowedTypes: {photoBlock, memoryBlock})`;
-      the X-remove calls `vm.clearFeatureBlock`. `_EmptyAddBlockCell`
-      is no longer used by `_FixedFourPlusTextBody` (which now uses
-      `BlockGrid.onAddBlock`) — feature-block is the only caller.
+      `layout_editor_screen.dart`). Tapping a cell opens the **general**
+      `showAddBlockSheet(context)` (any built-in / custom / habit block —
+      GUS-67, was photo/memory only) → `vm.setSingleBlock`; the X-remove
+      calls `vm.clearSingleBlock`. `_EmptyAddBlockCell` is no longer used
+      by `_FixedFourPlusTextBody` (which now uses `BlockGrid.onAddBlock`) —
+      the two single-block sections (feature-block + block-text-body) are
+      the only callers.
     - `header` → `_HeaderSectionPreview` — a `HeaderSectionWidget` in
       `BlockMode.readOnly` over an empty `TextBlockContent` (mirrors
       `_TextSectionPreview`; shows the italic "Heading" placeholder).
@@ -131,10 +143,9 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       a fixed 120px square or the old `* 0.42` proportion. The picker
       uses the **general** `showAddBlockSheet(context)` (any built-in /
       custom / habit block — GUS-46, was photo/memory only) →
-      `vm.setBlockTextFloatBlock` (accepts any `AddBlockResult`, unlike
-      `setFeatureBlock`); the X-remove calls `vm.clearFeatureBlock` (still
-      shared with `featureBlock`). The text block is entered per-entry
-      (not an editor slot). (GUS-9)
+      `vm.setSingleBlock` (accepts any `AddBlockResult`, shared with
+      `featureBlock`); the X-remove calls `vm.clearSingleBlock`. The text
+      block is entered per-entry (not an editor slot). (GUS-9)
     - `wannado` → a `WannadoSectionWidget` preview (the same widget the
       journal pager renders). It self-fetches the **global** wanna-do
       list off `AppDependencies.blockSettings` and rotates live in the

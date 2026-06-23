@@ -19,8 +19,9 @@ Scaffold
 │                          a streak reward is unclaimed — GUS-22),
 │                        AppMenuButton (hamburger popup: Settings / Manage Layout / Manage Blocks)
 │                editing: Done (unfocus)
-├── body: Material(surfaceContainerLow) + SizedBox.expand
-│         └── GestureDetector (unfocus-on-tap; disabled when editing)
+├── body: GestureDetector → PaperBackground (surface + grain, GUS-85)
+│         → Material(transparent) → SizedBox.expand
+│         └── (GestureDetector unfocus-on-tap; disabled when editing)
 │              └── inPager (vm.pageIndexForDate(date) != null)
 │                   ? JournalPager(vm, modeFor: …, externalLock: editing,
 │                                  onMakeEntry: _onMakeEntry)
@@ -107,6 +108,16 @@ Same gate as before the merge. Used for two decisions:
   `ToastKind.info`) and returns without opening the picker (GUS-47) —
   otherwise the picker would silently no-op (`showLayoutPickerSheet`
   returns null on an empty list).
+- `_openCustomLayoutEditor({forNewEntry})` (GUS-65, Pro) — the picker's
+  "Create a custom layout for this day" footer (`onCustomLayout`, badged
+  for free users) routes here. Gates on `requirePro`, then pushes
+  `LayoutEditorScreen(ephemeral: true, seedLayout: …)` via a
+  `MaterialPageRoute` (so it returns a transient `JournalLayout`). The
+  seed is the day's current entry (`layoutFromSections`) or the default
+  layout for a new day. On a non-null result it calls
+  `vm.createWithLayout` (new entry) or, for an existing entry, a
+  destructive confirm + `vm.applyLayout`. The layout is never saved to
+  the layout box. See [../../layouts/CLAUDE.md](../../layouts/CLAUDE.md).
 - `_openStatistics()` — `context.push(Routes.statistics)`. Back
   returns to `MainJournalScreen` on the same selected date. The
   former `_openEntries` pushed `/entries`; that route still works
@@ -124,10 +135,11 @@ Same gate as before the merge. Used for two decisions:
   breathing room and matches the rest of the app, at the cost of
   slightly less horizontal room for long titles — the title widget
   uses `maxLines: 1` + ellipsis so this is fine in practice.
-- **The body's surface color is `scheme.surfaceContainerLow`**, matching
-  the old editor (and the old preview). Keep it consistent so any
-  future cross-fade or shared-axis transition lands on the same
-  surface tone.
+- **The body background is `PaperBackground`** (GUS-85) — it paints the
+  palette `surface` plus a faint paper grain, with a transparent
+  `Material` over it for descendant ink/splash context. (It replaced the
+  old flat `Material(surfaceContainerLow)`.) Any future cross-fade /
+  shared-axis transition should land on the same `surface` tone.
 - **`debug.unlockAllDays` is read inside `ListenableBuilder`**, so
   flipping the flag rebuilds without reload. The pager's per-page
   mode picks it up too.

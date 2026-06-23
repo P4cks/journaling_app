@@ -8,6 +8,19 @@ text block and the full-width text section.
 
 ## Files
 
+- [block_options_button.dart](block_options_button.dart) —
+  `BlockOptionsButton`. Small circular `⋯` button shown in the top-right
+  corner of a **filled** multimedia block (photo / video / voice) when
+  the entry is editable. Opens that block's manage sheet. Introduced by
+  GUS-76: long-press used to open the sheet, which stole the gesture
+  from `BlockGrid`'s `LongPressDraggable` so a filled tile couldn't be
+  reordered. Each multimedia widget renders the button **inside its own
+  content** (a `Positioned` in a top-level `Stack`, gated on
+  `mode == editable && onChanged != null && !expanded`), so it scales
+  with the block via the chrome's `FittedBox` and needs no per-host
+  wiring (works in grid tiles and 2×2 feature blocks alike). Suppressed
+  in the expanded route (`expanded: true`) — there the whole surface
+  fires the action / hosts the player.
 - [carousel_block_scaffold.dart](carousel_block_scaffold.dart) —
   `CarouselBlockScaffold<T>`. The shared outer shell for every
   carousel block (mood, manual weather, custom carousel). Owns the

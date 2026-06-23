@@ -60,16 +60,18 @@ older `ProfileMenuButton` is retained unused for future user profiles.
   Same draft + Cancel/Discard/Save-on-leave `PopScope` shape as the
   custom-block editor but simpler: a title `TextField` (maxLength 40,
   `errorText: vm.titleError`) + one icon-picker `InkWell` row (48×48
-  preview via `carouselIconFor`; `HugeIcons.strokeRoundedAdd01` when
+  preview via `IconOrEmoji`; `HugeIcons.strokeRoundedAdd01` when
   unset). Constructs `HabitEditorViewModel` in `didChangeDependencies`.
   Pushed via `/habit-block/new` or `/habit-block/edit/:id` from the
   add-block sheet's Habits tab and the Block Settings "Habit Blocks"
   section. `_pickIcon` opens the shared
   [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
-  (icon-only — `allowEmoji` defaults false) over `kCarouselIcons`,
-  passing `selectedIconName: vm.iconName`, and writes back the picked
-  `PickerIconResult.name` (GUS-44; the former local `_showIconPicker`
-  sheet is gone).
+  **with `allowEmoji: true` (GUS-82)** over `kCarouselIcons`, passing
+  `selectedIconName: vm.iconName`, and writes back the picked
+  `PickerIconResult.name` **or `PickerEmojiResult.emoji`** via
+  `vm.setIconName` (an emoji glyph stored verbatim; the preview / habit
+  block resolve it through `IconOrEmoji`). GUS-44 removed the former
+  local `_showIconPicker` sheet.
 - [wannado_editor_screen.dart](wannado_editor_screen.dart) — public
   `WannadoEditorScreen({String? definitionId})` (GUS-42/GUS-45). Create
   (`null` id) or edit a `WannadoDefinition` (title + ordered text items).
@@ -158,6 +160,7 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 | `SettingsSection` "Blocks" | —                      | "Manage Blocks" (block-game icon) → `/block-settings` |
 | `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
 | `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
+| `_VersionFooter`            | —                       | Always-visible footer pinned to the bottom of the list. `FutureBuilder<PackageInfo>` (`package_info_plus`) renders "Version `<version>` (`<buildNumber>`)"; appends a red **DEBUG** badge when `kDebugMode` (dev builds only) |
 | `_PostItStyleSection`       | `themeSettings`         | Three toggles — "Block rotation" / "Block offset" / "Block color" `SwitchListTile`s (GUS-58) — + post-it palette `Wrap` (`_PostItSwatch` + `_AddPostItSwatch`). Palette greyed out when the **color** toggle is off |
 | `SwitchListTile` "Show debug menu" | `debugSettings` | persisted; gates debug rendering   |
 | `SwitchListTile` "Unlock all days" | `debugSettings`  |                                    |
@@ -165,14 +168,16 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 | `ListTile` "Generate sample entries" | —          | debug (GUS-35); non-destructive; `JournalRepository.debugGenerateSampleEntries` then a count toast |
 | `ListTile` "Delete all entries"  | —             | destructive; confirm dialog; calls `JournalRepository.deleteAllEntries` |
 | `ListTile` "Delete all layouts"  | —             | destructive; confirm dialog; calls `LayoutRepository.deleteAllLayouts` (re-seeds default) |
+| `ListTile` "Reset custom blocks" | —             | GUS-81; destructive; confirm dialog; calls `BlockSettings.resetCustomBlocks()` (custom carousels + habits + wanna-dos); count toast |
 | `ListTile` "Reset streak reward" | —             | GUS-22; non-destructive (no confirm); calls `StreakRewardSettings.reset()` so the milestone is claimable again; count toast |
-| `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `streakRewardSettings.reset()` in one shot |
+| `ListTile` "Reset everything"    | —             | destructive; confirm dialog; `deleteAllEntries` + `deleteAllLayouts` + `blockSettings.resetCustomBlocks()` + `streakRewardSettings.reset()` in one shot |
 
 ## Top-level helpers (settings_screen.dart)
 
 - `_confirmDestructive(context, {title, message, confirmLabel})` —
-  shared confirm dialog with a red `FilledButton`. Returns true on
-  confirm. Used by the two "Delete all …" debug actions.
+  shared confirm dialog with an `AppButtonVariant.inverted` confirm
+  button (red outline, no fill — GUS-78). Returns true on confirm. Used
+  by the two "Delete all …" debug actions.
 - `_confirmAndDeleteAllEntries(context)` /
   `_confirmAndDeleteAllLayouts(context)` — confirm + call repository
   + show a toast with the deleted count. The layouts variant
@@ -185,10 +190,14 @@ older `ProfileMenuButton` is retained unused for future user profiles.
   (non-destructive to journal content) — calls
   `streakRewardSettings.reset()` so the 7-day milestone is claimable
   again, then toasts. Lets you re-test the claim flow.
+- `_confirmAndResetCustomBlocks(context)` — debug (GUS-81); destructive,
+  confirm-gated — calls `blockSettings.resetCustomBlocks()` (wipes custom
+  carousels + habits + wanna-do definitions) and toasts the cleared count.
 - `_confirmAndResetEverything(context)` — debug (GUS-22); destructive,
   confirm-gated — `deleteAllEntries` + `deleteAllLayouts` (re-seeds
-  default) + `streakRewardSettings.reset()`, then a combined-count
-  toast. The "nuke all test data" button.
+  default) + `blockSettings.resetCustomBlocks()` + `streakRewardSettings.reset()`,
+  then a combined-count toast. The "nuke all test data" button (GUS-81 folded
+  custom-block wiping into it).
 
 ## Debug menu visibility (GUS-10 follow-up)
 
@@ -210,6 +219,11 @@ the header keeps a fixed 60-char cap.
 
 ### settings_screen.dart
 
+- `_VersionFooter` — bottom-of-list app version indicator. Reads
+  `PackageInfo.fromPlatform()` via a `FutureBuilder` and shows
+  "Version `<version>` (`<buildNumber>`)"; in `kDebugMode` builds it
+  appends a small red **DEBUG** badge (errorContainer chip). Depends on
+  the `package_info_plus` direct dependency added to `pubspec.yaml`.
 - `_PostItStyleSection` / `_PostItSwatch` / `_AddPostItSwatch` — the
   Post-it style section (toggle + post-it palette `Wrap`). Unchanged by
   GUS-27. (The former `_AppearanceSettingsContent`, `_ThemeEditorSheet`,

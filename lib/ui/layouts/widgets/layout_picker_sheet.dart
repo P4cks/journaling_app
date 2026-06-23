@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
@@ -53,6 +54,11 @@ String _summarize(JournalLayout layout) {
 /// sheet only pops with the layout on a successful upgrade. Pro users
 /// (and layouts without Pro features) tap straight through. Omit it (or
 /// pass `null`) to disable the gate entirely.
+/// Pass [onCustomLayout] to append a "Create a custom layout for this day"
+/// footer row (GUS-65, a Pro feature). Tapping it dismisses the sheet
+/// (returning `null`) and invokes the callback — the caller owns the Pro
+/// gate and opens the per-day layout editor. Set [customLayoutLocked] to
+/// show a Pro badge on the row (for free users).
 ///
 /// Uses the shared `showDraggableSheet` scaffold so the drag handle,
 /// title, and `DraggableScrollableSheet` chrome match the calendar and
@@ -64,6 +70,8 @@ Future<JournalLayout?> showLayoutPickerSheet(
   String title = 'Choose layout',
   VoidCallback? onManageLayouts,
   SubscriptionRepository? subscriptions,
+  VoidCallback? onCustomLayout,
+  bool customLayoutLocked = false,
 }) {
   if (layouts.isEmpty) return Future.value(null);
   return showDraggableSheet<JournalLayout>(
@@ -84,8 +92,9 @@ Future<JournalLayout?> showLayoutPickerSheet(
           final scheme = theme.colorScheme;
           final mutedColor = theme.disabledColor;
           return ListTile(
-            leading: HugeIcon(
-              icon: layoutIconFor(layout.iconName).icon,
+            leading: IconOrEmoji(
+              value: layout.iconName,
+              resolveIcon: (v) => layoutIconFor(v).icon,
               color: isProLocked
                   ? mutedColor
                   : (isDefault ? scheme.primary : null),
@@ -125,6 +134,37 @@ Future<JournalLayout?> showLayoutPickerSheet(
           );
         }, childCount: layouts.length),
       ),
+      if (onCustomLayout != null)
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Divider(height: 1),
+              Builder(
+                builder: (footerCtx) {
+                  final scheme = Theme.of(footerCtx).colorScheme;
+                  return ListTile(
+                    leading: AppIcon(
+                      HugeIcons.strokeRoundedDashboardSquareEdit,
+                      color: scheme.primary,
+                    ),
+                    title: Text(
+                      'Create a custom layout for this day',
+                      style: TextStyle(color: scheme.primary),
+                    ),
+                    trailing: customLayoutLocked
+                        ? const ProLockBadge()
+                        : null,
+                    onTap: () {
+                      Navigator.of(footerCtx).pop();
+                      onCustomLayout();
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       if (onManageLayouts != null)
         SliverToBoxAdapter(
           child: Column(

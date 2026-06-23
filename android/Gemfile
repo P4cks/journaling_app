@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+
+# fastlane drives the Play Store upload (see fastlane/Fastfile).
+# Run `bundle install` once, then `scripts/release.sh --play` uses it.
+gem "fastlane"
