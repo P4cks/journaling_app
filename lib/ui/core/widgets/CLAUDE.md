@@ -167,11 +167,16 @@ for how they fit together; this file is per-file notes.
   reported via toast. **Pass `context` from every call site** so the
   user gets that feedback; without it the gate still fails closed,
   just silently.
-  `ProLockBadge({compact})` — crown badge marking a locked affordance:
-  `compact: true` → small filled crown dot for overlaying on an icon
-  button (e.g. the editor's Add-block `+` at the block cap);
-  `compact: false` → a `primaryContainer` "Pro" chip for trailing a
-  list tile (e.g. the locked layout-kind picker tile).
+  `ProLockBadge({compact})` — the single crown badge marking a locked
+  affordance; refined in GUS-90 to be small + quiet so gating reads as
+  "available with Pro", not a billboard. `compact: true` → a tiny accent
+  crown dot (crown 9) with a 1.5 px **surface-coloured ring** so it lifts
+  cleanly off whatever control it overlays (e.g. the editor's Add-block
+  `+` at the cap); `compact: false` → a slimmed `primaryContainer` "Pro"
+  chip for trailing a list tile (e.g. the locked layout-kind picker tile).
+  Every gated call site pairs this badge with `theme.disabledColor`-greyed
+  content — that (greyed content + small crown badge) is the consistent
+  gating visual identity.
   `ProLimitHint({used, max, noun, subscriptions})` — inline free-user
   caption for a counted cap: "`used` of `max` `noun` used" below the cap,
   a tappable "limit reached — Upgrade to Pro" row (calls `requirePro`) at

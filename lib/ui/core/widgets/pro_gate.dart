@@ -127,31 +127,37 @@ class ProLockBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (compact) {
+      // A tiny accent crown dot for overlaying a gated control. The thin
+      // surface-coloured ring lifts it off whatever it sits on (a coloured
+      // button, a tile) so it reads consistently without being loud (GUS-90).
       return Container(
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: scheme.primary,
           shape: BoxShape.circle,
+          border: Border.all(color: scheme.surface, width: 1.5),
         ),
         child: AppIcon(
           HugeIcons.strokeRoundedCrown,
-          size: 10,
+          size: 9,
           color: scheme.onPrimary,
         ),
       );
     }
+    // The trailing "Pro" chip — slimmed (GUS-90) so a locked row reads as
+    // "available with Pro", not a billboard.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(7),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           AppIcon(
             HugeIcons.strokeRoundedCrown,
-            size: 14,
+            size: 12,
             color: scheme.onPrimaryContainer,
           ),
           const SizedBox(width: 4),
