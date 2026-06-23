@@ -75,7 +75,7 @@ ThemeData buildAppTheme(SurfacePalette palette) {
     brightness: brightness,
     colorScheme: scheme,
     // House type system (GUS-84). `fontFamily` defaults stray `Text` widgets
-    // to Inter; the explicit `textTheme` assigns Fraunces vs Inter per slot.
+    // to Inter; the explicit `textTheme` assigns Playfair Display vs Inter per slot.
     // `.apply` tints every slot with the palette's onSurface (our styles carry
     // no colour) so text follows the active palette.
     fontFamily: kBodyFamily,

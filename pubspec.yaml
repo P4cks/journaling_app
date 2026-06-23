@@ -68,13 +68,13 @@ flutter:
 
   # House type system (GUS-84). Both are bundled OFL variable fonts — a
   # single file per family carries every weight; Flutter maps `FontWeight`
-  # to the `wght` axis automatically. Fraunces also exposes `opsz`/`SOFT`
-  # axes driven via `FontVariation` in app_typography.dart. We bundle the
-  # TTFs rather than fetch at runtime (no `google_fonts` package).
+  # to the `wght` axis. We bundle the TTFs rather than fetch at runtime
+  # (no `google_fonts` package). Playfair Display is the display/journal
+  # voice; Inter is the body/UI face.
   fonts:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Variable.ttf
-    - family: Fraunces
+    - family: Playfair Display
       fonts:
-        - asset: assets/fonts/Fraunces-Variable.ttf
+        - asset: assets/fonts/PlayfairDisplay-Variable.ttf
