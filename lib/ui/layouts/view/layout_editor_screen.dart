@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
@@ -701,10 +702,28 @@ class _CustomBody extends StatelessWidget {
             )
           else
             for (var i = 0; i < sections.length; i++)
-              _SectionCard(
-                vm: vm,
-                index: i,
-                onConfirmRemove: (label) => _confirmRemove(context, label),
+              // A newly-added section slides + fades in to match the block
+              // add motion (GUS-88). Keyed by section id so it runs once on
+              // mount, not on every keystroke rebuild or reorder.
+              Animate(
+                key: ValueKey('section-${sections[i].id}'),
+                effects: const [
+                  FadeEffect(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                  ),
+                  MoveEffect(
+                    begin: Offset(0, 12),
+                    end: Offset.zero,
+                    duration: Duration(milliseconds: 340),
+                    curve: Curves.easeOutCubic,
+                  ),
+                ],
+                child: _SectionCard(
+                  vm: vm,
+                  index: i,
+                  onConfirmRemove: (label) => _confirmRemove(context, label),
+                ),
               ),
           const SizedBox(height: 12),
           ProLimitHint(

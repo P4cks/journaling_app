@@ -551,22 +551,32 @@ class _BlockGridState extends State<BlockGrid> {
     // Uniform behaviour across all block types: no flash on double
     // tap.
 
-    // Mount animation: scale 0.9 → 1.0 + fade. Runs once on mount,
-    // keyed by block.id so re-orders don't replay it. Independent of
-    // post-it theming — the animation is a structural affordance, not
-    // a theme decoration.
+    // Mount animation (GUS-88): the tile fades in, rises a few px, and
+    // settles with a gentle spring overshoot (easeOutBack) — a block
+    // "dropping into place". A small per-tile stagger (capped) makes a
+    // freshly-materialized layout cascade in rather than popping all at
+    // once, while a single added block still lands quickly. Runs once on
+    // mount, keyed by block.id so re-orders don't replay it; independent of
+    // post-it theming.
     final tileWidget = Animate(
       key: ValueKey('animate-${block.id}'),
+      delay: Duration(milliseconds: index.clamp(0, 4) * 28),
       effects: const [
         FadeEffect(
-          duration: Duration(milliseconds: 280),
+          duration: Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
         ),
         ScaleEffect(
-          begin: Offset(0.9, 0.9),
+          begin: Offset(0.86, 0.86),
           end: Offset(1.0, 1.0),
-          duration: Duration(milliseconds: 280),
+          duration: Duration(milliseconds: 380),
           curve: Curves.easeOutBack,
+        ),
+        MoveEffect(
+          begin: Offset(0, 10),
+          end: Offset.zero,
+          duration: Duration(milliseconds: 360),
+          curve: Curves.easeOutCubic,
         ),
       ],
       child: card,
@@ -627,30 +637,33 @@ class _BlockGridState extends State<BlockGrid> {
                   _pendingDeletes.removeWhere((p) => p == pending);
                 });
               },
+              // Exit (GUS-88): the tile shrinks, tips slightly, and drops
+              // away as it fades — a snappy "tossed off the page" accelerate
+              // (easeInCubic) so removal reads as decisive.
               effects: const [
                 FadeEffect(
                   begin: 1,
                   end: 0,
-                  duration: Duration(milliseconds: 320),
-                  curve: Curves.easeIn,
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInCubic,
                 ),
                 ScaleEffect(
                   begin: Offset(1.0, 1.0),
-                  end: Offset(0.7, 0.7),
-                  duration: Duration(milliseconds: 320),
-                  curve: Curves.easeIn,
+                  end: Offset(0.62, 0.62),
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInCubic,
                 ),
                 RotateEffect(
                   begin: 0,
-                  end: 0.04,
-                  duration: Duration(milliseconds: 320),
-                  curve: Curves.easeIn,
+                  end: 0.05,
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInCubic,
                 ),
                 MoveEffect(
                   begin: Offset.zero,
-                  end: Offset(0, 16),
-                  duration: Duration(milliseconds: 320),
-                  curve: Curves.easeIn,
+                  end: Offset(0, 22),
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInCubic,
                 ),
               ],
               child: BlockChrome(

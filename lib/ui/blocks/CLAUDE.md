@@ -319,17 +319,27 @@ animations affect the grid's RenderBoxes or insertion-index math:
   implied "you tapped but nothing happened". If you want it back,
   PR #25's `post_it_block.dart` history has the controller +
   TweenSequence wiring.
-- **Add**: each tile is wrapped in `flutter_animate`'s `Animate(...)`
-  with a fade + back-easing scale, keyed by `ValueKey('animate-${block.id}')`.
-  Effects only run on first mount, so re-orders don't replay them.
-  Runs regardless of the post-it toggles — the mount animation is a
-  structural affordance, not a theme decoration.
-- **Delete**: when `didUpdateWidget` notices a block id has gone
+- **Add (GUS-88)**: each tile is wrapped in `flutter_animate`'s
+  `Animate(...)`, keyed by `ValueKey('animate-${block.id}')`. The tile
+  fades in (300 ms easeOutCubic), rises 10 px (`MoveEffect`), and settles
+  with a gentle spring overshoot (`ScaleEffect` 0.86→1.0, 380 ms
+  easeOutBack) — a block "dropping into place". A small **per-tile
+  stagger** (`delay: index.clamp(0,4) * 28 ms`) makes a freshly-
+  materialized layout cascade in while a single added block still lands
+  quickly. Effects run only on first mount (stable key), so re-orders
+  don't replay them; runs regardless of the post-it toggles — the mount
+  animation is a structural affordance, not a theme decoration. The same
+  `BlockGrid` powers the layout editor, so add-block there animates
+  identically; the editor additionally wraps each **section** card in a
+  matching fade+slide `Animate` keyed by section id (add-section motion).
+- **Delete (GUS-88)**: when `didUpdateWidget` notices a block id has gone
   missing, the tile's last-known `Rect` is snapshotted into a
-  `_PendingDelete` and rendered as an overlay ghost above the grid.
-  The ghost runs `fade → 0` + `scale → 0.7` + `move y +16` (plus a
-  small `rotate` when post-it mode is on) for ~320 ms, then removes
-  itself in `Animate.onComplete`.
+  `_PendingDelete` and rendered as an overlay ghost above the grid. The
+  ghost runs a snappy accelerate (300 ms easeInCubic): `fade → 0` +
+  `scale → 0.62` + `rotate → 0.05` + `move y +22` — a "tossed off the
+  page" exit — then removes itself in `Animate.onComplete`. The `rotate`
+  applies always (it's part of the const effect list), not only in
+  post-it mode.
 - **Swap (post-drop) is intentionally not animated.** Re-animating
   swapped tiles requires either remounting (loses TextField focus)
   or per-tile `AnimationController` plumbing keyed by block id —
