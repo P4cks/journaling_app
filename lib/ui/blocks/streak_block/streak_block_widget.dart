@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/services/streak_service.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// Display-only block that shows the streak **as of its own entry's date**
 /// prominently, with the best streak up to that date in small text
@@ -93,7 +94,8 @@ class _StreakBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    // Tonal ink so the streak reads on-hue on a coloured block (GUS-86).
+    final ink = blockInk(context);
     return Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -104,17 +106,13 @@ class _StreakBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                AppIcon(
-                  HugeIcons.strokeRoundedFire,
-                  size: 30,
-                  color: scheme.primary,
-                ),
+                AppIcon(HugeIcons.strokeRoundedFire, size: 30, color: ink),
                 const SizedBox(width: 8),
                 Text(
                   streak.current.toString(),
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: scheme.onSurface,
+                    color: ink,
                     height: 1,
                   ),
                 ),
@@ -124,14 +122,14 @@ class _StreakBody extends StatelessWidget {
             Text(
               'day streak',
               style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
+                color: ink.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Best: ${streak.longest} ${streak.longest == 1 ? 'day' : 'days'}',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
+                color: ink.withValues(alpha: 0.6),
               ),
             ),
           ],

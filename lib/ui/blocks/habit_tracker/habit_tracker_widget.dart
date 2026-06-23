@@ -9,6 +9,8 @@ import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_c
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 
 /// Block widget for a `BlockType.habitTracker` instance. Resolves
@@ -243,18 +245,16 @@ class _DayDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final ink = blockInk(context);
     const size = 14.0;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: checked ? scheme.primary : Colors.transparent,
+        color: checked ? ink : Colors.transparent,
         border: Border.all(
-          color: checked
-              ? scheme.primary
-              : scheme.outline.withValues(alpha: 0.5),
+          color: checked ? ink : ink.withValues(alpha: 0.4),
           width: 1.5,
         ),
       ),
@@ -263,7 +263,7 @@ class _DayDot extends StatelessWidget {
               child: AppIcon(
                 HugeIcons.strokeRoundedTick01,
                 size: size * 0.6,
-                color: scheme.onPrimary,
+                color: contrastOn(ink),
               ),
             )
           : null,
@@ -288,15 +288,18 @@ class _HabitCheckBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // Track the chrome-injected tonal ink (GUS-86): a filled ink bubble when
+    // completed (tick in the ink's contrast colour), a muted ink ring + glyph
+    // when not.
+    final ink = blockInk(context);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: completed ? scheme.primary : Colors.transparent,
+        color: completed ? ink : Colors.transparent,
         border: Border.all(
-          color: completed ? scheme.primary : scheme.outline,
+          color: completed ? ink : ink.withValues(alpha: 0.4),
           width: 2,
         ),
       ),
@@ -305,7 +308,7 @@ class _HabitCheckBubble extends StatelessWidget {
             ? AppIcon(
                 HugeIcons.strokeRoundedTick01,
                 size: size * 0.5,
-                color: scheme.onPrimary,
+                color: completed ? contrastOn(ink) : ink.withValues(alpha: 0.7),
               )
             : IconOrEmoji(
                 value: iconValue,
@@ -331,20 +334,17 @@ class _StreakBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ink = blockInk(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AppIcon(
-          HugeIcons.strokeRoundedFire,
-          size: 14,
-          color: theme.colorScheme.primary,
-        ),
+        AppIcon(HugeIcons.strokeRoundedFire, size: 14, color: ink),
         const SizedBox(width: 2),
         Text(
           '$count',
           style: theme.textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: theme.colorScheme.primary,
+            color: ink,
           ),
         ),
       ],
