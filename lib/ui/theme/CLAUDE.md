@@ -56,11 +56,12 @@ vs Dark is what flips the app; the OS brightness is no longer followed.
   a settings value that might have been written by an older version.
 - [app_typography.dart](app_typography.dart) — the house **type system**
   (GUS-84). Two bundled OFL **variable** fonts (declared in `pubspec.yaml`,
-  files in `assets/fonts/`): **Fraunces** (`kDisplayFamily`) — warm soft-serif
-  for the journal voice (titles, dates, headings), driven on its `opsz` +
-  `SOFT` axes via `FontVariation`; **Inter** (`kBodyFamily`) — clean sans for
-  body text + all UI chrome. `buildAppTextTheme()` assigns `display* /
-  headline* / titleLarge / titleMedium` → Fraunces and `titleSmall / body* /
+  files in `assets/fonts/`): **Playfair Display** (`kDisplayFamily`) — a
+  high-contrast transitional serif for the journal voice (titles, dates,
+  headings), single `wght` axis (smaller display slots carry w600 so the
+  hairlines hold up); **Inter** (`kBodyFamily`) — clean sans for body text +
+  all UI chrome. `buildAppTextTheme()` assigns `display* / headline* /
+  titleLarge / titleMedium` → Playfair Display and `titleSmall / body* /
   label*` → Inter (`titleSmall` is Inter on purpose: it labels UI chrome).
   `AppText` exposes named journal styles that don't map onto a Material slot
   (`entryTitle`, `entryDate`, `sectionHeading`) — read these instead of
