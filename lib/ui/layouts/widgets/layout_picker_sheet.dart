@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_default_chip.dart';
@@ -74,8 +75,9 @@ Future<JournalLayout?> showLayoutPickerSheet(
           final isDefault = layout.id == defaultLayoutId;
           final scheme = Theme.of(listCtx).colorScheme;
           return ListTile(
-            leading: HugeIcon(
-              icon: layoutIconFor(layout.iconName).icon,
+            leading: IconOrEmoji(
+              value: layout.iconName,
+              resolveIcon: (v) => layoutIconFor(v).icon,
               color: isDefault ? scheme.primary : null,
             ),
             title: Text(layout.name),

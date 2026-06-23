@@ -13,6 +13,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/settings_section.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -684,10 +685,8 @@ class _HabitDefinitionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
-    final icon = definition.iconName.isEmpty
-        ? null
-        : carouselIconFor(definition.iconName)?.icon ??
-              HugeIcons.strokeRoundedQuestion;
+    final iconValue =
+        definition.iconName.isEmpty ? null : definition.iconName;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
@@ -695,8 +694,14 @@ class _HabitDefinitionRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (icon != null) ...[
-                AppIcon(icon, size: 20),
+              if (iconValue != null) ...[
+                IconOrEmoji(
+                  value: iconValue,
+                  resolveIcon: (v) =>
+                      carouselIconFor(v ?? '')?.icon ??
+                      HugeIcons.strokeRoundedQuestion,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
               ],
               Expanded(

@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_c
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_with_title.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 
 /// Block widget for a `BlockType.habitTracker` instance. Resolves
 /// `definitionId` against the `BlockSettings` registry for the habit's
@@ -67,10 +68,10 @@ class HabitTrackerWidget extends StatelessWidget {
 
         final definition = defId == null ? null : settings.findHabit(defId);
         final title = definition?.title;
-        final iconData = definition == null
-            ? HugeIcons.strokeRoundedCheckmarkCircle02
-            : (carouselIconFor(definition.iconName)?.icon ??
-                  HugeIcons.strokeRoundedCheckmarkCircle02);
+        // The stored value is an icon name or an emoji glyph (GUS-82);
+        // `_HabitCheckBubble` disambiguates via `IconOrEmoji`. Null / empty /
+        // unknown all fall back to the default check glyph.
+        final iconValue = definition?.iconName;
 
         final stats = defId == null
             ? null
@@ -100,7 +101,7 @@ class HabitTrackerWidget extends StatelessWidget {
                 children: [
                   _HabitCheckBubble(
                     completed: content.completed,
-                    icon: iconData,
+                    iconValue: iconValue,
                     size: 56,
                   ),
                   if (stats != null) ...[
@@ -271,16 +272,18 @@ class _DayDot extends StatelessWidget {
 }
 
 /// The big cross-off control. Empty → bordered circle with the habit's
-/// icon faintly inside. Done → filled primary circle with a tick.
+/// icon or emoji (GUS-82) faintly inside. Done → filled primary circle with
+/// a tick. [iconValue] is the stored icon name / emoji glyph (null / empty /
+/// unknown → default check glyph).
 class _HabitCheckBubble extends StatelessWidget {
   const _HabitCheckBubble({
     required this.completed,
-    required this.icon,
+    required this.iconValue,
     required this.size,
   });
 
   final bool completed;
-  final HugeIconData icon;
+  final String? iconValue;
   final double size;
 
   @override
@@ -298,13 +301,22 @@ class _HabitCheckBubble extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: AppIcon(
-          completed ? HugeIcons.strokeRoundedTick01 : icon,
-          size: size * 0.5,
-          color: completed
-              ? scheme.onPrimary
-              : scheme.onSurfaceVariant.withValues(alpha: 0.7),
-        ),
+        child: completed
+            ? AppIcon(
+                HugeIcons.strokeRoundedTick01,
+                size: size * 0.5,
+                color: scheme.onPrimary,
+              )
+            : IconOrEmoji(
+                value: iconValue,
+                resolveIcon: (v) =>
+                    (v == null || v.isEmpty)
+                        ? HugeIcons.strokeRoundedCheckmarkCircle02
+                        : (carouselIconFor(v)?.icon ??
+                              HugeIcons.strokeRoundedCheckmarkCircle02),
+                size: size * 0.5,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
       ),
     );
   }

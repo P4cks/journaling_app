@@ -19,8 +19,12 @@ false). Typed wrapper:
   `HabitTrackerWidget`. Stateless. Subscribes to both `BlockSettings`
   (definition edits) and `JournalRepository` (streak recompute) via
   `ListenableBuilder(Listenable.merge([...]))`. Resolves the definition
-  for title (`BlockWithTitle`) + icon (`carouselIconFor`, shared
-  catalogue). Big `_HabitCheckBubble` toggles `completed` on tap in
+  for title (`BlockWithTitle`) + icon. The stored `iconName` is a
+  `kCarouselIcons` name **or, since GUS-82, an emoji glyph**; the
+  `_HabitCheckBubble` renders it through `IconOrEmoji`
+  (`../../core/widgets/icon_or_emoji.dart`) — emoji glyph as text, ASCII
+  name via `carouselIconFor`, null/empty/unknown → default check glyph.
+  Big `_HabitCheckBubble` toggles `completed` on tap in
   editable mode; `_StreakBadge` (flame + count) shows only when the
   streak is > 0; `_SevenDayStrip` (read-only 7-day history, GUS-51) shows
   whenever the block has a real definition. The badge and strip sit on
@@ -83,7 +87,10 @@ streak > 0, then strip) — GUS-53.
   no entry fall back to `DateTime.now()`.
 - **Icon catalogue is shared with custom carousel** (`kCarouselIcons`).
   Removing a catalogue entry orphans the icon → fallback check glyph,
-  not a crash.
+  not a crash. **An `iconName` may also be an emoji glyph (GUS-82)** —
+  never resolve it with a bare `carouselIconFor`; go through
+  `IconOrEmoji` so emoji values render as text rather than falling back
+  to the check glyph.
 
 ## When to update this file
 

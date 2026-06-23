@@ -25,6 +25,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layout_editor_view_model.dart';
@@ -361,7 +362,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
                   IconButton(
                     tooltip: 'Change icon',
                     onPressed: _pickIcon,
-                    icon: AppIcon(layoutIconFor(vm.iconName).icon),
+                    icon: IconOrEmoji(
+                      value: vm.iconName,
+                      resolveIcon: (v) => layoutIconFor(v).icon,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
