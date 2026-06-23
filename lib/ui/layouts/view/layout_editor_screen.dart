@@ -140,17 +140,18 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     final vm = _viewModel;
     if (vm == null || !vm.isDirty) return true;
 
-    // Validate the name first. If the layout can't be saved (no name, or a
-    // duplicate), surface why with a toast and keep the user on the editor
-    // so they can fix it — there's nothing to "save" and no leave prompt.
+    // Validate first. If the layout can't be saved (no name, a duplicate
+    // name, or no content — GUS-80), surface why with a toast and keep the
+    // user on the editor so they can fix it — there's nothing to "save".
     final nameEmpty = vm.nameController.text.trim().isEmpty;
-    final canSave = !nameEmpty && !vm.nameConflict;
-    if (!canSave) {
+    if (!vm.canSave) {
       showToast(
         context,
         nameEmpty
             ? 'Add a name to save'
-            : 'A layout with this name already exists',
+            : vm.nameConflict
+            ? 'A layout with this name already exists'
+            : vm.emptyError!,
         kind: ToastKind.error,
       );
       return false;
@@ -242,6 +243,10 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     final vm = _viewModel;
     if (vm == null) return;
     FocusScope.of(context).unfocus();
+    if (vm.isEmpty) {
+      showToast(context, vm.emptyError!, kind: ToastKind.error);
+      return;
+    }
     Navigator.of(context).pop(vm.buildEphemeral());
   }
 
@@ -283,12 +288,14 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
     if (vm == null) return;
     FocusScope.of(context).unfocus();
     final nameEmpty = vm.nameController.text.trim().isEmpty;
-    if (nameEmpty || vm.nameConflict) {
+    if (!vm.canSave) {
       showToast(
         context,
         nameEmpty
             ? 'Add a name to save'
-            : 'A layout with this name already exists',
+            : vm.nameConflict
+            ? 'A layout with this name already exists'
+            : vm.emptyError!,
         kind: ToastKind.error,
       );
       return;

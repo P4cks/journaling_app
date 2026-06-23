@@ -220,6 +220,12 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     cascade into layouts / entries, the section renders an empty
     placeholder. Mirrors the `customCarousels` / `habits` registry
     pattern exactly.
+  - `resetCustomBlocks()` — debug-only (GUS-81): clears all three
+    registries (`customCarousels` + `habits` + `wannadoDefinitions`),
+    persists each as empty, notifies once, and returns the total count
+    cleared. No-op (returns 0) when nothing is defined. Backs the Settings
+    "Reset custom blocks" button and is also folded into "Reset
+    everything". Orphan-tolerant like the per-id deletes.
   - `pickPromptFor({date, slotIndex})` — used by
     `JournalRepository.materializeLayout`. In `random` mode the pick
     is deterministic from `(daysSinceEpoch + slotIndex) mod N`, so
