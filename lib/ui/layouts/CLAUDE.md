@@ -90,6 +90,11 @@ visible while editing. See [routing/CLAUDE.md](../../routing/CLAUDE.md).
   human `label`.
   - Names are persisted as plain strings in `JournalLayout.iconName`
     so we don't need a Hive adapter for the underlying icon data.
+  - **Since GUS-82 `iconName` may instead hold an emoji glyph** (the
+    icon picker now offers an Emoji tab). Render through `IconOrEmoji`
+    (`../core/widgets/icon_or_emoji.dart`), which routes ASCII names to
+    `layoutIconFor` and non-ASCII glyphs to a `Text`. The field shape is
+    unchanged (still a `String?`), so no Hive bump.
   - `kDefaultLayoutIconName = 'squaresFour'`.
   - `layoutIconFor(null)` and unknown names both fall back to the
     default icon — safe to call with values written by an older app

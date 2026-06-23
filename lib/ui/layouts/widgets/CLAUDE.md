@@ -160,20 +160,22 @@ sheet is a stateless top-level function returning the user's pick or
     spent their streak-reward token on renders ungated/addable for a
     free user. The caller passes `rewards` from `AppDependencies`.
 - [layout_icon_picker.dart](layout_icon_picker.dart) —
-  `Future<String?> showLayoutIconPicker(context, {selected})`. Now a
+  `Future<String?> showLayoutIconPicker(context, {selected})`. A
   **thin wrapper** (GUS-44) that maps [layout_icons.dart](../layout_icons.dart)
   to `PickerIcon`s and delegates to the shared
-  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
-  (icon-only, `selectedIconName: selected`), unwrapping the
-  `PickerIconResult` back to its `name`. Returns the chosen `icon.name`
-  (stable identifier string carried over from the pre-HugeIcons
-  Phosphor era) or `null`. The shared picker owns the search field,
-  selection highlight, and tile chrome — the former local `_IconTile`
-  is gone.
+  [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart).
+  **`allowEmoji: true` (GUS-82)** — so it returns the chosen icon `name`
+  **or** the chosen emoji glyph (both `String`s; an `PickerEmojiResult`
+  unwraps to its `emoji`). `null` on dismiss. The icon names are stable
+  identifier strings carried over from the pre-HugeIcons Phosphor era;
+  emoji glyphs are stored verbatim. The shared picker owns the search
+  field, selection highlight, and tile chrome.
   - Used by the layout editor's icon AppBar action. Callers may pass
-    the returned name (or `null`) straight into `vm.setIconName`. The
-    `Future<String?>` contract is unchanged, so the layout editor is
-    untouched.
+    the returned value (icon name, emoji glyph, or `null`) straight into
+    `vm.setIconName`. The `Future<String?>` contract is unchanged, so the
+    layout editor is untouched. **Resolve for display via `IconOrEmoji`
+    (`../../core/widgets/icon_or_emoji.dart`), not raw `layoutIconFor` —
+    the value may be an emoji.**
 - [layout_kind_picker_sheet.dart](layout_kind_picker_sheet.dart) —
   `Future<LayoutKind?> showLayoutKindPickerSheet(context)`. Two-tile
   sheet ("Only blocks", "Fully customizable"), each with an icon and
@@ -238,9 +240,12 @@ sheet is a stateless top-level function returning the user's pick or
 
 ## Gotchas
 
-- **`showLayoutIconPicker` returns the icon NAME**, not a `LayoutIcon`.
-  Callers must resolve via `layoutIconFor(name)` when they want the
-  glyph. The string is what's persisted in `JournalLayout.iconName`.
+- **`showLayoutIconPicker` returns an icon NAME *or* an emoji glyph**
+  (GUS-82), not a `LayoutIcon`. The string is what's persisted in
+  `JournalLayout.iconName`. Resolve for display via `IconOrEmoji`
+  (which calls `isEmojiValue` then `layoutIconFor(name)` for the icon
+  branch) — calling `layoutIconFor` directly on an emoji value would
+  wrongly fall back to the default glyph.
 - **`showLayoutPickerSheet` is *non-destructive*** — it just returns
   a selection. The destructive-action confirm lives in the editor's
   `_showChangeLayoutSheet`, not here. Don't move it; the home CTA

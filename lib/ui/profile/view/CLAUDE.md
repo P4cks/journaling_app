@@ -60,16 +60,18 @@ older `ProfileMenuButton` is retained unused for future user profiles.
   Same draft + Cancel/Discard/Save-on-leave `PopScope` shape as the
   custom-block editor but simpler: a title `TextField` (maxLength 40,
   `errorText: vm.titleError`) + one icon-picker `InkWell` row (48×48
-  preview via `carouselIconFor`; `HugeIcons.strokeRoundedAdd01` when
+  preview via `IconOrEmoji`; `HugeIcons.strokeRoundedAdd01` when
   unset). Constructs `HabitEditorViewModel` in `didChangeDependencies`.
   Pushed via `/habit-block/new` or `/habit-block/edit/:id` from the
   add-block sheet's Habits tab and the Block Settings "Habit Blocks"
   section. `_pickIcon` opens the shared
   [showIconEmojiPicker](../../core/widgets/icon_emoji_picker.dart)
-  (icon-only — `allowEmoji` defaults false) over `kCarouselIcons`,
-  passing `selectedIconName: vm.iconName`, and writes back the picked
-  `PickerIconResult.name` (GUS-44; the former local `_showIconPicker`
-  sheet is gone).
+  **with `allowEmoji: true` (GUS-82)** over `kCarouselIcons`, passing
+  `selectedIconName: vm.iconName`, and writes back the picked
+  `PickerIconResult.name` **or `PickerEmojiResult.emoji`** via
+  `vm.setIconName` (an emoji glyph stored verbatim; the preview / habit
+  block resolve it through `IconOrEmoji`). GUS-44 removed the former
+  local `_showIconPicker` sheet.
 - [wannado_editor_screen.dart](wannado_editor_screen.dart) — public
   `WannadoEditorScreen({String? definitionId})` (GUS-42/GUS-45). Create
   (`null` id) or edit a `WannadoDefinition` (title + ordered text items).
