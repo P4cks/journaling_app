@@ -29,8 +29,14 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
   (`strokeRoundedBlockGame`) — each pushing the corresponding route.
   Reuses the same focus-management dance as `ProfileMenuButton`
   (`onOpened` unfocus + post-`onSelected` unfocus after the push
-  returns). Stateless, no `AppDependencies` (reads only
-  `Theme.of(context).colorScheme`). No streak / auth / Pro UI.
+  returns). **Pro state at the foot of the menu (GUS-89):** wrapped in a
+  `ListenableBuilder(subscriptionRepository)` (from `AppDependencies`) so
+  the badge tracks entitlement live. Pro users see a quiet single-line
+  `_ProBadge` ("Pro active", `enabled: false`); free users see a tappable
+  `_UpgradeBadge` ("Free version → Upgrade to Pro", accent crown +
+  chevron) whose `value: 'upgrade'` routes through the menu's
+  `onSelected` → `requirePro(subscriptionRepository, context:)` (the
+  centralized paywall gate). No streak / auth UI.
 - [profile_menu_button.dart](profile_menu_button.dart) —
   `ProfileMenuButton`. **Currently unused — retained intentionally for
   when user profiles are reimplemented** (the main screen now uses
