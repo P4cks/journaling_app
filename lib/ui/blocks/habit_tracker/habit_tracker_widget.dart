@@ -308,7 +308,7 @@ class _HabitCheckBubble extends StatelessWidget {
             ? AppIcon(
                 HugeIcons.strokeRoundedTick01,
                 size: size * 0.5,
-                color: completed ? contrastOn(ink) : ink.withValues(alpha: 0.7),
+                color: contrastOn(ink),
               )
             : IconOrEmoji(
                 value: iconValue,
@@ -318,7 +318,7 @@ class _HabitCheckBubble extends StatelessWidget {
                         : (carouselIconFor(v)?.icon ??
                               HugeIcons.strokeRoundedCheckmarkCircle02),
                 size: size * 0.5,
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: ink.withValues(alpha: 0.7),
               ),
       ),
     );
