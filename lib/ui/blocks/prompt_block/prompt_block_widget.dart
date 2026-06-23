@@ -128,6 +128,12 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
       context,
       prompts: settings.prompts,
       selected: currentPrompt.isEmpty ? null : currentPrompt,
+      onSaveToRotation: (prompt) async {
+        // The sheet only invokes this when the prompt isn't already in
+        // the list, but guard anyway so a stale list never double-adds.
+        if (settings.prompts.contains(prompt)) return;
+        await settings.setPrompts([...settings.prompts, prompt]);
+      },
     );
     if (!mounted) return;
     if (picked == null) return;
