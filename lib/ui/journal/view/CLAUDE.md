@@ -12,7 +12,7 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 
 ```
 Scaffold
-├── AppBar
+├── AppBar (toolbarHeight: 72 — room for the Fraunces nameplate, GUS-87)
 │   ├── title: JournalTitle (editable title + date subtitle)
 │   └── actions: normal: Change-layout (editable + hasEntry),
 │                        Statistics icon (push /statistics; dot Badge when
