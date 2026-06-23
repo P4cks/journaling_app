@@ -23,7 +23,20 @@ in [header_section/](header_section/) (`SectionKind.header`, GUS-6).
   former single `postItModeEnabled` master). Each effect applies
   separately; all three off → flat card. **No animation, gesture, or
   interaction logic is gated on these flags** — that's the
-  central rewrite invariant. **Subscribes to `themeSettings` via a
+  central rewrite invariant. **Tonal same-hue colour (GUS-86):** when
+  `blockColorEnabled` and the block carries a `colorHex`, the chrome no
+  longer paints that raw colour with `contrastOn` black/white text — it
+  derives a `tonalBlockBackground` (soft same-hue tint) + a
+  `tonalBlockForeground` (saturated same-hue, WCAG-checked ink) from
+  [theme/tonal.dart](../theme/tonal.dart), and pushes `fg` into the card's
+  `DefaultTextStyle.merge` + `IconTheme.merge` so block **text and icons
+  that inherit their colour follow the ink automatically**. A block that
+  hard-codes `colorScheme.onSurface`/`primary` for a glyph won't — a
+  handful still do (todo, habit, memory, quote, weather-api, voice,
+  streak, location, block_options_button, block_with_title); those are the
+  remaining GUS-86 per-block audit. The stored `colorHex` is a hue anchor,
+  re-interpreted at render time (no schema change). **Subscribes to
+  `themeSettings` via a
   local `ListenableBuilder` (GUS-68)** so flipping a toggle /
   editing the post-it palette restyles the chrome live — the root
   rebuild in `main.dart` only carries `ThemeData`, which doesn't

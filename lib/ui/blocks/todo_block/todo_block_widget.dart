@@ -4,6 +4,8 @@ import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:uuid/uuid.dart';
 
@@ -173,7 +175,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
                                 ? TextDecoration.lineThrough
                                 : TextDecoration.none,
                             color: item.done
-                                ? theme.colorScheme.onSurfaceVariant
+                                ? blockInk(context).withValues(alpha: 0.5)
                                 : null,
                           ),
                         ),
@@ -193,9 +195,11 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
     // scrolls so every item is reachable. The "Add item" InkWell sits
     // OUTSIDE that area so it stays visible at the bottom of the Column.
     final atItemCap = content.items.length >= kTodoMaxItems;
-    final addColor = atItemCap
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
-        : theme.colorScheme.primary;
+    // Use the chrome-injected tonal ink so the affordance stays on-hue on a
+    // coloured card (was colorScheme.primary, which painted the global accent
+    // on top of e.g. a blue block — GUS-86).
+    final ink = blockInk(context);
+    final addColor = atItemCap ? ink.withValues(alpha: 0.4) : ink;
     final itemsColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -260,7 +264,7 @@ class _TodoBlockWidgetState extends State<TodoBlockWidget> {
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: atItemCap
                       ? theme.colorScheme.error
-                      : theme.colorScheme.onSurfaceVariant,
+                      : ink.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -321,7 +325,9 @@ class _TodoRow extends StatelessWidget {
                   decoration: item.done
                       ? TextDecoration.lineThrough
                       : TextDecoration.none,
-                  color: item.done ? theme.colorScheme.onSurfaceVariant : null,
+                  color: item.done
+                      ? blockInk(context).withValues(alpha: 0.5)
+                      : null,
                 ),
                 decoration: const InputDecoration(
                   hintText: 'Task',
@@ -340,7 +346,7 @@ class _TodoRow extends StatelessWidget {
               child: AppIcon(
                 HugeIcons.strokeRoundedCancel01,
                 size: 12,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: blockInk(context).withValues(alpha: 0.55),
               ),
             ),
           ),
@@ -358,15 +364,17 @@ class _CheckBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // Track the chrome-injected tonal ink: a filled ink bubble when done (tick
+    // in the ink's contrast colour), a muted ink ring when not (GUS-86).
+    final ink = blockInk(context);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: done ? scheme.primary : Colors.transparent,
+        color: done ? ink : Colors.transparent,
         border: Border.all(
-          color: done ? scheme.primary : scheme.outline,
+          color: done ? ink : ink.withValues(alpha: 0.4),
           width: 1.5,
         ),
       ),
@@ -375,7 +383,7 @@ class _CheckBubble extends StatelessWidget {
               child: AppIcon(
                 HugeIcons.strokeRoundedTick01,
                 size: size * 0.65,
-                color: scheme.onPrimary,
+                color: contrastOn(ink),
               ),
             )
           : null,

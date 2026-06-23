@@ -59,6 +59,18 @@ for how they fit together; this file is per-file notes.
   height-constrained bottom-bar control). `AddCustomBlockButton` (in
   [pro_gate.dart](pro_gate.dart)) is now an `AppButton` wrapped in a `Stack` for
   its crown-badge overlay at the free cap.
+- [paper_background.dart](paper_background.dart) — `PaperBackground`
+  (GUS-85). Warm tactile journal background: paints the palette
+  `surface` plus a very faint, tileable paper grain behind its `child`.
+  The grain asset (`assets/textures/paper_grain.png`) is pure-white RGB
+  with the speckle in its **alpha** channel, so a `srcIn`
+  `ColorFilter` recolours it per theme from one texture (dark flecks on
+  the cream light surface, light flecks on the warm-dark surface), tinted
+  toward `onSurface` at low alpha and painted via a single repeated
+  `DecorationImage` (`opacity` defaults to 0.6 — keep it a whisper). Used
+  as the body background of the main journal screen (behind
+  `JournalPager`); blocks/cards sit on top and occlude it, so the grain
+  only reads in the open page gutters. Cheap — no per-frame painting.
 - [app_toast.dart](app_toast.dart) — `showToast(context, message,
   {kind = ToastKind.info, duration})` + `enum ToastKind {info, success,
   error}` (GUS-49). The app's single transient-notification primitive —
