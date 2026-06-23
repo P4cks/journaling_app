@@ -7,19 +7,25 @@ See [../CLAUDE.md](../CLAUDE.md) for the screen overview.
 - [journal_title.dart](journal_title.dart) — `JournalTitle`. Stacks
   [EditorTitle](editor_title.dart) on top of a smaller date subtitle
   via `formatEntryDate`. When no entry exists, falls back to a
-  non-editable date-only title.
+  non-editable date-only title. **Entry-as-hero (GUS-87):** the title
+  renders in `AppText.entryTitle` (Fraunces ~28) and the subtitle in
+  `AppText.entryDate`; the AppBar sets `toolbarHeight: 72` so the
+  nameplate has room. Keep them in sync.
 - [editor_title.dart](editor_title.dart) — `EditorTitle`
   (StatefulWidget) + internal `_InlineTitleField`. Tap-to-edit inline
   title field; commits on submit / blur, cancels via Escape. The
-  parent VM normalizes empty/whitespace → null (date fallback).
+  parent VM normalizes empty/whitespace → null (date fallback). Display
+  text, the inline `TextField`, and its hint all use `AppText.entryTitle`
+  (GUS-87) so editing doesn't change the title's size/face.
 - [make_entry_cta.dart](make_entry_cta.dart) — `MakeEntryCta`. Centered
-  icon + title + subtitle + tonal button. Used when today has no entry
-  (both as a standalone empty-day body and as the pager's trailing
-  today page). `onTap` is nullable — a null renders the button
-  disabled.
+  empty-state for today with no entry (both a standalone body and the
+  pager's trailing today page). An accent-haloed glyph, a Fraunces
+  `headlineSmall` title, a subtitle, and a primary `AppButton` (GUS-87 —
+  replaced the raw `FilledButton.tonalIcon`; copy is "A blank page" /
+  "Start today's entry…"). `onTap` is nullable — null disables the button.
 - [no_entry_read_only.dart](no_entry_read_only.dart) — `NoEntryReadOnly`.
-  Centered "No entry was made on this day." message for past days
-  with no entry.
+  Quiet past-empty-day state: a muted calendar glyph + "Nothing written
+  this day" (GUS-87 — was a single italic line).
 - [app_menu_button.dart](app_menu_button.dart) — `AppMenuButton`.
   The **currently-wired** top-bar menu: a profile-free
   `PopupMenuButton<String>` anchored on a hamburger icon
