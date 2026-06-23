@@ -129,6 +129,11 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   like `"squaresFour"` carried over from the pre-HugeIcons Phosphor
   era, resolved to a HugeIcons glyph via
   [ui/layouts/layout_icons.dart](../../ui/layouts/layout_icons.dart)).
+  **Since GUS-82 `iconName` may instead hold an emoji glyph** (e.g.
+  `"😀"`, stored verbatim); `isEmojiValue` / `IconOrEmoji`
+  ([ui/core/widgets/icon_or_emoji.dart](../../ui/core/widgets/icon_or_emoji.dart))
+  disambiguate at render time (ASCII = icon name, non-ASCII = emoji).
+  The field stays a `String?` — **no schema bump**.
   `copyWith` has `clearIcon: true` for explicit-null on `iconName`.
 - [layout_section.dart](layout_section.dart) — `LayoutSection`. One
   ordered section of a `JournalLayout`. Fields: `id`, `kind`
@@ -193,7 +198,10 @@ generated `hive_adapters.g.dart` and `hive_registrar.g.dart` lock onto.
   registry and referenced by id from `BlockTemplate.configJson` (layout
   slots) and from `HabitBlockContent`. `iconName` is a name from the
   shared `kCarouselIcons` catalogue (resolved via `carouselIconFor`;
-  unknown → question-mark fallback). Pure JSON
+  unknown → question-mark fallback) **or, since GUS-82, an emoji glyph
+  stored verbatim** — `IconOrEmoji` / `isEmojiValue` disambiguate at
+  render time (no schema change; it lives in the `settings` box anyway).
+  Pure JSON
   (`fromMap`/`toMap`/`copyWith`), lives in the schema-free `settings`
   box, so no Hive adapter. Mirrors the `CustomCarouselDefinition`
   storage pattern; orphan-tolerant (delete leaves a "Deleted block"

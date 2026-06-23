@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/journal_block_data.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/core/format/date_format.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 
@@ -170,7 +171,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
             Text(
               caption,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+                color: blockInk(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -201,7 +202,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
                       AppIcon(
                         HugeIcons.strokeRoundedArrowRight01,
                         size: 14,
-                        color: theme.colorScheme.primary,
+                        color: blockInk(context),
                       ),
                       const SizedBox(width: 4),
                       Flexible(
@@ -209,7 +210,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
                           'View day',
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                            color: blockInk(context),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -282,7 +283,7 @@ class _MemoryBlockWidgetState extends State<MemoryBlockWidget> {
                   prompt.prompt,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontStyle: FontStyle.italic,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: blockInk(context).withValues(alpha: 0.65),
                   ),
                 ),
                 const SizedBox(height: 4),

@@ -31,6 +31,10 @@ vs Dark is what flips the app; the OS brightness is no longer followed.
      `bottomNavigationBarTheme`, `chipTheme`, `dividerTheme`. Ensures
      `scaffoldBackgroundColor == scheme.surface` so screens with no
      explicit `body` background still pick up the palette.
+  7. Wires the **type system** (GUS-84): `fontFamily: kBodyFamily` (Inter)
+     for stray `Text`, and `textTheme: buildAppTextTheme().apply(bodyColor:
+     onSurface, displayColor: onSurface)` so every slot is tinted with the
+     palette's text colour (the styles in `app_typography` carry no colour).
   - The old `secondary` / `accent` / `textColor` / `surfaceOverride` /
     `brightness` parameters are **gone** (GUS-27) — they only existed for
     the removed debug overrides. Everything is read off the palette now.
@@ -39,11 +43,43 @@ vs Dark is what flips the app; the OS brightness is no longer followed.
   surface`; no `surfaceFor(brightness)`) + two built-in defaults
   `kLightDefaultPalette` (id `light`) and `kDarkDefaultPalette` (id
   `dark`), collected in `kBuiltInPalettes`. Both built-ins are free and
-  always selectable; they are not editable/deletable. Custom themes are
+  always selectable; they are not editable/deletable. **Warm tactile
+  palette (GUS-85):** the defaults are warm, not the old cool greys —
+  light `surface` is warm cream `#FAF6EF` with warm near-black ink
+  `#2B2622`; dark `surface` is warm near-black `#1A1714` with warm
+  off-white ink `#F3ECE2`; the accent is a soft terracotta (`#C57B57`
+  light / `#D98E68` dark) so CTAs/focus read warm. Re-cooling these
+  undoes the redesign. Custom themes are
   decoded by `ThemeSettings` from persisted JSON (each carries its own
   `brightness` + `surface`) and use generated ids. `paletteById(id)`
   falls back to `kLightDefaultPalette` on unknown id — safe to call with
   a settings value that might have been written by an older version.
+- [app_typography.dart](app_typography.dart) — the house **type system**
+  (GUS-84). Two bundled OFL **variable** fonts (declared in `pubspec.yaml`,
+  files in `assets/fonts/`): **Playfair Display** (`kDisplayFamily`) — a
+  high-contrast transitional serif for the journal voice (titles, dates,
+  headings), single `wght` axis (smaller display slots carry w600 so the
+  hairlines hold up); **Inter** (`kBodyFamily`) — clean sans for body text +
+  all UI chrome. `buildAppTextTheme()` assigns `display* / headline* /
+  titleLarge / titleMedium` → Playfair Display and `titleSmall / body* /
+  label*` → Inter (`titleSmall` is Inter on purpose: it labels UI chrome).
+  `AppText` exposes named journal styles that don't map onto a Material slot
+  (`entryTitle`, `entryDate`, `sectionHeading`) — read these instead of
+  hand-rolling a `TextStyle`. We bundle the TTFs (no `google_fonts` runtime
+  package); a single variable file per family carries every weight (Flutter
+  maps `FontWeight` → the `wght` axis).
+- [tonal.dart](tonal.dart) — the **tonal same-hue colour system** for coloured
+  blocks (GUS-86). `tonalBlockBackground(base, brightness)` derives a soft,
+  low-chroma tint of `base`'s hue (light wash in light themes, deep muted card
+  in dark); `tonalBlockForeground(base, brightness)` derives a saturated
+  **same-hue** ink for text + icons and walks its lightness until it clears a
+  WCAG contrast `target` (default 5.0) against the background — so even a
+  near-grey or awkward base resolves to legible text. `contrastRatio(a, b)` is
+  the WCAG ratio helper. Used by `block_chrome` instead of the old
+  `colorFromHex` + `contrastOn(bg)` black/white flip: every coloured block now
+  reads as "one hue, tinted, with matched ink", coherent across a multi-colour
+  grid. Block colours stored in `BlockVisuals.colorHex` are **hue anchors** —
+  re-interpreted through this mapper at render time (no schema change).
 - [color_hex.dart](color_hex.dart) — three top-level helpers:
   - `colorToHex(Color)` → `#RRGGBB` (uses the M3 `Color.r`/`.g`/`.b`
     floats, scaled to 0-255).

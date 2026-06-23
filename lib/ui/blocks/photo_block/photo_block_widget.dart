@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 /// Fires the photo block's primary action — opens the Add / Manage
 /// sheet without mounting any widget. Called from `MainJournalScreen`
@@ -201,13 +202,13 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
                 AppIcon(
                   HugeIcons.strokeRoundedPlusSign,
                   size: 32,
-                  color: theme.colorScheme.primary,
+                  color: blockInk(context),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Add photo',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: blockInk(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

@@ -7,6 +7,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/icon_emoji_picker.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/profile/view_model/habit_editor_view_model.dart';
 
 /// Create / edit a `HabitDefinition`. Mirrors `CustomBlockEditorScreen`'s
@@ -110,15 +111,22 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
     if (vm == null) return;
     final result = await showIconEmojiPicker(
       context,
-      title: 'Pick an icon',
+      title: 'Pick an emoji or icon',
+      allowEmoji: true,
       selectedIconName: vm.iconName,
       icons: [
         for (final i in kCarouselIcons)
           PickerIcon(name: i.name, icon: i.icon, label: i.label),
       ],
     );
-    if (result is! PickerIconResult) return;
-    vm.setIconName(result.name);
+    switch (result) {
+      case PickerIconResult(:final name):
+        vm.setIconName(name);
+      case PickerEmojiResult(:final emoji):
+        vm.setIconName(emoji);
+      case null:
+        return;
+    }
   }
 
   @override
@@ -128,9 +136,6 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final iconName = vm.iconName;
-    final resolvedIcon = iconName == null
-        ? null
-        : carouselIconFor(iconName)?.icon ?? HugeIcons.strokeRoundedQuestion;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: _handlePop,
@@ -195,13 +200,19 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
                         borderRadius: BorderRadius.circular(12),
                         color: scheme.surfaceContainerHighest,
                       ),
-                      child: resolvedIcon == null
+                      child: iconName == null
                           ? AppIcon(
                               HugeIcons.strokeRoundedAdd01,
                               size: 24,
                               color: scheme.onSurfaceVariant,
                             )
-                          : AppIcon(resolvedIcon, size: 28),
+                          : IconOrEmoji(
+                              value: iconName,
+                              resolveIcon: (v) =>
+                                  carouselIconFor(v ?? '')?.icon ??
+                                  HugeIcons.strokeRoundedQuestion,
+                              size: 28,
+                            ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journaling_app_rewrite/ui/theme/app_typography.dart';
 import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
 import 'package:journaling_app_rewrite/ui/theme/surface_palette.dart';
 
@@ -73,6 +74,15 @@ ThemeData buildAppTheme(SurfacePalette palette) {
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
+    // House type system (GUS-84). `fontFamily` defaults stray `Text` widgets
+    // to Inter; the explicit `textTheme` assigns Playfair Display vs Inter per slot.
+    // `.apply` tints every slot with the palette's onSurface (our styles carry
+    // no colour) so text follows the active palette.
+    fontFamily: kBodyFamily,
+    textTheme: buildAppTextTheme().apply(
+      bodyColor: onSurface,
+      displayColor: onSurface,
+    ),
     scaffoldBackgroundColor: scheme.surface,
     canvasColor: scheme.surface,
     iconTheme: IconThemeData(color: scheme.onSurface),

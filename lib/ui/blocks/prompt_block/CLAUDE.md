@@ -14,11 +14,17 @@ Typed wrapper:
   `false`, threaded from `BlockWidget`) controlling grid-vs-expanded
   answer scroll.
 - [prompt_picker_sheet.dart](prompt_picker_sheet.dart) —
-  `Future<String?> showPromptPickerSheet(context, {prompts, selected})`.
-  Modal bottom sheet listing the configured prompts plus a "Type
-  custom prompt…" tile that swaps into a `TextField`. Returns the
-  picked prompt string, or `null` on dismiss. Custom-typed prompts are
-  one-off — they are **not** appended to `BlockSettings.prompts`.
+  `Future<String?> showPromptPickerSheet(context, {prompts, selected,
+  onSaveToRotation})`. Modal bottom sheet listing the configured
+  prompts plus a "Type custom prompt…" tile that swaps into a
+  `TextField`. Returns the picked prompt string, or `null` on dismiss.
+  Custom-typed prompts are one-off by default. When `onSaveToRotation`
+  is supplied (GUS-79), the type body shows an "Add to my prompts"
+  checkbox; ticking it and tapping Done awaits the callback (which
+  appends the prompt to `BlockSettings.prompts`) before returning the
+  picked value. The checkbox auto-disables ("Already in your prompts")
+  once the typed text matches an existing prompt, and the callback
+  de-dupes defensively.
 
 ## How the prompt gets there
 
@@ -105,10 +111,12 @@ The widget reads the prompt from `widget.data.content`. It only reads
   read. Don't drop the prompt argument from `_emit`.
 - **Empty `answer` makes the block empty** for sweep purposes — the
   prompt text alone doesn't count.
-- **Custom-typed prompts are entry-local**, not added to the global
-  list. If users start asking for "save this prompt", revisit by
-  promoting the typed value into `BlockSettings.setPrompts` before
-  emitting.
+- **Custom-typed prompts are entry-local unless the user opts in.**
+  The picker's "Add to my prompts" checkbox (GUS-79) is the only path
+  that promotes a typed value into `BlockSettings.setPrompts`; leaving
+  it unticked keeps the prompt one-off. The save happens *before* the
+  sheet pops, so the appended prompt is live the next time the picker
+  list is built.
 
 ## When to update this file
 

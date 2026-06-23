@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/paper_background.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/journal/view_model/main_journal_view_model.dart';
 import 'package:journaling_app_rewrite/ui/journal/widgets/calendar_bottom_bar.dart';
@@ -173,6 +174,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       layouts: vm.getAvailableLayouts(),
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      subscriptions: AppDependencies.of(context).subscriptionRepository,
       onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: true),
       customLayoutLocked: !subs.isPro,
     );
@@ -196,6 +198,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       layouts: layouts,
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      subscriptions: AppDependencies.of(context).subscriptionRepository,
       onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: false),
       customLayoutLocked: !subs.isPro,
     );
@@ -388,6 +391,9 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
         return Scaffold(
           appBar: AppBar(
+            // Taller header so the Fraunces entry title + dateline read as the
+            // page's nameplate — the entry is the hero (GUS-87).
+            toolbarHeight: 72,
             title: JournalTitle(
               date: selectedDate,
               title: entry?.title,
@@ -402,10 +408,14 @@ class _MainJournalScreenState extends State<MainJournalScreen>
             onTap: _editing
                 ? null
                 : () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: Material(
-              color: scheme.surfaceContainerLow,
-              child: SizedBox.expand(
-                child: inPager
+            child: PaperBackground(
+              // Transparent Material keeps ink/splash context for descendants
+              // while the warm surface + paper grain are painted by
+              // PaperBackground behind them (GUS-85).
+              child: Material(
+                color: Colors.transparent,
+                child: SizedBox.expand(
+                  child: inPager
                     ? JournalPager(
                         viewModel: vm,
                         modeFor: (e) =>
@@ -420,6 +430,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                     : (editable
                           ? MakeEntryCta(onTap: _onMakeEntry)
                           : const NoEntryReadOnly()),
+                ),
               ),
             ),
           ),
