@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_shee
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 
 class PromptBlockWidget extends StatefulWidget {
   const PromptBlockWidget({
@@ -184,7 +185,6 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
     final theme = Theme.of(context);
     final content = PromptBlockContent.fromMap(widget.data.content);
     final prompt = content.prompt.trim();
-    final scheme = theme.colorScheme;
     final isEditable = widget.mode == BlockMode.editable;
 
     final promptText = prompt.isEmpty
@@ -199,7 +199,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
             prompt,
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: scheme.primary,
+              color: blockInk(context),
               height: 1.25,
             ),
           );
@@ -232,7 +232,7 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
                   onPressed: () => _openPicker(initial: false),
                   icon: AppIcon(
                     HugeIcons.strokeRoundedPencil,
-                    color: scheme.primary,
+                    color: blockInk(context),
                   ),
                 ),
               ),

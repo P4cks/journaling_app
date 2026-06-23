@@ -11,6 +11,8 @@ import 'package:journaling_app_rewrite/ui/blocks/widgets/block_options_button.da
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
+import 'package:journaling_app_rewrite/ui/theme/color_hex.dart';
+import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
 import 'package:record/record.dart';
 
 /// Hard cap on a single voice note. The recorder auto-stops here so a
@@ -118,13 +120,13 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
                 AppIcon(
                   HugeIcons.strokeRoundedMic01,
                   size: 32,
-                  color: theme.colorScheme.primary,
+                  color: blockInk(context),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Record voice',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: blockInk(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -305,12 +307,14 @@ class _VoicePlayerState extends State<_VoicePlayer> {
         ? _format(_position)
         : '${_format(_position)} / ${_format(total)}';
 
+    // Tonal ink so the inline player reads on-hue on a coloured block (GUS-86).
+    final ink = blockInk(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Material(
-            color: theme.colorScheme.primary,
+            color: ink,
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -322,7 +326,7 @@ class _VoicePlayerState extends State<_VoicePlayer> {
                       ? HugeIcons.strokeRoundedPause
                       : HugeIcons.strokeRoundedPlay,
                   size: 24,
-                  color: theme.colorScheme.onPrimary,
+                  color: contrastOn(ink),
                 ),
               ),
             ),
@@ -335,9 +339,8 @@ class _VoicePlayerState extends State<_VoicePlayer> {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 4,
-                backgroundColor: theme.colorScheme.primary.withValues(
-                  alpha: 0.18,
-                ),
+                color: ink,
+                backgroundColor: ink.withValues(alpha: 0.18),
               ),
             ),
           ),
@@ -345,7 +348,7 @@ class _VoicePlayerState extends State<_VoicePlayer> {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: ink.withValues(alpha: 0.7),
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
