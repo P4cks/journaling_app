@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/data/model/journal_layout.dart';
 import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
+import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/bottom_sheet_scaffold.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
@@ -46,6 +47,13 @@ String _summarize(JournalLayout layout) {
 /// caller is responsible for navigating to the Layouts screen. Omit it to
 /// render no footer.
 ///
+/// Pass [subscriptions] to gate Pro-built layouts for free users
+/// (GUS-72). A layout flagged by `layoutHasProOnlyFeatures` renders
+/// greyed with a trailing "Pro" chip for a non-Pro user, and tapping it
+/// presents the paywall via `requirePro` rather than applying it — the
+/// sheet only pops with the layout on a successful upgrade. Pro users
+/// (and layouts without Pro features) tap straight through. Omit it (or
+/// pass `null`) to disable the gate entirely.
 /// Pass [onCustomLayout] to append a "Create a custom layout for this day"
 /// footer row (GUS-65, a Pro feature). Tapping it dismisses the sheet
 /// (returning `null`) and invokes the callback — the caller owns the Pro
@@ -61,6 +69,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
   String? defaultLayoutId,
   String title = 'Choose layout',
   VoidCallback? onManageLayouts,
+  SubscriptionRepository? subscriptions,
   VoidCallback? onCustomLayout,
   bool customLayoutLocked = false,
 }) {
@@ -73,17 +82,55 @@ Future<JournalLayout?> showLayoutPickerSheet(
         delegate: SliverChildBuilderDelegate((listCtx, index) {
           final layout = layouts[index];
           final isDefault = layout.id == defaultLayoutId;
-          final scheme = Theme.of(listCtx).colorScheme;
+          // GUS-72: free users can't apply Pro-built layouts. Such a row
+          // greys + badges and routes the tap through the paywall; only a
+          // successful upgrade applies it. Pro users tap straight through.
+          final isProLocked = subscriptions != null &&
+              !subscriptions.isPro &&
+              layoutHasProOnlyFeatures(layout);
+          final theme = Theme.of(listCtx);
+          final scheme = theme.colorScheme;
+          final mutedColor = theme.disabledColor;
           return ListTile(
             leading: IconOrEmoji(
               value: layout.iconName,
               resolveIcon: (v) => layoutIconFor(v).icon,
-              color: isDefault ? scheme.primary : null,
+              color: isProLocked
+                  ? mutedColor
+                  : (isDefault ? scheme.primary : null),
             ),
-            title: Text(layout.name),
-            subtitle: Text(_summarize(layout)),
-            trailing: isDefault ? const LayoutDefaultChip() : null,
-            onTap: () => Navigator.of(listCtx).pop(layout),
+            title: Text(
+              layout.name,
+              style: isProLocked ? TextStyle(color: mutedColor) : null,
+            ),
+            subtitle: Text(
+              _summarize(layout),
+              style: isProLocked ? TextStyle(color: mutedColor) : null,
+            ),
+            trailing: (isProLocked || isDefault)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isProLocked) const ProLockBadge(),
+                      if (isProLocked && isDefault)
+                        const SizedBox(width: 8),
+                      if (isDefault) const LayoutDefaultChip(),
+                    ],
+                  )
+                : null,
+            onTap: () async {
+              if (isProLocked) {
+                // Capture the navigator before the async gap — `listCtx`
+                // may unmount while the paywall is up.
+                final navigator = Navigator.of(listCtx);
+                if (!await requirePro(subscriptions, context: listCtx)) {
+                  return;
+                }
+                navigator.pop(layout);
+              } else {
+                Navigator.of(listCtx).pop(layout);
+              }
+            },
           );
         }, childCount: layouts.length),
       ),

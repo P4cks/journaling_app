@@ -182,6 +182,13 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                 itemBuilder: (context, index) {
                   final layout = layouts[index];
                   final isDefault = layout.id == vm.defaultLayoutId;
+                  // GUS-72: mark layouts built with Pro-only features so
+                  // free users can see which layouts depend on Pro (the
+                  // lock dialog on tap still gates editing for downgraded
+                  // free users, GUS-41). Pro users get no badge — every
+                  // layout is editable for them, so it carries no signal.
+                  final isProLayout =
+                      !subs.isPro && layoutHasProOnlyFeatures(layout);
                   return Dismissible(
                     key: ValueKey(layout.id),
                     direction: DismissDirection.endToStart,
@@ -205,6 +212,10 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (isProLayout) ...[
+                            const ProLockBadge(),
+                            const SizedBox(width: 8),
+                          ],
                           if (isDefault)
                             const LayoutDefaultChip()
                           else

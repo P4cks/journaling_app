@@ -232,6 +232,12 @@ how layouts materialize).
     free users (see [../profile/view/CLAUDE.md](../profile/view/CLAUDE.md)).
     Old entries keep rendering every block/section — only editing/adding
     is gated.
+  - **GUS-72 — Pro layouts are badged for free users.** The same
+    `layoutHasProOnlyFeatures(layout)` predicate drives a trailing
+    `ProLockBadge()` "Pro" chip on each `LayoutsScreen` row, gated on
+    `!subs.isPro` so only free users see it (Pro users can edit every
+    layout, so the marker carries no signal for them). Purely
+    informational — the editing gate is still GUS-41's tap-time dialog.
   See [../subscription/CLAUDE.md](../subscription/CLAUDE.md) and
   [../../data/repositories/CLAUDE.md](../../data/repositories/CLAUDE.md).
 - **`LayoutsScreen` refreshes its VM manually on push-pop** because

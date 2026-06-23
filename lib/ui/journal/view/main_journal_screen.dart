@@ -174,6 +174,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       layouts: vm.getAvailableLayouts(),
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      subscriptions: AppDependencies.of(context).subscriptionRepository,
       onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: true),
       customLayoutLocked: !subs.isPro,
     );
@@ -197,6 +198,7 @@ class _MainJournalScreenState extends State<MainJournalScreen>
       layouts: layouts,
       defaultLayoutId: vm.defaultLayoutId,
       onManageLayouts: () => context.push(Routes.layouts),
+      subscriptions: AppDependencies.of(context).subscriptionRepository,
       onCustomLayout: () => _openCustomLayoutEditor(forNewEntry: false),
       customLayoutLocked: !subs.isPro,
     );
