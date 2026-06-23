@@ -8,6 +8,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 import 'package:journaling_app_rewrite/ui/layouts/layout_icons.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view_model/layouts_view_model.dart';
@@ -286,7 +287,6 @@ class _LayoutIconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final icon = layoutIconFor(iconName);
     return Container(
       width: 40,
       height: 40,
@@ -301,8 +301,9 @@ class _LayoutIconBadge extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: AppIcon(
-        icon.icon,
+      child: IconOrEmoji(
+        value: iconName,
+        resolveIcon: (v) => layoutIconFor(v).icon,
         size: 22,
         color: isDefault ? scheme.onPrimaryContainer : scheme.onSurface,
       ),
