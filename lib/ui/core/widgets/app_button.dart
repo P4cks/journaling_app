@@ -106,7 +106,8 @@ class AppButton extends StatelessWidget {
     // disabled — otherwise the disabled default paints a faint pill behind the
     // label.
     final fillLess =
-        variant == AppButtonVariant.text || variant == AppButtonVariant.inverted;
+        variant == AppButtonVariant.text ||
+        variant == AppButtonVariant.inverted;
 
     final style = FilledButton.styleFrom(
       backgroundColor: background,

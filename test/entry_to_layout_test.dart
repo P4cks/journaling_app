@@ -7,8 +7,11 @@ import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/ui/layouts/entry_to_layout.dart';
 
-JournalBlockData _block(String id, BlockType type, {Map<String, dynamic>? content}) =>
-    JournalBlockData.create(id: id, type: type, content: content ?? const {});
+JournalBlockData _block(
+  String id,
+  BlockType type, {
+  Map<String, dynamic>? content,
+}) => JournalBlockData.create(id: id, type: type, content: content ?? const {});
 
 void main() {
   group('layoutFromSections', () {
@@ -71,7 +74,9 @@ void main() {
             _block(
               'c1',
               BlockType.customCarousel,
-              content: const CustomCarouselBlockContent(definitionId: 'def-7').toMap(),
+              content: const CustomCarouselBlockContent(
+                definitionId: 'def-7',
+              ).toMap(),
             ),
           ],
         ),
@@ -82,24 +87,29 @@ void main() {
       expect(template.config['definitionId'], 'def-7');
     });
 
-    test('keeps only the float of a blockTextBody section, dropping the body', () {
-      final withFloat = EntrySection(
-        id: 's-bt',
-        kind: SectionKind.blockTextBody,
-        blocks: [
-          _block('float', BlockType.photoBlock),
-          _block('body', BlockType.textBlock),
-        ],
-      );
-      final textOnly = EntrySection(
-        id: 's-bt2',
-        kind: SectionKind.blockTextBody,
-        blocks: [_block('body2', BlockType.textBlock)],
-      );
-      final layout = layoutFromSections([withFloat, textOnly]);
-      expect(layout.sections[0].blocks.map((b) => b.type), [BlockType.photoBlock]);
-      expect(layout.sections[1].blocks, isEmpty);
-    });
+    test(
+      'keeps only the float of a blockTextBody section, dropping the body',
+      () {
+        final withFloat = EntrySection(
+          id: 's-bt',
+          kind: SectionKind.blockTextBody,
+          blocks: [
+            _block('float', BlockType.photoBlock),
+            _block('body', BlockType.textBlock),
+          ],
+        );
+        final textOnly = EntrySection(
+          id: 's-bt2',
+          kind: SectionKind.blockTextBody,
+          blocks: [_block('body2', BlockType.textBlock)],
+        );
+        final layout = layoutFromSections([withFloat, textOnly]);
+        expect(layout.sections[0].blocks.map((b) => b.type), [
+          BlockType.photoBlock,
+        ]);
+        expect(layout.sections[1].blocks, isEmpty);
+      },
+    );
 
     test('carries the wannado definitionId and carries no blocks', () {
       final sections = [

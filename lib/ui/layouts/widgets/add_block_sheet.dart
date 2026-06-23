@@ -50,7 +50,15 @@ const _builtinCategories = <({String label, List<BlockType> types})>[
   ),
   (label: 'Trackers', types: [BlockType.moodTracker, BlockType.streakBlock]),
   (label: 'Weather', types: [BlockType.weatherManual, BlockType.weatherApi]),
-  (label: 'Memories', types: [BlockType.photoBlock, BlockType.memoryBlock, BlockType.videoBlock, BlockType.voiceBlock]),
+  (
+    label: 'Memories',
+    types: [
+      BlockType.photoBlock,
+      BlockType.memoryBlock,
+      BlockType.videoBlock,
+      BlockType.voiceBlock,
+    ],
+  ),
   (label: 'Inspiration', types: [BlockType.quoteBlock]),
 ];
 

@@ -74,8 +74,10 @@ Future<void> main(List<String> args) async {
   final buf = StringBuffer()
     ..writeln('// GENERATED FILE — do not edit by hand.')
     ..writeln('//')
-    ..writeln('// Source: Unicode emoji-test.txt'
-        '${version == null ? '' : ' (Emoji $version)'}.')
+    ..writeln(
+      '// Source: Unicode emoji-test.txt'
+      '${version == null ? '' : ' (Emoji $version)'}.',
+    )
     ..writeln('// Regenerate with: dart run tool/gen_emoji_catalogue.dart')
     ..writeln('//')
     ..writeln('// Base forms only — skin-tone and hair-color variants are')

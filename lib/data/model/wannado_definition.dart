@@ -24,14 +24,12 @@ class WannadoDefinition {
     required this.items,
   });
 
-  WannadoDefinition copyWith({
-    String? title,
-    List<WannadoItem>? items,
-  }) => WannadoDefinition(
-    id: id,
-    title: title ?? this.title,
-    items: items ?? this.items,
-  );
+  WannadoDefinition copyWith({String? title, List<WannadoItem>? items}) =>
+      WannadoDefinition(
+        id: id,
+        title: title ?? this.title,
+        items: items ?? this.items,
+      );
 
   factory WannadoDefinition.fromMap(Map<String, dynamic> map) {
     final rawItems = map['items'];

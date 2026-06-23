@@ -85,7 +85,8 @@ Future<JournalLayout?> showLayoutPickerSheet(
           // GUS-72: free users can't apply Pro-built layouts. Such a row
           // greys + badges and routes the tap through the paywall; only a
           // successful upgrade applies it. Pro users tap straight through.
-          final isProLocked = subscriptions != null &&
+          final isProLocked =
+              subscriptions != null &&
               !subscriptions.isPro &&
               layoutHasProOnlyFeatures(layout);
           final theme = Theme.of(listCtx);
@@ -112,8 +113,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isProLocked) const ProLockBadge(),
-                      if (isProLocked && isDefault)
-                        const SizedBox(width: 8),
+                      if (isProLocked && isDefault) const SizedBox(width: 8),
                       if (isDefault) const LayoutDefaultChip(),
                     ],
                   )
@@ -152,9 +152,7 @@ Future<JournalLayout?> showLayoutPickerSheet(
                       'Create a custom layout for this day',
                       style: TextStyle(color: scheme.primary),
                     ),
-                    trailing: customLayoutLocked
-                        ? const ProLockBadge()
-                        : null,
+                    trailing: customLayoutLocked ? const ProLockBadge() : null,
                     onTap: () {
                       Navigator.of(footerCtx).pop();
                       onCustomLayout();

@@ -78,8 +78,7 @@ class StreakRewardSettings extends ChangeNotifier {
   Set<SectionKind> get unlockedSections => Set.unmodifiable(_unlockedSections);
 
   bool isBlockUnlocked(BlockType type) => _unlockedBlocks.contains(type);
-  bool isSectionUnlocked(SectionKind kind) =>
-      _unlockedSections.contains(kind);
+  bool isSectionUnlocked(SectionKind kind) => _unlockedSections.contains(kind);
 
   /// How many tokens the user has spent. The first milestone grants
   /// exactly one, so `claimedCount > 0` ⇒ the token is spent.

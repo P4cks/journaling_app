@@ -18,11 +18,7 @@ class NoEntryReadOnly extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(
-              HugeIcons.strokeRoundedCalendar03,
-              size: 36,
-              color: muted,
-            ),
+            AppIcon(HugeIcons.strokeRoundedCalendar03, size: 36, color: muted),
             const SizedBox(height: 14),
             Text(
               'Nothing written this day',

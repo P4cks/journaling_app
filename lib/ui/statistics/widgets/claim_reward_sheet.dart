@@ -35,8 +35,7 @@ const _rewardSections = <_RewardSection>[
     kind: SectionKind.blockTextBody,
     icon: HugeIcons.strokeRoundedImage01,
     label: 'Block + text',
-    description:
-        'A photo or memory floated left with text wrapping around it.',
+    description: 'A photo or memory floated left with text wrapping around it.',
   ),
   _RewardSection(
     kind: SectionKind.wannado,

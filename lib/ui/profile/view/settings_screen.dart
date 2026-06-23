@@ -218,7 +218,8 @@ class SettingsScreen extends StatelessWidget {
                                 'wanna-do definition. Layouts using them render '
                                 'a placeholder. Cannot be undone.',
                               ),
-                              onTap: () => _confirmAndResetCustomBlocks(context),
+                              onTap: () =>
+                                  _confirmAndResetCustomBlocks(context),
                             ),
                             ListTile(
                               leading: AppIcon(
@@ -272,9 +273,9 @@ class _VersionFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: scheme.onSurfaceVariant,
-    );
+    final labelStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -436,8 +437,9 @@ Future<void> _confirmAndResetCustomBlocks(BuildContext context) async {
     confirmLabel: 'Reset custom blocks',
   );
   if (!ok || !context.mounted) return;
-  final cleared = await AppDependencies.of(context).blockSettings
-      .resetCustomBlocks();
+  final cleared = await AppDependencies.of(
+    context,
+  ).blockSettings.resetCustomBlocks();
   if (!context.mounted) return;
   showToast(
     context,
@@ -663,4 +665,3 @@ class _AddPostItSwatch extends StatelessWidget {
     );
   }
 }
-

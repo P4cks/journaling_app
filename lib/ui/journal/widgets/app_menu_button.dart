@@ -19,8 +19,9 @@ class AppMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final subscriptionRepository =
-        AppDependencies.of(context).subscriptionRepository;
+    final subscriptionRepository = AppDependencies.of(
+      context,
+    ).subscriptionRepository;
 
     // Rebuild the menu when entitlement state changes so the Pro badge
     // appears/disappears without requiring a manual reopen.

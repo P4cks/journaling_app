@@ -9,7 +9,11 @@ import 'package:journaling_app_rewrite/ui/core/widgets/emoji_catalogue.dart';
 /// per-area icon catalogues (`kCarouselIcons`, `kLayoutIcons`). Map a
 /// catalogue entry to this at the call site.
 class PickerIcon {
-  const PickerIcon({required this.name, required this.icon, required this.label});
+  const PickerIcon({
+    required this.name,
+    required this.icon,
+    required this.label,
+  });
 
   final String name;
   final HugeIconData icon;
@@ -117,7 +121,8 @@ class _IconEmojiPickerSheetState extends State<_IconEmojiPickerSheet> {
     super.dispose();
   }
 
-  void _popIcon(String name) => Navigator.of(context).pop(PickerIconResult(name));
+  void _popIcon(String name) =>
+      Navigator.of(context).pop(PickerIconResult(name));
   void _popEmoji(String emoji) =>
       Navigator.of(context).pop(PickerEmojiResult(emoji));
 
@@ -246,13 +251,10 @@ class _IconEmojiPickerSheetState extends State<_IconEmojiPickerSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           sliver: SliverGrid(
             gridDelegate: _gridDelegate,
-            delegate: SliverChildBuilderDelegate(
-              (context, i) {
-                final e = list[i];
-                return _EmojiTile(entry: e, onTap: () => _popEmoji(e.emoji));
-              },
-              childCount: list.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, i) {
+              final e = list[i];
+              return _EmojiTile(entry: e, onTap: () => _popEmoji(e.emoji));
+            }, childCount: list.length),
           ),
         ),
       );

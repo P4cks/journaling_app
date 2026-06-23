@@ -312,11 +312,10 @@ class _HabitCheckBubble extends StatelessWidget {
               )
             : IconOrEmoji(
                 value: iconValue,
-                resolveIcon: (v) =>
-                    (v == null || v.isEmpty)
-                        ? HugeIcons.strokeRoundedCheckmarkCircle02
-                        : (carouselIconFor(v)?.icon ??
-                              HugeIcons.strokeRoundedCheckmarkCircle02),
+                resolveIcon: (v) => (v == null || v.isEmpty)
+                    ? HugeIcons.strokeRoundedCheckmarkCircle02
+                    : (carouselIconFor(v)?.icon ??
+                          HugeIcons.strokeRoundedCheckmarkCircle02),
                 size: size * 0.5,
                 color: ink.withValues(alpha: 0.7),
               ),

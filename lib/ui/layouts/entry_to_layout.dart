@@ -39,7 +39,11 @@ LayoutSection _sectionFromEntry(EntrySection section) {
     case SectionKind.divider:
       // Carry no slots — the materialised text block (text/header) is
       // implicit, and dividers are purely visual.
-      return LayoutSection(id: section.id, kind: section.kind, blocks: const []);
+      return LayoutSection(
+        id: section.id,
+        kind: section.kind,
+        blocks: const [],
+      );
     case SectionKind.wannado:
       return LayoutSection(
         id: section.id,

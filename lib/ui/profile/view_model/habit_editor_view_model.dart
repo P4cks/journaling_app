@@ -20,10 +20,8 @@ const _uuid = Uuid();
 /// The icon is optional — habits resolve a question-mark fallback when
 /// `iconName` is empty/unknown, so it never blocks save.
 class HabitEditorViewModel extends ChangeNotifier {
-  HabitEditorViewModel({
-    required BlockSettings settings,
-    String? definitionId,
-  }) : _settings = settings {
+  HabitEditorViewModel({required BlockSettings settings, String? definitionId})
+    : _settings = settings {
     final existing = definitionId == null
         ? null
         : settings.findHabit(definitionId);

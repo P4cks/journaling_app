@@ -328,7 +328,11 @@ class _WannadoItemDialogState extends State<_WannadoItemDialog> {
           onPressed: () => Navigator.of(context).pop(),
           label: 'Cancel',
         ),
-        AppButton(variant: AppButtonVariant.primary, onPressed: _submit, label: 'Save'),
+        AppButton(
+          variant: AppButtonVariant.primary,
+          onPressed: _submit,
+          label: 'Save',
+        ),
       ],
     );
   }

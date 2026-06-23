@@ -70,16 +70,14 @@ class _ToastPillState extends State<_ToastPill>
     reverseDuration: _kToastExitDuration,
   )..forward();
 
-  late final Animation<Offset> _slide = Tween<Offset>(
-    begin: const Offset(1, 0),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ),
-  );
+  late final Animation<Offset> _slide =
+      Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+      );
 
   late final Animation<double> _fade = CurvedAnimation(
     parent: _controller,

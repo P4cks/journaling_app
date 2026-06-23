@@ -255,9 +255,8 @@ class ThemeSettings extends ChangeNotifier {
     final brightness = switch (rawBrightness) {
       'light' => Brightness.light,
       'dark' => Brightness.dark,
-      _ => surface.computeLuminance() > 0.5
-          ? Brightness.light
-          : Brightness.dark,
+      _ =>
+        surface.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark,
     };
     return SurfacePalette(
       id: id,

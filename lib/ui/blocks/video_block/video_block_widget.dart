@@ -416,7 +416,11 @@ class _VideoPosterState extends State<_VideoPoster> {
                   ),
                   child: Padding(
                     padding: EdgeInsets.all(8),
-                    child: Icon(Icons.play_arrow, color: Colors.white, size: 28),
+                    child: Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
               ),

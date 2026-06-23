@@ -494,7 +494,9 @@ class LayoutEditorViewModel extends ChangeNotifier {
       return null;
     }
     if (isEmpty) {
-      debugPrint('[LayoutEditorVM] save skipped (layout empty for kind $_kind)');
+      debugPrint(
+        '[LayoutEditorVM] save skipped (layout empty for kind $_kind)',
+      );
       return null;
     }
     final layout = _buildLayout(name: nameController.text.trim());

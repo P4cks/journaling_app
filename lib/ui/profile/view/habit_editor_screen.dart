@@ -140,9 +140,7 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
       canPop: false,
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(vm.isNew ? 'New habit' : 'Edit habit'),
-        ),
+        appBar: AppBar(title: Text(vm.isNew ? 'New habit' : 'Edit habit')),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [

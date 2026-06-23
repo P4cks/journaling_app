@@ -227,7 +227,11 @@ class AddCustomBlockButton extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         button,
-        const Positioned(top: -6, right: -6, child: ProLockBadge(compact: true)),
+        const Positioned(
+          top: -6,
+          right: -6,
+          child: ProLockBadge(compact: true),
+        ),
       ],
     );
   }
@@ -334,7 +338,8 @@ bool layoutHasProOnlyFeatures(JournalLayout layout) {
     int customCarouselCount = 0;
     for (final block in section.blocks) {
       // Check for Pro-only built-in block types
-      if (block.type == BlockType.weatherApi || block.type == BlockType.quoteBlock) {
+      if (block.type == BlockType.weatherApi ||
+          block.type == BlockType.quoteBlock) {
         return true;
       }
 

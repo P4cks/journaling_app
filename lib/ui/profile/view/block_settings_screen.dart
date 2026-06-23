@@ -408,7 +408,9 @@ class _WannadoCarouselList extends StatelessWidget {
     WannadoDefinition def,
   ) async {
     final uses = layoutRepository.countWannadoUsage(def.id);
-    final label = def.title.isEmpty ? 'this wanna-do carousel' : '"${def.title}"';
+    final label = def.title.isEmpty
+        ? 'this wanna-do carousel'
+        : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -582,10 +584,7 @@ class _HabitList extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    HabitDefinition def,
-  ) async {
+  Future<void> _confirmDelete(BuildContext context, HabitDefinition def) async {
     final label = def.title.isEmpty ? 'this habit' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -622,8 +621,7 @@ class _HabitList extends StatelessWidget {
       builder: (context, _) {
         final defs = settings.habits;
         // Shared "custom block" budget with carousels (GUS-40).
-        final customBlockCount =
-            defs.length + settings.customCarousels.length;
+        final customBlockCount = defs.length + settings.customCarousels.length;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -685,8 +683,7 @@ class _HabitDefinitionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
-    final iconValue =
-        definition.iconName.isEmpty ? null : definition.iconName;
+    final iconValue = definition.iconName.isEmpty ? null : definition.iconName;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(

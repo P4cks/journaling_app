@@ -13,11 +13,7 @@ import 'package:flutter/material.dart';
 /// Used as the body background of the main journal screen. Cheap: a single
 /// repeated `DecorationImage`, no per-frame painting.
 class PaperBackground extends StatelessWidget {
-  const PaperBackground({
-    super.key,
-    required this.child,
-    this.opacity = 0.6,
-  });
+  const PaperBackground({super.key, required this.child, this.opacity = 0.6});
 
   /// The content painted on top of the textured surface.
   final Widget child;

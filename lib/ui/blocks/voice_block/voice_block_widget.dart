@@ -461,9 +461,9 @@ class _RecorderSheetState extends State<_RecorderSheet> {
       Navigator.of(context).pop();
       return;
     }
-    Navigator.of(context).pop(
-      VoiceRecording(path: path, durationMs: measured.inMilliseconds),
-    );
+    Navigator.of(
+      context,
+    ).pop(VoiceRecording(path: path, durationMs: measured.inMilliseconds));
   }
 
   Future<void> _cancel() async {
