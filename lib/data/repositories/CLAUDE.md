@@ -38,8 +38,16 @@ coordination live.
   `SubscriptionService.configure`) fetches initial `CustomerInfo` +
   `Offerings`, **swallowing failures** so an offline launch falls
   through to the persisted flag; `restore()` re-applies prior purchases.
-  `ensureOfferings()` (re)loads the current offering and returns whether
-  a paywall can be presented — the Pro gate
+  Caught `PlatformException`s from `init()` / `restore()` are mapped to a
+  **user-friendly** `errorMessage` via `_friendlyPurchasesError`
+  (top-level in [subscription_repository.dart](subscription_repository.dart),
+  GUS-92): it runs `PurchasesErrorHelper.getErrorCode` and returns a
+  dedicated "you're offline" string for `networkError` /
+  `offlineConnectionError`, else a generic "something went wrong". The
+  raw SDK message is only `debugPrint`ed — never surfaced — so the
+  Subscription screen / restore toast never show RevenueCat's developer
+  text. `ensureOfferings()` (re)loads the current offering and returns
+  whether a paywall can be presented — the Pro gate
   ([pro_gate.dart](../../ui/core/widgets/pro_gate.dart)) calls it to
   detect "offline / can't buy" before presenting RevenueCat's paywall.
   `hasOfferings` exposes the same state synchronously. The live
