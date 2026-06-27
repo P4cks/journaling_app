@@ -17,15 +17,22 @@ subscription/
   `didChangeDependencies` and wraps the body in a
   `ListenableBuilder(listenable: subscriptionRepository)`. Renders a
   status card ("Journaling App Pro" vs "Free plan") and:
-  - **Free:** an "Upgrade to Pro" `FilledButton` →
-    `RevenueCatUI.presentPaywall()`.
+  - **Free:** an "Upgrade to Pro" `FilledButton` → `requirePro(subs,
+    context:)` (the shared Pro gate, GUS-92) — **not** a bare
+    `RevenueCatUI.presentPaywall()`. Routing through the gate means an
+    offline user gets the "you're offline" toast instead of a broken /
+    empty native paywall, and any RevenueCat error is reported as a
+    friendly toast.
   - **Pro:** a "Manage subscription" `FilledButton` →
     `RevenueCatUI.presentCustomerCenter()` (cancel / refund / plan
     change flows).
   - Always: a "Restore purchases" `TextButton` →
     `subscriptionRepository.restore()`, with a toast reporting the
     result.
-  - Loading spinner + `errorMessage` surfaced from the repository.
+  - Loading spinner + `errorMessage` surfaced from the repository. The
+    `errorMessage` is already a **user-friendly** string (the repository
+    maps raw RevenueCat `PlatformException`s — see GUS-92), so this
+    screen renders it verbatim and never sees the raw SDK message.
 
 ## Implementation details
 

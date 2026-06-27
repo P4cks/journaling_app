@@ -5,6 +5,7 @@ import 'package:journaling_app_rewrite/data/repositories/subscription_repository
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/pro_gate.dart';
 
 /// Subscription hub reached from Settings → Subscription. Shows the current
 /// plan and routes purchases through the RevenueCat paywall + Customer Center.
@@ -28,8 +29,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _openPaywall() async {
-    await RevenueCatUI.presentPaywall();
+    final subs = _subscriptions;
+    if (subs == null) return;
+    // Route through the shared gate so an offline user gets the friendly
+    // "you're offline" toast instead of a broken/empty native paywall, and
+    // any RevenueCat error is surfaced as a user-facing message (GUS-92).
     // No manual refresh: the repository's customer-info listener updates isPro.
+    await requirePro(subs, context: context);
   }
 
   Future<void> _openCustomerCenter() async {

@@ -81,7 +81,7 @@ class SubscriptionRepository extends ChangeNotifier {
       _offerings = await _service.getOfferings();
       debugPrint('[SubscriptionRepository] init; isPro=$isPro');
     } on PlatformException catch (e) {
-      _errorMessage = e.message;
+      _errorMessage = _friendlyPurchasesError(e);
       debugPrint(
         '[SubscriptionRepository] init failed (offline?): ${e.message}; '
         'falling back to lastKnownPro=$_lastKnownPro',
@@ -101,7 +101,7 @@ class SubscriptionRepository extends ChangeNotifier {
       _applyCustomerInfo(await _service.restorePurchases());
       debugPrint('[SubscriptionRepository] restore; isPro=$isPro');
     } on PlatformException catch (e) {
-      _errorMessage = e.message;
+      _errorMessage = _friendlyPurchasesError(e);
       debugPrint('[SubscriptionRepository] restore failed: ${e.message}');
     } finally {
       _isLoading = false;
@@ -162,5 +162,29 @@ class SubscriptionRepository extends ChangeNotifier {
   void dispose() {
     _service.removeCustomerInfoUpdateListener(_onCustomerInfo);
     super.dispose();
+  }
+}
+
+/// Maps a RevenueCat [PlatformException] to a short, user-facing message.
+/// The raw SDK message (e.g. "There was a problem with the request…") is
+/// developer-facing noise, so we never surface it to users (GUS-92). Offline /
+/// network failures get a dedicated "you're offline" message; everything else
+/// falls back to a generic try-again. The raw message is still `debugPrint`ed
+/// by the callers for diagnosis.
+String _friendlyPurchasesError(PlatformException e) {
+  PurchasesErrorCode code;
+  try {
+    code = PurchasesErrorHelper.getErrorCode(e);
+  } on FormatException {
+    // `getErrorCode` parses `e.code` as a number; a non-RevenueCat
+    // PlatformException (no numeric code) shouldn't crash the mapper.
+    code = PurchasesErrorCode.unknownError;
+  }
+  switch (code) {
+    case PurchasesErrorCode.networkError:
+    case PurchasesErrorCode.offlineConnectionError:
+      return "You're offline — connect to the internet and try again.";
+    default:
+      return 'Something went wrong. Please try again.';
   }
 }
