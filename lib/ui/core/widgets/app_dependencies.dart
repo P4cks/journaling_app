@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/repositories/subscription_repository
 import 'package:journaling_app_rewrite/data/services/audio_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
+import 'package:journaling_app_rewrite/data/services/onboarding_settings.dart';
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/streak_reward_settings.dart';
@@ -23,6 +24,7 @@ class AppDependencies extends InheritedWidget {
     required this.themeSettings,
     required this.blockSettings,
     required this.streakRewardSettings,
+    required this.onboardingSettings,
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
@@ -39,6 +41,7 @@ class AppDependencies extends InheritedWidget {
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
   final StreakRewardSettings streakRewardSettings;
+  final OnboardingSettings onboardingSettings;
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
@@ -62,6 +65,7 @@ class AppDependencies extends InheritedWidget {
       themeSettings != oldWidget.themeSettings ||
       blockSettings != oldWidget.blockSettings ||
       streakRewardSettings != oldWidget.streakRewardSettings ||
+      onboardingSettings != oldWidget.onboardingSettings ||
       quoteService != oldWidget.quoteService ||
       weatherService != oldWidget.weatherService ||
       photoStorage != oldWidget.photoStorage ||

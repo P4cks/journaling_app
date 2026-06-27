@@ -31,6 +31,10 @@ the same three-part shape:
   with editable title + date subtitle + entries-icon + profile dropdown,
   swipe pager between entries, sticky calendar bar at the bottom.
   Merger of the former Home + journal-entry editor.
+- [onboarding/CLAUDE.md](onboarding/CLAUDE.md) — First-run welcome
+  carousel (GUS-18). A `PageView` of icon-driven slides at
+  `/onboarding`; auto-pushed once on first launch and replayable from
+  Settings → Help.
 - [journal_entries/CLAUDE.md](journal_entries/CLAUDE.md) — Sectioned
   list of all entries (plural). Route still exists at `/entries` but
   no AppBar action links to it after the stats rewire — kept around

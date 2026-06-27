@@ -158,6 +158,7 @@ older `ProfileMenuButton` is retained unused for future user profiles.
 | `SettingsSection` "Appearance" | —                  | single `SettingsNavTile` "Theme" → `/theme-settings` (GUS-27) |
 | `SettingsSection` "Journal templates" | —             | "Manage Layout" (dashboard-setting icon) → `/layouts` |
 | `SettingsSection` "Blocks" | —                      | "Manage Blocks" (block-game icon) → `/block-settings` |
+| `SettingsSection` "Help" | —                  | single `ListTile` "Replay tutorial" (help-circle icon) → `context.push(Routes.onboarding)` with no `extra` (GUS-18). Plain `ListTile`, not `SettingsNavTile`, so back works normally on the replayed carousel |
 | `SettingsSection` "Beta testing" | `debugSettings` | **BETA-ONLY, always visible (incl. release)** — a single "Unlock all days" `SwitchListTile` bound to `debug.unlockAllDays`. Surfaces the unlock outside the `kDebugMode` gate so beta testers can reach it. Remove this section before 1.0 |
 | `SettingsSection` "Debug" | `debugSettings`         | **`kDebugMode`-gated** — the whole section (incl. the "Show debug menu" toggle) is absent from the tree in release builds; inner rows still gated by the `debugMenuVisible` toggle |
 | `_VersionFooter`            | —                       | Always-visible footer pinned to the bottom of the list. `FutureBuilder<PackageInfo>` (`package_info_plus`) renders "Version `<version>` (`<buildNumber>`)"; appends a red **DEBUG** badge when `kDebugMode` (dev builds only) |

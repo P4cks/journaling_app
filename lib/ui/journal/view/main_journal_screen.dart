@@ -82,6 +82,15 @@ class _MainJournalScreenState extends State<MainJournalScreen>
         initialDate: widget.initialDate,
       );
       _viewModel!.addListener(_onChanged);
+
+      // First-run onboarding (GUS-18): on a fresh install push the
+      // welcome carousel over the main screen on the first frame. The
+      // persisted flag means this only ever fires once.
+      if (!deps.onboardingSettings.completed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.push(Routes.onboarding, extra: true);
+        });
+      }
     }
   }
 

@@ -9,6 +9,10 @@ every screen has access to repositories without per-route plumbing.
 - [app_router.dart](app_router.dart) — `GoRouter appRouter`. Flat
   top-level routes, no `StatefulShellRoute`:
   - `/` → `MainJournalScreen()` (defaults to today)
+  - `/onboarding` → `OnboardingScreen(firstRun: state.extra as bool? ??
+    false)` (GUS-18 welcome carousel). Pushed with `extra: true` by the
+    main screen on first launch (blocks back-dismiss); pushed with no
+    `extra` from Settings → Help → "Replay tutorial".
   - `/journal/:date` → `MainJournalScreen(initialDate: parsed)`
     (deep-link / entries-list tap)
   - `/entries` → `JournalEntriesScreen` (kept for future reuse; no

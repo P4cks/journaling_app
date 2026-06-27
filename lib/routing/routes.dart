@@ -4,6 +4,7 @@ class Routes {
   Routes._();
 
   static const home = '/';
+  static const onboarding = '/onboarding';
   static const journalEntry = '/journal/:date';
   static const entries = '/entries';
   static const statistics = '/statistics';
@@ -51,6 +52,7 @@ class RouteNames {
   RouteNames._();
 
   static const home = 'home';
+  static const onboarding = 'onboarding';
   static const journalEntry = 'journalEntry';
   static const entries = 'entries';
   static const statistics = 'statistics';

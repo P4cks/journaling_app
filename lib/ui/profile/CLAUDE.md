@@ -71,12 +71,17 @@ Settings contains:
    `subscriptionRepository` so the title flips between "Upgrade to Pro"
    (free) and "Manage subscription" (Pro). See
    [../subscription/CLAUDE.md](../subscription/CLAUDE.md).
-6. **Beta testing** — **BETA-ONLY, always visible (including release
+6. **Help** — a single `ListTile` ("Replay tutorial", help-circle icon)
+   that pushes `/onboarding` with no `extra` (so `firstRun` is false and
+   system back works). Replays the GUS-18 welcome carousel on demand. A
+   plain `ListTile` rather than `SettingsNavTile` because the nav tile
+   always pushes without `extra`; the row itself just mimics its look.
+7. **Beta testing** — **BETA-ONLY, always visible (including release
    builds)**: a single "Unlock all days" `SwitchListTile` bound to
    `debug.unlockAllDays`. It deliberately surfaces the unlock outside
    the `kDebugMode`-gated Debug section so beta testers can reach it.
    **Remove this whole section before the 1.0 launch.**
-7. **Debug** — the whole section is **`kDebugMode`-gated** (absent in
+8. **Debug** — the whole section is **`kDebugMode`-gated** (absent in
    release builds). In a debug build: `Show debug menu` toggle plus,
    when on, `unlockAllDays`, `Simulate free account` (a `SwitchListTile`
    bound to `subscriptionRepository.debugForceFree` / `setDebugForceFree`;
