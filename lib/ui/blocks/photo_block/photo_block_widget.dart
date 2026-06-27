@@ -168,15 +168,29 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
 
     if (!content.hasPhoto) {
       if (widget.mode == BlockMode.readOnly) {
+        // A photo glyph + label, not bare "No photo" text, so the block is
+        // recognizable as a photo block in previews like the layout editor
+        // (GUS-73).
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Center(
-            child: Text(
-              'No photo',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontStyle: FontStyle.italic,
-                color: theme.disabledColor,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedImage01,
+                  size: 28,
+                  color: theme.disabledColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Photo',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -200,7 +214,7 @@ class _PhotoBlockWidgetState extends State<PhotoBlockWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppIcon(
-                  HugeIcons.strokeRoundedPlusSign,
+                  HugeIcons.strokeRoundedImage01,
                   size: 32,
                   color: blockInk(context),
                 ),

@@ -57,10 +57,17 @@ tapped:
   `TextSectionWidget` in `BlockMode.readOnly` (over an empty
   `TextBlockContent`) so it shows the same "No text yet" italic
   placeholder a fresh entry would.
-- **custom** — fully editable. The editor renders a vertical stack
-  of section cards. Each card has up/down/delete affordances; for
-  block-grid sections an inline "Add block" button (the grid grows
-  to fit added blocks — no row picker). Below the last section a
+- **custom** — fully editable. The editor renders a vertical
+  `ReorderableListView` of sections. Sections have **no card chrome**
+  (no grey fill / border) so the block previews read like real
+  journal-entry content; each carries only a slim quiet header — a
+  leading drag handle (`ReorderableDragStartListener`), a faded type
+  label, and a trailing remove-X — with a hairline `Divider` between
+  sections. **Reorder is drag-and-drop via the handle** (the old
+  up/down buttons are gone); the explicit handle keeps the section
+  drag from clashing with a block-grid section's own long-press block
+  drag. For block-grid sections an inline "Add block" button (the grid
+  grows to fit added blocks — no row picker). Below the last section a
   dashed "Add section" tap zone opens [add_section_sheet.dart](widgets/add_section_sheet.dart)
   to append a text or block-grid section. New block-grid sections
   start empty. No AppBar `+` — section creation happens at the tap
@@ -143,10 +150,14 @@ kinds share the same drag-drop code path as the journal pager —
 when the journal entry's DnD works, the layout editor's does too.
 
 The blocks are constructed from `BlockSlot`s (the VM's lightweight
-`(id, type)` pair) by `_slotPreviewData(slot, blockSettings,
-themeSettings)`, which builds a `JournalBlockData` via
+`(id, type, definitionId?)` triple) by `_slotPreviewData(slot,
+blockSettings, themeSettings)`, which builds a `JournalBlockData` via
 `BlockType.sampleData(id: slot.id)` (see
-[block_type_display.dart](../blocks/block_type_display.dart)) and
+[block_type_display.dart](../blocks/block_type_display.dart)) for
+built-ins, but threads `slot.definitionId` through for `customCarousel`
+**and `habitTracker`** slots so the preview resolves the real
+definition's title (GUS-73) instead of `sampleData`'s generic,
+title-less placeholder. It also
 **seeds `BlockVisuals` deterministically from the slot id** against
 the live post-it palette. The visuals stay stable across rebuilds and
 match what a materialized entry will use — so the editor previews
@@ -255,6 +266,16 @@ how layouts materialize).
   `to == from + 1` as a no-op, which made forward one-position
   moves silently fail and longer moves off-by-one. Match
   `MainJournalViewModel.reorderBlockInSection` exactly.
+- **Section reordering (custom kind) is wired to
+  `ReorderableListView.builder(onReorderItem: vm.moveSection)`** — like
+  the wanna-do / custom-block editors, NOT the deprecated `onReorder`.
+  `onReorderItem` hands over a `newIndex` already adjusted for the
+  removed source item, and `moveSection` is itself a plain
+  `removeAt + insert`, so the two compose with no manual
+  `newIndex > oldIndex` correction. `buildDefaultDragHandles: false` +
+  an explicit `ReorderableDragStartListener` on the header drag handle
+  is mandatory: block-grid sections embed a `BlockGrid` that drags its
+  blocks on long-press, so a long-press section drag would clash.
 
 ## When to update this file
 

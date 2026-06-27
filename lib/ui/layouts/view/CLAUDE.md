@@ -109,8 +109,16 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
       `BlockGrid(scrollable: false, onAddBlock: …)`. Empty sections
       show only the inline Add button — no separate empty-state
       branch.
-  - **Custom-layout sections** still route via the per-`SectionKind`
-    switch in `_SectionCard.build`:
+  - **Custom-layout sections** render in a `ReorderableListView` inside
+    `_CustomBody` (drag-and-drop reorder via each card's header drag
+    handle — `onReorderItem: vm.moveSection`, `buildDefaultDragHandles:
+    false`; no up/down buttons). `_SectionCard` has **no card chrome**
+    (the old `surfaceContainerLow` fill + `outlineVariant` border are
+    gone) so block previews look like real entry content; it keeps only
+    a slim quiet header (leading `ReorderableDragStartListener` drag
+    handle, faded type label, trailing remove-X) and a hairline
+    `Divider` between sections. The body still routes via the
+    per-`SectionKind` switch in `_SectionCard.build`:
     - `blockGrid` → `_BlockGridSectionBody` — `BlockGrid` with the
       Add button baked in.
     - `text` → `_TextSectionPreview` — a `TextSectionWidget` in
@@ -162,7 +170,11 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
   custom-carousel slots thread their `definitionId` (and pre-select
   the first item of the registry definition, if any) so the preview
   resolves the real title + items instead of falling through to the
-  "Deleted block" placeholder. **Visuals are seeded** from
+  "Deleted block" placeholder. **Habit slots are threaded the same
+  way** (GUS-73): a `habitTracker` slot with a `definitionId` builds
+  `HabitBlockContent(definitionId:, completed: true)` so the preview
+  shows the habit's real title rather than `sampleData`'s generic
+  title-less checkmark. **Visuals are seeded** from
   `Random(slot.id.hashCode)` against `themeSettings.postItPalette`
   so the editor mirrors what a materialized entry will look like —
   same rotation/offset/colour. The seed is deterministic, so visuals
@@ -183,6 +195,13 @@ See [../CLAUDE.md](../CLAUDE.md) for the area overview.
   no-op, which made forward moves of one position silently fail and
   forward moves of more than one off-by-one. See
   [../view_model/CLAUDE.md](../view_model/CLAUDE.md) "Move semantics".
+  **Section** reorder (custom kind) instead flows from a
+  `ReorderableListView`'s `onReorderItem: vm.moveSection` — that
+  callback pre-adjusts `newIndex`, and `moveSection` is itself a plain
+  `removeAt + insert`, so they compose cleanly. An explicit
+  `ReorderableDragStartListener` drag handle (with
+  `buildDefaultDragHandles: false`) is required so the section drag
+  doesn't clash with a block-grid section's long-press block drag.
 
 ## When to update this file
 

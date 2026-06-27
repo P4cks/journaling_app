@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/custom_carousel_block_content.dart';
+import 'package:journaling_app_rewrite/data/model/block_content/habit_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_content/text_block_content.dart';
 import 'package:journaling_app_rewrite/data/model/block_type.dart';
 import 'package:journaling_app_rewrite/data/model/block_visuals.dart';
@@ -38,10 +38,10 @@ import 'package:journaling_app_rewrite/ui/layouts/widgets/layout_name_title.dart
 
 /// Build a preview `JournalBlockData` for a layout-editor slot. For
 /// built-in types we delegate to `BlockTypeDisplay.sampleData`; for
-/// `customCarousel` slots we thread the slot's `definitionId` (and
-/// pre-select the first item, if any) so the preview resolves the
-/// real definition's title + items instead of falling through to the
-/// "Deleted block" placeholder.
+/// `customCarousel` and `habitTracker` slots we thread the slot's
+/// `definitionId` (and, for carousels, pre-select the first item) so
+/// the preview resolves the real definition's title + items instead of
+/// falling through to a title-less placeholder (GUS-73).
 ///
 /// Visuals are seeded from the slot id (`Random(slot.id.hashCode)`)
 /// against the live post-it palette so the editor mirrors what
@@ -60,6 +60,26 @@ JournalBlockData _slotPreviewData(
     Random(slot.id.hashCode),
     theme.postItPalette,
   );
+  // Habit slots carry a `definitionId` too — thread it through so the
+  // habit widget resolves the real definition and renders its title
+  // (GUS-73) instead of falling back to `sampleData`'s generic
+  // title-less checkmark. `completed: true` preserves the checked look
+  // the preview had before.
+  if (slot.type == BlockType.habitTracker) {
+    final habitDefId = slot.definitionId;
+    if (habitDefId == null) {
+      return slot.type.sampleData(id: slot.id).copyWith(visuals: visuals);
+    }
+    return JournalBlockData.create(
+      id: slot.id,
+      type: slot.type,
+      content: HabitBlockContent(
+        definitionId: habitDefId,
+        completed: true,
+      ).toMap(),
+      visuals: visuals,
+    );
+  }
   if (slot.type != BlockType.customCarousel) {
     return slot.type.sampleData(id: slot.id).copyWith(visuals: visuals);
   }
@@ -701,30 +721,28 @@ class _CustomBody extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < sections.length; i++)
-              // A newly-added section slides + fades in to match the block
-              // add motion (GUS-88). Keyed by section id so it runs once on
-              // mount, not on every keystroke rebuild or reorder.
-              Animate(
+            // Sections drag-and-drop to reorder (no up/down buttons): the
+            // explicit drag handle lives on each card's header
+            // (`ReorderableDragStartListener`), so dragging a section can't
+            // clash with a block-grid section's own long-press block drag.
+            // `onReorderItem` hands `moveSection` a `newIndex` already
+            // adjusted for the removed source item — `moveSection` is a
+            // plain removeAt + insert, so it maps directly. The GUS-88
+            // add-in `Animate` is dropped here: it fights
+            // `ReorderableListView`'s own item transitions.
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: sections.length,
+              onReorderItem: vm.moveSection,
+              itemBuilder: (context, i) => _SectionCard(
                 key: ValueKey('section-${sections[i].id}'),
-                effects: const [
-                  FadeEffect(
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeOutCubic,
-                  ),
-                  MoveEffect(
-                    begin: Offset(0, 12),
-                    end: Offset.zero,
-                    duration: Duration(milliseconds: 340),
-                    curve: Curves.easeOutCubic,
-                  ),
-                ],
-                child: _SectionCard(
-                  vm: vm,
-                  index: i,
-                  onConfirmRemove: (label) => _confirmRemove(context, label),
-                ),
+                vm: vm,
+                index: i,
+                onConfirmRemove: (label) => _confirmRemove(context, label),
               ),
+            ),
           const SizedBox(height: 12),
           ProLimitHint(
             used: sections.length,
@@ -742,6 +760,7 @@ class _CustomBody extends StatelessWidget {
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
+    super.key,
     required this.vm,
     required this.index,
     required this.onConfirmRemove,
@@ -755,7 +774,6 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final section = vm.sections[index];
-    final isFirst = index == 0;
     final isLast = index == vm.sections.length - 1;
     final (String header, String removeLabel) = switch (section.kind) {
       SectionKind.blockGrid => ('Block grid', 'block grid'),
@@ -767,65 +785,59 @@ class _SectionCard extends StatelessWidget {
       SectionKind.wannado => ('Wanna-do carousel', 'wanna-do carousel'),
     };
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 4, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    header,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+    // No card chrome (looks-like-a-journal-entry): sections sit on the
+    // page background and the block previews carry the visual weight. A
+    // slim quiet header keeps the editor affordances — a drag handle to
+    // reorder (replacing the old up/down buttons) + a faded type label + a
+    // remove-X — and a hairline rule separates adjacent sections.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(6, 6, 4, 0),
+          child: Row(
+            children: [
+              ReorderableDragStartListener(
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: AppIcon(
+                    HugeIcons.strokeRoundedMoreVertical,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.6,
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Move up',
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: isFirst
-                      ? null
-                      : () => vm.moveSection(index, index - 1),
-                  icon: AppIcon(HugeIcons.strokeRoundedArrowUp01),
-                ),
-                IconButton(
-                  tooltip: 'Move down',
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: isLast
-                      ? null
-                      : () => vm.moveSection(index, index + 1),
-                  icon: AppIcon(HugeIcons.strokeRoundedArrowDown01),
-                ),
-                IconButton(
-                  tooltip: 'Remove section',
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () async {
-                    final ok = await onConfirmRemove(removeLabel);
-                    if (!ok) return;
-                    vm.removeSection(section.id);
-                  },
-                  icon: AppIcon(
-                    HugeIcons.strokeRoundedDelete02,
-                    color: theme.colorScheme.error,
+              ),
+              Expanded(
+                child: Text(
+                  header,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                tooltip: 'Remove section',
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                onPressed: () async {
+                  final ok = await onConfirmRemove(removeLabel);
+                  if (!ok) return;
+                  vm.removeSection(section.id);
+                },
+                icon: AppIcon(
+                  HugeIcons.strokeRoundedCancel01,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-          switch (section.kind) {
+        ),
+        switch (section.kind) {
             SectionKind.blockGrid => _BlockGridSectionBody(
               vm: vm,
               sectionIndex: index,
@@ -859,8 +871,15 @@ class _SectionCard extends StatelessWidget {
               child: WannadoSectionWidget(definitionId: section.definitionId),
             ),
           },
+        if (!isLast)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Divider(
+              height: 1,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
         ],
-      ),
     );
   }
 }
