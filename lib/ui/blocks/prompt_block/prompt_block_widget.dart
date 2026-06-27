@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/chrome/delayed_tap_focus.dart';
 import 'package:journaling_app_rewrite/ui/blocks/prompt_block/prompt_picker_sheet.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/theme/tonal.dart';
@@ -166,20 +167,24 @@ class _PromptBlockWidgetState extends State<PromptBlockWidget> {
           'You already typed an answer. Keep it under the new prompt, or clear it?',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(null),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Clear it',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Keep',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(null),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Clear it',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Keep',
+              ),
+            ],
           ),
         ],
       ),

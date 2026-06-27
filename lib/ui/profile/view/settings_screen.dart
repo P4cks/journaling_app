@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -218,7 +219,8 @@ class SettingsScreen extends StatelessWidget {
                                 'wanna-do definition. Layouts using them render '
                                 'a placeholder. Cannot be undone.',
                               ),
-                              onTap: () => _confirmAndResetCustomBlocks(context),
+                              onTap: () =>
+                                  _confirmAndResetCustomBlocks(context),
                             ),
                             ListTile(
                               leading: AppIcon(
@@ -272,9 +274,9 @@ class _VersionFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: scheme.onSurfaceVariant,
-    );
+    final labelStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -331,15 +333,19 @@ Future<bool> _confirmDestructive(
       title: Text(title),
       content: Text(message),
       actions: [
-        AppButton(
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          label: 'Cancel',
-        ),
-        AppButton(
-          variant: AppButtonVariant.inverted,
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          label: confirmLabel,
+        AppDialogActions(
+          children: [
+            AppButton(
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              label: 'Cancel',
+            ),
+            AppButton(
+              variant: AppButtonVariant.inverted,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              label: confirmLabel,
+            ),
+          ],
         ),
       ],
     ),
@@ -436,8 +442,9 @@ Future<void> _confirmAndResetCustomBlocks(BuildContext context) async {
     confirmLabel: 'Reset custom blocks',
   );
   if (!ok || !context.mounted) return;
-  final cleared = await AppDependencies.of(context).blockSettings
-      .resetCustomBlocks();
+  final cleared = await AppDependencies.of(
+    context,
+  ).blockSettings.resetCustomBlocks();
   if (!context.mounted) return;
   showToast(
     context,
@@ -663,4 +670,3 @@ class _AddPostItSwatch extends StatelessWidget {
     );
   }
 }
-

@@ -10,6 +10,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_type_display.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -67,20 +68,24 @@ class _BlockSettingsScreenState extends State<BlockSettingsScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your block settings before leaving?'),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            label: 'Discard',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop('save'),
-            label: 'Save',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('discard'),
+                label: 'Discard',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop('save'),
+                label: 'Save',
+              ),
+            ],
           ),
         ],
       ),
@@ -306,15 +311,19 @@ class _CustomCarouselList extends StatelessWidget {
                     'You can edit the affected layouts afterwards.',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.inverted,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Delete',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.inverted,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Delete',
+              ),
+            ],
           ),
         ],
       ),
@@ -408,7 +417,9 @@ class _WannadoCarouselList extends StatelessWidget {
     WannadoDefinition def,
   ) async {
     final uses = layoutRepository.countWannadoUsage(def.id);
-    final label = def.title.isEmpty ? 'this wanna-do carousel' : '"${def.title}"';
+    final label = def.title.isEmpty
+        ? 'this wanna-do carousel'
+        : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -421,15 +432,19 @@ class _WannadoCarouselList extends StatelessWidget {
                     'empty placeholder until you point them at another list.',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.inverted,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Delete',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.inverted,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Delete',
+              ),
+            ],
           ),
         ],
       ),
@@ -582,10 +597,7 @@ class _HabitList extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    HabitDefinition def,
-  ) async {
+  Future<void> _confirmDelete(BuildContext context, HabitDefinition def) async {
     final label = def.title.isEmpty ? 'this habit' : '"${def.title}"';
     final ok = await showDialog<bool>(
       context: context,
@@ -597,15 +609,19 @@ class _HabitList extends StatelessWidget {
           'a "Deleted block" placeholder from now on.',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.inverted,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Delete',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.inverted,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Delete',
+              ),
+            ],
           ),
         ],
       ),
@@ -622,8 +638,7 @@ class _HabitList extends StatelessWidget {
       builder: (context, _) {
         final defs = settings.habits;
         // Shared "custom block" budget with carousels (GUS-40).
-        final customBlockCount =
-            defs.length + settings.customCarousels.length;
+        final customBlockCount = defs.length + settings.customCarousels.length;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -685,8 +700,7 @@ class _HabitDefinitionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = definition.title.isEmpty ? 'Untitled' : definition.title;
-    final iconValue =
-        definition.iconName.isEmpty ? null : definition.iconName;
+    final iconValue = definition.iconName.isEmpty ? null : definition.iconName;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(

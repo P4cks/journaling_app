@@ -6,6 +6,7 @@ import 'package:journaling_app_rewrite/data/model/section_kind.dart';
 import 'package:journaling_app_rewrite/data/repositories/subscription_repository.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/icon_or_emoji.dart';
@@ -104,17 +105,21 @@ class _LayoutsScreenState extends State<LayoutsScreen> {
           'This layout uses Pro features. You need to upgrade to Pro to edit it.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'cancel'),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'delete'),
-            child: const Text('Delete Layout'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, 'upgrade'),
-            child: const Text('Upgrade to Pro'),
+          AppDialogActions(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'cancel'),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'delete'),
+                child: const Text('Delete Layout'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, 'upgrade'),
+                child: const Text('Upgrade to Pro'),
+              ),
+            ],
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:journaling_app_rewrite/ui/blocks/custom_carousel/carousel_icon_catalogue.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
@@ -61,20 +62,24 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your habit before leaving?'),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            label: 'Discard',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop('save'),
-            label: 'Save',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('discard'),
+                label: 'Discard',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop('save'),
+                label: 'Save',
+              ),
+            ],
           ),
         ],
       ),
@@ -140,9 +145,7 @@ class _HabitEditorScreenState extends State<HabitEditorScreen> {
       canPop: false,
       onPopInvokedWithResult: _handlePop,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(vm.isNew ? 'New habit' : 'Edit habit'),
-        ),
+        appBar: AppBar(title: Text(vm.isNew ? 'New habit' : 'Edit habit')),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [

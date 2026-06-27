@@ -59,6 +59,17 @@ for how they fit together; this file is per-file notes.
   height-constrained bottom-bar control). `AddCustomBlockButton` (in
   [pro_gate.dart](pro_gate.dart)) is now an `AppButton` wrapped in a `Stack` for
   its crown-badge overlay at the free cap.
+- [app_dialog_actions.dart](app_dialog_actions.dart) — `AppDialogActions`
+  (GUS-83). Lays an `AlertDialog`'s action buttons **inline** (side by side,
+  equal width) instead of letting Material's default `OverflowBar` stack them
+  vertically. `AlertDialog.actions` are placed in an `OverflowBar` that only
+  keeps buttons on one row while their *natural* widths fit; the app's wide
+  filled-pill `AppButton`s overflowed and dropped to one-button-per-line. Pass
+  this as the **single** child of `actions:` — it wraps each child in an
+  `Expanded`, so the dialog's own `OverflowBar` has exactly one child and
+  nothing to overflow. Used by every `showDialog`/`AlertDialog` call site in the
+  app (the editor "Unsaved changes" save/discard/cancel dialogs, delete
+  confirmations, the swatch picker, etc.).
 - [paper_background.dart](paper_background.dart) — `PaperBackground`
   (GUS-85). Warm tactile journal background: paints the palette
   `surface` plus a very faint, tileable paper grain behind its `child`.

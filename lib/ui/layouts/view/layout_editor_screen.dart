@@ -23,6 +23,7 @@ import 'package:journaling_app_rewrite/ui/blocks/header_section/header_section_w
 import 'package:journaling_app_rewrite/ui/blocks/text_section/text_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/blocks/wannado_section/wannado_section_widget.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -165,20 +166,24 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
         title: const Text('Unsaved changes'),
         content: const Text('Save your changes to this layout before leaving?'),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop('discard'),
-            label: 'Discard',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop('save'),
-            label: 'Save',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop('discard'),
+                label: 'Discard',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop('save'),
+                label: 'Save',
+              ),
+            ],
           ),
         ],
       ),
@@ -222,15 +227,19 @@ class _LayoutEditorScreenState extends State<LayoutEditorScreen> {
           "This custom layout hasn't been applied to the day yet. Discard it?",
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Discard',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Discard',
+              ),
+            ],
           ),
         ],
       ),
@@ -664,15 +673,19 @@ class _CustomBody extends StatelessWidget {
         title: Text('Remove $label?'),
         content: Text('The $label will be removed from this layout.'),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Remove',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Remove',
+              ),
+            ],
           ),
         ],
       ),

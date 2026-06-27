@@ -9,6 +9,7 @@ import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/blocks/block_mode.dart';
 import 'package:journaling_app_rewrite/ui/blocks/expanded/expanded_block_route.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
+import 'package:journaling_app_rewrite/ui/core/widgets/app_dialog_actions.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_dependencies.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_icon.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_toast.dart';
@@ -212,15 +213,19 @@ class _MainJournalScreenState extends State<MainJournalScreen>
           'Existing content for this day will be lost.',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Apply',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Apply',
+              ),
+            ],
           ),
         ],
       ),
@@ -251,8 +256,11 @@ class _MainJournalScreenState extends State<MainJournalScreen>
 
     final built = await Navigator.of(context).push<JournalLayout>(
       MaterialPageRoute(
-        builder: (_) =>
-            LayoutEditorScreen(layoutId: null, ephemeral: true, seedLayout: seed),
+        builder: (_) => LayoutEditorScreen(
+          layoutId: null,
+          ephemeral: true,
+          seedLayout: seed,
+        ),
       ),
     );
     if (built == null || !mounted) return;
@@ -270,15 +278,19 @@ class _MainJournalScreenState extends State<MainJournalScreen>
           'Existing content for this day will be lost.',
         ),
         actions: [
-          AppButton(
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            label: 'Cancel',
-          ),
-          AppButton(
-            variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            label: 'Apply',
+          AppDialogActions(
+            children: [
+              AppButton(
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                label: 'Cancel',
+              ),
+              AppButton(
+                variant: AppButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                label: 'Apply',
+              ),
+            ],
           ),
         ],
       ),
@@ -416,20 +428,21 @@ class _MainJournalScreenState extends State<MainJournalScreen>
                 color: Colors.transparent,
                 child: SizedBox.expand(
                   child: inPager
-                    ? JournalPager(
-                        viewModel: vm,
-                        modeFor: (e) =>
-                            _modeFor(e, unlockAllDays: debug.unlockAllDays),
-                        externalLock: _editing,
-                        onRequestBlockEdit: (block) => _requestBlockEdit(block),
-                        onRequestTextSectionEdit: (block) =>
-                            _requestBlockEdit(block, isTextSection: true),
-                        onReorderBlockInSection: vm.reorderBlockInSection,
-                        onMakeEntry: _onMakeEntry,
-                      )
-                    : (editable
-                          ? MakeEntryCta(onTap: _onMakeEntry)
-                          : const NoEntryReadOnly()),
+                      ? JournalPager(
+                          viewModel: vm,
+                          modeFor: (e) =>
+                              _modeFor(e, unlockAllDays: debug.unlockAllDays),
+                          externalLock: _editing,
+                          onRequestBlockEdit: (block) =>
+                              _requestBlockEdit(block),
+                          onRequestTextSectionEdit: (block) =>
+                              _requestBlockEdit(block, isTextSection: true),
+                          onReorderBlockInSection: vm.reorderBlockInSection,
+                          onMakeEntry: _onMakeEntry,
+                        )
+                      : (editable
+                            ? MakeEntryCta(onTap: _onMakeEntry)
+                            : const NoEntryReadOnly()),
                 ),
               ),
             ),
