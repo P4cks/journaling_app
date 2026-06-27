@@ -516,7 +516,15 @@ class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
                     alignment: Alignment.center,
                     children: [
                       VideoPlayer(_controller),
-                      VideoProgressIndicator(_controller, allowScrubbing: true),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: VideoProgressIndicator(
+                          _controller,
+                          allowScrubbing: true,
+                        ),
+                      ),
                       if (!_controller.value.isPlaying)
                         const DecoratedBox(
                           decoration: BoxDecoration(
