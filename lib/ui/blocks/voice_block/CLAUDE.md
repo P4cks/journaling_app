@@ -25,7 +25,7 @@ Typed wrapper: [VoiceBlockContent](../../../data/model/block_content/voice_block
 |---|---|
 | `editable`, no audio | "Record voice" mic affordance; tap → recording sheet. |
 | `editable`, has audio | Inline `_VoicePlayer` (play/pause + progress + `m:ss / m:ss`); top-right `⋯` [`BlockOptionsButton`](../widgets/block_options_button.dart) → Re-record/Remove sheet; double-tap → expanded route. **Long-press is NOT handled** so it falls through to `BlockGrid`'s drag-to-reorder (GUS-76). |
-| `readOnly`, no audio | Dimmed italic "No recording" placeholder. |
+| `readOnly`, no audio | Dimmed mic glyph (`HugeIcons.strokeRoundedMic01`) + "Voice" label, so the block is recognizable in previews like the layout editor (GUS-73) — was a bare italic "No recording". |
 | `readOnly`, has audio | Inline `_VoicePlayer`. No long-press/expand. |
 
 ## Recording flow
