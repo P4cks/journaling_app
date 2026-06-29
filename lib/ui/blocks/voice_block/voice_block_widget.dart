@@ -105,7 +105,32 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
 
     if (!content.hasAudio) {
       if (widget.mode == BlockMode.readOnly) {
-        return _centeredHint(theme, 'No recording');
+        // Mic glyph + label, not bare "No recording" text, so the block
+        // is recognizable as a voice block in previews like the layout
+        // editor (GUS-73).
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedMic01,
+                  size: 28,
+                  color: theme.disabledColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Voice',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       }
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -172,19 +197,6 @@ class _VoiceBlockWidgetState extends State<VoiceBlockWidget> {
     );
   }
 
-  Widget _centeredHint(ThemeData theme, String text) => Padding(
-    padding: const EdgeInsets.all(12),
-    child: Center(
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.bodySmall?.copyWith(
-          fontStyle: FontStyle.italic,
-          color: theme.disabledColor,
-        ),
-      ),
-    ),
-  );
 }
 
 Future<String?> _showManageSheet(BuildContext context) {

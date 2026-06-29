@@ -28,7 +28,7 @@ and a `VideoStorageService` substituted for the image equivalents.
 |---|---|
 | `editable`, no video | "+ Add video" affordance; tap → Record/Library sheet. |
 | `editable`, has video | Poster frame + play glyph + duration badge; top-right `⋯` [`BlockOptionsButton`](../widgets/block_options_button.dart) → Play/Replace/Remove sheet; double-tap → expanded route (tap there fires the action). **Long-press is NOT handled** so it falls through to `BlockGrid`'s drag-to-reorder (GUS-76). |
-| `readOnly`, no video | Dimmed italic "No video" placeholder. |
+| `readOnly`, no video | Dimmed video glyph (`HugeIcons.strokeRoundedVideo01`) + "Video" label, so the block is recognizable in previews like the layout editor (GUS-73) — was a bare italic "No video". |
 | `readOnly`, has video | Poster frame; tap plays fullscreen. |
 
 ## Storage contract

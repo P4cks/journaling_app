@@ -212,15 +212,29 @@ class VideoBlockWidget extends StatelessWidget {
 
     if (!content.hasVideo) {
       if (mode == BlockMode.readOnly) {
+        // Video glyph + label, not bare "No video" text, so the block is
+        // recognizable as a video block in previews like the layout
+        // editor (GUS-73).
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Center(
-            child: Text(
-              'No video',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontStyle: FontStyle.italic,
-                color: theme.disabledColor,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(
+                  HugeIcons.strokeRoundedVideo01,
+                  size: 28,
+                  color: theme.disabledColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Video',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.disabledColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         );
