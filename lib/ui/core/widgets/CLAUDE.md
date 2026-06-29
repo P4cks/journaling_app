@@ -60,16 +60,23 @@ for how they fit together; this file is per-file notes.
   [pro_gate.dart](pro_gate.dart)) is now an `AppButton` wrapped in a `Stack` for
   its crown-badge overlay at the free cap.
 - [app_dialog_actions.dart](app_dialog_actions.dart) — `AppDialogActions`
-  (GUS-83). Lays an `AlertDialog`'s action buttons **inline** (side by side,
-  equal width) instead of letting Material's default `OverflowBar` stack them
-  vertically. `AlertDialog.actions` are placed in an `OverflowBar` that only
-  keeps buttons on one row while their *natural* widths fit; the app's wide
+  (GUS-83). Lays an `AlertDialog`'s action buttons **inline** (one end-aligned
+  row) instead of letting Material's default `OverflowBar` stack them
+  vertically. `AlertDialog.actions` go in an `OverflowBar` that only keeps
+  buttons on one row while their *natural* widths fit; the app's wide
   filled-pill `AppButton`s overflowed and dropped to one-button-per-line. Pass
-  this as the **single** child of `actions:` — it wraps each child in an
-  `Expanded`, so the dialog's own `OverflowBar` has exactly one child and
-  nothing to overflow. Used by every `showDialog`/`AlertDialog` call site in the
-  app (the editor "Unsaved changes" save/discard/cancel dialogs, delete
-  confirmations, the swatch picker, etc.).
+  this as the **single** child of `actions:`. It (1) applies a local `Theme`
+  that tightens every button variant's metrics (12px horizontal padding,
+  `VisualDensity.compact`, `shrinkWrap` tap target) so two/three pills fit a
+  ~280px dialog, and (2) holds them in a `Wrap` (not a `Row`/`Expanded`).
+  Natural width + `Wrap` matters: an earlier `Expanded` version squeezed each
+  button below its label width, overflowing the label *inside* the pill — the
+  `AppButton` label `Text` is intentionally non-`Flexible` (it sits in
+  unbounded `Wrap`s elsewhere), so it can't shrink. `Wrap` also degrades to a
+  second line instead of throwing if even compact buttons can't fit (e.g. three
+  long labels on a tiny screen). Used by every `showDialog`/`AlertDialog` call
+  site in the app (the editor "Unsaved changes" save/discard/cancel dialogs,
+  delete confirmations, the swatch picker, etc.).
 - [paper_background.dart](paper_background.dart) — `PaperBackground`
   (GUS-85). Warm tactile journal background: paints the palette
   `surface` plus a very faint, tileable paper grain behind its `child`.

@@ -1,49 +1,84 @@
 import 'package:flutter/material.dart';
 
-/// Lays out [AlertDialog] action buttons **inline** — side by side, equal
-/// width — instead of letting Material's default [OverflowBar] stack them
-/// vertically.
+/// Lays out [AlertDialog] action buttons **inline** — on a single row aligned
+/// to the end — instead of Material's default `OverflowBar`, which stacks the
+/// app's wide filled-pill [AppButton]s vertically as soon as their natural
+/// widths don't fit on one line (GUS-83).
 ///
-/// `AlertDialog.actions` are placed in an [OverflowBar], which only keeps
-/// buttons on one row while their *natural* widths fit; the moment they don't,
-/// it drops to one-button-per-line. The app's filled-pill [AppButton]s are
-/// wide, so a two- or three-button dialog routinely overflowed and rendered as
-/// a vertical stack (GUS-83). Splitting the available width equally guarantees
-/// the buttons stay on a single row regardless of label length or screen size.
+/// Two things keep the inline row both compact and robust:
 ///
-/// Pass this as the **single** child of `AlertDialog.actions` so the dialog's
-/// own [OverflowBar] has exactly one child and nothing to overflow:
+/// 1. A local [Theme] tightens the metrics of every button variant (smaller
+///    horizontal padding, [VisualDensity.compact],
+///    [MaterialTapTargetSize.shrinkWrap]) so two or three pill buttons fit
+///    across a default ~280px dialog. The buttons keep their **natural** width
+///    (no [Expanded]/[Flexible]), so a button is never squeezed narrower than
+///    its label — which previously made the label overflow *inside* the pill.
+/// 2. A [Wrap] (not a [Row]) holds the buttons: if even compact buttons can't
+///    fit — e.g. three long labels on a very narrow screen — it gracefully
+///    drops to a second line instead of throwing a `RenderFlex` overflow.
+///
+/// Pass this as the **single** child of `AlertDialog.actions`:
 ///
 /// ```dart
 /// actions: [
-///   AppDialogActions(
-///     children: [
-///       AppButton(variant: AppButtonVariant.text, onPressed: ..., label: 'Cancel'),
-///       AppButton(variant: AppButtonVariant.primary, onPressed: ..., label: 'Save'),
-///     ],
-///   ),
+///   AppDialogActions(children: [cancelButton, saveButton]),
 /// ],
 /// ```
-///
-/// Each child is wrapped in an [Expanded], so buttons need not (and should not)
-/// set `expand: true` themselves — the [Expanded] supplies the bounded width
-/// and the button fills it.
 class AppDialogActions extends StatelessWidget {
   const AppDialogActions({super.key, required this.children, this.spacing = 8});
 
-  /// The action buttons, laid out left-to-right with equal widths.
+  /// The action buttons, laid out left-to-right and aligned to the end.
   final List<Widget> children;
 
-  /// Horizontal gap between adjacent buttons.
+  /// Gap between adjacent buttons (and between rows, if they wrap).
   final double spacing;
 
   @override
   Widget build(BuildContext context) {
-    final row = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      if (i > 0) row.add(SizedBox(width: spacing));
-      row.add(Expanded(child: children[i]));
-    }
-    return Row(children: row);
+    final base = Theme.of(context);
+
+    // Compact metrics shared by every button variant so several filled-pill
+    // buttons fit on one row inside a default-width AlertDialog. Applied via a
+    // local Theme so it reaches AppButton (a FilledButton under the hood) as
+    // well as any raw TextButton/FilledButton/ElevatedButton passed in.
+    const padding = EdgeInsets.symmetric(horizontal: 12);
+    const density = VisualDensity.compact;
+    const tap = MaterialTapTargetSize.shrinkWrap;
+
+    final filled = FilledButton.styleFrom(
+      padding: padding,
+      visualDensity: density,
+      tapTargetSize: tap,
+    );
+    final text = TextButton.styleFrom(
+      padding: padding,
+      visualDensity: density,
+      tapTargetSize: tap,
+    );
+    final elevated = ElevatedButton.styleFrom(
+      padding: padding,
+      visualDensity: density,
+      tapTargetSize: tap,
+    );
+
+    return Theme(
+      data: base.copyWith(
+        filledButtonTheme: FilledButtonThemeData(
+          style: filled.merge(base.filledButtonTheme.style),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: text.merge(base.textButtonTheme.style),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: elevated.merge(base.elevatedButtonTheme.style),
+        ),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        spacing: spacing,
+        runSpacing: spacing,
+        children: children,
+      ),
+    );
   }
 }

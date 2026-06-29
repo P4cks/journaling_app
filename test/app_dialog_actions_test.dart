@@ -7,8 +7,9 @@ void main() {
   testWidgets(
     'AppDialogActions lays dialog buttons inline (single row) without overflow',
     (tester) async {
-      // Narrow surface so the old OverflowBar would have stacked the pills.
-      tester.view.physicalSize = const Size(360, 720);
+      // Narrow phone width: the old equal-width Expanded layout overflowed each
+      // button's label here; the compact Wrap must fit all three on one row.
+      tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
