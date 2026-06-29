@@ -76,7 +76,10 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     user spent their streak-reward token on; absent → none),
     `streak.reward.unlockedSections` (JSON list of `SectionKind.name`s
     unlocked the same way; absent → none — see
-    [streak_reward_settings.dart](streak_reward_settings.dart)).
+    [streak_reward_settings.dart](streak_reward_settings.dart)),
+    `onboarding.completed` (`true`/`false`; absent → `false`; whether
+    the user has finished/skipped the GUS-18 welcome tutorial — backs
+    [onboarding_settings.dart](onboarding_settings.dart)).
   - **Removed keys (GUS-27):** `theme.mode`, `theme.secondary`,
     `theme.accent`, `theme.debugSurface` and their accessors are gone —
     brightness is now baked into the selected palette and the debug
@@ -317,6 +320,16 @@ the shape of `JournalEntry` or `JournalLayout` (see root CLAUDE.md).
     reward-unlocked Pro item bypasses its lock — count caps are
     unaffected). Constructed in `main.dart`, exposed via
     `AppDependencies`.
+- [onboarding_settings.dart](onboarding_settings.dart) —
+  `OnboardingSettings extends ChangeNotifier` (GUS-18). A single
+  persisted `completed` flag backing the first-run welcome tutorial.
+  Reads the initial value from `SettingsStorageService` in its
+  constructor; `setCompleted(bool)` guards the no-op, persists via
+  `setOnboardingCompleted`, `debugPrint`s, then notifies. Constructed
+  in `main.dart`, exposed via `AppDependencies`. The main journal
+  screen reads `completed` to decide whether to push the onboarding
+  carousel on first frame; the onboarding screen sets it on
+  finish/skip (replay from Settings re-sets it to `true` — harmless).
 - [auth_service.dart](auth_service.dart) — `AuthService` interface,
   `AuthFailure`, and `DisabledAuthService`. **This is the only auth
   implementation right now.** `main.dart` always constructs a

@@ -12,6 +12,7 @@ import 'package:journaling_app_rewrite/data/services/block_settings.dart';
 import 'package:journaling_app_rewrite/data/services/debug_settings.dart';
 import 'package:journaling_app_rewrite/data/services/hive_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/layout_storage_service.dart';
+import 'package:journaling_app_rewrite/data/services/onboarding_settings.dart';
 import 'package:journaling_app_rewrite/data/services/photo_storage_service.dart';
 import 'package:journaling_app_rewrite/data/services/quote_service.dart';
 import 'package:journaling_app_rewrite/data/services/settings_storage_service.dart';
@@ -54,6 +55,7 @@ void main() async {
   final blockSettings = BlockSettings(settingsStorage);
   final themeSettings = ThemeSettings(settingsStorage);
   final streakRewardSettings = StreakRewardSettings(settingsStorage);
+  final onboardingSettings = OnboardingSettings(settingsStorage);
   final journalRepository = JournalRepository(
     entryStorage,
     layoutRepository,
@@ -87,6 +89,7 @@ void main() async {
       themeSettings: themeSettings,
       blockSettings: blockSettings,
       streakRewardSettings: streakRewardSettings,
+      onboardingSettings: onboardingSettings,
       quoteService: quoteService,
       weatherService: weatherService,
       photoStorage: photoStorage,
@@ -107,6 +110,7 @@ class MyApp extends StatefulWidget {
     required this.themeSettings,
     required this.blockSettings,
     required this.streakRewardSettings,
+    required this.onboardingSettings,
     required this.quoteService,
     required this.weatherService,
     required this.photoStorage,
@@ -122,6 +126,7 @@ class MyApp extends StatefulWidget {
   final ThemeSettings themeSettings;
   final BlockSettings blockSettings;
   final StreakRewardSettings streakRewardSettings;
+  final OnboardingSettings onboardingSettings;
   final QuoteService quoteService;
   final WeatherService weatherService;
   final PhotoStorageService photoStorage;
@@ -170,6 +175,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       themeSettings: widget.themeSettings,
       blockSettings: widget.blockSettings,
       streakRewardSettings: widget.streakRewardSettings,
+      onboardingSettings: widget.onboardingSettings,
       quoteService: widget.quoteService,
       weatherService: widget.weatherService,
       photoStorage: widget.photoStorage,

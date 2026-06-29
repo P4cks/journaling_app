@@ -4,6 +4,7 @@ import 'package:journaling_app_rewrite/data/model/layout_kind.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/journal/view/main_journal_screen.dart';
 import 'package:journaling_app_rewrite/ui/journal_entries/view/journal_entries_screen.dart';
+import 'package:journaling_app_rewrite/ui/onboarding/view/onboarding_screen.dart';
 import 'package:journaling_app_rewrite/ui/statistics/view/statistics_screen.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view/layout_editor_screen.dart';
 import 'package:journaling_app_rewrite/ui/layouts/view/layouts_screen.dart';
@@ -31,6 +32,12 @@ final GoRouter appRouter = GoRouter(
       path: Routes.home,
       name: RouteNames.home,
       builder: (context, state) => const MainJournalScreen(),
+    ),
+    GoRoute(
+      path: Routes.onboarding,
+      name: RouteNames.onboarding,
+      builder: (context, state) =>
+          OnboardingScreen(firstRun: state.extra as bool? ?? false),
     ),
     GoRoute(
       path: Routes.journalEntry,

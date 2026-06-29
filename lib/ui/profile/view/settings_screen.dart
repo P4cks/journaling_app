@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:journaling_app_rewrite/data/services/theme_settings.dart';
 import 'package:journaling_app_rewrite/routing/routes.dart';
 import 'package:journaling_app_rewrite/ui/core/widgets/app_button.dart';
@@ -84,6 +85,17 @@ class SettingsScreen extends StatelessWidget {
                       route: Routes.subscription,
                     );
                   },
+                ),
+              ],
+            ),
+            SettingsSection(
+              label: "Help",
+              children: [
+                ListTile(
+                  leading: AppIcon(HugeIcons.strokeRoundedHelpCircle),
+                  title: const Text('Replay tutorial'),
+                  trailing: AppIcon(HugeIcons.strokeRoundedArrowRight01),
+                  onTap: () => context.push(Routes.onboarding),
                 ),
               ],
             ),

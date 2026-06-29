@@ -34,6 +34,7 @@ class SettingsStorageService {
   static const _subscriptionDebugForceFreeKey = 'subscription.debugForceFree';
   static const _streakRewardBlocksKey = 'streak.reward.unlockedBlocks';
   static const _streakRewardSectionsKey = 'streak.reward.unlockedSections';
+  static const _onboardingCompletedKey = 'onboarding.completed';
   // Debug-only per-block input-limit overrides. Absent → use the
   // hard-coded default in BlockInputLimits. Stored as the int's string
   // form; deleted when cleared back to default.
@@ -212,6 +213,15 @@ class SettingsStorageService {
       (json == null || json.isEmpty)
       ? _box.delete(_streakRewardSectionsKey)
       : _box.put(_streakRewardSectionsKey, json);
+
+  /// Whether the user has finished (or skipped) the onboarding tutorial.
+  /// Absent → `false`, so a fresh install shows the tutorial once on
+  /// first launch (GUS-18).
+  bool getOnboardingCompleted() =>
+      _box.get(_onboardingCompletedKey) == 'true';
+
+  Future<void> setOnboardingCompleted(bool value) =>
+      _box.put(_onboardingCompletedKey, value.toString());
 
   int? _getInt(String key) {
     final raw = _box.get(key);
